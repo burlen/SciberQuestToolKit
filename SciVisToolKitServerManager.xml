@@ -1,0 +1,558 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="sources">
+
+<!--
+========================================================================U.I. -->
+<Proxy name="BOVReaderUI">
+  <Documentation
+      short_help="BOV reader.">
+      long_help="BOV Reader. Reads raw or brick of values files in parallel handles time."
+  </Documentation>
+  <!-- File Name -->
+  <StringVectorProperty
+    name="FileName"
+    animateable="0"
+    command="SetFileName"
+    number_of_elements="1">
+  <FileListDomain name="files"/>
+  <Documentation>
+    This property specifies the file name for the reader.
+  </Documentation>
+  </StringVectorProperty>
+  <!-- Time Steps -->
+  <DoubleVectorProperty 
+    name="TimestepValues"
+    information_only="1">
+    <TimeStepsInformationHelper/>
+    <Documentation>
+    Available timestep values.
+    </Documentation>
+  </DoubleVectorProperty>
+  <!-- Array selection -->
+  <StringVectorProperty
+    name="PointArrayInfo"
+    information_only="1">
+    <ArraySelectionInformationHelper attribute_name="Point"/>
+  </StringVectorProperty>
+  <StringVectorProperty
+    name="PointArrayStatus"
+    command="SetPointArrayStatus"
+    number_of_elements="0"
+    repeat_command="1"
+    number_of_elements_per_command="2"
+    element_types="2 0"
+    information_property="PointArrayInfo"
+    label="Arrays">
+    <ArraySelectionDomain name="array_list">
+      <RequiredProperties>
+        <Property name="PointArrayInfo" function="ArrayList"/>
+      </RequiredProperties>
+    </ArraySelectionDomain>
+    <Documentation>
+    This property is used to select arrays to read in.
+  </Documentation>
+  </StringVectorProperty>
+  <!-- Subset selection -->
+  <IntVectorProperty 
+    name="ISubsetInfo"
+    command="GetISubsetRange"
+    information_only="1">
+    <SimpleIntInformationHelper/>
+  </IntVectorProperty>
+  <IntVectorProperty 
+    name="ISubset"
+    command="SetISubset"
+    number_of_elements="2" 
+    default_values="1 0"
+    animateable="0"
+    information_property="ISubsetInfo" >
+    <IntRangeDomain name="range">
+      <RequiredProperties>
+          <Property name="ISubsetInfo" function="Range"/>
+      </RequiredProperties>
+    </IntRangeDomain>
+    <Documentation>
+      This property controls what subset of data is read in. Subset for smaller memory footprint and better interactivity.
+    </Documentation>
+  </IntVectorProperty>
+  <IntVectorProperty 
+    name="JSubsetInfo"
+    command="GetJSubsetRange"
+    information_only="1">
+    <SimpleIntInformationHelper/>
+  </IntVectorProperty>
+  <IntVectorProperty 
+    name="JSubset"
+    command="SetJSubset"
+    number_of_elements="2" 
+    default_values="1 0"
+    animateable="0"
+    information_property="JSubsetInfo" >
+    <IntRangeDomain name="range">
+      <RequiredProperties>
+          <Property name="JSubsetInfo" function="Range"/>
+      </RequiredProperties>
+    </IntRangeDomain>
+    <Documentation>
+      This property controls what subset of data is read in. Subset for smaller memory footprint and better interactivity.
+    </Documentation>
+  </IntVectorProperty>
+  <IntVectorProperty 
+    name="KSubsetInfo"
+    command="GetKSubsetRange"
+    information_only="1">
+    <SimpleIntInformationHelper/>
+  </IntVectorProperty>
+  <IntVectorProperty 
+    name="KSubset"
+    command="SetKSubset"
+    number_of_elements="2" 
+    default_values="1 0"
+    animateable="0"
+    information_property="KSubsetInfo" >
+    <IntRangeDomain name="range">
+      <RequiredProperties>
+          <Property name="KSubsetInfo" function="Range"/>
+      </RequiredProperties>
+    </IntRangeDomain>
+    <Documentation>
+      This property controls what subset of data is read in. Subset for smaller memory footprint and better interactivity.
+    </Documentation>
+  </IntVectorProperty>
+</Proxy>
+
+<!--
+========================================================================BOV Reader -->
+<SourceProxy
+    name="BOVReader"
+    class="vtkBOVReader"
+    label="BOV Reader"
+    base_proxyname="BOVReaderUI"
+    base_proxygroup="sources">
+  <Documentation
+      short_help="BOV reader.">
+      long_help="BOV Reader. Reads raw or brick of values files in parallel handles time."
+  </Documentation>
+  <!-- Meta Flag -->
+  <IntVectorProperty 
+    name="MetaRead" 
+    command="SetMetaRead" 
+    number_of_elements="1"
+    default_values="0">
+    <BooleanDomain name="bool"/>
+    <Documentation>
+    If checked meta mode is active. Meta data will be read and processed however actual read will be 
+    deffered to down stream filters. If unchecked the reader performs as expected, an actual read of
+    the requested arrays.
+    </Documentation>
+  </IntVectorProperty>
+  <Hints>
+    <Property name="MetaRead" show="0"/>
+  </Hints>
+</SourceProxy>
+
+<!--
+========================================================================BOV Meta Reader -->
+<SourceProxy
+    name="BOVMetaReader"
+    class="vtkBOVReader"
+    label="BOV Meta Reader"
+    base_proxyname="BOVReaderUI"
+    base_proxygroup="sources">
+  <Documentation
+      short_help="BOV reader.">
+      long_help="BOV Reader. Reads raw or brick of values files in parallel handles time."
+  </Documentation>
+  <!-- Meta Flag -->
+  <IntVectorProperty 
+    name="MetaRead" 
+    command="SetMetaRead" 
+    number_of_elements="1"
+    default_values="1">
+    <BooleanDomain name="bool"/>
+    <Documentation>
+    If checked meta mode is active. Meta data will be read and processed however actual read will be 
+    deffered to down stream filters. If unchecked the reader performs as expected, an actual read of
+    the requested arrays.
+    </Documentation>
+  </IntVectorProperty>
+  <Hints>
+    <Property name="MetaRead" show="0"/>
+  </Hints>
+</SourceProxy>
+
+</ProxyGroup>
+  
+  
+  <ProxyGroup name="filters">
+<!--==================================================================== -->
+  <SourceProxy 
+    name="vtkFieldTopologyAnalyzer" 
+    class="vtkFieldTopologyAnalyzer"
+    label="Field Topology Analyzer">
+    <Documentation
+      long_help="Long Documentation"
+      short_help="Short Documentation">
+      Textual Documentation.
+    </Documentation>
+
+    <!-- Out -->
+    <OutputPort name="Seed Points" index="0" />
+    <OutputPort name="Field Lines (+)" index="1" />
+    <OutputPort name="Field Lines (-)" index="2" />
+    <OutputPort name="Surface Intersect" index="3" />
+    <!-- In -->
+    <!-- clean_command="ResetDatasetInputConnections" -->
+    <InputProperty
+      name="Input"
+      command="AddDatasetInputConnection"
+      clean_command="ClearDatasetInputConnections"
+      multiple_input="0">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkDataSet"/>
+      </DataTypeDomain>
+      <InputArrayDomain name="input_array"
+        attribute_type="point"
+        number_of_components="3"/>
+        <Documentation>
+          Used to set a dataset with vector field to analyze.
+        </Documentation>
+      </InputProperty>
+      <!--lean_command="ResetBoundaryInputConnections"-->
+      <InputProperty
+        name="Source"
+        command="AddBoundaryInputConnection"
+        clean_command="ClearBoundaryInputConnections"
+        multiple_input="1">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet"/>
+        </DataTypeDomain>
+        <Documentation>
+          This input should contian boundary surfaces.
+        </Documentation>
+     </InputProperty>
+      <!-- Vector Field -->
+     <StringVectorProperty 
+      name="SelectInputVectors" 
+      command="SetInputArrayToProcess"
+      number_of_elements="5"
+      element_types="0 0 0 0 2"
+      animateable="0"
+      label="Vectors">
+      <ArrayListDomain name="array_list" attribute_type="Vectors">
+        <RequiredProperties>
+          <Property name="Input" function="Input"/>
+        </RequiredProperties>
+      </ArrayListDomain>
+      <Documentation>
+        This property contains the name of the vector array from which to generate streamlines.
+     </Documentation>
+     </StringVectorProperty>
+     <!-- Integration length -->
+     <DoubleVectorProperty
+       name="StepSize"
+       label="Step Size"
+       command="SetStepSize" 
+       number_of_elements="1"
+       default_values="0.001" >
+       <DoubleRangeDomain name="range"/>
+       <Documentation>
+         This property specifies the step size takein during field line integration.
+       </Documentation>
+     </DoubleVectorProperty>
+     <!-- Bounds on stream line generation -->
+     <IntVectorProperty 
+       name="MaxNumberOfSteps" 
+       label="Max Steps"
+       command="SetMaxNumberOfSteps" 
+       number_of_elements="1"
+       default_values="10000" >
+       <IntRangeDomain name="range"/>
+       <Documentation>
+         This property specifies the maximum number of steps, beyond which streamline integration is terminated.
+       </Documentation>
+     </IntVectorProperty>
+     <!-- Bounds on stream line generation -->
+     <DoubleVectorProperty
+       name="MaxLineLength"
+       label="Max Line Length"
+       command="SetMaxLineLength"
+       number_of_elements="1"
+       default_values="1.0" >
+       <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="10.0">
+         <RequiredProperties>
+            <Property name="Input" function="Input"/>
+         </RequiredProperties>
+       </BoundsDomain>
+       <Documentation>
+         This property specifies the maximum streamline length (i.e., physical arc length), beyond which line integration is terminated.
+       </Documentation>
+     </DoubleVectorProperty>
+    <!-- Cut functuion -->
+    <ProxyProperty 
+      name="CutFunction"
+      command="SetCutFunction"
+      label="Slice Type">
+          <ProxyGroupDomain name="groups">
+            <Group name="implicit_functions"/>
+          </ProxyGroupDomain>
+          <ProxyListDomain name="proxy_list">
+            <Proxy group="implicit_functions" name="Plane" />
+            <!--
+            <Proxy group="implicit_functions" name="Box" />
+            <Proxy group="implicit_functions" name="Sphere" />
+            -->
+          </ProxyListDomain>
+          <Documentation>
+            This property sets the type of intersecting geometry, and associated parameters.
+          </Documentation>
+    </ProxyProperty>
+    <IntVectorProperty 
+      name="Resolution"
+      command="SetCutResolution"
+      number_of_elements="1" 
+      default_values="1"
+      animateable="0">
+      <Documentation>
+        This property controls the resolution of the seed object.
+      </Documentation>
+    </IntVectorProperty>
+    <!-- ParaView tweaks -->
+    <Hints>
+      <Visibility replace_input="0" />
+    </Hints>
+  <!-- End vtkFieldTopologyAnalyzer -->
+  </SourceProxy>
+ 
+ <!-- ==================================================================== -->
+ <SourceProxy name="vtkDistributedFieldTracer" class="vtkDistributedFieldTracer"
+    label="Field Tracer">
+    <Documentation
+       long_help="Integrate field lines in a vector field."
+       short_help="Integrate field lines in a vector field.">
+The Stream Tracer filter generates streamlines in a vector field from a collection of seed points. Production of streamlines terminates if a streamline crosses the exterior boundary of the input dataset. Other reasons for termination are listed for the MaximumNumberOfSteps, TerminalSpeed, and MaximumPropagation properties. This filter operates on any type of dataset, provided it has point-centered vectors. The output is polygonal data containing polylines. 
+    </Documentation>
+    <InputProperty
+       name="Input"
+       command="AddInputConnection"
+       clean_command="RemoveAllInputs"
+       multiple_input="1">
+          <ProxyGroupDomain name="groups">
+            <Group name="sources"/>
+            <Group name="filters"/>
+          </ProxyGroupDomain>
+          <DataTypeDomain name="input_type" composite_data_supported="1">
+            <DataType value="vtkDataSet"/>
+          </DataTypeDomain>
+          <InputArrayDomain name="input_array" attribute_type="point"
+                            number_of_components="3"/>
+          <Documentation>
+            This property specifies the input to the Stream Tracer filter.
+          </Documentation>
+     </InputProperty>
+
+     <InputProperty
+        name="Source"
+        command="SetSourceConnection"
+        label="Seed Type">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+           </ProxyGroupDomain>
+           <Documentation>
+             The value of this property determines how the seeds for the 
+             streamlines will be generated.
+           </Documentation>
+      </InputProperty>
+
+     <StringVectorProperty 
+        name="SelectInputVectors" 
+        command="SetInputArrayToProcess"
+        number_of_elements="5"
+        element_types="0 0 0 0 2"
+        animateable="0"
+        label="Vectors">
+           <ArrayListDomain name="array_list" attribute_type="Vectors">
+             <RequiredProperties>
+                <Property name="Input" function="Input"/>
+             </RequiredProperties>
+           </ArrayListDomain>
+           <Documentation>
+             This property contains the name of the vector array from which to generate streamlines.
+           </Documentation>
+     </StringVectorProperty>
+
+     <!-- Never generate any seeds, user must supply -->
+     <IntVectorProperty
+        name="NumberOfPoints"
+        number_of_elements="1"
+        default_values="0"/>
+     <!-- Always integrate in both directions -->
+     <IntVectorProperty 
+       name="IntegrationDirection" 
+       command="SetIntegrationDirection" 
+       number_of_elements="1"
+       default_values="2"/>
+     <!-- Always use the best integrator -->
+     <IntVectorProperty 
+       name="IntegratorType" 
+       command="SetIntegratorType" 
+       number_of_elements="1"
+       default_values="2"/>
+     <!-- Always measure integrate as multiple of cell length -->
+     <IntVectorProperty 
+       name="IntegrationStepUnit"
+       label="Integration Step Unit"
+       command="SetIntegrationStepUnit" 
+       number_of_elements="1"
+       default_values="2"/>
+
+     <DoubleVectorProperty
+       name="InitialIntegrationStep"
+       label="Initial Step Length"
+       command="SetInitialIntegrationStep"
+       number_of_elements="1"
+       default_values="0.2" >
+       <DoubleRangeDomain name="range"/>
+       <Documentation>
+         This property specifies the initial integration step size as a multiple of cell lengths.
+       </Documentation>
+     </DoubleVectorProperty>
+
+     <DoubleVectorProperty
+       name="MinimumIntegrationStep"
+       label="Minimum Step Length"
+       command="SetMinimumIntegrationStep"
+       number_of_elements="1"
+       default_values="0.01" >
+       <DoubleRangeDomain name="range"/>
+       <Documentation>
+         This property specifies the minimum integration step size.
+       </Documentation>
+     </DoubleVectorProperty>
+
+     <DoubleVectorProperty
+       name="MaximumIntegrationStep"
+       label="Maximum Step Length"
+       command="SetMaximumIntegrationStep"
+       number_of_elements="1"
+       default_values="0.5" >
+       <DoubleRangeDomain name="range"/>
+       <Documentation>
+         This property specifies the maximum integration step size.
+       </Documentation>
+     </DoubleVectorProperty>  
+
+     <IntVectorProperty 
+       name="MaximumNumberOfSteps" 
+       label="Maximum Steps"
+       command="SetMaximumNumberOfSteps" 
+       number_of_elements="1"
+       default_values="2000" >
+       <IntRangeDomain name="range"/>
+       <Documentation>
+         This property specifies the maximum number of steps, beyond which streamline integration is terminated.
+       </Documentation>
+     </IntVectorProperty>
+
+     <DoubleVectorProperty
+       name="MaximumPropagation"
+       label="Maximum Streamline Length"
+       command="SetMaximumPropagation"
+       number_of_elements="1"
+       default_values="1.0" >
+       <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="10.0">
+         <RequiredProperties>
+            <Property name="Input" function="Input"/>
+         </RequiredProperties>
+       </BoundsDomain>
+       <Documentation>
+         This property specifies the maximum streamline length (i.e., physical arc length), beyond which line integration is terminated.
+       </Documentation>       
+     </DoubleVectorProperty>
+
+     <DoubleVectorProperty
+       name="TerminalSpeed"
+       label="Terminal Speed"
+       command="SetTerminalSpeed"
+       number_of_elements="1"
+       default_values="0.000000000001" >
+       <DoubleRangeDomain name="range"/>
+       <Documentation>
+         This property specifies the terminal speed, below which particle advection/integration is terminated.
+       </Documentation>
+     </DoubleVectorProperty>
+     
+     <!-- Always use this error -->
+     <DoubleVectorProperty
+       name="MaximumError"
+       command="SetMaximumError"
+       number_of_elements="1"
+       default_values="0.000001"
+       information_only="1"/>
+     <Hints>
+       <Visibility replace_input="2" />
+       <Property name="NumberOfPoints" show="0"/>
+       <Property name="IntegrationDirection" show="0"/>
+       <Property name="IntegratorType" show="0"/>
+       <Property name="IntegrationStepUnit" show="0"/>
+       <Property name="MaximumError" show="0"/>
+     </Hints>
+   <!-- End StreamTracer -->
+   </SourceProxy>
+   
+   <!-- ==================================================================== -->
+  <SourceProxy 
+    name="vtkFaceCenteredDivergence" 
+    class="vtkFaceCenteredDivergence"
+    label="Face Centered Divergence">
+    <Documentation
+      long_help="Long Documentation"
+      short_help="Short Documentation">
+      Textual Documentation.
+    </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+           <InputArrayDomain name="input_array" attribute_type="point"
+                             number_of_components="3"/>
+           <Documentation>
+             This property specifies the input to the Warp (vector) filter.
+           </Documentation>
+      </InputProperty>
+
+      <StringVectorProperty 
+         name="SelectInputVectors" 
+         command="SetInputArrayToProcess"
+         number_of_elements="5"
+         element_types="0 0 0 0 2"
+         label="Vectors">
+            <ArrayListDomain name="array_list" attribute_type="Vectors">
+              <RequiredProperties>
+                 <Property name="Input" function="Input"/>
+              </RequiredProperties>
+            </ArrayListDomain>
+            <Documentation>
+              The value of this property contains the name of the vector array by which to warp the dataset's point coordinates.
+            </Documentation>
+      </StringVectorProperty> 
+  <!-- End vtkFaceCenteredDivergence -->
+  </SourceProxy>
+
+</ProxyGroup>
+</ServerManagerConfiguration>

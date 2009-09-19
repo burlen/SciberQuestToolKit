@@ -1,0 +1,19 @@
+<ParaViewFilters>
+  <Reader
+    name="BOVReader"
+    extensions="bov"
+    file_description="Parallel brick time series reader.">
+  </Reader>
+  <Reader
+    name="BOVMetaReader"
+    extensions="bov, bovm"
+    file_description="Parallel brick time series reader.">
+  </Reader>
+
+  <Category name="SciberQuestSciVis" menu_label="SciberQuest SciVis Toolkit">
+    <Filter name="vtkFieldTopologyAnalyzer"/>
+    <Filter name="vtkDistributedFieldTracer"/>
+    <Filter name="vtkFaceCenteredDivergence"/>
+  </Category>
+
+</ParaViewFilters>
