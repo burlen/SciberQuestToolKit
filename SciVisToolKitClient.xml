@@ -13,7 +13,7 @@
   <Category name="SciberQuestSciVis" menu_label="SciberQuest SciVis Toolkit">
     <Filter name="vtkFieldTopologyAnalyzer"/>
     <Filter name="vtkDistributedFieldTracer"/>
-    <Filter name="vtkFaceCenteredDivergence"/>
+    <Filter name="vtkFieldAnalysis"/>
   </Category>
 
 </ParaViewFilters>

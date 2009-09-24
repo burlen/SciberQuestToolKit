@@ -97,6 +97,7 @@ class vtkGenericCell;
 class vtkIdList;
 class vtkIntArray;
 class vtkInterpolatedVelocityField;
+class TerminationCondition;
 
 class VTK_GRAPHICS_EXPORT vtkFieldTracer : public vtkPolyDataAlgorithm
 {
@@ -277,6 +278,13 @@ public:
   // integration is of the same class as this prototype.
   void SetInterpolatorPrototype(vtkInterpolatedVelocityField* ivf);
 
+
+  // Description:
+  // Access to the reader object.
+  vtkSetStringMacro(FileName);
+  vtkSetStringMacro(FeildName);
+  vtkSetMacro(StepId,int);
+
 protected:
 
   vtkFieldTracer();
@@ -365,6 +373,17 @@ protected:
 
   vtkCompositeDataSet* InputData;
 
+  // This object is used to stop integration when field line
+  // crosses one of a given set of surfaces. It also has logic
+  // for detecting when a field line leaves a region defined
+  // by a box.
+  TerminationCondition *TermCond;
+
+  // This object is used for reads.
+  BOVReader *Reader;
+  char *FileName;
+  char *FieldName;
+  int StepId;
 
 private:
   vtkFieldTracer(const vtkFieldTracer&);  // Not implemented.

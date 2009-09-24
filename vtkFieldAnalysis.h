@@ -15,24 +15,33 @@ Copyright 2008 SciberQuest Inc.
 class vtkInformation;
 class vtkInformationVector;
 
-class vtkFaceCenteredDivergence : public vtkDataSetAlgorithm
+class vtkFieldAnalysis : public vtkDataSetAlgorithm
 {
 public:
-  vtkTypeRevisionMacro(vtkFaceCenteredDivergence,vtkDataSetAlgorithm);
+  vtkTypeRevisionMacro(vtkFieldAnalysis,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
-  static vtkFaceCenteredDivergence *New();
+  static vtkFieldAnalysis *New();
+
+  vtkSetMacro(ComputeFaceDivergence,int);
+  vtkSetMacro(ComputeCurrentHelicity,int);
+  vtkSetMacro(ComputeRotation,int);
 
 protected:
   //int FillInputPortInformation(int port, vtkInformation *info);
   //int FillOutputPortInformation(int port, vtkInformation *info);
   int RequestDataObject(vtkInformation*,vtkInformationVector** inInfoVec,vtkInformationVector* outInfoVec);
   int RequestData(vtkInformation *req, vtkInformationVector **input, vtkInformationVector *output);
-  vtkFaceCenteredDivergence();
-  virtual ~vtkFaceCenteredDivergence();
+  vtkFieldAnalysis();
+  virtual ~vtkFieldAnalysis();
 
 private:
-  vtkFaceCenteredDivergence(const vtkFaceCenteredDivergence &); // Not implemented
-  void operator=(const vtkFaceCenteredDivergence &); // Not implemented
+  int ComputeFaceDivergence;
+  int ComputeCurrentHelicity;
+  int ComputeRotation;
+
+private:
+  vtkFieldAnalysis(const vtkFieldAnalysis &); // Not implemented
+  void operator=(const vtkFieldAnalysis &); // Not implemented
 };
 
 #endif

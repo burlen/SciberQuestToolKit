@@ -492,7 +492,6 @@ int vtkBOVReader::RequestData(
     #endif
     }
 
-
   int nPoints[3]={2,2,2};
   // The two modes to run the reader are Meta mode and Actual mode.
   // In meta mode no data is read rather the pipeline is tricked into

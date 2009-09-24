@@ -507,12 +507,12 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
      </Hints>
    <!-- End StreamTracer -->
    </SourceProxy>
-   
-   <!-- ==================================================================== -->
+
+<!-- ==================================================================== -->
   <SourceProxy 
-    name="vtkFaceCenteredDivergence" 
-    class="vtkFaceCenteredDivergence"
-    label="Face Centered Divergence">
+    name="vtkFieldAnalysis" 
+    class="vtkFieldAnalysis"
+    label="Field Analysis">
     <Documentation
       long_help="Long Documentation"
       short_help="Short Documentation">
@@ -551,8 +551,46 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
               The value of this property contains the name of the vector array by which to warp the dataset's point coordinates.
             </Documentation>
       </StringVectorProperty> 
-  <!-- End vtkFaceCenteredDivergence -->
-  </SourceProxy>
 
+      <IntVectorProperty
+        name="ComputeFaceDivergence"
+        label="Face-Centered Divergence"
+        command="SetComputeFaceDivergence"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute divergence using a face centered stencil (Data on CT/Yee cells).
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeCurrentHelicity"
+        label="Current-Helicity"
+        command="SetComputeCurrentHelicity"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the current/velocity helicity of the vector field using a point centered stencil.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeRotation"
+        label="Rotation"
+        command="SetComputeRotation"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the rotation of the vector field using a point centered stencil.
+        </Documentation>
+     </IntVectorProperty>
+
+  <!-- End vtkFieldAnalysis -->
+  </SourceProxy>
+  
+  
 </ProxyGroup>
 </ServerManagerConfiguration>

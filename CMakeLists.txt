@@ -28,7 +28,7 @@ set(SM_SOURCES
   vtkPFieldTracer.cxx
   vtkFieldTopologyAnalyzer.cxx
   vtkDistributedFieldTracer.cxx
-  vtkFaceCenteredDivergence.cxx)
+  vtkFieldAnalysis.cxx)
 
 # Sources which aren't for use by the server manager.
 set(_SOURCES
