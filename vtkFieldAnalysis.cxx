@@ -86,8 +86,8 @@ void Helicity(int *I, double *dX, T *V, T *H)
 
           //cerr << "(" << vilo << ", " << vihi << ", " << vjlo << ", " << vjhi << ", " << vklo << ", " << vkhi << ")" << endl;
 
-          //const double modVsq=V[vpId]*V[vpId]+V[vpId+1]*V[vpId+1]+V[vpId+2]*V[vpId+2];
-          const double modVsq=1.0;
+          const double modVsq=V[vpId]*V[vpId]+V[vpId+1]*V[vpId+1]+V[vpId+2]*V[vpId+2];
+          //const double modVsq=1.0;
 
           //      __   -> ->   -> ->
           //  H = \/ x V/|V| . V/|V|
@@ -139,8 +139,8 @@ void Rotation(int *I, double *dX, T *V, T *xV)
 
           //cerr << "(" << vilo << ", " << vihi << ", " << vjlo << ", " << vjhi << ", " << vklo << ", " << vkhi << ")" << endl;
 
-          //const double modV=sqrt(V[vi]*V[vi]+V[vj]*V[vj]+V[vk]*V[vk]);
-          const double modV=1.0;
+          const double modV=sqrt(V[vi]*V[vi]+V[vj]*V[vj]+V[vk]*V[vk]);
+          //const double modV=1.0;
 
           //      __   -> ->   -> ->
           //  H = \/ x V/|V| . V/|V|
