@@ -427,11 +427,12 @@ int vtkBOVReader::RequestInformation(
   vector<double> times(nSteps,0.0);
   for (int i=0; i<nSteps; ++i)
     {
-    #if defined vtkBOVReaderDEBUG
-    cerr << "\t" << steps[i] << endl;
-    #endif
     times[i]=(double)steps[i]; // use the index rather than the actual.
     }
+  #if defined vtkBOVReaderDEBUG
+  cerr << times << endl;
+  cerr << "Total: " << nSteps << endl;
+  #endif
   // Set available time steps on pipeline.
   info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),&times[0],times.size());
   double timeRange[2]={times[0],times[times.size()-1]};
