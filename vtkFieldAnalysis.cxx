@@ -132,6 +132,7 @@ void Rotation(int *I, double *dX, T *V, T *mV, T *xV, T *mxV)
           xV[vi]=0.0;
           xV[vj]=0.0;
           xV[vk]=0.0;
+          mxV[p]=0.0;
           }
         else
           {
@@ -169,7 +170,7 @@ void Rotation(int *I, double *dX, T *V, T *mV, T *xV, T *mxV)
 // V  -> vector field
 // mV -> Magnitude
 template <typename T>
-void Magnitude(int *I, double *dX, T *V, T *mV)
+void Magnitude(int *I, T *V, T *mV)
 {
   for (int k=0; k<I[2]; ++k) {
     for (int j=0; j<I[1]; ++j) {
@@ -179,7 +180,7 @@ void Magnitude(int *I, double *dX, T *V, T *mV)
         const int vi = 3*p;
         const int vj = vi + 1;
         const int vk = vi + 2;
-        mV[vi]=sqrt(V[vi]*V[vi]+V[vj]*V[vj]+V[vk]*V[vk]);
+        mV[p]=sqrt(V[vi]*V[vi]+V[vj]*V[vj]+V[vk]*V[vk]);
         }
       }
     }
@@ -318,7 +319,7 @@ int vtkFieldAnalysis::RequestData(
         string mVName("Mod-");
         mVName+=V->GetName();
         mV->SetName(mVName.c_str());
-        Magnitude(P,dX,V->GetPointer(0),mV->GetPointer(0));
+        Magnitude(P,V->GetPointer(0),mV->GetPointer(0));
         }
 
       // face centered divergence.
