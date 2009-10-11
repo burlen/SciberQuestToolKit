@@ -10,6 +10,9 @@ Copyright 2008 SciberQuest Inc.
 #ifndef TerminationCondition_h
 #define TerminationCondition_h
 
+
+#include "IntersectionSetColorMapper.h"
+#include "vtkCellLocator.h"
 #include<vector>
 using std::vector;
 
@@ -23,15 +26,17 @@ class TerminationCondition
 {
 public:
   TerminationCondition()
-    :
-  ProblemDomain(0),
-  WrokingDomain(0)
-   { }
+    {
+    ProblemDomain[0]=ProblemDomain[2]=ProblemDomain[4]=1;
+    ProblemDomain[1]=ProblemDomain[3]=ProblemDomain[5]=0;
+    WorkingDomain[0]=WorkingDomain[2]=WorkingDomain[4]=1;
+    WorkingDomain[1]=WorkingDomain[3]=WorkingDomain[5]=0;
+    }
   ~TerminationCondition();
 
   // Description:
   // Return a value of zero if the field line with last segment 
-  // from points x0->x1  should be terminated now. A psoitive value
+  // from points x0->x1  should be terminated now. A positive value
   // will be an application defined termination code that can be used
   // as a color in a rendering.
   int SegmentTerminates(double *p0, double *p1);
@@ -39,14 +44,12 @@ public:
   // Return boolean indicating if the field line is leaving the
   // problem domain.
   int OutsideProblemDomain(double *p);
-  ///int SegmentExitsProblemDomain(double *p0, double *p1);
   // Description:
   // Return boolean indicating if the field line is leaving the
   // active sub-domain domain. Lines that are leaving the active
   // sub-domain but not the problem domain can be integrated
   // further.
   int OutsideWorkingDomain(double *p);
-  ///int SegmentExitsWorkingDomain(double *p0, double *p1);
 
   // Description:
   // Set the problem domain. See SegmentExistProblemDomain.
@@ -61,6 +64,19 @@ public:
   // Remove all surfaces.See SegmentTerminates.
   void ClearSurfaces();
 
+  // Description:
+  // Get a unique color using two surface ids returned
+  // from SegmentTerminates(). There are two special ids
+  // that may additionally be used, that of a stagnation
+  // of field null retruned by GetFieldNullId and
+  // , that of the problem domain returned by
+  // GetProblemDoainSurfaceId().
+  void InitializeColorMapper();
+  int GetTerminationColor(int sId1, int sId2);
+  int GetProblemDomainSurfaceId();
+  int GetFieldNullId();
+  int GetShortIntegrationId();
+
 private:
   // Helper, to generate a polygonal box from a set of bounds.
   void DomainToLocator(vtkCellLocator *cellLoc, double dom[6]);
@@ -71,6 +87,7 @@ private:
   double ProblemDomain[6];
   double WorkingDomain[6];
   vector<vtkCellLocator*> Surfaces;
+  IntersectionSetColorMapper CMap;
 };
 
 //-----------------------------------------------------------------------------

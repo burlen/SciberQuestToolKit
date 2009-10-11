@@ -28,7 +28,7 @@ public:
     }
   /// Virtual copy constructor. Create a new object and copy. return the copy.
   /// or 0 on error. Caller to delete.
-  virtual BOVMetaData *Duplicate()
+  virtual BOVMetaData *Duplicate() const
     {
     GDAMetaData *other=new GDAMetaData;
     *other=*this;

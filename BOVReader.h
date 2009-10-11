@@ -21,8 +21,6 @@ class vtkMultiBlockDataSet;
 class vtkMultiProcessController;
 class vtkAlgorithm;
 
-
-
 /// Low level reader for BOV files with domain decomposition capability.
 /**
 Given a domain and a set of files reads subsets of the files into
@@ -36,10 +34,16 @@ public:
   BOVReader() : MetaData(NULL), Comm(MPI_COMM_NULL) {
     this->Clear();
     }
+  BOVReader(const BOVReader &other) {
+    *this=other;
+    }
   ~BOVReader(){
     this->SetMetaData(NULL);
     this->Clear();
     }
+
+  /// Safely copying the reader.
+  const BOVReader &operator=(const BOVReader &other);
 
   /// Identify this among a number of processes.
   int SetController(vtkMultiProcessController *cont);
@@ -56,10 +60,10 @@ public:
   /// Set the metadata object that will interpret the metadata file,
   /// a deep copy of the passed in object is made prior to returning.
   /// See BOVMetaData for interface details.
-  void SetMetaData(BOVMetaData *metaData);
+  void SetMetaData(const BOVMetaData *metaData);
   /// Get the active metadata object. Use this to querry the open dataset.
   /// See BOVMetaData.
-  BOVMetaData *GetMetaData(){
+  BOVMetaData *GetMetaData() const{
     return this->MetaData;
     }
   /// Open a dataset. Pass the dataset's metadata file in. If this call succeeeds

@@ -33,6 +33,8 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkLinearSubdivisionFilter.h"
 
 #include "vtkFieldTopologyAnalyzerUtils.h"
+#include "IntersectionSet.h"
+#include "IntersectionSetColorMapper.h"
 #include "PrintUtils.h"
 
 #if defined vtkFieldTopologyAnalyzerDEBUG
@@ -189,10 +191,10 @@ int vtkFieldTopologyAnalyzer::RequestUpdateExtent(
   #endif
 
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
-  int piece
-    =outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
-  int numPieces
-    =outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+  // int piece
+  //   =outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+  // int numPieces
+  //   =outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
   int ghostLevel =
     outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
 

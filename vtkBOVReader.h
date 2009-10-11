@@ -44,20 +44,6 @@ class vtkInformationIntegerVectorKey;
 class VTK_EXPORT vtkBOVReader : public vtkImageAlgorithm
 {
 public:
-  // Description:
-  // This key holds the file name so that downstream filter
-  // may have access to it.
-  static vtkInformationStringKey  *FILE_NAME();
-  static vtkInformationIntegerKey *FILE_INDEX();
-  static vtkInformationDoubleKey  *TIME();
-  // Description:
-  // These keys are used to pass actual meta data
-  // downstream. The usual ones hold false information
-  // that get PV to render the bounds correctly.
-  static vtkInformationIntegerVectorKey *WHOLE_EXTENT();
-  static vtkInformationDoubleVectorKey  *ORIGIN();
-  static vtkInformationDoubleVectorKey  *SPACING();
-public:
   static vtkBOVReader *New();
   vtkTypeRevisionMacro(vtkBOVReader,vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);

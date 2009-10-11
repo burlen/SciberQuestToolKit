@@ -23,7 +23,7 @@ void FaceDiv(int *I, double *dX, T *V, T *mV, T *div)
   // with the last face left off.
   const int pihi=I[0]+1;
   const int pjhi=I[1]+1;
-  const int pkhi=I[2]+1;
+  // const int pkhi=I[2]+1;
 
   for (int k=0; k<I[2]; ++k) {
     for (int j=0; j<I[1]; ++j) {
@@ -213,7 +213,7 @@ vtkFieldAnalysis::~vtkFieldAnalysis()
 //   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
 //   return 1;
 // }
-// 
+//
 // //-----------------------------------------------------------------------------
 // int vtkFieldAnalysis::FillOutputPortInformation(
 //     int port,
@@ -381,76 +381,6 @@ int vtkFieldAnalysis::RequestData(
     {
     vtkWarningMacro("TODO : implment divregence for stretched grids.");
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  if (isImage)
-    {
-    vtkImageData *inImData=dynamic_cast<vtkImageData *>(inData);
-    vtkImageData *outImData=dynamic_cast<vtkImageData *>(outData);
-
-    int I[3];
-    inImData->GetDimensions(I);
-    double dX[3];
-    inImData->GetSpacing(dX);
-
-    vtkDataArray *da=this->GetInputArrayToProcess(0, inImData);
-
-    int isFloat=da->IsA("vtkFloatArray");
-    int isDouble=da->IsA("vtkDoubleArray");
-
-    if (!isFloat && !isDouble)
-      {
-      vtkWarningMacro("Floating point data required. Aborting.");
-      return 1;
-      }
-
-    if (isFloat)
-      {
-      
-      }
-    else
-    if (isDouble)
-      {
-      vtkWarningMacro("TODO : handle double types.");
-
-      }
-    }
-  else
-  if (isRecti)
-    {
-    vtkWarningMacro("TODO : implment divregence for stretched grids.");
-    }
-
 
  return 1;
 }

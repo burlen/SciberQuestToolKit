@@ -28,14 +28,23 @@ set(SM_SOURCES
   vtkPFieldTracer.cxx
   vtkFieldTopologyAnalyzer.cxx
   vtkDistributedFieldTracer.cxx
-  vtkFieldAnalysis.cxx)
+  vtkFieldAnalysis.cxx
+  vtkOOCFieldTracer.cxx)
 
 # Sources which aren't for use by the server manager.
 set(_SOURCES
+  vtkOOCReader.cxx
+  vtkOOCBOVReader.cxx
   BOVReader.cxx
   GDAMetaData.cxx
   PrintUtils.cxx
-  vtkFieldTopologyAnalyzerUtils.cxx)
+  IntersectionSet.cxx
+  TerminationCondition.cxx)
+
+SET_SOURCE_FILES_PROPERTIES(
+vtkOOCReader.cxx
+ABSTRACT
+)
 
 if (WIN32)
   set(_SOURCES ${_SOURCES} windirent.cxx)

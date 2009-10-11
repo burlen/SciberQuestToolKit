@@ -89,6 +89,25 @@ int SlabDecomp(
 }
 
 //-----------------------------------------------------------------------------
+const BOVReader &BOVReader::operator=(const BOVReader &other)
+{
+  if (this==&other)
+    {
+    return *this;
+    }
+
+  this->Blocks=other.Blocks;
+  this->Comm=other.Comm;
+  this->NGhost=other.NGhost;
+  this->NProcs=other.NProcs;
+  this->ProcId=other.ProcId;
+
+  this->SetMetaData(other.GetMetaData());
+
+  return *this;
+}
+
+//-----------------------------------------------------------------------------
 void BOVReader::Clear()
 {
   // TODO what about MetaData??
@@ -101,7 +120,7 @@ void BOVReader::Clear()
 }
 
 //-----------------------------------------------------------------------------
-void BOVReader::SetMetaData(BOVMetaData *metaData)
+void BOVReader::SetMetaData(const BOVMetaData *metaData)
 {
   if (this->MetaData!=metaData)
     {

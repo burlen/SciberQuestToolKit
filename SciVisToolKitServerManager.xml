@@ -509,6 +509,193 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
    </SourceProxy>
 
 <!-- ==================================================================== -->
+ <SourceProxy name="vtkOOCFieldTracer" class="vtkOOCFieldTracer"
+    label="OOC Field Tracer">
+    <Documentation
+       long_help="Integrate field lines in a vector field."
+       short_help="Integrate field lines in a vector field.">
+The Stream Tracer filter generates streamlines in a vector field from a collection of seed points. Production of streamlines terminates if a streamline crosses the exterior boundary of the input dataset. Other reasons for termination are listed for the MaximumNumberOfSteps, TerminalSpeed, and MaximumPropagation properties. This filter operates on any type of dataset, provided it has point-centered vectors. The output is polygonal data containing polylines. 
+    </Documentation>
+    <!-- Dataset input -->
+    <InputProperty
+       name="DatasetInput"
+       command="AddVectorInputConnection"
+       clean_command="ClearVectorInputConnections"
+       label="Vector Field">
+          <ProxyGroupDomain name="groups">
+            <Group name="sources"/>
+            <Group name="filters"/>
+          </ProxyGroupDomain>
+          <DataTypeDomain name="input_type" composite_data_supported="0">
+            <DataType value="vtkDataSet"/>
+          </DataTypeDomain>
+          <InputArrayDomain name="input_array" attribute_type="point" number_of_components="3"/>
+          <Documentation>
+            Dataset containing the vector field.
+          </Documentation>
+     </InputProperty>
+     <!-- Seed input -->
+     <InputProperty
+        name="SeedPointInput"
+        command="AddSeedPointInputConnection"
+        clean_command="ClearSeedPointInputConnections"
+        label="Seed Cells"
+        multiple_input="1">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <Documentation>
+             Cells to generate seed points from (at cell center).
+           </Documentation>
+      </InputProperty>
+     <!-- Terminator Surface input -->
+     <InputProperty
+        name="TerminatorInput"
+        command="AddTerminatorInputConnection"
+        clean_command="ClearTerminatorInputConnections"
+        label="Terminator Surfaces"
+        multiple_input="1"
+        optional="1">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <Documentation>
+             Surfaces which if present stop field line integration when a field line crosses one.
+           </Documentation>
+      </InputProperty>
+
+     <!-- Vector Field Selection -->
+     <StringVectorProperty 
+        name="SelectInputVectors" 
+        command="SetInputArrayToProcess"
+        number_of_elements="5"
+        element_types="0 0 0 0 2"
+        animateable="0"
+        label="Vectors">
+           <ArrayListDomain name="array_list" attribute_type="Vectors">
+             <RequiredProperties>
+                <Property name="DatasetInput" function="Input"/>
+             </RequiredProperties>
+           </ArrayListDomain>
+           <Documentation>
+             This property contains the name of the vector array from which to generate streamlines.
+           </Documentation>
+     </StringVectorProperty>
+
+     <!-- OOC Reader parameter -->
+     <IntVectorProperty 
+       name="OOCNeighborhoodSize" 
+       label="OOC Read Size"
+       command="SetOOCNeighborhoodSize"
+       number_of_elements="1"
+       default_values="15" >
+       <IntRangeDomain name="range" min="-1"/>
+       <Documentation>
+         Control the size of the OOC reads (context dependent meaning).
+       </Documentation>
+     </IntVectorProperty>
+
+     <DoubleVectorProperty
+       name="InitialStep"
+       label="Initial Step"
+       command="SetInitialStep"
+       number_of_elements="1"
+       default_values="0.1" >
+       <DoubleRangeDomain name="range"/>
+       <Documentation>
+         Initial integration step size as a multiple of cell lengths.
+       </Documentation>
+     </DoubleVectorProperty>
+
+     <DoubleVectorProperty
+       name="MinStep"
+       label="Minimum Step"
+       command="SetMinStep"
+       number_of_elements="1"
+       default_values="0.1" >
+       <DoubleRangeDomain name="range"/>
+       <Documentation>
+         Minimum integration step size as a multiple of cell lengths.
+       </Documentation>
+     </DoubleVectorProperty>
+
+     <DoubleVectorProperty
+       name="MaxStep"
+       label="Maximum Step"
+       command="SetMaxStep"
+       number_of_elements="1"
+       default_values="0.5" >
+       <DoubleRangeDomain name="range"/>
+       <Documentation>
+         Maximum integration step size as a multiple of cell lengths.
+       </Documentation>
+     </DoubleVectorProperty>  
+
+     <IntVectorProperty 
+       name="MaxNumberOfSteps" 
+       label="Maximum Steps"
+       command="SetMaxNumberOfSteps" 
+       number_of_elements="1"
+       default_values="1000" >
+       <IntRangeDomain name="range"/>
+       <Documentation>
+         Maximum number of steps, beyond which integration is terminated.
+       </Documentation>
+     </IntVectorProperty>
+
+     <DoubleVectorProperty
+       name="MaxLineLength"
+       label="Maximum Length"
+       command="SetMaxLineLength"
+       number_of_elements="1"
+       default_values="1.0" >
+       <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="10.0">
+         <RequiredProperties>
+            <Property name="DatasetInput" function="Input"/>
+         </RequiredProperties>
+       </BoundsDomain>
+       <Documentation>
+         Maximum streamline arc length beyond which line integration is terminated.
+       </Documentation>
+     </DoubleVectorProperty>
+
+     <DoubleVectorProperty
+       name="TerminalSpeed"
+       label="Terminal Speed"
+       command="SetTerminalSpeed"
+       number_of_elements="1"
+       default_values="0.000001" >
+       <DoubleRangeDomain name="range"/>
+       <Documentation>
+         This property specifies the terminal speed, below which particle advection/integration is terminated.
+       </Documentation>
+     </DoubleVectorProperty>
+
+     <!-- Always use this error -->
+     <DoubleVectorProperty
+       name="MaxError"
+       command="SetMaxError"
+       number_of_elements="1"
+       default_values="0.000001"/>
+     <!-- Always measure integrate as multiple of cell length -->
+     <IntVectorProperty 
+       name="StepUnit"
+       label="Step Unit"
+       command="SetStepUnit" 
+       number_of_elements="1"
+       default_values="2"/>
+     <!-- Hide some of these -->
+     <Hints>
+       <Visibility replace_input="2" />
+       <Property name="StepUnit" show="0"/>
+       <Property name="MaxError" show="0"/>
+     </Hints>
+   <!-- End StreamTracer -->
+   </SourceProxy>
+
+<!-- ==================================================================== -->
   <SourceProxy 
     name="vtkFieldAnalysis" 
     class="vtkFieldAnalysis"

@@ -13,6 +13,7 @@
   <Category name="SciberQuestSciVis" menu_label="SciberQuest SciVis Toolkit">
     <Filter name="vtkFieldTopologyAnalyzer"/>
     <Filter name="vtkDistributedFieldTracer"/>
+    <Filter name="vtkOOCFieldTracer"/>
     <Filter name="vtkFieldAnalysis"/>
   </Category>
 

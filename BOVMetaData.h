@@ -51,7 +51,7 @@ public:
 
   /// Virtual copy constructor. Create a new object and copy this into it. 
   /// return the copy or 0 on error. Caller to delete.
-  virtual BOVMetaData *Duplicate()=0;
+  virtual BOVMetaData *Duplicate() const=0;
   /// Copy from other.
   BOVMetaData &operator=(const BOVMetaData &other)
     {

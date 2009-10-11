@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkFieldTracer.h,v $
+  Module:    $RCSfile: vtkOOCFieldTracer.h,v $
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -21,18 +21,18 @@
 Copyright 2008 SciberQuest Inc.
 
 */
-// .NAME vtkFieldTracer - Streamline generator
+// .NAME vtkOOCFieldTracer - Streamline generator
 // .SECTION Description
-// vtkFieldTracer is a filter that integrates a vector field to generate
+// vtkOOCFieldTracer is a filter that integrates a vector field to generate
 // streamlines. The integration is performed using a specified integrator,
 // by default Runge-Kutta2. 
 // 
-// vtkFieldTracer produces polylines as the output, with each cell (i.e.,
+// vtkOOCFieldTracer produces polylines as the output, with each cell (i.e.,
 // polyline) representing a streamline. The attribute values associated
 // with each streamline are stored in the cell data, whereas those
 // associated with streamline-points are stored in the point data.
 //
-// vtkFieldTracer supports forward (the default), backward, and combined
+// vtkOOCFieldTracer supports forward (the default), backward, and combined
 // (i.e., BOTH) integration. The length of a streamline is governed by 
 // specifying a maximum value either in physical arc length or in (local)
 // cell length. Otherwise, the integration terminates upon exiting the
@@ -66,7 +66,7 @@ Copyright 2008 SciberQuest Inc.
 // are computed only when ComputeVorticity is on). All point data attributes
 // in the source dataset are interpolated on the new streamline points.
 //
-// vtkFieldTracer supports integration through any type of dataset. Thus if
+// vtkOOCFieldTracer supports integration through any type of dataset. Thus if
 // the dataset contains 2D cells like polygons or triangles, the integration
 // is constrained to lie on the surface defined by 2D cells.
 //
@@ -82,12 +82,14 @@ Copyright 2008 SciberQuest Inc.
 // vtkInterpolatedVelocityField
 //  
 
-#ifndef __vtkFieldTracer_h
-#define __vtkFieldTracer_h
+#ifndef __vtkOOCFieldTracer_h
+#define __vtkOOCFieldTracer_h
 
 #include "vtkPolyDataAlgorithm.h"
 
 #include "vtkInitialValueProblemSolver.h" // Needed for constants
+#include "TerminationCondition.h"
+
 
 class vtkCompositeDataSet;
 class vtkDataArray;
@@ -97,297 +99,152 @@ class vtkGenericCell;
 class vtkIdList;
 class vtkIntArray;
 class vtkInterpolatedVelocityField;
-class TerminationCondition;
-
-class VTK_GRAPHICS_EXPORT vtkFieldTracer : public vtkPolyDataAlgorithm
-{
-public:
-  vtkTypeRevisionMacro(vtkFieldTracer,vtkPolyDataAlgorithm);
-  void PrintSelf(ostream& os, vtkIndent indent);
-
-  // Description:
-  // Construct object to start from position (0,0,0), with forward
-  // integration, terminal speed 1.0E-12, vorticity computation on,
-  // integration step size 0.5 (in cell length unit), maximum number
-  // of steps 2000, using Runge-Kutta2, and maximum propagation 1.0 
-  // (in arc length unit).
-  static vtkFieldTracer *New();
-
-  // Description:
-  // Specify the starting point (seed) of a streamline in the global
-  // coordinate system. Search must be performed to find the initial cell
-  // from which to start integration.
-  vtkSetVector3Macro(StartPosition, double);
-  vtkGetVector3Macro(StartPosition, double);
-
-  // Description:
-  // Specify the source object used to generate starting points (seeds).
-  // Old style. Do not use.
-  void SetSource(vtkDataSet *source);
-  vtkDataSet *GetSource();
-
-  // Description:
-  // Specify the source object used to generate starting points (seeds).
-  // New style.
-  void SetSourceConnection(vtkAlgorithmOutput* algOutput);
-
+class vtkOOCReader;
+class vtkMultiProcessController;
 //BTX
-  // The previously-supported TIME_UNIT is excluded in this current
-  // enumeration definition because the underlying step size is ALWAYS in
-  // arc length unit (LENGTH_UNIT) while the 'real' time interval (virtual 
-  // for steady flows) that a particle actually takes to trave in a single
-  // step is obtained by dividing the arc length by the LOCAL speed. The
-  // overall elapsed time (i.e., the life span) of the particle is the sum
-  // of those individual step-wise time intervals. The arc-length-to-time 
-  // convertion only occurs for vorticity computation and for generating a
-  // point data array named 'IntegrationTime'.
-  enum Units
-  {
-    LENGTH_UNIT = 1,
-    CELL_LENGTH_UNIT = 2
-  };
-
-  enum Solvers
-  {
-    RUNGE_KUTTA2,
-    RUNGE_KUTTA4,
-    RUNGE_KUTTA45,
-    NONE,
-    UNKNOWN
-  };
-
-  enum ReasonForTermination
-  {
-    OUT_OF_DOMAIN = vtkInitialValueProblemSolver::OUT_OF_DOMAIN,
-    NOT_INITIALIZED = vtkInitialValueProblemSolver::NOT_INITIALIZED ,
-    UNEXPECTED_VALUE = vtkInitialValueProblemSolver::UNEXPECTED_VALUE,
-    OUT_OF_LENGTH = 4,
-    OUT_OF_STEPS = 5,
-    STAGNATION = 6
-  };
+class FieldLine;
 //ETX
 
-  // Description:
-  // Set/get the integrator type to be used for streamline generation. 
-  // The object passed is not actually used but is cloned with 
-  // NewInstance in the process of integration  (prototype pattern). 
-  // The default is Runge-Kutta2. The integrator can also be changed
-  // using SetIntegratorType. The recognized solvers are:
-  // RUNGE_KUTTA2  = 0
-  // RUNGE_KUTTA4  = 1
-  // RUNGE_KUTTA45 = 2
-  void SetIntegrator(vtkInitialValueProblemSolver *);
-  vtkGetObjectMacro ( Integrator, vtkInitialValueProblemSolver );
-  void SetIntegratorType(int type);
-  int GetIntegratorType();
-  void SetIntegratorTypeToRungeKutta2()
-    {this->SetIntegratorType(RUNGE_KUTTA2);};
-  void SetIntegratorTypeToRungeKutta4()
-    {this->SetIntegratorType(RUNGE_KUTTA4);};
-  void SetIntegratorTypeToRungeKutta45()
-    {this->SetIntegratorType(RUNGE_KUTTA45);};
+
+class VTK_GRAPHICS_EXPORT vtkOOCFieldTracer : public vtkPolyDataAlgorithm
+{
+public:
+  vtkTypeRevisionMacro(vtkOOCFieldTracer,vtkPolyDataAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent);
+  static vtkOOCFieldTracer *New();
 
   // Description:
-  // Specify the maximum length of a streamline expressed in LENGTH_UNIT.
-  void SetMaximumPropagation(double max);
-  double GetMaximumPropagation() { return this->MaximumPropagation; }
+  // Specify the dataset with the vector field to analyze.
+  void AddVectorInputConnection(vtkAlgorithmOutput* algOutput);
+  void ClearVectorInputConnections();
+  // Description:
+  // Specify a set of seed points to use.
+  void AddSeedPointInputConnection(vtkAlgorithmOutput* algOutput);
+  void ClearSeedPointInputConnections();
+  // Description:
+  // Specify a set of surfaces to use.
+  void AddTerminatorInputConnection(vtkAlgorithmOutput* algOutput);
+  void ClearTerminatorInputConnections();
+
+
   // Description:
   // Specify a uniform integration step unit for MinimumIntegrationStep, 
   // InitialIntegrationStep, and MaximumIntegrationStep. NOTE: The valid
-  // unit is now limited to only LENGTH_UNIT (1) and CELL_LENGTH_UNIT (2),
-  // EXCLUDING the previously-supported TIME_UNIT.  
-  void SetIntegrationStepUnit( int unit );
-  int  GetIntegrationStepUnit() { return this->IntegrationStepUnit; } 
+  // units are LENGTH_UNIT (1) and CELL_LENGTH_UNIT (2).
+  void SetStepUnit(int unit);
+  vtkGetMacro(StepUnit,int);
 
   // Description:
-  // Specify the Initial step size used for line integration, expressed in:
-  // LENGTH_UNIT      = 1
-  // CELL_LENGTH_UNIT = 2
-  // (either the starting size for an adaptive integrator, e.g., RK45,
-  // or the constant / fixed size for non-adaptive ones, i.e., RK2 and RK4)
-  void SetInitialIntegrationStep(double step);
-  double GetInitialIntegrationStep() { return this->InitialIntegrationStep; }
+  // Specify the Initial step size used for line integration.
+  vtkSetMacro(InitialStep,double);
+  vtkGetMacro(InitialStep,double);
 
   // Description:
-  // Specify the Minimum step size used for line integration, expressed in:
-  // LENGTH_UNIT      = 1
-  // CELL_LENGTH_UNIT = 2
-  // (Only valid for an adaptive integrator, e.g., RK45)
-  void SetMinimumIntegrationStep( double step );
-  double GetMinimumIntegrationStep() { return this->MinimumIntegrationStep; }
+  // Specify the Minimum step size used for line integration.
+  vtkSetMacro(MinStep,double);
+  vtkGetMacro(MinStep,double);
 
   // Description:
-  // Specify the Maximum step size used for line integration, expressed in:
-  // LENGTH_UNIT      = 1
-  // CELL_LENGTH_UNIT = 2
-  // (Only valid for an adaptive integrator, e.g., RK45)
-  void SetMaximumIntegrationStep( double step );
-  double GetMaximumIntegrationStep() { return this->MaximumIntegrationStep; }
+  // Specify the Maximum step size used for line integration.
+  vtkSetMacro(MaxStep,double);
+  vtkGetMacro(MaxStep,double);
 
   // Description
   // Specify the maximum error tolerated throughout streamline integration.
-  vtkSetMacro(MaximumError, double);
-  vtkGetMacro(MaximumError, double);
+  vtkSetMacro(MaxError,double);
+  vtkGetMacro(MaxError,double);
 
   // Description
   // Specify the maximum number of steps for integrating a streamline.
-  vtkSetMacro(MaximumNumberOfSteps, vtkIdType);
-  vtkGetMacro(MaximumNumberOfSteps, vtkIdType);
+  vtkSetMacro(MaxNumberOfSteps,vtkIdType);
+  vtkGetMacro(MaxNumberOfSteps,vtkIdType);
+
+  // Description:
+  // Specify the maximum length of a streamline expressed in LENGTH_UNIT.
+  vtkSetMacro(MaxLineLength,vtkIdType);
+  vtkGetMacro(MaxLineLength,vtkIdType);
 
   // Description
   // Specify the terminal speed value, below which integration is terminated.
-  vtkSetMacro(TerminalSpeed, double);
-  vtkGetMacro(TerminalSpeed, double);
-
-//BTX
-  enum
-  {
-    FORWARD,
-    BACKWARD,
-    BOTH
-  };
-//ETX
+  vtkSetMacro(TerminalSpeed,double);
+  vtkGetMacro(TerminalSpeed,double);
 
   // Description:
-  // Specify whether the streamline is integrated in the upstream or
-  // downstream direction.
-  vtkSetClampMacro(IntegrationDirection, int, FORWARD, BOTH);
-  vtkGetMacro(IntegrationDirection, int);
-  void SetIntegrationDirectionToForward()
-    {this->SetIntegrationDirection(FORWARD);};
-  void SetIntegrationDirectionToBackward()
-    {this->SetIntegrationDirection(BACKWARD);};
-  void SetIntegrationDirectionToBoth()
-    {this->SetIntegrationDirection(BOTH);};  
-
-  // Description
-  // Turn on/off vorticity computation at streamline points
-  // (necessary for generating proper stream-ribbons using the
-  // vtkRibbonFilter.
-  vtkSetMacro(ComputeVorticity, bool);
-  vtkGetMacro(ComputeVorticity, bool);
-
-  // Description
-  // This can be used to scale the rate with which the streamribbons
-  // twist. The default is 1.
-  vtkSetMacro(RotationScale, double);
-  vtkGetMacro(RotationScale, double);
-
-  // Description:
-  // The object used to interpolate the velocity field during
-  // integration is of the same class as this prototype.
-  void SetInterpolatorPrototype(vtkInterpolatedVelocityField* ivf);
-
-
-  // Description:
-  // Access to the reader object.
-  vtkSetStringMacro(FileName);
-  vtkSetStringMacro(FeildName);
-  vtkSetMacro(StepId,int);
+  // Control of the OOC read size. This parameter may have different
+  // meaning in the context of different readers.
+  vtkSetMacro(OOCNeighborhoodSize,int);
+  vtkGetMacro(OOCNeighborhoodSize,int);
 
 protected:
+  vtkOOCFieldTracer();
+  ~vtkOOCFieldTracer();
 
-  vtkFieldTracer();
-  ~vtkFieldTracer();
+  // VTK Pipeline
+  int FillInputPortInformation(int port,vtkInformation *info);
+  int FillOutputPortInformation(int port,vtkInformation *info);
+  int RequestData(vtkInformation *req, vtkInformationVector **input, vtkInformationVector *output);
+  int RequestInformation(vtkInformation* req, vtkInformationVector** input, vtkInformationVector* output);
+  int RequestUpdateExtent(vtkInformation* req, vtkInformationVector** input, vtkInformationVector* output);
 
-  // Create a default executive.
-  virtual vtkExecutive* CreateDefaultExecutive();
+private:
+  // Description:
+  // Trace one field line from the given seed point, using the given out-of-core
+  // reader.
+  void OOCIntegrateOne(vtkOOCReader *oocR,const char *fieldName,FieldLine *line,TerminationCondition *tcon);
 
-  // hide the superclass' AddInput() from the user and the compiler
-  void AddInput(vtkDataObject *) 
-    { vtkErrorMacro( << "AddInput() must be called with a vtkDataSet not a vtkDataObject."); };
-  
-  virtual int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-  virtual int FillInputPortInformation(int, vtkInformation *);
+  // Description:
+  // Convert from cell fractional unit into length.
+  void ClipStep(
+      double& step,
+      int stepSign,
+      double& minStep,
+      double& maxStep,
+      double cellLength,
+      double lineLength);
+  // Description:
+  // Convert from cell fractional unit into length.
+  void ConvertIntervals(
+        double& step,
+        double& minStep,
+        double& maxStep,
+        int direction,
+        double cellLength);
+  // Description:
+  // Convert from cell fractional unit into length.
+  static double ConvertToLength(double interval,int unit,double cellLength);
 
-  void CalculateVorticity( vtkGenericCell* cell, double pcoords[3],
-                           vtkDoubleArray* cellVectors, double vorticity[3] );
-  void Integrate(vtkDataSet *input,
-                 vtkPolyData* output,
-                 vtkDataArray* seedSource, 
-                 vtkIdList* seedIds,
-                 vtkIntArray* integrationDirections,
-                 double lastPoint[3],
-                 vtkInterpolatedVelocityField* func,
-                 int maxCellSize,
-                 const char *vecFieldName,
-                 double& propagation,
-                 vtkIdType& numSteps);
-  void SimpleIntegrate(double seed[3], 
-                       double lastPoint[3], 
-                       double stepSize,
-                       vtkInterpolatedVelocityField* func);
-  int CheckInputs(vtkInterpolatedVelocityField*& func,
-                  int* maxCellSize);
-  void GenerateNormals(vtkPolyData* output, double* firstNormal, const char *vecName);
+  int SetupOutput(vtkInformation* inInfo,vtkInformation* outInfo);
 
-  bool GenerateNormalsInIntegrate;
+  void InitializeSeeds(vtkDataArray*& seeds,vtkIdList*& seedIds,vtkIntArray*&dirs,vtkDataSet *source);
 
-  // starting from global x-y-z position
-  double StartPosition[3];
+  vtkOOCFieldTracer(const vtkOOCFieldTracer&);  // Not implemented.
+  void operator=(const vtkOOCFieldTracer&);  // Not implemented.
 
-  static const double EPSILON;
-  double TerminalSpeed;
-
-  double LastUsedStepSize;
-
-//BTX
-  struct IntervalInformation
-  {
-    double Interval;
-    int Unit;
-  };
-
-  double MaximumPropagation;
-  double MinimumIntegrationStep;
-  double MaximumIntegrationStep;
-  double InitialIntegrationStep;
-
-  void ConvertIntervals( double& step, double& minStep, double& maxStep,
-                        int direction, double cellLength );
-  static double ConvertToLength( double interval, int unit, double cellLength );
-  static double ConvertToLength( IntervalInformation& interval, double cellLength );
-  
-//ETX
-
-  int SetupOutput(vtkInformation* inInfo, 
-                  vtkInformation* outInfo);
-  void InitializeSeeds(vtkDataArray*& seeds,
-                       vtkIdList*& seedIds,
-                       vtkIntArray*& integrationDirections,
-                       vtkDataSet *source);
-  
-  int IntegrationStepUnit;
-  int IntegrationDirection;
-
+private:
   // Prototype showing the integrator type to be set by the user.
   vtkInitialValueProblemSolver* Integrator;
 
-  double MaximumError;
-  vtkIdType MaximumNumberOfSteps;
+  // Parameters controlling integration,
+  int StepUnit;
+  double InitialStep;
+  double MinStep;
+  double MaxStep;
+  double MaxError;
+  vtkIdType MaxNumberOfSteps;
+  double MaxLineLength;
+  double TerminalSpeed;
+  vtkMultiProcessController *Controller;
 
-  bool ComputeVorticity;
-  double RotationScale;
+  static const double EPSILON;
 
-  vtkInterpolatedVelocityField* InterpolatorPrototype;
-
-  vtkCompositeDataSet* InputData;
+  // Parameter to adjust the size of data reads.
+  int OOCNeighborhoodSize;
 
   // This object is used to stop integration when field line
   // crosses one of a given set of surfaces. It also has logic
   // for detecting when a field line leaves a region defined
   // by a box.
-  TerminationCondition *TermCond;
-
-  // This object is used for reads.
-  BOVReader *Reader;
-  char *FileName;
-  char *FieldName;
-  int StepId;
-
-private:
-  vtkFieldTracer(const vtkFieldTracer&);  // Not implemented.
-  void operator=(const vtkFieldTracer&);  // Not implemented.
+  TerminationCondition *TermCon;
 };
 
 

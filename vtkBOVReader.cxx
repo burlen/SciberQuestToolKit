@@ -24,6 +24,8 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkMultiProcessController.h"
 #include "vtkMPIController.h"
 
+#include "vtkOOCReader.h"
+#include "vtkOOCBOVReader.h"
 #include "BOVReader.h"
 #include "GDAMetaData.h"
 #include "PrintUtils.h"
@@ -133,24 +135,6 @@ void vtkBOVReader::Clear()
     =this->Subset[3]=this->Subset[4]=this->Subset[5]=0;
   this->Reader->Close();
 }
-
-//-----------------------------------------------------------------------------
-vtkInformationKeyMacro(vtkBOVReader,FILE_NAME,String);
-
-//-----------------------------------------------------------------------------
-vtkInformationKeyMacro(vtkBOVReader,FILE_INDEX,Integer);
-
-//-----------------------------------------------------------------------------
-vtkInformationKeyRestrictedMacro(vtkBOVReader,WHOLE_EXTENT,IntegerVector,6);
-
-//-----------------------------------------------------------------------------
-vtkInformationKeyRestrictedMacro(vtkBOVReader,ORIGIN,DoubleVector,3);
-
-//-----------------------------------------------------------------------------
-vtkInformationKeyRestrictedMacro(vtkBOVReader,SPACING,DoubleVector,3);
-
-//-----------------------------------------------------------------------------
-vtkInformationKeyMacro(vtkBOVReader,TIME,Double);
 
 //-----------------------------------------------------------------------------
 int vtkBOVReader::CanReadFile(const char *file)
@@ -374,33 +358,34 @@ int vtkBOVReader::RequestInformation(
 
     // Set the extent of the data.
     // The point extent given PV by the meta reader will always start from
-    // 0 and range to nProcs and 1. This will necdcesitate a false origin
+    // 0 and range to nProcs and 1. This will neccesitate a false origin
     // and spacing as well.
     wholeExtent[1]=this->NProcs;
     // Save the real extent in our own key.
-    info->Set(this->WHOLE_EXTENT(),this->Subset,6);
+    // info->Set(vtkOOCReader::WHOLE_EXTENT(),this->Subset,6);
 
     // Set the origin and spacing
     // We save the actuals in our own keys.
-    info->Set(this->ORIGIN(),X0,3);
-    info->Set(this->SPACING(),dX,3);
+    // info->Set(vtkOOCReader::ORIGIN(),X0,3);
+    // info->Set(vtkOOCReader::SPACING(),dX,3);
     // Adjust PV's keys for the false subsetting extents.
     X0[0]=X0[0]+this->Subset[0]*dX[0];
     X0[1]=X0[1]+this->Subset[2]*dX[1];
     X0[2]=X0[2]+this->Subset[4]*dX[2];
 
-    // Adjust grid spacing for our single cell per process.
+    // Adjust grid spacing for our single cell per process. We are using the dual
+    // grid so we are subtracting 1 to get the number of cells.
     int nCells[3]={
-      this->Subset[1]-this->Subset[0]+1,
-      this->Subset[3]-this->Subset[2]+1,
-      this->Subset[5]-this->Subset[4]+1};
+      this->Subset[1]-this->Subset[0],
+      this->Subset[3]-this->Subset[2],
+      this->Subset[5]-this->Subset[4]};
     dX[0]=dX[0]*((double)nCells[0])/((double)this->NProcs);
     dX[1]=dX[1]*((double)nCells[1]);
     dX[2]=dX[2]*((double)nCells[2]);
 
     // Set the file name so that filter who process the data may read
     // as neccessary.
-    info->Set(this->FILE_NAME(),this->FileName);
+    // info->Set(vtkOOCReader::FILE_NAME(),this->FileName);
     }
   else
     {
@@ -418,7 +403,7 @@ int vtkBOVReader::RequestInformation(
 
   // Pass values into the pipeline.
   info->Set(vtkDataObject::ORIGIN(),X0,3);
-  info->Set(vtkDataObject::SPACING(),dX,3); 
+  info->Set(vtkDataObject::SPACING(),dX,3);
   info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),wholeExtent,6);
 
   // Determine which time steps are available.
@@ -493,12 +478,19 @@ int vtkBOVReader::RequestData(
     #endif
     }
 
-  int nPoints[3]={2,2,2};
   // The two modes to run the reader are Meta mode and Actual mode.
   // In meta mode no data is read rather the pipeline is tricked into
   // ploting a bounding box matching the data size. Keys are provided
   // so that actual read may take place downstream. In actual mode
   // the reader reads the requested arrays.
+
+
+  // This is what the user selected via th UI.
+  const vtkAMRBox &subset=this->Reader->GetMetaData()->GetSubset();
+
+  // Set the number of points in the output depending on the
+  // reader mode.
+  int nPoints[3]={2,2,2};
   if (this->MetaRead)
     {
     // A meta reade makes a grid consisting of nProcs cells along
@@ -507,15 +499,12 @@ int vtkBOVReader::RequestData(
     nPoints[0]=this->NProcs+1;
     nPoints[1]=2;
     nPoints[2]=2;
-    // Save the stepId for downstream use.
-    info->Set(this->FILE_INDEX(),stepId);
     }
   else
     {
     // The actual read will  use actual grid dimensions which
-    // inb this case are cell centered and being read onto the 
+    // in this case are cell centered and being read onto the
     // dual node centered grid.
-    const vtkAMRBox &subset=this->Reader->GetMetaData()->GetSubset();
     subset.GetNumberOfCells(nPoints);
     }
 
@@ -558,6 +547,20 @@ int vtkBOVReader::RequestData(
     {
     // Meta read.
     ok=this->Reader->ReadMetaTimeStep(stepId,idds,this);
+    // Pass the actual reader into the pipeline.
+    vtkOOCBOVReader *OOCReader=vtkOOCBOVReader::New();
+    OOCReader->SetReader(this->Reader);
+    OOCReader->SetTimeIndex(stepId);
+    info->Set(vtkOOCReader::READER(),OOCReader);
+    OOCReader->Delete();
+    // Pass the bounds of what would have been read on all
+    // processes. The subset describes what the user has
+    // marked for reading.
+    double subsetBounds[6];
+    subsetBounds[0]=X0[0]; subsetBounds[1]=X0[0]+dX[0];
+    subsetBounds[2]=X0[0]; subsetBounds[3]=X0[0]+dX[1];
+    subsetBounds[4]=X0[0]; subsetBounds[5]=X0[0]+dX[2];
+    info->Set(vtkOOCReader::BOUNDS(),subsetBounds,6);
     }
   else
     {
