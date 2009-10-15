@@ -12,6 +12,15 @@
     }
 
 //-----------------------------------------------------------------------------
+TerminationCondition::TerminationCondition()
+{
+  ProblemDomain[0]=ProblemDomain[2]=ProblemDomain[4]=1;
+  ProblemDomain[1]=ProblemDomain[3]=ProblemDomain[5]=0;
+  WorkingDomain[0]=WorkingDomain[2]=WorkingDomain[4]=1;
+  WorkingDomain[1]=WorkingDomain[3]=WorkingDomain[5]=0;
+}
+
+//-----------------------------------------------------------------------------
 TerminationCondition::~TerminationCondition()
 {
   this->ClearSurfaces();
@@ -26,6 +35,7 @@ void TerminationCondition::ClearSurfaces()
     SafeDelete(this->Surfaces[i]);
     }
   this->Surfaces.clear();
+  this->SurfaceNames.clear();
 }
 
 //-----------------------------------------------------------------------------
@@ -47,23 +57,34 @@ void TerminationCondition::SetWorkingDomain(double dom[6])
 }
 
 //-----------------------------------------------------------------------------
-void TerminationCondition::PushSurface(vtkPolyData *pd)
+void TerminationCondition::PushSurface(vtkPolyData *pd, const char *name)
 {
   vtkCellLocator *cellLoc=vtkCellLocator::New();
   cellLoc->SetDataSet(pd);
   cellLoc->BuildLocator();
   this->Surfaces.push_back(cellLoc);
+
+  if (name==0)
+    {
+    ostringstream os;
+    os << "S" << this->Surfaces.size();
+    this->SurfaceNames.push_back(os.str().c_str());
+    }
+  else
+    {
+    this->SurfaceNames.push_back(name);
+    }
 }
 
 //-----------------------------------------------------------------------------
-int TerminationCondition::GetFieldNullId()
+int TerminationCondition::GetProblemDomainSurfaceId()
 {
   // See the note in the mapper initialization below.
   return 0;
 }
 
 //-----------------------------------------------------------------------------
-int TerminationCondition::GetProblemDomainSurfaceId()
+int TerminationCondition::GetFieldNullId()
 {
   // See the note in the mapper initialization below.
   return this->Surfaces.size()+1;
@@ -80,14 +101,20 @@ int TerminationCondition::GetShortIntegrationId()
 void TerminationCondition::InitializeColorMapper()
 {
   // Initialize the mapper, color scheme as follows:
-  // 0   -> field null
+  // 0   -> problem domain
   // 1   -> s1
   //    ...
   // n   -> sn
-  // n+1 -> problem domain
+  // n+1 -> field null
   // n+2 -> short integration
-  this->CMap.SetNumberOfSurfaces(this->Surfaces.size()+2);
-  // 2 because null surface is accounted for in mapper.
+  vector<string> names;
+  names.push_back("domain bounds");
+  names.insert(names.end(),this->SurfaceNames.begin(),this->SurfaceNames.end());
+  names.push_back("feild null");
+  names.push_back("short integration");
+
+  size_t nSurf=this->Surfaces.size()+2; // only 2 bc problem domain is automatically included.
+  this->CMap.BuildColorMap(nSurf,names);
 }
 
 //-----------------------------------------------------------------------------

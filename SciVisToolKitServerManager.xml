@@ -774,10 +774,220 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
           Compute the rotation of the vector field using a point centered stencil.
         </Documentation>
      </IntVectorProperty>
-
   <!-- End vtkFieldAnalysis -->
   </SourceProxy>
-  
-  
+
 </ProxyGroup>
+<ProxyGroup name="sources">
+
+  <!-- ==================================================================== -->
+  <SourceProxy name="vtkSQPlaneSource" class="vtkSQPlaneSource" label="Plane">
+      <Documentation
+        long_help="Create a parallelogram given an origin and two points. The resolution indicates the number of division along each axis of the plane." 
+        short_help="Create a parallelogram from an origin and two points">
+        The Plane source can be used to add a polygonal parallelogram to the 3D scene.
+      </Documentation>
+
+      <StringVectorProperty
+         name="Name"
+         command="SetDescriptiveName"
+         number_of_elements="1">
+        <Documentation>
+          Give the object a name that may be used downstream to identify it.
+        </Documentation>
+      </StringVectorProperty>
+
+      <DoubleVectorProperty
+         name="Origin"
+         command="SetOrigin"
+         number_of_elements="3"
+         animateable="1"
+         default_values="-0.5 -0.5 0.0" >
+        <DoubleRangeDomain name="range"/>
+        <Documentation>
+          This property specifies the 3D coordinate of the origin (one corner) of the plane.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Point1"
+         command="SetPoint1"
+         number_of_elements="3"
+         animateable="1"
+         default_values="0.5 -0.5 0.0" >
+        <DoubleRangeDomain name="range"/>
+        <Documentation>
+          This property specifies the 3D coordinate a second corner of the parallelogram. The line connecting this point and that specified by the Origin property define one edge of the parallelogram (its X axis).
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Point2"
+         command="SetPoint2"
+         number_of_elements="3"
+         animateable="1"
+         default_values="-0.5 0.5 0.0" >
+        <DoubleRangeDomain name="range"/>
+        <Documentation>
+          This property specifies the 3D coordinate a third corner of the parallelogram. The line connecting this point and that specified by the Origin property define a second edge of the parallelogram (its Y axis).
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
+         name="XResolution"
+         command="SetXResolution"
+         number_of_elements="1"
+         default_values="1" >
+        <IntRangeDomain name="range" min="1" />
+        <Documentation>
+          This property specifies the number of divisions along the X axis of the parallelogram.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
+         name="YResolution"
+         command="SetYResolution"
+         number_of_elements="1"
+         default_values="1" >
+        <IntRangeDomain name="range" min="1" />
+        <Documentation>
+          This property specifies the number of divisions along the Y axis of the parallelogram.
+        </Documentation>
+      </IntVectorProperty>
+   <!-- End Plane -->
+   </SourceProxy>
+
+   <!-- ==================================================================== -->
+   <SourceProxy name="vtkSQSphereSource" class="vtkSQSphereSource" label="Sphere">
+      <Documentation
+        long_help="Create a 3D sphere given a center and radius." 
+        short_help="Create a 3D sphere">
+          The Sphere source can be used to add a polygonal sphere to the 3D scene. The output of the Sphere source is polygonal data with point normals defined.
+      </Documentation>
+
+      <StringVectorProperty
+         name="Name"
+         command="SetDescriptiveName"
+         number_of_elements="1">
+        <Documentation>
+          Give the object a name that may be used downstream to identify it.
+        </Documentation>
+      </StringVectorProperty>
+      
+      <DoubleVectorProperty
+         name="Center"
+         command="SetCenter"
+         number_of_elements="3"
+         animateable="1"
+         default_values="0.0 0.0 0.0" >
+        <DoubleRangeDomain name="range"/>
+        <Documentation>
+          This property specifies the 3D coordinates for the center of the sphere.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Radius"
+         command="SetRadius"
+         number_of_elements="1"
+         animateable="1"
+         default_values="0.5" >
+        <DoubleRangeDomain name="range" min="0"/>
+        <Documentation>
+          This property specifies the radius of the sphere.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
+         name="ThetaResolution"
+         command="SetThetaResolution"
+         number_of_elements="1"
+         default_values="8" >
+        <IntRangeDomain name="range" min="3" max="1024" />
+        <Documentation>
+          The value of this property represents the number of divisions between Start Theta and End Theta around the sphere. (See the Start Theta and End Theta properties.) The theta divisions are similar to longitude lines on the earth. The higher the resolution, the closer the approximation will come to a sphere, and the more polygons there will be.
+        </Documentation>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+         name="StartTheta"
+         command="SetStartTheta"
+         number_of_elements="1"
+         animateable="1"
+         default_values="0" >
+        <DoubleRangeDomain name="range" min="0" max="360" />
+        <Documentation>
+          To form a complete sphere, the value of this property should be 0 degrees, and the value of the End Theta property should be 360 degrees. The value of this property can be adjusted to form only a portion of a sphere.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="EndTheta"
+         command="SetEndTheta"
+         number_of_elements="1"
+         animateable="1"
+         default_values="360" >
+        <DoubleRangeDomain name="range" min="0" max="360" />
+        <Documentation>
+          The value of this property can be adjusted to form only a portion of a sphere. This value is measured in degrees.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
+         name="PhiResolution"
+         command="SetPhiResolution"
+         number_of_elements="1"
+         default_values="8" >
+        <IntRangeDomain name="range" min="3" max="1024" />
+        <Documentation>
+          The value of this property represents the number of divisions between Start Phi and End Phi on the sphere. (See the Start Phi and End Phi properties.) The phi divisions are similar to latitude lines on the earth.
+        </Documentation>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+         name="StartPhi"
+         command="SetStartPhi"
+         number_of_elements="1"
+         animateable="1"
+         default_values="0" >
+        <DoubleRangeDomain name="range" min="0" max="180" />
+        <Documentation>
+          To form a complete sphere, the value of this property should be 0 degrees, and the value of the End Phi property should be 180 degrees. The value of this property can be adjusted to form only a portion of a sphere.
+          Set the starting angle (in degrees) in the latitudinal direction.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="EndPhi"
+         command="SetEndPhi"
+         number_of_elements="1"
+         animateable="1"
+         default_values="180" >
+        <DoubleRangeDomain name="range" min="0" max="180" />
+        <Documentation>
+          The value of this property can be adjusted to form only a portion of a sphere. The value is measured in degrees.
+        </Documentation>
+      </DoubleVectorProperty>
+   <!-- End Sphere -->
+   </SourceProxy>
+   
+    <!-- ==================================================================== -->
+  <SourceProxy name="vtkProcessMonitor" class="vtkProcessMonitor" label="Process Monitor">
+      <Documentation
+        long_help="A custom Qt panel that manages and monitors the running processes."
+        short_help="A custom Qt panel that manages and monitors the running processes.">
+        A custom panel that manages and monitors the running processes.
+      </Documentation>
+
+     <StringVectorProperty name="ConfigStream"
+        command="GetConfigStream"
+        information_only="1" >
+        <SimpleStringInformationHelper />
+     </StringVectorProperty>
+
+   <!-- End Debug Panel -->
+   </SourceProxy>
+
+</ProxyGroup>
+ 
 </ServerManagerConfiguration>

@@ -55,11 +55,11 @@ vtkDataSet *vtkOOCBOVReader::ReadNeighborhood(double p[3], int size)
   // Locate the cell where this point lies.
   double X0[3];
   double dX[3];
-  ///int wholeExt[6];
+
   const vtkAMRBox &domain=this->Reader->GetMetaData()->GetDomain();
   domain.GetDataSetOrigin(X0);
   domain.GetGridSpacing(dX);
-  ///domain.GetDimensions(wholeExt);
+
   int cellId[3];
   cellId[0]=static_cast<int>((p[0]-X0[0])/dX[0]);
   cellId[1]=static_cast<int>((p[1]-X0[1])/dX[1]);
@@ -72,9 +72,11 @@ vtkDataSet *vtkOOCBOVReader::ReadNeighborhood(double p[3], int size)
   decomp.Grow(size/2);
   decomp&=domain;
 
+  #if defined vtkOOCBOVReaderDEBUG
   cerr << "Reading ("
        << p[0] << ", " << p[1] << ", " << p[2] << ") -> ";
   cerr << decomp.Print(cerr) << endl;
+  #endif
 
   // Set up a vtk dataset to hold the results.
   int subset[6];
@@ -87,8 +89,6 @@ vtkDataSet *vtkOOCBOVReader::ReadNeighborhood(double p[3], int size)
   idds->SetDimensions(nPoints);
   idds->SetOrigin(X0);
   idds->SetSpacing(dX);
-  ///idds->SetExtent(subset);
-  ///idds->SetWholeExtent(wholeExt);
 
   // Actual read.
   this->Reader->GetMetaData()->SetDecomp(decomp);

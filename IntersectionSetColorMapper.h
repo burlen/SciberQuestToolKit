@@ -15,6 +15,19 @@ Copyright 2008 SciberQuest Inc.
 #include <vector>
 using std::vector;
 
+#include<iostream>
+using std::cerr;
+using std::endl;
+
+#include<string>
+using std::string;
+
+#include<sstream>
+using std::ostringstream;
+
+#include"vtkIntArray.h"
+
+
 namespace {
 //*****************************************************************************
 template<typename T>
@@ -53,6 +66,23 @@ public:
   /// Set the number of surfaces, this allocates space for the colors.
   /// and appropriately initializes them.
   void SetNumberOfSurfaces(int nSurfaces){
+    this->BuildColorMap(nSurfaces);
+    }
+  /// Allocates space for the color map and appropriately initializes
+  /// them as a function of surface pairs. A legend is also generated
+  /// if a the surfaceName vector is provided these are used in the
+  /// legend.
+  void BuildColorMap(int nSurfaces){
+    vector<string> names(nSurfaces);
+    for (int i=0; i<nSurfaces; ++i)
+      {
+      ostringstream os;
+      os << i;
+      names[i]=os.str();
+      }
+    this->BuildColorMap(nSurfaces,names);
+    }
+  void BuildColorMap(int nSurfaces, vector<string> &names){
     // Store the color values in the upper triangle of a nxn matrix.
     // Note that we only need n=sum_{i=1}^{n+1}i colors, but using the
     // matrix sinmplifies look ups.
@@ -60,16 +90,23 @@ public:
     const int nColors=(nSurfaces+1)*(nSurfaces+1);
     this->Colors.clear();
     this->Colors.resize(nColors,-1);
+    this->ColorsUsed.resize(nColors,0);
+    this->ColorLegend.resize(nColors);
     int color=0;
     for (int j=0; j<nSurfaces+1; ++j)
       {
       for (int i=j; i<nSurfaces+1; ++i)
         {
+        // set the color entry
         int x=max(i,j);
         int y=min(i,j);
         int idx=x+(nSurfaces+1)*y;
         this->Colors[idx]=color;
         ++color;
+        // set its legend entry
+        ostringstream os;
+        os << "(" << names[x] << ", " << names[y] << ")";
+        this->ColorLegend[idx]=os.str();
         }
       }
     }
@@ -84,12 +121,48 @@ public:
     int x=max(s1,s2);
     int y=min(s1,s2);
     int idx=x+(this->NSurfaces+1)*y;
+    this->ColorsUsed[idx]=1;
     return this->Colors[idx];
+    }
+  /// reduce the number of colors to those which are used.
+  void SqueezeColorMap(vtkIntArray *scalar){
+    // Walk the color map, for any used color replace it with 
+    // the number of colors used thus far. This will reduce
+    // the color map to only the used colors.
+    vtkIdType nCells=scalar->GetNumberOfTuples();
+    int *pScalar=scalar->GetPointer(0);
+    int nUsed=0;
+    for (int j=0; j<this->NSurfaces+1; ++j)
+      {
+      for (int i=j; i<this->NSurfaces+1; ++i)
+        {
+        int x=max(i,j);
+        int y=min(i,j);
+        int idx=x+(this->NSurfaces+1)*y;
+        int color=this->Colors[idx];
+        if (this->ColorsUsed[idx])
+          {
+          cerr << this->ColorLegend[idx] << "->" << nUsed << endl;
+          for (vtkIdType q=0; q<nCells; ++q)
+            {
+            // search and replace the old value with the new.
+            if (pScalar[q]==color)
+              {
+              pScalar[q]=nUsed;
+              }
+            }
+          // next new color.
+          ++nUsed;
+          }
+        }
+      }
     }
 
 private:
   int NSurfaces;
   vector<int> Colors;
+  vector<int> ColorsUsed;
+  vector<string> ColorLegend;
 };
 
 #endif

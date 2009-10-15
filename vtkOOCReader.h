@@ -80,7 +80,11 @@ public:
   /// \@}
 
 protected:
-  vtkOOCReader(){};
+  vtkOOCReader()
+      :
+    TimeIndex(0),
+    Time(0)
+      {};
   virtual ~vtkOOCReader(){};
 
 private:

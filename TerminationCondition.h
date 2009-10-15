@@ -22,16 +22,17 @@ class vtkPolyData;
 // Description:
 // Defines and interface for testing whether or not
 // a feild line should be terminated.
+//
+// 0   -> field null
+// 1   -> s1
+//    ...
+// n   -> sn
+// n+1 -> problem domain
+// n+2 -> short integration
 class TerminationCondition
 {
 public:
-  TerminationCondition()
-    {
-    ProblemDomain[0]=ProblemDomain[2]=ProblemDomain[4]=1;
-    ProblemDomain[1]=ProblemDomain[3]=ProblemDomain[5]=0;
-    WorkingDomain[0]=WorkingDomain[2]=WorkingDomain[4]=1;
-    WorkingDomain[1]=WorkingDomain[3]=WorkingDomain[5]=0;
-    }
+  TerminationCondition();
   ~TerminationCondition();
 
   // Description:
@@ -59,7 +60,7 @@ public:
   void SetWorkingDomain(double domain[6]);
   // Description:
   // Adds a termination surface. See SegmentTerminates.
-  void PushSurface(vtkPolyData *pd);
+  void PushSurface(vtkPolyData *pd, const char *name=0);
   // Description:
   // Remove all surfaces.See SegmentTerminates.
   void ClearSurfaces();
@@ -76,6 +77,10 @@ public:
   int GetProblemDomainSurfaceId();
   int GetFieldNullId();
   int GetShortIntegrationId();
+  void SqueezeColorMap(vtkIntArray *colors)
+    {
+    this->CMap.SqueezeColorMap(colors);
+    }
 
 private:
   // Helper, to generate a polygonal box from a set of bounds.
@@ -87,6 +92,7 @@ private:
   double ProblemDomain[6];
   double WorkingDomain[6];
   vector<vtkCellLocator*> Surfaces;
+  vector<string> SurfaceNames;
   IntersectionSetColorMapper CMap;
 };
 

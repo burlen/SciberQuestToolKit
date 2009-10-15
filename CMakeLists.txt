@@ -29,7 +29,10 @@ set(SM_SOURCES
   vtkFieldTopologyAnalyzer.cxx
   vtkDistributedFieldTracer.cxx
   vtkFieldAnalysis.cxx
-  vtkOOCFieldTracer.cxx)
+  vtkOOCFieldTracer.cxx
+  vtkSQPlaneSource.cxx
+  vtkSQSphereSource.cxx
+  vtkProcessMonitor.cxx)
 
 # Sources which aren't for use by the server manager.
 set(_SOURCES
@@ -39,7 +42,8 @@ set(_SOURCES
   GDAMetaData.cxx
   PrintUtils.cxx
   IntersectionSet.cxx
-  TerminationCondition.cxx)
+  TerminationCondition.cxx
+  vtkMetaDataKeys.cxx)
 
 SET_SOURCE_FILES_PROPERTIES(
 vtkOOCReader.cxx
@@ -61,12 +65,30 @@ if (PV_VER LESS 3.6)
   add_definitions(-DPV_3_4_BUILD)
 endif (PV_VER LESS 3.6)
 
+# Qt custom panels
+QT4_WRAP_CPP(MOC_SRCS pqProcessMonitor.h)
+QT4_WRAP_UI(UI_SRCS pqProcessMonitorForm.ui)
+ADD_PARAVIEW_OBJECT_PANEL(
+  IFACES IFACE_SRCS
+  CLASS_NAME pqProcessMonitor
+  XML_NAME vtkProcessMonitor
+  XML_GROUP sources)
+
+# panel sources
+set (_SOURCES
+  ${_SOURCES}
+  ${MOC_SRCS}
+  ${UI_SRCS}
+  ${IFACE_SRCS}
+  pqProcessMonitor.cxx)
+
 # Generate the plugin, servermanager and wrapped language bindings.
 add_paraview_plugin(
   SciVisToolKit "1.0"
+  GUI_INTERFACES ${IFACES}
   SERVER_MANAGER_SOURCES ${SM_SOURCES}
   SERVER_MANAGER_XML SciVisToolKitServerManager.xml
   GUI_RESOURCE_FILES SciVisToolKitClient.xml
-  SOURCES ${_SOURCES})
+  SOURCES ${_SOURCES} )
 
 install(TARGETS SciVisToolKit DESTINATION ${CMAKE_INSTALL_PREFIX})

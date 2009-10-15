@@ -1,17 +1,3 @@
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkOOCFieldTracer.h,v $
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 /*
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
@@ -23,64 +9,11 @@ Copyright 2008 SciberQuest Inc.
 */
 // .NAME vtkOOCFieldTracer - Streamline generator
 // .SECTION Description
-// vtkOOCFieldTracer is a filter that integrates a vector field to generate
-// streamlines. The integration is performed using a specified integrator,
-// by default Runge-Kutta2. 
-// 
-// vtkOOCFieldTracer produces polylines as the output, with each cell (i.e.,
-// polyline) representing a streamline. The attribute values associated
-// with each streamline are stored in the cell data, whereas those
-// associated with streamline-points are stored in the point data.
 //
-// vtkOOCFieldTracer supports forward (the default), backward, and combined
-// (i.e., BOTH) integration. The length of a streamline is governed by 
-// specifying a maximum value either in physical arc length or in (local)
-// cell length. Otherwise, the integration terminates upon exiting the
-// flow field domain, or if the particle speed is reduced to a value less
-// than a specified terminal speed, or when a maximum number of steps is 
-// completed. The specific reason for the termination is stored in a cell 
-// array named ReasonForTermination.
-//
-// Note that normalized vectors are adopted in streamline integration,
-// which achieves high numerical accuracy/smoothness of flow lines that is
-// particularly guranteed for Runge-Kutta45 with adaptive step size and
-// error control). In support of this feature, the underlying step size is
-// ALWAYS in arc length unit (LENGTH_UNIT) while the 'real' time interval 
-// (virtual for steady flows) that a particle actually takes to trave in a 
-// single step is obtained by dividing the arc length by the LOCAL speed. 
-// The overall elapsed time (i.e., the life span) of the particle is the 
-// sum of those individual step-wise time intervals.
-//
-// The quality of streamline integration can be controlled by setting the
-// initial integration step (InitialIntegrationStep), particularly for 
-// Runge-Kutta2 and Runge-Kutta4 (with a fixed step size), and in the case
-// of Runge-Kutta45 (with an adaptive step size and error control) the
-// minimum integration step, the maximum integration step, and the maximum
-// error. These steps are in either LENGTH_UNIT or CELL_LENGTH_UNIT while
-// the error is in physical arc length. For the former two integrators,
-// there is a trade-off between integration speed and streamline quality.
-//
-// The integration time, vorticity, rotation and angular velocity are stored
-// in point data arrays named "IntegrationTime", "Vorticity", "Rotation" and
-// "AngularVelocity", respectively (vorticity, rotation and angular velocity
-// are computed only when ComputeVorticity is on). All point data attributes
-// in the source dataset are interpolated on the new streamline points.
-//
-// vtkOOCFieldTracer supports integration through any type of dataset. Thus if
-// the dataset contains 2D cells like polygons or triangles, the integration
-// is constrained to lie on the surface defined by 2D cells.
-//
-// The starting point, or the so-called 'seed', of a streamline may be set
-// in two different ways. Starting from global x-y-z "position" allows you
-// to start a single trace at a specified x-y-z coordinate. If you specify
-// a source object, traces will be generated from each point in the source
-// that is inside the dataset.
-//
-// .SECTION See Also
-// vtkRibbonFilter vtkRuledSurfaceFilter vtkInitialValueProblemSolver 
-// vtkRungeKutta2 vtkRungeKutta4 vtkRungeKutta45 vtkTemporalStreamTracer
-// vtkInterpolatedVelocityField
-//  
+// Scalable field line tracer using RK45 Adds capability to
+// terminate trace upon intersection with one of a set of
+// surfaces.
+// TODO verify that VTK rk45 implementation increases step size!!
 
 #ifndef __vtkOOCFieldTracer_h
 #define __vtkOOCFieldTracer_h
@@ -106,7 +39,7 @@ class FieldLine;
 //ETX
 
 
-class VTK_GRAPHICS_EXPORT vtkOOCFieldTracer : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkOOCFieldTracer : public vtkPolyDataAlgorithm
 {
 public:
   vtkTypeRevisionMacro(vtkOOCFieldTracer,vtkPolyDataAlgorithm);
@@ -203,19 +136,7 @@ private:
       double lineLength);
   // Description:
   // Convert from cell fractional unit into length.
-  void ConvertIntervals(
-        double& step,
-        double& minStep,
-        double& maxStep,
-        int direction,
-        double cellLength);
-  // Description:
-  // Convert from cell fractional unit into length.
   static double ConvertToLength(double interval,int unit,double cellLength);
-
-  int SetupOutput(vtkInformation* inInfo,vtkInformation* outInfo);
-
-  void InitializeSeeds(vtkDataArray*& seeds,vtkIdList*& seedIds,vtkIntArray*&dirs,vtkDataSet *source);
 
   vtkOOCFieldTracer(const vtkOOCFieldTracer&);  // Not implemented.
   void operator=(const vtkOOCFieldTracer&);  // Not implemented.
@@ -245,9 +166,15 @@ private:
   // for detecting when a field line leaves a region defined
   // by a box.
   TerminationCondition *TermCon;
+
+  //BTX
+  // units
+  enum 
+    {
+    ARC_LENGTH=1,
+    CELL_FRACTION=2
+    };
+ //ETX
 };
 
-
 #endif
-
-

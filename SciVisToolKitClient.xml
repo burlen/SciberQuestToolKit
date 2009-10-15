@@ -15,6 +15,9 @@
     <Filter name="vtkDistributedFieldTracer"/>
     <Filter name="vtkOOCFieldTracer"/>
     <Filter name="vtkFieldAnalysis"/>
+    <Source name="vtkSQPlaneSource"/>
+    <Source name="vtkSQSphereSource"/>
+    <Source name="vtkProcessMonitor"/>
   </Category>
 
 </ParaViewFilters>

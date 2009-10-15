@@ -41,6 +41,7 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkRungeKutta45.h"
 #include "vtkSmartPointer.h"
 #include "vtkOOCReader.h"
+#include "vtkMetaDataKeys.h"
 
 #if defined PV_3_4_BUILD
   #include "vtkInterpolatedVelocityField-3.7.h"
@@ -52,28 +53,10 @@ PURPOSE.  See the above copyright notice for more information.
 using std::map;
 using std::pair;
 
-vtkCxxRevisionMacro(vtkOOCFieldTracer, "$Revision: 1.49 $");
+vtkCxxRevisionMacro(vtkOOCFieldTracer, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkOOCFieldTracer);
 
 const double vtkOOCFieldTracer::EPSILON = 1.0E-12;
-
-//=============================================================================
-class _Interval
-{
-public:
-  _Interval()
-      :
-    Interval(0.0),
-    Unit(LENGTH_UNIT)
-      {}
-  double Interval;
-  int Unit;
-  enum Units
-  {
-    LENGTH_UNIT = 1,
-    CELL_LENGTH_UNIT = 2
-  };
-};
 
 //=============================================================================
 class FieldLine
@@ -132,19 +115,19 @@ public:
   void PushPoint(int dir,float *p)
     {
     assert((dir>=0)&&(dir<=1));
-    vtkFloatArray *line=dir==0?FwdTrace:BwdTrace;
+    vtkFloatArray *line=dir==0?BwdTrace:FwdTrace;
     line->InsertNextTuple(p);
     }
   void PushPoint(int dir,double *p)
     {
     assert((dir>=0)&&(dir<=1));
-    vtkFloatArray *line=dir==0?FwdTrace:BwdTrace;
+    vtkFloatArray *line=dir==0?BwdTrace:FwdTrace;
     line->InsertNextTuple(p);
     }
   void SetTerminator(int dir, int code)
     {
     assert((dir>=0)&&(dir<=1));
-    int *term=dir==0?&this->FwdTerminator:&this->BwdTerminator;
+    int *term=dir==0?&this->BwdTerminator:&this->FwdTerminator;
     *term=code;
     }
 
@@ -232,14 +215,15 @@ private:
 //-----------------------------------------------------------------------------
 vtkOOCFieldTracer::vtkOOCFieldTracer()
       :
-  StepUnit(_Interval::CELL_LENGTH_UNIT),
+  StepUnit(CELL_FRACTION),
   InitialStep(0.1),
   MinStep(0.1),
   MaxStep(0.5),
   MaxError(1E-5),
   MaxNumberOfSteps(1000),
   MaxLineLength(1E6),
-  TerminalSpeed(1E-6)
+  TerminalSpeed(1E-6),
+  OOCNeighborhoodSize(15)
 {
   this->Integrator=vtkRungeKutta45::New();
   this->TermCon=new TerminationCondition;
@@ -373,10 +357,10 @@ void vtkOOCFieldTracer::ClearTerminatorInputConnections()
 //-----------------------------------------------------------------------------
 void vtkOOCFieldTracer::SetStepUnit(int unit)
 { 
-  if (unit!=_Interval::LENGTH_UNIT
-   && unit!=_Interval::CELL_LENGTH_UNIT )
+  if (unit!=ARC_LENGTH
+   && unit!=CELL_FRACTION )
     {
-    unit=_Interval::CELL_LENGTH_UNIT;
+    unit=CELL_FRACTION;
     }
 
   if (unit==this->StepUnit )
@@ -524,7 +508,14 @@ int vtkOOCFieldTracer::RequestData(
       vtkWarningMacro("Termination surface is not polydata. Skipping.");
       continue;
       }
-    tcon.PushSurface(pd);
+
+    const char *surfName=0;
+    if (info->Has(vtkMetaDataKeys::DESCRIPTIVE_NAME()))
+      {
+      surfName=info->Get(vtkMetaDataKeys::DESCRIPTIVE_NAME());
+      }
+    tcon.PushSurface(pd,surfName);
+
     }
   tcon.InitializeColorMapper();
 
@@ -750,8 +741,6 @@ int vtkOOCFieldTracer::RequestData(
   ///   cerr << pc[i] << ", ";
   ///   }
 
-
-
   /// seedOutPolyPd->Print(cerr);
   /// seedOutCellCenterPd->Print(cerr);
 
@@ -773,9 +762,9 @@ int vtkOOCFieldTracer::RequestData(
     nLinePtsAll+=line->GetNumberOfPoints();
     }
   // place the color color into the polygonal cell output.
+  tcon.SqueezeColorMap(intersectColor);
   seedOutPolyPd->GetCellData()->AddArray(intersectColor);
   intersectColor->Delete();
-
 
   // construct lines from the integrations.
   vtkFloatArray *linePts=vtkFloatArray::New();
@@ -790,8 +779,9 @@ int vtkOOCFieldTracer::RequestData(
     {
     // copy the points
     vtkIdType nLinePts=lines[i]->CopyPointsTo(pLinePts);
-    pLinePts+=nLinePts;
+    pLinePts+=3*nLinePts;
     delete lines[i];
+
     // build the cell
     *pLineCells=nLinePts;
     ++pLineCells;
@@ -802,6 +792,27 @@ int vtkOOCFieldTracer::RequestData(
       ++ptId;
       }
     }
+
+  // //
+  // cerr << "nLinePtsAll=" << nLinePtsAll << endl;
+  // cerr << endl;
+  // cerr << "LinePts=(" << endl;
+  // float *plp=linePts->GetPointer(0);
+  // for (vtkIdType i=0; i<nLinePtsAll; ++i)
+  //   {
+  //   cerr << i << " -> " << plp[0] << "," << plp[1] << ", " << plp[2] << endl;
+  //   plp+=3;
+  //   }
+  // cerr << ")" << endl;
+  // //
+  // cerr << "LineCells=(" << endl;
+  // vtkIdType *pc=lineCells->GetPointer(0);
+  // for (vtkIdType i=0; i<nLinePtsAll+nPolysLocal; ++i)
+  //   {
+  //   cerr << " " << pc[i];
+  //   }
+  // cerr << ")" << endl;
+
   // put the lines into the output.
   info=outputVector->GetInformationObject(0);
   vtkPolyData *fieldLines
@@ -827,23 +838,6 @@ int vtkOOCFieldTracer::RequestData(
   return 1;
 }
 
-//  vtkPoints *seedPts=seeds->GetPoints();
-//   vtkIdType nSeedPts=seedPts->GetNumberOfPoints();
-//   vtkIdType seedPtsPerProc=nSeedPts/nProcs;
-//   vtkIdType seedPtsLeft=nSeedPts%nProcs;
-//   vtkIdType seedPtsLocal=seedPtsPerProc+(procId<seedPtsLeft?1:0);
-//   vtkIdType startPtId=procId<seedPtsLeft?procId*seedPtsLocal:procId*seedPtsLocal+seedPtsLeft;
-//   vtkIdType endPtId=startPtId+seedPtsLocal;
-//   double progInc=0.9/(double)seedPtsLocal;
-//   lines.resize(nSeedPtsLocal,0);
-//   for (vtkIdType j=startPtId, q=0; j<endPtId; ++j, ++q)
-//     {
-//     this->UdpateProgress(q*progInc);
-//     lines[q]=new FieldLine(seedPts->GetPoint(j),j);
-//     this->OOCIntegrateOne(oocr,lines[q],tcon);
-//     }
-
-
 //-----------------------------------------------------------------------------
 void vtkOOCFieldTracer::OOCIntegrateOne(
       vtkOOCReader *oocR,
@@ -861,7 +855,7 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
     double V0[3]={0.0};             // vector field interpolated at the start point
     double p0[3]={0.0};             // a start point
     double p1[3]={0.0};             // intergated point
-    vtkDataSet *nhood=vtkPolyData::New();// data in a neighborhood about the seed point
+    vtkDataSet *nhood=vtkPolyData::New();// data in a neighborhood of the seed point
     int numSteps=0;                 // number of steps taken in integration
     double stepSize=this->MaxStep;  // next recommended step size
     vtkInterpolatedVelocityField *interp;
@@ -875,13 +869,17 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
       // add the point to the line.
       line->PushPoint(i,p0);
 
+      #if defined vtkOOCFieldTracerDEBUG
       cerr << "   " << p0[0] << ", " << p0[1] << ", " << p0[2] << endl;
+      #endif
 
       // check integration limit
       if (lineLength>this->MaxLineLength
        || numSteps>this->MaxNumberOfSteps)
         {
+        #if defined vtkOOCFieldTracerDEBUG
         cerr << "Terminated: Integration limmit exceeded." << endl;
+        #endif
         line->SetTerminator(i,tcon->GetShortIntegrationId());
         break; // stop integrating
         }
@@ -889,7 +887,9 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
       // We are now integrated through all available.
       if (tcon->OutsideProblemDomain(p0))
         {
+        #if defined vtkOOCFieldTracerDEBUG
         cerr << "Terminated: Integration outside problem domain." << endl;
+        #endif
         line->SetTerminator(i,tcon->GetProblemDomainSurfaceId());
         break; // stop integrating
         }
@@ -924,7 +924,9 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
       // check for field null
       if ((speed==0) || (speed<=this->TerminalSpeed))
         {
+        #if defined vtkOOCFieldTracerDEBUG
         cerr << "Terminated: Field null encountered." << endl;
+        #endif
         line->SetTerminator(i,tcon->GetFieldNullId());
         break; // stop integrating
         }
@@ -933,23 +935,6 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
       vtkCell* cell=nhood->GetCell(interp->GetLastCellId());
       double cellLength=sqrt(cell->GetLength2());
       this->ClipStep(stepSize,stepSign,minStep,maxStep,cellLength,lineLength);
-
-      /**
-      // TODO there is quite a lot of logic related to integrate direction about
-      // would is make more sense to always assume a forward direction and flip sign
-      // on the vector field itself?
-
-      // If, with the next step, lineLength will be larger than
-      // max, reduce it so that it is (approximately) equal to max.
-      _Interval aStep;
-      aStep.Interval=fabs(stepSize);
-      if ((lineLength+aStep.Interval)>this->MaxLineLength)
-        {
-        aStep.Interval=this->MaxLineLength-lineLength;
-        stepSize=stepSize>=0?1.0:-1.0;
-        stepSize*=this->ConvertToLength(aStep.Interval,aStep.Unit,cellLength);
-        maxStep=stepSize;
-        }*/
 
       /// Integrate
       // Calculate the next step using the integrator provided.
@@ -966,8 +951,6 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
           error);
       interp->SetNormalizeVector(false);
 
-      /// cerr << stepSize << "==" << stepTaken << endl;
-
       // Use v=dx/dt to calculate speed and check if it is below
       // stagnation threshold
       double dx=0;
@@ -979,9 +962,22 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
       double v=dx/(dt+1E-12);
       if (v<=this->TerminalSpeed)
         {
+        #if defined vtkOOCFieldTracerDEBUG
         cerr << "Terminated: Field null encountered." << endl;
+        #endif
         line->SetTerminator(i,tcon->GetFieldNullId());
         break; // stop integrating
+        }
+
+      // check for line crossing a termination surface.
+      int surfIsect=tcon->SegmentTerminates(p0,p1);
+      if (surfIsect)
+        {
+        #if defined vtkOOCFieldTracerDEBUG
+        cerr << "Terminated: Surface " << surfIsect-1 << " hit." << endl;
+        #endif
+        line->SetTerminator(i,surfIsect);
+        break;
         }
 
       // Update the lineLength
@@ -1004,41 +1000,16 @@ double vtkOOCFieldTracer::ConvertToLength(
       double cellLength)
 {
   double retVal = 0.0;
-  if (unit==_Interval::LENGTH_UNIT )
+  if (unit==ARC_LENGTH )
     {
     retVal=interval;
     }
   else
-  if (unit==_Interval::CELL_LENGTH_UNIT)
+  if (unit==CELL_FRACTION)
     {
     retVal=interval*cellLength;
     }
   return retVal;
-}
-
-//-----------------------------------------------------------------------------
-void vtkOOCFieldTracer::ConvertIntervals(
-      double& step,
-      double& minStep,
-      double& maxStep,
-      int direction,
-      double cellLength)
-{
-  minStep = maxStep = step = 
-    direction * this->ConvertToLength( this->InitialStep,
-                                       this->StepUnit, cellLength );
-
-  if ( this->MinStep > 0.0 )
-    {
-    minStep = this->ConvertToLength( this->MinStep,
-                                     this->StepUnit, cellLength );
-    }
-
-  if ( this->MaxStep > 0.0 )
-    {
-    maxStep = this->ConvertToLength( this->MaxStep,
-                                     this->StepUnit, cellLength );
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -1075,523 +1046,9 @@ void vtkOOCFieldTracer::ClipStep(
   /// cerr << "Intervals: " << minStep << ", " << step << ", " << maxStep << ", " << direction << endl;
 }
 
-
 //-----------------------------------------------------------------------------
 void vtkOOCFieldTracer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
   // TODO
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// vtkExecutive* vtkOOCFieldTracer::CreateDefaultExecutive()
-// {
-//   return vtkCompositeDataPipeline::New();
-// }
-
-// //-----------------------------------------------------------------------------
-// void vtkOOCFieldTracer::Integrate(
-//       vtkDataSet *input0,
-//       vtkPolyData* output,
-//       vtkDataArray* seedSource, 
-//       vtkIdList* seedIds,
-//       vtkIntArray* integrationDirections,
-//       double lastPoint[3],
-//       vtkInterpolatedVelocityField* func,
-//       int maxCellSize,
-//       const char *vecName,
-//       double& inPropagation,
-//       vtkIdType& inNumSteps)
-// {
-//   int i;
-//   vtkIdType numLines = seedIds->GetNumberOfIds();
-//   double propagation = inPropagation;
-//   vtkIdType numSteps = inNumSteps;
-// 
-//   // Useful pointers
-//   vtkDataSetAttributes* outputPD = output->GetPointData();
-//   vtkDataSetAttributes* outputCD = output->GetCellData();
-// 
-// 
-//   int direction=1;
-// 
-//   double* weights = 0;
-//   if ( maxCellSize > 0 )
-//     {
-//     weights = new double[maxCellSize];
-//     }
-// 
-//   if (this->GetIntegrator() == 0)
-//     {
-//     vtkErrorMacro("No integrator is specified.");
-//     return;
-//     }
-// 
-//   // Used in GetCell() 
-//   vtkGenericCell* cell = vtkGenericCell::New();
-// 
-//   // Create a new integrator, the type is the same as Integrator
-//   vtkInitialValueProblemSolver* integrator=this->GetIntegrator()->NewInstance();
-//   integrator->SetFunctionSet(func);
-// 
-//   // Since we do not know what the total number of points
-//   // will be, we do not allocate any. This is important for
-//   // cases where a lot of streamers are used at once. If we
-//   // were to allocate any points here, potentially, we can
-//   // waste a lot of memory if a lot of streamers are used.
-//   // Always insert the first point
-//   vtkPoints* outputPoints = vtkPoints::New();
-//   vtkCellArray* outputLines = vtkCellArray::New();
-// 
-//   // We will keep track of integration time in this array
-//   vtkDoubleArray* time = vtkDoubleArray::New();
-//   time->SetName("IntegrationTime");
-// 
-//   // This array explains why the integration stopped
-//   vtkIntArray* retVals = vtkIntArray::New();
-//   retVals->SetName("ReasonForTermination");
-// 
-//   // This array assigns a unique id to each line. This does 
-//   // 2 things for you, 1) allows for treatment of line as a unit
-//   // and 2) lets you do a reverse lookup given the line get the
-//   // seed point.
-//   vtkIntArray *seedPointIds=vtkIntArray::New();
-//   seedPointIds->SetName("SeedPointIds");
-// 
-//   vtkDoubleArray* cellVectors = 0;
-//   vtkDoubleArray* vorticity = 0;
-//   vtkDoubleArray* rotation = 0;
-//   vtkDoubleArray* angularVel = 0;
-//   if (this->ComputeVorticity)
-//     {
-//     cellVectors = vtkDoubleArray::New();
-//     cellVectors->SetNumberOfComponents(3);
-//     cellVectors->Allocate(3*VTK_CELL_SIZE);
-// 
-//     vorticity = vtkDoubleArray::New();
-//     vorticity->SetName("Vorticity");
-//     vorticity->SetNumberOfComponents(3);
-// 
-//     rotation = vtkDoubleArray::New();
-//     rotation->SetName("Rotation");
-// 
-//     angularVel = vtkDoubleArray::New();
-//     angularVel->SetName("AngularVelocity");
-//     }
-//   // We will interpolate all point attributes of the input on
-//   // each point of the output (unless they are turned off)
-//   // Note that we are using only the first input, if there are more
-//   // than one, the attributes have to match.
-//   outputPD->InterpolateAllocate(input0->GetPointData());
-//   // Note:  It is an overestimation to have the estimate the same number of
-//   // output points and input points.  We sill have to squeeze at end.
-//   // TODO that seems like a gross overestimation....
-// 
-//   vtkIdType numPtsTotal=0;
-//   double velocity[3];
-// 
-//   int shouldAbort = 0;
-// 
-//   // Work each line by line, note a line is not a seed because each seed
-//   // may be traced in both directions producing two lines.
-//   /// TODO here is where work queue should be accessed.
-//   for(int currentLine = 0; currentLine < numLines; currentLine++)
-//     {
-// 
-//     double progress = static_cast<double>(currentLine)/numLines;
-//     this->UpdateProgress(progress);
-// 
-//     switch (integrationDirections->GetValue(currentLine))
-//       {
-//       case FORWARD:
-//         direction = 1;
-//         break;
-//       case BACKWARD:
-//         direction = -1;
-//         break;
-//       }
-// 
-//     // temporary variables used in the integration
-//     double point1[3], point2[3], pcoords[3], vort[3], omega;
-//     vtkIdType index, numPts=0;
-// 
-//     // Clear the last cell to avoid starting a search from
-//     // the last point in the streamline
-//     func->ClearLastCellId();
-// 
-//     // Initial point, if interpolation fails then skip this
-//     // line.
-//     seedSource->GetTuple(seedIds->GetId(currentLine), point1);
-//     memcpy(point2, point1, 3*sizeof(double));
-//     if (!func->FunctionValues(point1, velocity))
-//       {
-//       continue; // next line
-//       }
-// 
-//     // Stop integrating a line at predetermined length and step
-//     // limits.
-//     if(propagation>=this->MaximumPropagation
-//       || numSteps>this->MaximumNumberOfSteps)
-//       {
-//       continue; // next line
-//       }
-// 
-//     // Insert the starting point into the output.
-//     numPts++;
-//     numPtsTotal++;
-//     vtkIdType nextPoint = outputPoints->InsertNextPoint(point1);
-//     time->InsertNextValue(0.0);
-// 
-//     // We will always pass an arc-length step size to the integrator.
-//     // If the user specifies a step size in cell length unit, we will 
-//     // have to convert it to arc length.
-//     Interval stepSize;  // either positive or negative
-//     stepSize.Unit  = LENGTH_UNIT;
-//     stepSize.Interval = 0;
-//     Interval aStep; // always positive
-//     aStep.Unit = LENGTH_UNIT;
-//     double step, minStep=0, maxStep=0;
-//     double stepTaken, accumTime=0;
-//     double speed;
-//     double cellLength;
-//     int retVal=OUT_OF_LENGTH;
-// 
-//     // Get the input data. Make sure we use the same dataset as the
-//     // interpolator.
-//     vtkDataSet *input=func->GetLastDataSet();
-//     vtkPointData *inputPD=input->GetPointData();
-//     vtkDataArray *inVectorsinVectors=inputPD->GetVectors(vecName);
-// 
-//     // Convert intervals to arc-length unit
-//     input->GetCell(func->GetLastCellId(), cell);
-//     cellLength = sqrt(static_cast<double>(cell->GetLength2()));
-//     speed = vtkMath::Norm(velocity);
-//     // Never call conversion methods if speed == 0
-//     if (speed!=0.0)
-//       {
-//       this->ConvertIntervals(stepSize.Interval,minStep,maxStep,direction,cellLength);
-//       }
-// 
-//     // Interpolate all point attributes on first point
-//     func->GetLastWeights(weights);
-//     outputPD->InterpolatePoint(inputPD,nextPoint,cell->PointIds,weights);
-// 
-//     // Compute vorticity if required
-//     // This can be used later for streamribbon generation.
-//     if (this->ComputeVorticity)
-//       {
-//       inVectors->GetTuples(cell->PointIds, cellVectors);
-//       func->GetLastLocalCoordinates(pcoords);
-//       vtkOOCFieldTracer::CalculateVorticity(cell, pcoords, cellVectors, vort);
-//       vorticity->InsertNextTuple(vort);
-//       // rotation
-//       // local rotation = vorticity . unit tangent ( i.e. velocity/speed )
-//       if (speed != 0.0)
-//         {
-//         omega = vtkMath::Dot(vort,velocity);
-//         omega /= speed;
-//         omega *= this->RotationScale;
-//         }
-//       else
-//         {
-//         omega = 0.0;
-//         }
-//       angularVel->InsertNextValue(omega);
-//       rotation->InsertNextValue(0.0);
-//       }
-// 
-//     // Add seed point id. This can be used to select line
-//     // as a unit, and for reverse lookup, given the line
-//     // look up the seed point.
-//     vtkIdType seedPointId=seedIds->GetId(currentLine);
-//     seedPointIds->InsertNextValue(seedPointId);
-// 
-// 
-//     double error = 0;
-//     /// line integration.
-//     // Integrate until the maximum propagation length is reached, 
-//     // maximum number of steps is reached or until a boundary is encountered.
-//     // Begin Integration
-//     while (propagation<this->MaximumPropagation)
-//       {
-//       // check for step limit
-//       if (numSteps>this->MaximumNumberOfSteps)
-//         {
-//         retVal = OUT_OF_STEPS;
-//         break; // stop integrating
-//         }
-//       // check for field null
-//       if ( (speed == 0) || (speed <= this->TerminalSpeed) )
-//         {
-//         retVal = STAGNATION;
-//         break; // stop integrating 
-//         }
-// 
-//       // // every 1000 steps report progress...how about every field line?
-//       // if ( numSteps++ % 1000 == 1 )
-//       //   {
-//       //   progress = 
-//       //     ( currentLine + propagation / this->MaximumPropagation ) / numLines;
-//       //   this->UpdateProgress(progress);
-//       // 
-//       //   if (this->GetAbortExecute())
-//       //     {
-//       //     shouldAbort = 1;
-//       //     break;
-//       //     }
-//       //   }
-// 
-//       // If, with the next step, propagation will be larger than
-//       // max, reduce it so that it is (approximately) equal to max.
-//       aStep.Interval=fabs(stepSize.Interval);
-//       if ((propagation+aStep.Interval)>this->MaximumPropagation)
-//         {
-//         aStep.Interval=this->MaximumPropagation-propagation;
-//         // Keep the sign of the step size intacted
-//         if (stepSize.Interval>=0.0)
-//           {
-//           stepSize.Interval=this->ConvertToLength(aStep,cellLength);
-//           }
-//         else
-//           {
-//           stepSize.Interval=this->ConvertToLength(aStep,cellLength)*(-1.0);
-//           }
-//         maxStep=stepSize.Interval;
-//         }
-//       this->LastUsedStepSize = stepSize.Interval;
-// 
-//       /// Integrate
-//       // Calculate the next step using the integrator provided.
-//       // Note, both stepSizeInterval and stepTaken are modified
-//       // by the rk45 integrator.
-//       func->SetNormalizeVector(true);
-//       int out=integrator->ComputeNextStep(point1,point2,0,stepSize.Interval,
-//                                       stepTaken,minStep,maxStep,
-//                                       this->MaximumError,error);
-//       func->SetNormalizeVector(false);
-//       // Stop the integration because the point is out of bounds.
-//       if (out)
-//         {
-//         retVal=out;
-//         memcpy(lastPoint,point2,3*sizeof(double));
-//         break; // stop integrating
-//         }
-//       /// This has to change because it may be out side of the 
-//       /// interpolator but we may need to continue our integration
-//       /// loading the next neighborhood.
-// 
-// 
-//       // It is not enough to use the starting point for stagnation calculation
-//       // Use delX/stepSize to calculate speed and check if it is below
-//       // stagnation threshold
-//       double disp[3];
-//       for (i=0; i<3; i++)
-//         {
-//         disp[i] = point2[i] - point1[i];
-//         }
-//       if ( (stepSize.Interval == 0) ||
-//            (vtkMath::Norm(disp) / fabs(stepSize.Interval) <= this->TerminalSpeed) )
-//         {
-//         retVal = STAGNATION;
-//         break;
-//         }
-//       // Calculate propagation (using the same units as MaximumPropagation
-//       propagation+=fabs(stepTaken);
-//       accumTime+=stepTaken/speed;
-// 
-// 
-//       /// Prep for next step.
-//       // This is the next starting point
-//       for(i=0; i<3; i++)
-//         {
-//         point1[i] = point2[i];
-//         }
-// 
-//       // Interpolate the velocity at the next point
-//       if (!func->FunctionValues(point2, velocity))
-//         {
-//         retVal = OUT_OF_DOMAIN;
-//         memcpy(lastPoint, point2, 3*sizeof(double));
-//         break;
-//         }
-// 
-//       // Make sure we use the dataset found by the vtkInterpolatedVelocityField
-//       // TODO does this really change during line integration??
-//       input = func->GetLastDataSet();
-//       inputPD = input->GetPointData();
-//       inVectors = inputPD->GetVectors(vecName);
-// 
-//       // Point is valid. Insert it.
-//       numPts++;
-//       numPtsTotal++;
-//       nextPoint=outputPoints->InsertNextPoint(point1);
-// 
-// 
-//       // Calculate cell length and speed to be used in unit conversions
-//       input->GetCell(func->GetLastCellId(),cell);
-//       cellLength=sqrt(static_cast<double>(cell->GetLength2()));
-//       speed=vtkMath::Norm(velocity);
-// 
-//       // Interpolate all point attributes on current point
-//       func->GetLastWeights(weights);
-//       outputPD->InterpolatePoint(inputPD,nextPoint,cell->PointIds,weights);
-// 
-//       // Compute vorticity if required
-//       // This can be used later for streamribbon generation.
-//       if (this->ComputeVorticity)
-//         {
-//         time->InsertNextValue(accumTime);
-//         //
-//         inVectors->GetTuples(cell->PointIds, cellVectors);
-//         func->GetLastLocalCoordinates(pcoords);
-//         vtkOOCFieldTracer::CalculateVorticity(cell,pcoords,cellVectors,vort);
-//         vorticity->InsertNextTuple(vort);
-//         // rotation
-//         // angular velocity = vorticity . unit tangent ( i.e. velocity/speed )
-//         // rotation = sum ( angular velocity * stepSize )
-//         omega = vtkMath::Dot(vort, velocity);
-//         omega /= speed;
-//         omega *= this->RotationScale;
-//         index = angularVel->InsertNextValue(omega);
-//         rotation->InsertNextValue(rotation->GetValue(index-1) +
-//                                   (angularVel->GetValue(index-1) + omega)/2 * 
-//                                   (accumTime - time->GetValue(index-1)));
-//         }
-//       // Add seed point id. This can be used to select line
-//       // as a unit, and for reverse lookup, given the line
-//       // look up the seed point.
-//       vtkIdType seedPointId=seedIds->GetId(currentLine);
-//       seedPointIds->InsertNextValue(seedPointId);
-// 
-//       // Never call conversion methods if speed == 0
-//       if ( (speed == 0) || (speed <= this->TerminalSpeed) )
-//         {
-//         retVal = STAGNATION;
-//         break;
-//         }
-// 
-//       // Convert all intervals to arc length
-//       this->ConvertIntervals( step, minStep, maxStep, direction, cellLength );
-// 
-// 
-//       // If the solver is adaptive and the next step size (stepSize.Interval)
-//       // that the solver wants to use is smaller than minStep or larger 
-//       // than maxStep, re-adjust it. This has to be done every step
-//       // because minStep and maxStep can change depending on the cell
-//       // size (unless it is specified in arc-length unit)
-//       if (integrator->IsAdaptive())
-//         {
-//         if (fabs(stepSize.Interval) < fabs(minStep))
-//           {
-//           stepSize.Interval = fabs( minStep ) * 
-//                                 stepSize.Interval / fabs( stepSize.Interval );
-//           }
-//         else if (fabs(stepSize.Interval) > fabs(maxStep))
-//           {
-//           stepSize.Interval = fabs( maxStep ) * 
-//                                 stepSize.Interval / fabs( stepSize.Interval );
-//           }
-//         }
-//       else
-//         {
-//         stepSize.Interval = step;
-//         }
-//       } /// End Integration
-// 
-//     if (shouldAbort)
-//       {
-//       break;
-//       }
-// 
-//     if (numPts > 1)
-//       {
-//       outputLines->InsertNextCell(numPts);
-//       for (i=numPtsTotal-numPts; i<numPtsTotal; i++)
-//         {
-//         outputLines->InsertCellPoint(i);
-//         }
-//       retVals->InsertNextValue(retVal);
-//       }
-// 
-//     // Initialize these to 0 before starting the next line.
-//     // The values passed in the function call are only used
-//     // for the first line.
-//     inPropagation = propagation;
-//     inNumSteps = numSteps;
-// 
-//     propagation = 0;
-//     numSteps = 0;
-//     }
-// 
-//   if (!shouldAbort)
-//     {
-//     // Create the output polyline
-//     output->SetPoints(outputPoints);
-//     outputPD->AddArray(time);
-//     if (vorticity)
-//       {
-//       outputPD->AddArray(vorticity);
-//       outputPD->AddArray(rotation);
-//       outputPD->AddArray(angularVel);
-//       }
-// 
-//     outputPD->AddArray(seedPointIds);
-// 
-//     vtkIdType numPts = outputPoints->GetNumberOfPoints();
-//     if ( numPts > 1 )
-//       {
-//       // Assign geometry and attributes
-//       output->SetLines(outputLines);
-//       if (this->GenerateNormalsInIntegrate)
-//         {
-//         this->GenerateNormals(output, 0, vecName);
-//         }
-// 
-//       outputCD->AddArray(retVals);
-//       }
-//     }
-// 
-//   if (vorticity)
-//     {
-//     vorticity->Delete();
-//     rotation->Delete();
-//     angularVel->Delete();
-//     }
-// 
-//   seedPointIds->Delete();
-// 
-//   if (cellVectors)
-//     {
-//     cellVectors->Delete();
-//     }
-//   retVals->Delete();
-// 
-//   outputPoints->Delete();
-//   outputLines->Delete();
-// 
-//   time->Delete();
-// 
-// 
-//   integrator->Delete();
-//   cell->Delete();
-// 
-//   delete[] weights;
-//   
-//   output->Squeeze();
-//   return;
-// }
