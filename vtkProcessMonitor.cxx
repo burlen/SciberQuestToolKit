@@ -18,6 +18,10 @@
 
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
+#include "vtkDataObject.h"
+#include "vtkPolyData.h"
+#include "vtkInformation.h"
+#include "vtkInformationVector.h"
 #include "vtkMetaDataKeys.h"
 #include "vtkMultiProcessController.h"
 
@@ -66,13 +70,15 @@ vtkProcessMonitor::~vtkProcessMonitor()
 
 //----------------------------------------------------------------------------
 int vtkProcessMonitor::RequestInformation(
-  vtkInformation *vtkNotUsed(request),
-  vtkInformationVector **vtkNotUsed(inputVector),
-  vtkInformationVector *outputVector)
+  vtkInformation *request,
+  vtkInformationVector **inInfos,
+  vtkInformationVector *outInfos)
 {
   #if defined vtkProcessMonitorDEBUG
     cerr << "====================================================================RequestInformation" << endl;
   #endif
+
+  this->vtkPolyDataAlgorithm::RequestInformation(request,inInfos,outInfos);
 
   if (this->Controller)
     {
@@ -158,7 +164,7 @@ int vtkProcessMonitor::RequestInformation(
     free(hostnames);
     }
 
-  this->Modified();
+  // this->Modified();
 
   return 1;
 }
@@ -168,11 +174,21 @@ int vtkProcessMonitor::RequestInformation(
 int vtkProcessMonitor::RequestData(
   vtkInformation *vtkNotUsed(request),
   vtkInformationVector **vtkNotUsed(inputVector),
-  vtkInformationVector *outputVector)
+  vtkInformationVector *outInfos)
 {
   #if defined vtkProcessMonitorDEBUG
     cerr << "====================================================================RequestData" << endl;
   #endif
+
+  vtkInformation *outInfo=outInfos->GetInformationObject(0);
+  vtkPolyData *pdOut=dynamic_cast<vtkPolyData*>(outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  if (pdOut==0)
+    {
+    vtkWarningMacro("No output data found. Aborting request.");
+    return 1;
+    }
+  pdOut->Initialize();
+
   return 1;
 }
 

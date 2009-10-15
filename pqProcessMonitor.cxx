@@ -83,7 +83,7 @@ pqProcessMonitor::pqProcessMonitor(
       this, SLOT(UpdateInformationEvent()));
 
   // Set up configuration viewer
-  this->UpdateInformationEvent();
+  this->PullServerConfig();
 
   // set up buttons
   QObject::connect(this->Form->execButton,SIGNAL(clicked()),this,SLOT(ForkExec()));
@@ -114,6 +114,17 @@ void pqProcessMonitor::UpdateInformationEvent()
   #endif
   vtkSMProxy* dpProxy=this->referenceProxy()->getProxy();
 
+
+  // Let our superclass do the undocumented stuff that needs to be done.
+  // pqNamedObjectPanel::accept();
+}
+
+
+//-----------------------------------------------------------------------------
+void pqProcessMonitor::PullServerConfig()
+{
+  vtkSMProxy* dpProxy=this->referenceProxy()->getProxy();
+
   // client
   QTreeWidgetItem *clientGroup=new QTreeWidgetItem(this->Form->configView,QStringList("paraview"));
   clientGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
@@ -126,14 +137,6 @@ void pqProcessMonitor::UpdateInformationEvent()
   // pid
   pid_t clientPid=getpid();
   clientGroup->setText(2,QString("%1").arg(clientPid));
-
-//   QTreeWidgetItem *clientConfig=new QTreeWidgetItem(clientGroup);
-//   clientConfig->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
-//   clientConfig->setExpanded(true);
-//   clientConfig->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_LOCAL));
-//   // id
-//   clientConfig->setText(0,"paraview");
-  
 
   // server
   QTreeWidgetItem *serverGroup=new QTreeWidgetItem(this->Form->configView,QStringList("pvserver"));
@@ -149,12 +152,6 @@ void pqProcessMonitor::UpdateInformationEvent()
   string csBytes=csProp->GetElement(0);
 
   cerr << csBytes << endl;
-
-
-// vtkSMIntVectorProperty *serverDVMTimeProp
-//   =dynamic_cast<vtkSMIntVectorProperty *>(dbbProxy->GetProperty("DatabaseViewMTime"));
-// dbbProxy->UpdatePropertyInformation(serverDVMTimeProp);
-// const int *serverDVMTime=dvmtProp->GetElement(0);
 
   istringstream is(csBytes);
   if (csBytes.size()>0 && is.good())
@@ -184,9 +181,6 @@ void pqProcessMonitor::UpdateInformationEvent()
     {
     cerr << "Error: failed to get configuration stream. Aborting." << endl;
     }
-
-  // Let our superclass do the undocumented stuff that needs to be done.
-  pqNamedObjectPanel::accept();
 }
 
 //-----------------------------------------------------------------------------
@@ -334,6 +328,16 @@ void pqProcessMonitor::Signal()
     }
 }
 
+//-----------------------------------------------------------------------------
+void pqProcessMonitor::accept()
+{
+  #if defined pqProcessMonitorDEBUG
+  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::accept" << endl;
+  #endif
+
+  // Let our superclass do the undocumented stuff that needs to be done.
+  pqNamedObjectPanel::accept();
+}
 
 /// VTK stuffs
 //   // Connect to server side pipeline's UpdateInformation events.
