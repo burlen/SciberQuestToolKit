@@ -96,7 +96,7 @@ int vtkProcessMonitor::RequestInformation(
   this->Hostname=hostname;
   int hnLen=strlen(hostname)+1;
 
-  cerr << this->ProcId << " " << hnLen << " " << hostname << " " << this->Pid << endl;
+  /// cerr << this->ProcId << " " << hnLen << " " << hostname << " " << this->Pid << endl;
 
   // set root up for gather pid and hostname sizes
   int *pids=0;
@@ -155,7 +155,7 @@ int vtkProcessMonitor::RequestInformation(
       }
 
     this->SetConfigStream(os.str().c_str());
-    cerr << os.str() << endl;
+    /// cerr << os.str() << endl;
 
     // root cleans up.
     free(pids);

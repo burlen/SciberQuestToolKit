@@ -53,11 +53,23 @@ public:
   int OutsideWorkingDomain(double *p);
 
   // Description:
-  // Set the problem domain. See SegmentExistProblemDomain.
+  // Set the problem domain. See OutsideProblemDomain.
   void SetProblemDomain(double domain[6]);
   // Description:
-  // Set the working domain. See SegmentExitsWorkingDomain.
+  // Set the problem domain to an empty domain. See OutsideProblemDomain.
+  void ResetProblemDomain()
+    {
+    this->ResetDomain(this->ProblemDomain);
+    }
+  // Description:
+  // Set the working domain. See OutsideWorkingDomain.
   void SetWorkingDomain(double domain[6]);
+  // Description:
+  // Set the working domain to an empty domain. See OutsideWorkingDomain.
+  void ResetWorkingDomain()
+    {
+    this->ResetDomain(this->WorkingDomain);
+    }
   // Description:
   // Adds a termination surface. See SegmentTerminates.
   void PushSurface(vtkPolyData *pd, const char *name=0);
@@ -87,6 +99,8 @@ private:
   void DomainToLocator(vtkCellLocator *cellLoc, double dom[6]);
   // Helper, test if a point is inside a box.
   int Outside(double box[6], double pt[3]);
+  // Reset domain.
+  void ResetDomain(double dom[6]);
 
 private:
   double ProblemDomain[6];
@@ -144,6 +158,14 @@ int TerminationCondition::SegmentTerminates(double *p0, double *p1)
       }
     }
   return 0;
+}
+
+//-------------------------------------------------------------------------------
+inline
+void TerminationCondition::ResetDomain(double dom[6])
+{
+  dom[0]=dom[2]=dom[4]=1;
+  dom[1]=dom[3]=dom[5]=0;
 }
 
 // //-----------------------------------------------------------------------------

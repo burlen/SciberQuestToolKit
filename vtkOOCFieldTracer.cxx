@@ -454,12 +454,13 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
     double V0[3]={0.0};             // vector field interpolated at the start point
     double p0[3]={0.0};             // a start point
     double p1[3]={0.0};             // intergated point
-    vtkDataSet *nhood=vtkPolyData::New();// data in a neighborhood of the seed point
+    vtkDataSet *nhood=0;            // data in a neighborhood of the seed point
     int numSteps=0;                 // number of steps taken in integration
     double stepSize=this->MaxStep;  // next recommended step size
     vtkInterpolatedVelocityField *interp;
 
     line->GetSeedPoint(p0);
+    tcon->ResetWorkingDomain();
 
     // Integrate until the maximum line length is reached, maximum number of 
     // steps is reached or until a termination surface is encountered.
@@ -498,7 +499,7 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
       if (tcon->OutsideWorkingDomain(p0))
         {
         // Read data in the neighborhood of the seed point.
-        nhood->Delete();
+        if (nhood){ nhood->Delete(); }
         nhood=oocR->ReadNeighborhood(p0,this->OOCNeighborhoodSize);
         if (!nhood)
           {

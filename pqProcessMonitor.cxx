@@ -87,7 +87,7 @@ pqProcessMonitor::pqProcessMonitor(
 
   // set up buttons
   QObject::connect(this->Form->execButton,SIGNAL(clicked()),this,SLOT(ForkExec()));
-  QObject::connect(this->Form->signalButton,SIGNAL(clicked()),this,SLOT(Signal()));
+  //QObject::connect(this->Form->signalButton,SIGNAL(clicked()),this,SLOT(Signal()));
 
   // Let the super class do the undocumented stuff that needs to hapen.
   pqNamedObjectPanel::linkServerManagerProperties();
@@ -263,66 +263,66 @@ void pqProcessMonitor::ForkExec()
     }
 }
 
-//-----------------------------------------------------------------------------
-void pqProcessMonitor::Signal()
-{
-  #if defined pqProcessMonitorDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::Signal" << endl;
-  #endif
-
-  QTreeWidgetItem *item=this->Form->configView->currentItem();
-  if (item)
-    {
-    bool ok;
-    int type=item->data(0,PROCESS_TYPE).toInt(&ok);
-    if (!ok) return;
-    switch (type)
-      {
-      case PROCESS_TYPE_LOCAL:
-      case PROCESS_TYPE_REMOTE:
-        {
-        pid_t childPid=fork();
-        if (childPid==0)
-          {
-          string pidStr((const char *)item->text(2).toAscii());
-          string sigName("-");
-          sigName+=(const char *)this->Form->signalCombo->currentText().toAscii();
-          const char *const args[]={"kill",sigName.c_str(),pidStr.c_str(),0};
-          execvp(args[0],( char* const*)args);
-
-//           // use linux kill command
-//           const char exe[]="kill";
-//           // signame
-//           int sigNameLen=sigName.size()+1;
-//           args[0]=(char*)malloc(sigNameLen*sizeof(char));
-//           strncpy(args[0],sigName.c_str(),sigNameLen);
-//           // pid
+// //-----------------------------------------------------------------------------
+// void pqProcessMonitor::Signal()
+// {
+//   #if defined pqProcessMonitorDEBUG
+//   cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::Signal" << endl;
+//   #endif
+// 
+//   QTreeWidgetItem *item=this->Form->configView->currentItem();
+//   if (item)
+//     {
+//     bool ok;
+//     int type=item->data(0,PROCESS_TYPE).toInt(&ok);
+//     if (!ok) return;
+//     switch (type)
+//       {
+//       case PROCESS_TYPE_LOCAL:
+//       case PROCESS_TYPE_REMOTE:
+//         {
+//         pid_t childPid=fork();
+//         if (childPid==0)
+//           {
 //           string pidStr((const char *)item->text(2).toAscii());
-//           int pidStrLen=pidStr.size()+1;
-//           args[1]=(char*)malloc(pidStrLen*sizeof(char));
-//           strncpy(args[0],sigName.c_str(),pidStrLen);
-//           // end
-//           args[2]=0;
-//           // exec
-//           execvp(exe,args);
-          // should never get here
-          QMessageBox ebx;
-          ebx.setText("Exec failed.");
-          ebx.exec();
-          /// exit(0);
-          }
-        }
-        break;
-      case PROCESS_TYPE_INVALID:
-      default:
-        QMessageBox ebx;
-        ebx.setText("Could not signal. No process selected.");
-        ebx.exec();
-        return;
-        break;
-      }
-    }
-}
+//           string sigName("-");
+//           sigName+=(const char *)this->Form->signalCombo->currentText().toAscii();
+//           const char *const args[]={"kill",sigName.c_str(),pidStr.c_str(),0};
+//           execvp(args[0],( char* const*)args);
+// 
+// //           // use linux kill command
+// //           const char exe[]="kill";
+// //           // signame
+// //           int sigNameLen=sigName.size()+1;
+// //           args[0]=(char*)malloc(sigNameLen*sizeof(char));
+// //           strncpy(args[0],sigName.c_str(),sigNameLen);
+// //           // pid
+// //           string pidStr((const char *)item->text(2).toAscii());
+// //           int pidStrLen=pidStr.size()+1;
+// //           args[1]=(char*)malloc(pidStrLen*sizeof(char));
+// //           strncpy(args[0],sigName.c_str(),pidStrLen);
+// //           // end
+// //           args[2]=0;
+// //           // exec
+// //           execvp(exe,args);
+//           // should never get here
+//           QMessageBox ebx;
+//           ebx.setText("Exec failed.");
+//           ebx.exec();
+//           /// exit(0);
+//           }
+//         }
+//         break;
+//       case PROCESS_TYPE_INVALID:
+//       default:
+//         QMessageBox ebx;
+//         ebx.setText("Could not signal. No process selected.");
+//         ebx.exec();
+//         return;
+//         break;
+//       }
+//     }
+// }
 
 //-----------------------------------------------------------------------------
 void pqProcessMonitor::accept()

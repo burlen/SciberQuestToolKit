@@ -39,7 +39,7 @@ protected slots:
   // Description:
   // Attach a debugger to the selected process.
   void ForkExec();
-  void Signal();
+  // void Signal();
 
 private:
 

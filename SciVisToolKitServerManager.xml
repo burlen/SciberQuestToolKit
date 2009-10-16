@@ -542,7 +542,7 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
         command="AddSeedPointInputConnection"
         clean_command="ClearSeedPointInputConnections"
         label="Seed Cells"
-        multiple_input="1">
+        multiple_input="0">
            <ProxyGroupDomain name="groups">
              <Group name="sources"/>
              <Group name="filters"/>
@@ -721,6 +721,8 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
   </IntVectorProperty>
   <Hints>
     <Property name="TopologyMode" show="0"/>
+    <Property name="StepUnit" show="0"/>
+    <Property name="MaxError" show="0"/>
   </Hints>
    <!-- End OOCFieldTracer -->
 </SourceProxy>
@@ -749,6 +751,8 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
   </IntVectorProperty>
   <Hints>
     <Property name="TopologyMode" show="0"/>
+    <Property name="StepUnit" show="0"/>
+    <Property name="MaxError" show="0"/>
   </Hints>
    <!-- End FieldTracer -->
 </SourceProxy>
