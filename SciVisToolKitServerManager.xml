@@ -182,9 +182,11 @@
 </SourceProxy>
 
 </ProxyGroup>
-  
-  
+
   <ProxyGroup name="filters">
+
+ 
+    
 <!--==================================================================== -->
   <SourceProxy 
     name="vtkFieldTopologyAnalyzer" 
@@ -508,13 +510,13 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
    <!-- End StreamTracer -->
    </SourceProxy>
 
+
 <!-- ==================================================================== -->
- <SourceProxy name="vtkOOCFieldTracer" class="vtkOOCFieldTracer"
-    label="OOC Field Tracer">
+  <Proxy name="vtkOOCFieldTracerUI">
     <Documentation
-       long_help="Integrate field lines in a vector field."
-       short_help="Integrate field lines in a vector field.">
-The Stream Tracer filter generates streamlines in a vector field from a collection of seed points. Production of streamlines terminates if a streamline crosses the exterior boundary of the input dataset. Other reasons for termination are listed for the MaximumNumberOfSteps, TerminalSpeed, and MaximumPropagation properties. This filter operates on any type of dataset, provided it has point-centered vectors. The output is polygonal data containing polylines. 
+       long_help="Trace field lines in a vector field."
+       short_help="Trace field lines in a vector field.">
+      Trace field lines in a vector field.
     </Documentation>
     <!-- Dataset input -->
     <InputProperty
@@ -692,8 +694,64 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
        <Property name="StepUnit" show="0"/>
        <Property name="MaxError" show="0"/>
      </Hints>
-   <!-- End StreamTracer -->
-   </SourceProxy>
+   <!-- End FieldTracerUI -->
+   </Proxy>
+
+<!-- ==================================================================== -->
+<SourceProxy name="vtkOOCFieldTracer" 
+    class="vtkOOCFieldTracer"
+    label="OOC Field Tracer"
+    base_proxyname="vtkOOCFieldTracerUI"
+    base_proxygroup="filters">
+
+  <!-- Out -->
+  <OutputPort name="Field Lines" index="0" />
+
+  <!-- Meta Flag -->
+  <IntVectorProperty 
+    name="TopologyMode" 
+    command="SetTopologyMode" 
+    number_of_elements="1"
+    default_values="0">
+    <BooleanDomain name="bool"/>
+    <Documentation>
+    If checked topology mode is active and the filter produces a topology
+    map rather than field lines.
+    </Documentation>
+  </IntVectorProperty>
+  <Hints>
+    <Property name="TopologyMode" show="0"/>
+  </Hints>
+   <!-- End OOCFieldTracer -->
+</SourceProxy>
+
+<!-- ==================================================================== -->
+<SourceProxy name="vtkOOCFieldTopologyMapper" 
+    class="vtkOOCFieldTracer"
+    label="OOC Field Topology Mapper"
+    base_proxyname="vtkOOCFieldTracerUI"
+    base_proxygroup="filters">
+
+  <!-- Out -->
+  <OutputPort name="Topology Map" index="0" />
+
+  <!-- Meta Flag -->
+  <IntVectorProperty 
+    name="TopologyMode" 
+    command="SetTopologyMode" 
+    number_of_elements="1"
+    default_values="1">
+    <BooleanDomain name="bool"/>
+    <Documentation>
+    If checked topology mode is active and the filter produces a topology
+    map rather than field lines.
+    </Documentation>
+  </IntVectorProperty>
+  <Hints>
+    <Property name="TopologyMode" show="0"/>
+  </Hints>
+   <!-- End FieldTracer -->
+</SourceProxy>
 
 <!-- ==================================================================== -->
   <SourceProxy 
@@ -776,6 +834,14 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
      </IntVectorProperty>
   <!-- End vtkFieldAnalysis -->
   </SourceProxy>
+
+
+
+
+
+
+
+
 
 </ProxyGroup>
 <ProxyGroup name="sources">

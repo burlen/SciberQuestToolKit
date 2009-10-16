@@ -29,7 +29,8 @@ using std::string;
 using std::cerr;
 using std::endl;
 
-#define vtkProcessMonitorDEBUG
+// define the following ot enable debuging io
+// #define vtkProcessMonitorDEBUG
 
 class VTK_GRAPHICS_EXPORT vtkProcessMonitor : public vtkPolyDataAlgorithm
 {

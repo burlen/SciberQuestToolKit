@@ -78,12 +78,12 @@
        </property>
        <item>
         <property name="text">
-         <string>xterm -e ssh @HOST@ gdb --pid=@PID@</string>
+         <string>xterm -e ssh -t @HOST@ gdb --pid=@PID@</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>konsole -e ssh @HOST@ gdb --pid=@PID@</string>
+         <string>konsole -e ssh -t @HOST@ gdb --pid=@PID@</string>
         </property>
        </item>
        <item>

@@ -14,6 +14,7 @@
     <Filter name="vtkFieldTopologyAnalyzer"/>
     <Filter name="vtkDistributedFieldTracer"/>
     <Filter name="vtkOOCFieldTracer"/>
+    <Filter name="vtkOOCFieldTopologyMapper"/>
     <Filter name="vtkFieldAnalysis"/>
     <Source name="vtkSQPlaneSource"/>
     <Source name="vtkSQSphereSource"/>

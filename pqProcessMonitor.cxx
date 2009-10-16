@@ -19,7 +19,7 @@
 #include <unistd.h>
 
 #if defined pqProcessMonitorDEBUG
-//#include <PrintUtils.cxx>
+#include <PrintUtils.h>
 #endif
 
 #include <vtkstd/vector>
@@ -112,11 +112,7 @@ void pqProcessMonitor::UpdateInformationEvent()
   #if defined pqProcessMonitorDEBUG
   cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::UpdateInformationEvent" << endl;
   #endif
-  vtkSMProxy* dpProxy=this->referenceProxy()->getProxy();
-
-
-  // Let our superclass do the undocumented stuff that needs to be done.
-  // pqNamedObjectPanel::accept();
+  // vtkSMProxy* dpProxy=this->referenceProxy()->getProxy();
 }
 
 

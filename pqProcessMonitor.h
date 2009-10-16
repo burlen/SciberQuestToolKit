@@ -8,7 +8,8 @@
 #include "ui_pqProcessMonitorForm.h"//  no comment
 using Ui::pqProcessMonitorForm;
 
-#define pqProcessMonitorDEBUG
+// Define the following to enable debug io
+// #define pqProcessMonitorDEBUG
 
 class pqProxy;
 class vtkEventQtSlotConnect;

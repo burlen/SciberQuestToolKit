@@ -126,6 +126,8 @@ public:
     }
   /// reduce the number of colors to those which are used.
   void SqueezeColorMap(vtkIntArray *scalar){
+    int procId=0;
+    MPI_Comm_rank(MPI_COMM_WORLD,&procId);
     // Walk the color map, for any used color replace it with 
     // the number of colors used thus far. This will reduce
     // the color map to only the used colors.
@@ -140,9 +142,15 @@ public:
         int y=min(i,j);
         int idx=x+(this->NSurfaces+1)*y;
         int color=this->Colors[idx];
-        if (this->ColorsUsed[idx])
+        int colorUsed=0;
+        MPI_Allreduce(&this->ColorsUsed[idx],&colorUsed,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
+        if (colorUsed)
           {
-          cerr << this->ColorLegend[idx] << "->" << nUsed << endl;
+          // print the lengend.
+          if (procId==0)
+            {
+            cerr << this->ColorLegend[idx] << "->" << nUsed << endl;
+            }
           for (vtkIdType q=0; q<nCells; ++q)
             {
             // search and replace the old value with the new.

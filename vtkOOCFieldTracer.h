@@ -5,7 +5,6 @@
 /___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
 
 Copyright 2008 SciberQuest Inc.
-
 */
 // .NAME vtkOOCFieldTracer - Streamline generator
 // .SECTION Description
@@ -108,6 +107,13 @@ public:
   vtkSetMacro(OOCNeighborhoodSize,int);
   vtkGetMacro(OOCNeighborhoodSize,int);
 
+  // Description:
+  // Set the run mode of the filter. If this flag is set then a topology 
+  // map is produced in place of field lines. This allows this filter to
+  // serve as two ParaView filters, the OOCFieldTracer and the OOCTopologyMapper.
+  vtkSetMacro(TopologyMode,int);
+  vtkGetMacro(TopologyMode,int);
+
 protected:
   vtkOOCFieldTracer();
   ~vtkOOCFieldTracer();
@@ -120,10 +126,52 @@ protected:
   int RequestUpdateExtent(vtkInformation* req, vtkInformationVector** input, vtkInformationVector* output);
 
 private:
+  //BTX
+  // Description:
+  // Given a set of polygons (seedSource) that is assumed duplicated across
+  // all process in the communicator, extract an equal number of polygons
+  // on each process and compute seed points at the center of each local
+  // poly. The computed points are stored in new FieldLine structures. It is
+  // the callers responsibility to delete these structures.
+  // Return 0 if an error occurs. Upon successful completion the number
+  // of seed points is returned.
+  int PolyDataToSeeds(
+        int procId,
+        int nProcs,
+        vtkPolyData *seedSource,
+        vector<FieldLine*> &lines);
+  // Description:
+  // Given a set of polygons (seedSource) that is assumed duplicated across
+  // all process in the communicator, extract an equal number of polygons
+  // on each process and compute seed points at the center of each local
+  // poly. In addition copy the local polys (seedOut). The computed points
+  // are stored in new FieldLine structures. It is the callers responsibility
+  // to delete these structures.
+  // Return 0 if an error occurs. Upon successful completion the number
+  // of seed points is returned.
+  int PolyDataToSeeds(
+        int procId,
+        int nProcs,
+        vtkPolyData *seedSource,
+        vtkPolyData *seedOut,
+        vector<FieldLine*> &lines);
   // Description:
   // Trace one field line from the given seed point, using the given out-of-core
-  // reader.
-  void OOCIntegrateOne(vtkOOCReader *oocR,const char *fieldName,FieldLine *line,TerminationCondition *tcon);
+  // reader. As segments are generated they are tested using the stermination 
+  // condition and terminated imediately.
+  void OOCIntegrateOne(
+        vtkOOCReader *oocR,
+        const char *fieldName,
+        FieldLine *line,
+        TerminationCondition *tcon);
+  // Description:
+  // USe the set of field lines to construct a vtk polydata set. Field line structures
+  // are deleted as theya re coppied.
+  int FieldLinesToPolydata(
+        vector<FieldLine*> &lines,
+        vtkIdType nPtsTotal,
+        vtkPolyData *fieldLines);
+  //ETX
 
   // Description:
   // Convert from cell fractional unit into length.
@@ -142,8 +190,8 @@ private:
   void operator=(const vtkOOCFieldTracer&);  // Not implemented.
 
 private:
-  // Prototype showing the integrator type to be set by the user.
   vtkInitialValueProblemSolver* Integrator;
+  vtkMultiProcessController *Controller;
 
   // Parameters controlling integration,
   int StepUnit;
@@ -154,18 +202,16 @@ private:
   vtkIdType MaxNumberOfSteps;
   double MaxLineLength;
   double TerminalSpeed;
-  vtkMultiProcessController *Controller;
 
   static const double EPSILON;
 
-  // Parameter to adjust the size of data reads.
+  // Reader related
   int OOCNeighborhoodSize;
-
-  // This object is used to stop integration when field line
-  // crosses one of a given set of surfaces. It also has logic
-  // for detecting when a field line leaves a region defined
-  // by a box.
   TerminationCondition *TermCon;
+
+  // Output controls
+  int TopologyMode;
+
 
   //BTX
   // units

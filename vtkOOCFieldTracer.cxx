@@ -53,164 +53,12 @@ PURPOSE.  See the above copyright notice for more information.
 using std::map;
 using std::pair;
 
+#include "FieldLine.h"
+
 vtkCxxRevisionMacro(vtkOOCFieldTracer, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkOOCFieldTracer);
 
 const double vtkOOCFieldTracer::EPSILON = 1.0E-12;
-
-//=============================================================================
-class FieldLine
-{
-public:
-  FieldLine(double p[3], int seedId=0)
-      :
-    FwdTrace(0),
-    BwdTrace(0),
-    SeedId(seedId),
-    FwdTerminator(0),
-    BwdTerminator(0)
-    {
-    this->Seed[0]=p[0];
-    this->Seed[1]=p[1];
-    this->Seed[2]=p[2];
-
-    this->FwdTrace=vtkFloatArray::New();
-    this->FwdTrace->SetNumberOfComponents(3);
-    this->FwdTrace->Allocate(128);
-    this->BwdTrace=vtkFloatArray::New();
-    this->BwdTrace->SetNumberOfComponents(3);
-    this->BwdTrace->Allocate(128);
-    }
-  FieldLine(const FieldLine &other)
-    {
-    *this=other;
-    }
-  ~FieldLine()
-    {
-    this->FwdTrace->Delete();
-    this->BwdTrace->Delete();
-    }
-  const FieldLine &operator=(const FieldLine &other)
-    {
-    if (&other==this)
-      {
-      return *this;
-      }
-    this->Seed[0]=other.Seed[0];
-    this->Seed[1]=other.Seed[1];
-    this->Seed[2]=other.Seed[2];
-
-    this->SeedId=other.SeedId;
-
-    this->FwdTerminator=other.FwdTerminator;
-    this->BwdTerminator=other.BwdTerminator;
-
-    this->FwdTrace->Delete();
-    this->FwdTrace=other.FwdTrace;
-    this->FwdTrace->Register(0);
-    this->BwdTrace->Delete();
-    this->BwdTrace=other.BwdTrace;
-    this->BwdTrace->Register(0);
-    }
-  void PushPoint(int dir,float *p)
-    {
-    assert((dir>=0)&&(dir<=1));
-    vtkFloatArray *line=dir==0?BwdTrace:FwdTrace;
-    line->InsertNextTuple(p);
-    }
-  void PushPoint(int dir,double *p)
-    {
-    assert((dir>=0)&&(dir<=1));
-    vtkFloatArray *line=dir==0?BwdTrace:FwdTrace;
-    line->InsertNextTuple(p);
-    }
-  void SetTerminator(int dir, int code)
-    {
-    assert((dir>=0)&&(dir<=1));
-    int *term=dir==0?&this->BwdTerminator:&this->FwdTerminator;
-    *term=code;
-    }
-
-  int GetForwardTerminator() const
-    {
-    return this->FwdTerminator;
-    }
-  int GetBackwardTerminator() const
-    {
-    return this->BwdTerminator;
-    }
-  int GetSeedId() const
-    {
-    return this->SeedId;
-    }
-  float *GetSeedPoint()
-    {
-    return this->Seed;
-    }
-  const float *GetSeedPoint() const
-    {
-    return this->Seed;
-    }
-  void GetSeedPoint(float p[3]) const
-    {
-    p[0]=this->Seed[0];
-    p[1]=this->Seed[1];
-    p[2]=this->Seed[2];
-    }
-  void GetSeedPoint(double p[3]) const
-    {
-    p[0]=this->Seed[0];
-    p[1]=this->Seed[1];
-    p[2]=this->Seed[2];
-    }
-  vtkIdType GetNumberOfPoints()
-    {
-    return
-    this->FwdTrace->GetNumberOfTuples()+this->BwdTrace->GetNumberOfTuples()-1;
-    // less one because seed point is duplicated in both.
-    }
-  vtkIdType CopyPointsTo(float *pts)
-    {
-    // Copy the bwd running field line, reversing its order
-    // so it ends on the seed point.
-    vtkIdType nPtsBwd=this->BwdTrace->GetNumberOfTuples();
-    float *pbtr=this->BwdTrace->GetPointer(0);
-    pbtr+=3*nPtsBwd-3;
-    for (vtkIdType i=0; i<nPtsBwd; ++i,pts+=3,pbtr-=3)
-      {
-      pts[0]=pbtr[0];
-      pts[1]=pbtr[1];
-      pts[2]=pbtr[2];
-      }
-    // Copy the forward running field line, skip the
-    // seed point as we already coppied it.
-    vtkIdType nPtsFwd=this->FwdTrace->GetNumberOfTuples();
-    float *pftr=this->FwdTrace->GetPointer(0);
-    pftr+=3; // skip
-    for (vtkIdType i=1; i<nPtsFwd; ++i,pts+=3,pftr+=3)
-      {
-      pts[0]=pftr[0];
-      pts[1]=pftr[1];
-      pts[2]=pftr[2];
-      }
-    return nPtsBwd+nPtsFwd-1;
-    }
-
-private:
-  FieldLine();
-
-private:
-  vtkFloatArray *FwdTrace;
-  vtkFloatArray *BwdTrace;
-  float Seed[3];
-  int SeedId;
-  int FwdTerminator;
-  int BwdTerminator;
-};
-
-
-//*****************************************************************************
-
 
 //-----------------------------------------------------------------------------
 vtkOOCFieldTracer::vtkOOCFieldTracer()
@@ -223,17 +71,14 @@ vtkOOCFieldTracer::vtkOOCFieldTracer()
   MaxNumberOfSteps(1000),
   MaxLineLength(1E6),
   TerminalSpeed(1E-6),
-  OOCNeighborhoodSize(15)
+  OOCNeighborhoodSize(15),
+  TopologyMode(0)
 {
   this->Integrator=vtkRungeKutta45::New();
   this->TermCon=new TerminationCondition;
   this->Controller=vtkMultiProcessController::GetGlobalController();
   this->SetNumberOfInputPorts(3);
-  #if defined vtkOOCFieldTracerAllOut
-  this->SetNumberOfOutputPorts(3);
-  #else
-  this->SetNumberOfOutputPorts(2);
-  #endif
+  this->SetNumberOfOutputPorts(1);
 }
 
 //-----------------------------------------------------------------------------
@@ -257,7 +102,7 @@ int vtkOOCFieldTracer::FillInputPortInformation(int port, vtkInformation *info)
       break;
     // Seed points
     case 1:
-      info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
+      info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPolyData");
       break;
     // termination Surface
     case 2:
@@ -280,7 +125,7 @@ int vtkOOCFieldTracer::FillOutputPortInformation(int port, vtkInformation *info)
   #endif
   // 2 Outputs:
   //   0 - feild lines
-  //   1 - Seed points
+  //   1 - Seed cells
   switch (port)
     {
     case 0:
@@ -393,7 +238,7 @@ int vtkOOCFieldTracer::RequestUpdateExtent(
   // only process 0 gets the source data.
 
   // Seed point input.
-  int nSources=inputVector[0]->GetNumberOfInformationObjects();
+  int nSources=inputVector[1]->GetNumberOfInformationObjects();
   for (int i=0; i<nSources; ++i)
     {
     vtkInformation *sourceInfo = inputVector[1]->GetInformationObject(i);
@@ -406,10 +251,10 @@ int vtkOOCFieldTracer::RequestUpdateExtent(
     }
 
   // Terminator surface input.
-  nSources=inputVector[1]->GetNumberOfInformationObjects();
+  nSources=inputVector[2]->GetNumberOfInformationObjects();
   for (int i=0; i<nSources; ++i)
     {
-    vtkInformation *sourceInfo = inputVector[1]->GetInformationObject(i);
+    vtkInformation *sourceInfo = inputVector[2]->GetInformationObject(i);
     if (sourceInfo)
       {
       sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(),0);
@@ -450,10 +295,6 @@ int vtkOOCFieldTracer::RequestData(
   int procId=this->Controller->GetLocalProcessId();
   int nProcs=this->Controller->GetNumberOfProcesses();
 
-  #if defined vtkOOCFieldTracerDEBUG
-  cerr << procId <<  " " << getpid() << endl;
-  #endif
-
   vtkInformation *info;
   // Get the input on the first port. This should be the dummy dataset 
   // produced by ameta-reader. The information object should have the
@@ -462,12 +303,11 @@ int vtkOOCFieldTracer::RequestData(
   if (!info->Has(vtkOOCReader::READER()))
     {
     vtkWarningMacro(
-        "OOCReader object not present in input pipeline "
-        "information! Aborting request.");
+        "OOCReader object not present in input pipeline information! Aborting request.");
     return 1;
     }
-  vtkOOCReader *oocr
-    = dynamic_cast<vtkOOCReader*>(info->Get(vtkOOCReader::READER()));
+  vtkSmartPointer<vtkOOCReader> oocr;
+  oocr=dynamic_cast<vtkOOCReader*>(info->Get(vtkOOCReader::READER()));
   if (!oocr)
     {
     vtkWarningMacro(
@@ -477,7 +317,7 @@ int vtkOOCFieldTracer::RequestData(
   // Configure the reader (TODO should I make a copy?)
   vtkInformation *arrayInfo=this->GetInputArrayInformation(0);
   const char *fieldName=arrayInfo->Get(vtkDataObject::FIELD_NAME());
-  oocr->Register(0);
+  //oocr->Register(0);
   oocr->DeActivateAllArrays();
   oocr->ActivateArray(fieldName);
 
@@ -508,19 +348,16 @@ int vtkOOCFieldTracer::RequestData(
       vtkWarningMacro("Termination surface is not polydata. Skipping.");
       continue;
       }
-
     const char *surfName=0;
     if (info->Has(vtkMetaDataKeys::DESCRIPTIVE_NAME()))
       {
       surfName=info->Get(vtkMetaDataKeys::DESCRIPTIVE_NAME());
       }
     tcon.PushSurface(pd,surfName);
-
     }
   tcon.InitializeColorMapper();
 
-  // Get seed points from the required second input, at the same time
-  // we'll construct the output.
+
   // TODO for now we consider a seed single source, but we should handle
   // multiple sources.
   info=inputVector[1]->GetInformationObject(0);
@@ -532,308 +369,70 @@ int vtkOOCFieldTracer::RequestData(
     return 1;
     }
 
-  // TODO to make this easier for now we only suppport polygonal cells,
-  // Here we break up the work load. This assumes that the seed source is duplicated
-  // on all processes. RequestInformation is configured to make this happen.
-  vtkIdType nPolys=seedSource->GetNumberOfPolys();
-  if (nPolys==0)
-    {
-    vtkWarningMacro("Did not find supported cell type in seed source. Aborting request.");
-    return 1;
-    }
-  vtkIdType nPolysPerProc=nPolys/nProcs;
-  vtkIdType nPolysLeft=nPolys%nProcs;
-  vtkIdType nPolysLocal=nPolysPerProc+(procId<nPolysLeft?1:0);
-  vtkIdType startPolyId=procId<nPolysLeft?procId*nPolysLocal:procId*nPolysLocal+nPolysLeft;
-  // vtkIdType endPolyId=startPolyId+nPolysLocal;
-
-  // Cells are sequentially acccessed (not random) so explicitly skip all cells
-  // we aren't interested in.
-  vtkCellArray *seedSourcePolys=seedSource->GetPolys();
-  seedSourcePolys->InitTraversal();
-  for (vtkIdType i=0; i<startPolyId; ++i)
-    {
-    vtkIdType n;
-    vtkIdType *ptIds;
-    seedSourcePolys->GetNextCell(n,ptIds);
-    }
-  // For each cell asigned to us we'll get its center (this is the seed point)
-  // and build corresponding cell in the output, The output only will have
-  // the cells assigned to this process.
-  vtkFloatArray *seedSourcePts
-    = dynamic_cast<vtkFloatArray*>(seedSource->GetPoints()->GetData());
-  if (seedSourcePts==0)
-    {
-    vtkWarningMacro("Seed source points are not float. Aborting request.");
-    return 1;
-    }
-  float *pSeedSourcePts=seedSourcePts->GetPointer(0);
-
-  // polygonal cells
-  vtkFloatArray *seedOutPolyPts=vtkFloatArray::New();
-  seedOutPolyPts->SetNumberOfComponents(3);
-  vtkIdTypeArray *seedOutPolyCells=vtkIdTypeArray::New();
-  vtkIdType nCellIds=0;
-  vtkIdType nSeedOutPolyPts=0;
-  vtkIdType polyId=startPolyId;
-
-  #if defined vtkOOCFieldTracerAllOut
-  // polygonal cell centers
-  vtkFloatArray *seedOutCellCenterPts=vtkFloatArray::New();
-  seedOutCellCenterPts->SetNumberOfComponents(3);
-  seedOutCellCenterPts->SetNumberOfTuples(nPolysLocal);
-  float *pSeedOutCellCenterPts=seedOutCellCenterPts->GetPointer(0);
-  vtkIdTypeArray *seedOutCellCenterCells=vtkIdTypeArray::New();
-  seedOutCellCenterCells->SetNumberOfTuples(2*nPolysLocal);
-  vtkIdType *pSeedOutCellCenterCells=seedOutCellCenterCells->GetPointer(0);
-  #endif
-
-  vector<FieldLine *> lines(nPolysLocal,0);
-
-  map<vtkIdType,vtkIdType> idMap;
-
-  for (vtkIdType i=0; i<nPolysLocal; ++i)
-    {
-    // Get the cell that belong to us.
-    vtkIdType nPtIds;
-    vtkIdType *ptIds;
-    seedSourcePolys->GetNextCell(nPtIds,ptIds);
-
-    /// cerr << ptIds[0];
-    /// for (int q=1; q<nPtIds; ++q){cerr << ", " << ptIds[q];}
-    /// cerr << endl;
-
-    // Get location to write new cell.
-    vtkIdType *pSeedOutPolyCells=seedOutPolyCells->WritePointer(nCellIds,nPtIds+1);
-    // update next cell write location.
-    nCellIds+=nPtIds+1;
-    // number of points in this cell
-    *pSeedOutPolyCells=nPtIds;
-    ++pSeedOutPolyCells;
-
-    // Get location to write new point. assumes we need to copy all
-    // but this is wrong as there will be many duplicates. ignored.
-    float *pSeedOutPolyPts=seedOutPolyPts->WritePointer(3*nSeedOutPolyPts,3*nPtIds);
-    // the seed point we will use the center of the cell
-    double seed[3]={0.0};
-    // transfer from input to output (only what we own)
-    for (vtkIdType j=0; j<nPtIds; ++j,++pSeedOutPolyCells)
-      {
-      vtkIdType idx=3*ptIds[j];
-      // do we already have this point?
-      pair<vtkIdType,vtkIdType> elem(ptIds[j],nSeedOutPolyPts);
-      pair<map<vtkIdType,vtkIdType>::iterator,bool> ret=idMap.insert(elem);
-      if (ret.second==true)
-        {
-        /// cerr << "    " << ptIds[j] << " -> " << nSeedOutPolyPts << endl;
-        // this point hasn't previsouly been coppied
-        // copy the point.
-        pSeedOutPolyPts[0]=pSeedSourcePts[idx  ];
-        pSeedOutPolyPts[1]=pSeedSourcePts[idx+1];
-        pSeedOutPolyPts[2]=pSeedSourcePts[idx+2];
-
-        /// cerr << pSeedOutPolyPts[0] << ", " << pSeedOutPolyPts[1] << ", " << pSeedOutPolyPts[2] << endl;
-
-        pSeedOutPolyPts+=3;
-
-        // insert the new point id.
-        *pSeedOutPolyCells=nSeedOutPolyPts;
-        ++nSeedOutPolyPts;
-        }
-      else
-        {
-        // this point has been coppied, do not add a duplicate.
-        // insert the other point id.
-        *pSeedOutPolyCells=(*ret.first).second;
-        }
-      // compute contribution to cell center.
-      seed[0]+=pSeedSourcePts[idx  ];
-      seed[1]+=pSeedSourcePts[idx+1];
-      seed[2]+=pSeedSourcePts[idx+2];
-      }
-    // finsih the seed point computation (at cell center).
-    seed[0]/=nPtIds;
-    seed[1]/=nPtIds;
-    seed[2]/=nPtIds;
-
-    #if defined vtkOOCFieldTracerAllOut
-    pSeedOutCellCenterPts[0]=seed[0];
-    pSeedOutCellCenterPts[1]=seed[1];
-    pSeedOutCellCenterPts[2]=seed[2];
-    pSeedOutCellCenterPts+=3;
-
-    pSeedOutCellCenterCells[0]=1;
-    pSeedOutCellCenterCells[1]=i;
-    pSeedOutCellCenterCells+=2;
-    #endif
-
-    lines[i]=new FieldLine(seed,polyId);
-    ++polyId;
-    }
-
-  // correct the length of the point array, above we assumed 
-  // that all points from each cell needed to be inserted
-  // and allocated that much space.
-  seedOutPolyPts->SetNumberOfTuples(nSeedOutPolyPts);
-
-  // put the new cells and points into the filter's output.
-  info=outputVector->GetInformationObject(1);
-  vtkPolyData *seedOutPolyPd
-    = dynamic_cast<vtkPolyData*>(info->Get(vtkDataObject::DATA_OBJECT()));
-  if (seedOutPolyPd==0)
-    {
-    vtkWarningMacro("Seed point output is not polydata. Aborting request.");
-    return 1;
-    }
-  vtkPoints *seedOutPolyPoints=vtkPoints::New();
-  seedOutPolyPoints->SetData(seedOutPolyPts);
-  seedOutPolyPd->SetPoints(seedOutPolyPoints);
-  seedOutPolyPoints->Delete();
-  seedOutPolyPts->Delete();
-
-  vtkCellArray *seedOutPolys=vtkCellArray::New();
-  seedOutPolys->SetCells(nPolysLocal,seedOutPolyCells);
-  seedOutPolyPd->SetPolys(seedOutPolys);
-  seedOutPolys->Delete();
-  seedOutPolyCells->Delete();
-
-  #if defined vtkOOCFieldTracerAllOut
-  // put the new verts into the filters output.
-  info=outputVector->GetInformationObject(2);
-  vtkPolyData *seedOutCellCenterPd
-    = dynamic_cast<vtkPolyData*>(info->Get(vtkDataObject::DATA_OBJECT()));
-  if (seedOutCellCenterPd==0)
-    {
-    vtkWarningMacro("Seed point output is not polydata. Aborting request.");
-    return 1;
-    }
-  // points
-  vtkPoints *seedOutCellCenterPoints=vtkPoints::New();
-  seedOutCellCenterPoints->SetData(seedOutCellCenterPts);
-  seedOutCellCenterPd->SetPoints(seedOutCellCenterPoints);
-  seedOutCellCenterPoints->Delete();
-  seedOutCellCenterPts->Delete();
-  // cells
-  vtkCellArray *seedOutCellCenterVerts=vtkCellArray::New();
-  seedOutCellCenterVerts->SetCells(nPolysLocal,seedOutCellCenterCells);
-  seedOutCellCenterPd->SetVerts(seedOutCellCenterVerts);
-  seedOutCellCenterVerts->Delete();
-  seedOutCellCenterCells->Delete();
-  #endif
-
-
-  /*
-  cerr << endl << endl;
-  int nTups=seedOutPts->GetNumberOfTuples();
-  for (int i=0; i<nTups; ++i)
-    {
-    double t[3];
-    seedOutPts->GetTuple(i,t);
-    cerr << t[0] << ", " << t[1] << ", " << t[2] << endl;
-    }*/
-
-  // put the points and cells just defined into the output.
-  /// cerr << "npts " << seedOutPts->GetNumberOfTuples() << endl;
-  /// vtkIdType *pc=seedOutCells->GetPointer(0);
-  /// int nTup=seedOutCells->GetNumberOfTuples();
-  /// for (int i=0; i<nTup;++i)
-  ///   {
-  ///   cerr << pc[i] << ", ";
-  ///   }
-
-  /// seedOutPolyPd->Print(cerr);
-  /// seedOutCellCenterPd->Print(cerr);
-
-
-  // integrate and build surface intersection color array.
-  vtkIntArray *intersectColor=vtkIntArray::New();
-  intersectColor->SetNumberOfTuples(nPolysLocal);
-  intersectColor->SetName("IntersectColor");
-  int *pColor=intersectColor->GetPointer(0);
-  vtkIdType nLinePtsAll=0;
-  double progInc=0.8/(double)nPolysLocal;
-  for (vtkIdType i=0; i<nPolysLocal; ++i)
-    {
-    FieldLine *line=lines[i];
-    this->UpdateProgress(i*progInc+0.10);
-    this->OOCIntegrateOne(oocr,fieldName,line,&tcon);
-    pColor[i]
-    =tcon.GetTerminationColor(line->GetForwardTerminator(),line->GetBackwardTerminator());
-    nLinePtsAll+=line->GetNumberOfPoints();
-    }
-  // place the color color into the polygonal cell output.
-  tcon.SqueezeColorMap(intersectColor);
-  seedOutPolyPd->GetCellData()->AddArray(intersectColor);
-  intersectColor->Delete();
-
-  // construct lines from the integrations.
-  vtkFloatArray *linePts=vtkFloatArray::New();
-  linePts->SetNumberOfComponents(3);
-  linePts->SetNumberOfTuples(nLinePtsAll);
-  float *pLinePts=linePts->GetPointer(0);
-  vtkIdTypeArray *lineCells=vtkIdTypeArray::New();
-  lineCells->SetNumberOfTuples(nLinePtsAll+nPolysLocal);
-  vtkIdType *pLineCells=lineCells->GetPointer(0);
-  vtkIdType ptId=0;
-  for (vtkIdType i=0; i<nPolysLocal; ++i)
-    {
-    // copy the points
-    vtkIdType nLinePts=lines[i]->CopyPointsTo(pLinePts);
-    pLinePts+=3*nLinePts;
-    delete lines[i];
-
-    // build the cell
-    *pLineCells=nLinePts;
-    ++pLineCells;
-    for (vtkIdType q=0; q<nLinePts; ++q)
-      {
-      *pLineCells=ptId;
-      ++pLineCells;
-      ++ptId;
-      }
-    }
-
-  // //
-  // cerr << "nLinePtsAll=" << nLinePtsAll << endl;
-  // cerr << endl;
-  // cerr << "LinePts=(" << endl;
-  // float *plp=linePts->GetPointer(0);
-  // for (vtkIdType i=0; i<nLinePtsAll; ++i)
-  //   {
-  //   cerr << i << " -> " << plp[0] << "," << plp[1] << ", " << plp[2] << endl;
-  //   plp+=3;
-  //   }
-  // cerr << ")" << endl;
-  // //
-  // cerr << "LineCells=(" << endl;
-  // vtkIdType *pc=lineCells->GetPointer(0);
-  // for (vtkIdType i=0; i<nLinePtsAll+nPolysLocal; ++i)
-  //   {
-  //   cerr << " " << pc[i];
-  //   }
-  // cerr << ")" << endl;
-
-  // put the lines into the output.
+  // Get the filter's output.
   info=outputVector->GetInformationObject(0);
-  vtkPolyData *fieldLines
+  vtkPolyData *output
     = dynamic_cast<vtkPolyData*>(info->Get(vtkDataObject::DATA_OBJECT()));
-  if (fieldLines==0)
+  if (output==0)
     {
-    vtkWarningMacro("Failed to get field line output. Aborting request.");
+    vtkWarningMacro("Output polydata was not present. Aborting request.");
     return 1;
     }
-  // points
-  vtkPoints *fieldLinePoints=vtkPoints::New();
-  fieldLinePoints->SetData(linePts);
-  fieldLines->SetPoints(fieldLinePoints);
-  fieldLinePoints->Delete();
-  linePts->Delete();
-  // cells
-  vtkCellArray *fieldLineCells=vtkCellArray::New();
-  fieldLineCells->SetCells(nPolysLocal,lineCells);
-  fieldLines->SetLines(fieldLineCells);
-  fieldLineCells->Delete();
-  lineCells->Delete();
+
+
+
+
+
+  // There are two modes of operation, the traditional
+  // FieldLine mode and a Topology mode. In FieldLine mode the output contains
+  // field lines. In Topology mode the output contains seed cells colored by
+  // where the field line terminated.
+  if (this->TopologyMode)
+    {
+    vector<FieldLine *> lines;
+    // compute seed points (centered on cells of input). Copy the cells
+    // on which we operate into the output.
+    vtkIdType nLines
+      =this->PolyDataToSeeds(procId,nProcs,seedSource,output,lines);
+    // integrate and build surface intersection color array.
+    vtkIntArray *intersectColor=vtkIntArray::New();
+    intersectColor->SetNumberOfTuples(nLines);
+    intersectColor->SetName("IntersectColor");
+    int *pColor=intersectColor->GetPointer(0);
+    double progInc=0.8/(double)nLines;
+    for (vtkIdType i=0; i<nLines; ++i)
+      {
+      FieldLine *line=lines[i];
+      this->UpdateProgress(i*progInc+0.10);
+      this->OOCIntegrateOne(oocr,fieldName,line,&tcon);
+      pColor[i]
+      =tcon.GetTerminationColor(line->GetForwardTerminator(),line->GetBackwardTerminator());
+      delete line;
+      lines[i]=0;
+      }
+    // place the color color into the polygonal cell output.
+    tcon.SqueezeColorMap(intersectColor);
+    output->GetCellData()->AddArray(intersectColor);
+    intersectColor->Delete();
+    }
+  else
+    {
+    vector<FieldLine *> lines;
+    // compute seed points.
+    vtkIdType nLines=this->PolyDataToSeeds(procId,nProcs,seedSource,lines);
+    // integrate
+    vtkIdType nPtsTotal=0;
+    double progInc=0.8/(double)nLines;
+    for (vtkIdType i=0; i<nLines; ++i)
+      {
+      FieldLine *line=lines[i];
+      this->UpdateProgress(i*progInc+0.10);
+      this->OOCIntegrateOne(oocr,fieldName,line,&tcon);
+      nPtsTotal+=line->GetNumberOfPoints();
+      }
+    // copy into output (also deletes the lines).
+    this->FieldLinesToPolydata(lines,nPtsTotal,output);
+    }
 
   return 1;
 }
@@ -992,6 +591,295 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
     } /// End fwd/backwd trace
   return;
 }
+
+
+//-----------------------------------------------------------------------------
+int vtkOOCFieldTracer::PolyDataToSeeds(
+        int procId,
+        int nProcs,
+        vtkPolyData *seedSource,
+        vtkPolyData *seedOut,
+        vector<FieldLine *> &lines)
+{
+  // TODO to make this easier for now we only suppport polygonal cells,
+  // Here we break up the work load. This assumes that the seed source is duplicated
+  // on all processes. RequestInformation is configured to make this happen.
+  vtkIdType nPolys=seedSource->GetNumberOfPolys();
+  if (nPolys==0)
+    {
+    vtkWarningMacro("Did not find supported cell type in seed source. Aborting request.");
+    return 0;
+    }
+  vtkIdType nPolysPerProc=nPolys/nProcs;
+  vtkIdType nPolysLeft=nPolys%nProcs;
+  vtkIdType nPolysLocal=nPolysPerProc+(procId<nPolysLeft?1:0);
+  vtkIdType startPolyId=procId<nPolysLeft?procId*nPolysLocal:procId*nPolysLocal+nPolysLeft;
+
+  // Cells are sequentially acccessed (not random) so explicitly skip all cells
+  // we aren't interested in.
+  vtkCellArray *seedSourcePolys=seedSource->GetPolys();
+  seedSourcePolys->InitTraversal();
+  for (vtkIdType i=0; i<startPolyId; ++i)
+    {
+    vtkIdType n;
+    vtkIdType *ptIds;
+    seedSourcePolys->GetNextCell(n,ptIds);
+    }
+  // For each cell asigned to us we'll get its center (this is the seed point)
+  // and build corresponding cell in the output, The output only will have
+  // the cells assigned to this process.
+  vtkFloatArray *seedSourcePts
+    = dynamic_cast<vtkFloatArray*>(seedSource->GetPoints()->GetData());
+  if (seedSourcePts==0)
+    {
+    vtkWarningMacro("Seed source points are not float. Aborting request.");
+    return 0;
+    }
+  float *pSeedSourcePts=seedSourcePts->GetPointer(0);
+
+  // polygonal cells
+  vtkFloatArray *seedOutPolyPts=vtkFloatArray::New();
+  seedOutPolyPts->SetNumberOfComponents(3);
+  vtkIdTypeArray *seedOutPolyCells=vtkIdTypeArray::New();
+  vtkIdType nCellIds=0;
+  vtkIdType nSeedOutPolyPts=0;
+  vtkIdType polyId=startPolyId;
+
+  lines.clear();
+  lines.resize(nPolysLocal,0);
+
+  map<vtkIdType,vtkIdType> idMap;
+
+  for (vtkIdType i=0; i<nPolysLocal; ++i)
+    {
+    // Get the cell that belong to us.
+    vtkIdType nPtIds;
+    vtkIdType *ptIds;
+    seedSourcePolys->GetNextCell(nPtIds,ptIds);
+
+    // Get location to write new cell.
+    vtkIdType *pSeedOutPolyCells=seedOutPolyCells->WritePointer(nCellIds,nPtIds+1);
+    // update next cell write location.
+    nCellIds+=nPtIds+1;
+    // number of points in this cell
+    *pSeedOutPolyCells=nPtIds;
+    ++pSeedOutPolyCells;
+
+    // Get location to write new point. assumes we need to copy all
+    // but this is wrong as there will be many duplicates. ignored.
+    float *pSeedOutPolyPts=seedOutPolyPts->WritePointer(3*nSeedOutPolyPts,3*nPtIds);
+    // the seed point we will use the center of the cell
+    double seed[3]={0.0};
+    // transfer from input to output (only what we own)
+    for (vtkIdType j=0; j<nPtIds; ++j,++pSeedOutPolyCells)
+      {
+      vtkIdType idx=3*ptIds[j];
+      // do we already have this point?
+      pair<vtkIdType,vtkIdType> elem(ptIds[j],nSeedOutPolyPts);
+      pair<map<vtkIdType,vtkIdType>::iterator,bool> ret=idMap.insert(elem);
+      if (ret.second==true)
+        {
+        // this point hasn't previsouly been coppied
+        // copy the point.
+        pSeedOutPolyPts[0]=pSeedSourcePts[idx  ];
+        pSeedOutPolyPts[1]=pSeedSourcePts[idx+1];
+        pSeedOutPolyPts[2]=pSeedSourcePts[idx+2];
+        pSeedOutPolyPts+=3;
+
+        // insert the new point id.
+        *pSeedOutPolyCells=nSeedOutPolyPts;
+        ++nSeedOutPolyPts;
+        }
+      else
+        {
+        // this point has been coppied, do not add a duplicate.
+        // insert the other point id.
+        *pSeedOutPolyCells=(*ret.first).second;
+        }
+      // compute contribution to cell center.
+      seed[0]+=pSeedSourcePts[idx  ];
+      seed[1]+=pSeedSourcePts[idx+1];
+      seed[2]+=pSeedSourcePts[idx+2];
+      }
+    // finsih the seed point computation (at cell center).
+    seed[0]/=nPtIds;
+    seed[1]/=nPtIds;
+    seed[2]/=nPtIds;
+
+    lines[i]=new FieldLine(seed,polyId);
+    ++polyId;
+    }
+
+  // correct the length of the point array, above we assumed 
+  // that all points from each cell needed to be inserted
+  // and allocated that much space.
+  seedOutPolyPts->SetNumberOfTuples(nSeedOutPolyPts);
+
+  // put the new cells and points into the filter's output.
+  vtkPoints *seedOutPolyPoints=vtkPoints::New();
+  seedOutPolyPoints->SetData(seedOutPolyPts);
+  seedOut->SetPoints(seedOutPolyPoints);
+  seedOutPolyPoints->Delete();
+  seedOutPolyPts->Delete();
+
+  vtkCellArray *seedOutPolys=vtkCellArray::New();
+  seedOutPolys->SetCells(nPolysLocal,seedOutPolyCells);
+  seedOut->SetPolys(seedOutPolys);
+  seedOutPolys->Delete();
+  seedOutPolyCells->Delete();
+
+
+  return nPolysLocal;
+}
+
+//-----------------------------------------------------------------------------
+int vtkOOCFieldTracer::PolyDataToSeeds(
+        int procId,
+        int nProcs,
+        vtkPolyData *seedSource,
+        vector<FieldLine *> &lines)
+{
+  // TODO to make this easier for now we only suppport polygonal cells,
+  // Here we break up the work load. This assumes that the seed source is duplicated
+  // on all processes. RequestInformation is configured to make this happen.
+  vtkIdType nPolys=seedSource->GetNumberOfPolys();
+  if (nPolys==0)
+    {
+    vtkWarningMacro("Did not find supported cell type in seed source. Aborting request.");
+    return 0;
+    }
+  vtkIdType nPolysPerProc=nPolys/nProcs;
+  vtkIdType nPolysLeft=nPolys%nProcs;
+  vtkIdType nPolysLocal=nPolysPerProc+(procId<nPolysLeft?1:0);
+  vtkIdType startPolyId=procId<nPolysLeft?procId*nPolysLocal:procId*nPolysLocal+nPolysLeft;
+
+  // Cells are sequentially acccessed (not random) so explicitly skip all cells
+  // we aren't interested in.
+  vtkCellArray *seedSourcePolys=seedSource->GetPolys();
+  seedSourcePolys->InitTraversal();
+  for (vtkIdType i=0; i<startPolyId; ++i)
+    {
+    vtkIdType n;
+    vtkIdType *ptIds;
+    seedSourcePolys->GetNextCell(n,ptIds);
+    }
+  // For each cell asigned to us we'll get its center (this is the seed point)
+  // and build corresponding cell in the output, The output only will have
+  // the cells assigned to this process.
+  vtkFloatArray *seedSourcePts
+    = dynamic_cast<vtkFloatArray*>(seedSource->GetPoints()->GetData());
+  if (seedSourcePts==0)
+    {
+    vtkWarningMacro("Seed source points are not float. Aborting request.");
+    return 0;
+    }
+  float *pSeedSourcePts=seedSourcePts->GetPointer(0);
+
+
+  vtkIdType polyId=startPolyId;
+
+  lines.resize(nPolysLocal,0);
+
+  for (vtkIdType i=0; i<nPolysLocal; ++i)
+    {
+    // Get the cell that belong to us.
+    vtkIdType nPtIds;
+    vtkIdType *ptIds;
+    seedSourcePolys->GetNextCell(nPtIds,ptIds);
+
+    // the seed point we will use the center of the cell
+    double seed[3]={0.0};
+    // transfer from input to output (only what we own)
+    for (vtkIdType j=0; j<nPtIds; ++j)
+      {
+      vtkIdType idx=3*ptIds[j];
+      // compute contribution to cell center.
+      seed[0]+=pSeedSourcePts[idx  ];
+      seed[1]+=pSeedSourcePts[idx+1];
+      seed[2]+=pSeedSourcePts[idx+2];
+      }
+    // finsih the seed point computation (at cell center).
+    seed[0]/=nPtIds;
+    seed[1]/=nPtIds;
+    seed[2]/=nPtIds;
+
+    lines[i]=new FieldLine(seed,polyId);
+    ++polyId;
+    }
+
+  return nPolysLocal;
+}
+
+
+//-----------------------------------------------------------------------------
+int vtkOOCFieldTracer::FieldLinesToPolydata(
+        vector<FieldLine *> &lines,
+        vtkIdType nPtsTotal,
+        vtkPolyData *fieldLines)
+{
+  size_t nLines=lines.size();
+  // construct lines from the integrations.
+  vtkFloatArray *linePts=vtkFloatArray::New();
+  linePts->SetNumberOfComponents(3);
+  linePts->SetNumberOfTuples(nPtsTotal);
+  float *pLinePts=linePts->GetPointer(0);
+  vtkIdTypeArray *lineCells=vtkIdTypeArray::New();
+  lineCells->SetNumberOfTuples(nPtsTotal+nLines);
+  vtkIdType *pLineCells=lineCells->GetPointer(0);
+  vtkIdType ptId=0;
+  #if defined vtkOOCFieldTracerDEBUG
+  // cell data
+  vtkFloatArray *lineIds=vtkFloatArray::New();
+  lineIds->SetName("line id");
+  lineIds->SetNumberOfTuples(nLines);
+  float *pLineIds=lineIds->GetPointer(0);
+  #endif
+  for (size_t i=0; i<nLines; ++i)
+    {
+    // copy the points
+    vtkIdType nLinePts=lines[i]->CopyPointsTo(pLinePts);
+    pLinePts+=3*nLinePts;
+
+    // build the cell
+    *pLineCells=nLinePts;
+    ++pLineCells;
+    for (vtkIdType q=0; q<nLinePts; ++q)
+      {
+      *pLineCells=ptId;
+      ++pLineCells;
+      ++ptId;
+      }
+    #if defined vtkOOCFieldTracerDEBUG
+    // build the cell data
+    *pLineIds=lines[i]->GetSeedId();
+    ++pLineIds;
+    #endif
+
+    delete lines[i];
+    }
+  // points
+  vtkPoints *fieldLinePoints=vtkPoints::New();
+  fieldLinePoints->SetData(linePts);
+  fieldLines->SetPoints(fieldLinePoints);
+  fieldLinePoints->Delete();
+  linePts->Delete();
+  // cells
+  vtkCellArray *fieldLineCells=vtkCellArray::New();
+  fieldLineCells->SetCells(nLines,lineCells);
+  fieldLines->SetLines(fieldLineCells);
+  fieldLineCells->Delete();
+  lineCells->Delete();
+  #if defined vtkOCCFieldTracerDEBUG
+  // cell data
+  fieldLines->GetCellData()->AddArray(lineIds);
+  lineIds->Delete();
+  #endif
+
+  return 1;
+}
+
+
+
 
 //-----------------------------------------------------------------------------
 double vtkOOCFieldTracer::ConvertToLength(
