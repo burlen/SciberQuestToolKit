@@ -65,6 +65,8 @@ if (PV_VER LESS 3.6)
   add_definitions(-DPV_3_4_BUILD)
 endif (PV_VER LESS 3.6)
 
+
+if(PARAVIEW_BUILD_QT_GUI)
 # Qt custom panels
 QT4_WRAP_CPP(MOC_SRCS pqProcessMonitor.h)
 QT4_WRAP_UI(UI_SRCS pqProcessMonitorForm.ui)
@@ -81,6 +83,7 @@ set (_SOURCES
   ${UI_SRCS}
   ${IFACE_SRCS}
   pqProcessMonitor.cxx)
+endif (PARAVIEW_BUILD_QT_GUI)
 
 # Generate the plugin, servermanager and wrapped language bindings.
 add_paraview_plugin(
