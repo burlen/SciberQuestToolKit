@@ -93,8 +93,8 @@ public:
 
   // Description:
   // Specify the maximum length of a streamline expressed in LENGTH_UNIT.
-  vtkSetMacro(MaxLineLength,vtkIdType);
-  vtkGetMacro(MaxLineLength,vtkIdType);
+  vtkSetMacro(MaxLineLength,double);
+  vtkGetMacro(MaxLineLength,double);
 
   // Description
   // Specify the terminal speed value, below which integration is terminated.
