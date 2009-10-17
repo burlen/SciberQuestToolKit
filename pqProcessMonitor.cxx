@@ -14,6 +14,8 @@
 
 #include <QTreeWidgetItem>
 #include <QString>
+#include <QStringList>
+#include <QSettings>
 #include <QMessageBox>
 
 #include <unistd.h>
@@ -72,6 +74,10 @@ pqProcessMonitor::pqProcessMonitor(
   // Construct Qt form.
   this->Form=new pqProcessMonitorForm;
   this->Form->setupUi(this);
+  // this->Form->addCommand->setIcon(QPixmap(":/pqWidgets/Icons/pqNewItem16.png"));
+  // this->Form->execCommand->setIcon(QPixmap(":/pqWidgets/Icons/pqVcrPlay16.png"));
+  this->Restore();
+
 
   vtkSMProxy* dpProxy=this->referenceProxy()->getProxy();
 
@@ -86,8 +92,10 @@ pqProcessMonitor::pqProcessMonitor(
   this->PullServerConfig();
 
   // set up buttons
-  QObject::connect(this->Form->execButton,SIGNAL(clicked()),this,SLOT(ForkExec()));
-  //QObject::connect(this->Form->signalButton,SIGNAL(clicked()),this,SLOT(Signal()));
+  QObject::connect(this->Form->execCommand,SIGNAL(clicked()),this,SLOT(ExecCommand()));
+  // QObject::connect(this->Form->addCommand,SIGNAL(clicked()),this,SLOT(AddCommand()));
+  QObject::connect(this->Form->delCommand,SIGNAL(clicked()),this,SLOT(DelCommand()));
+  QObject::connect(this->Form->editCommand,SIGNAL(toggled(bool)),this,SLOT(EditCommand(bool)));
 
   // Let the super class do the undocumented stuff that needs to hapen.
   pqNamedObjectPanel::linkServerManagerProperties();
@@ -100,11 +108,51 @@ pqProcessMonitor::~pqProcessMonitor()
   cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::~pqProcessMonitor" << endl;
   #endif
 
+  this->Save();
   delete this->Form;
 
   this->VTKConnect->Delete();
   this->VTKConnect=0;
 }
+
+//-----------------------------------------------------------------------------
+void pqProcessMonitor::Restore()
+{
+  QStringList defaultCmds;
+  defaultCmds
+       << "xterm -e ssh -t @HOST@ gdb --pid=@PID@"
+       << "konsole -e ssh -t @HOST@ gdb --pid=@PID@"
+       << "xterm -e ssh @HOST@ kill -TERM @PID@"
+       << "xterm -e ssh @HOST@ kill -KILL @PID@";
+
+  QSettings settings("SciberQuest", "SciVisToolKit");
+
+  QStringList cmds=settings.value("ProcessMonitor/commands",defaultCmds).toStringList();
+
+  int nCmds=cmds.size();
+  for (int i=0; i<nCmds; ++i)
+    {
+    this->Form->commandCombo->addItem(cmds.at(i));
+    }
+
+
+}
+
+//-----------------------------------------------------------------------------
+void pqProcessMonitor::Save()
+{
+  QStringList cmds;
+  int nCmds=this->Form->commandCombo->count();
+  for (int i=0; i<nCmds; ++i)
+    {
+    cmds << this->Form->commandCombo->itemText(i);
+    }
+
+  QSettings settings("SciberQuest", "SciVisToolKit");
+
+  settings.setValue("ProcessMonitor/commands",cmds);
+}
+
 
 //-----------------------------------------------------------------------------
 void pqProcessMonitor::UpdateInformationEvent()
@@ -147,7 +195,7 @@ void pqProcessMonitor::PullServerConfig()
   dpProxy->UpdatePropertyInformation(csProp);
   string csBytes=csProp->GetElement(0);
 
-  cerr << csBytes << endl;
+  // cerr << csBytes << endl;
 
   istringstream is(csBytes);
   if (csBytes.size()>0 && is.good())
@@ -180,7 +228,32 @@ void pqProcessMonitor::PullServerConfig()
 }
 
 //-----------------------------------------------------------------------------
-void pqProcessMonitor::ForkExec()
+void pqProcessMonitor::AddCommand()
+{
+//   int idx=this->Form->commandCombo->count();
+//   this->Form->commandCombo->addItem("NEW COMMAND");
+//   this->Form->commandCombo->setCurrentIndex(idx);
+//   if (!this->Form->editCommand->isChecked())
+//     {
+//     this->Form->editCommand->click();
+//     }
+}
+
+//-----------------------------------------------------------------------------
+void pqProcessMonitor::DelCommand()
+{
+  int idx=this->Form->commandCombo->currentIndex();
+  this->Form->commandCombo->removeItem(idx);
+}
+
+//-----------------------------------------------------------------------------
+void pqProcessMonitor::EditCommand(bool state)
+{
+  this->Form->commandCombo->setEditable(state);
+}
+
+//-----------------------------------------------------------------------------
+void pqProcessMonitor::ExecCommand()
 {
   #if defined pqProcessMonitorDEBUG
   cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::ForkExec" << endl;
@@ -197,7 +270,7 @@ void pqProcessMonitor::ForkExec()
       case PROCESS_TYPE_LOCAL:
       case PROCESS_TYPE_REMOTE:
         {
-        string cmd=(const char*)this->Form->execCombo->currentText().toAscii();
+        string cmd=(const char*)this->Form->commandCombo->currentText().toAscii();
         string hostNameStr((const char *)item->text(1).toAscii());
         string pidStr((const char *)item->text(2).toAscii());
         SearchAndReplace(string("@HOST@"),hostNameStr,cmd);
@@ -236,19 +309,19 @@ void pqProcessMonitor::ForkExec()
           }
         else
           {
-          // client
-          QTreeWidgetItem *clientGroup=new QTreeWidgetItem(this->Form->configView);
-          clientGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
-          clientGroup->setExpanded(false);
-          clientGroup->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_LOCAL));
-          // exec name
-          clientGroup->setText(0,argStrs[0].c_str());
-          // hostname
-          char clientHostName[1024];
-          gethostname(clientHostName,1024);
-          clientGroup->setText(1,clientHostName);
-          // pid
-          clientGroup->setText(2,QString("%1").arg(childPid));
+          // // client
+          // QTreeWidgetItem *clientGroup=new QTreeWidgetItem(this->Form->configView);
+          // clientGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
+          // clientGroup->setExpanded(false);
+          // clientGroup->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_LOCAL));
+          // // exec name
+          // clientGroup->setText(0,argStrs[0].c_str());
+          // // hostname
+          // char clientHostName[1024];
+          // gethostname(clientHostName,1024);
+          // clientGroup->setText(1,clientHostName);
+          // // pid
+          // clientGroup->setText(2,QString("%1").arg(childPid));
           }
         }
         break;

@@ -18,7 +18,6 @@ using std::vector;
 
 class vtkPolyData;
 
-
 // Description:
 // Defines and interface for testing whether or not
 // a feild line should be terminated.
@@ -167,37 +166,5 @@ void TerminationCondition::ResetDomain(double dom[6])
   dom[0]=dom[2]=dom[4]=1;
   dom[1]=dom[3]=dom[5]=0;
 }
-
-// //-----------------------------------------------------------------------------
-// inline
-// int TerminationCondition::SegmentExitsProblemDomain(double *p0, double *p1)
-// {
-//   int hitSurface=0;
-//   if (this->ProblemDomain)
-//     {
-//     double t=0.0;
-//     double x[3]={0.0};
-//     double p[3]={0.0};
-//     int c=0;
-//     hitSurface=this->ProblemDomain->IntersectWithLine(p0,p1,1E-6,t,x,p,c);
-//     }
-//   return hitSurface;
-// }
-// 
-// //-----------------------------------------------------------------------------
-// inline
-// int TerminationCondition::SegmentExitsWorkingDomain(double *p0, double *p1)
-// {
-//   int hitSurface=0;
-//   if (this->WorkingDomain)
-//     {
-//     double t=0.0;
-//     double x[3]={0.0};
-//     double p[3]={0.0};
-//     int c=0;
-//     hitSurface=this->WorkingDomain->IntersectWithLine(p0,p1,1E-6,t,x,p,c);
-//     }
-//   return hitSurface;
-// }
 
 #endif

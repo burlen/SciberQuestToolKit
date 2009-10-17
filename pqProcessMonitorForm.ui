@@ -6,12 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>379</width>
-    <height>480</height>
+    <width>350</width>
+    <height>498</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
+  </property>
+  <property name="toolTip">
+   <string/>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -68,40 +71,106 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QPushButton" name="execButton">
+      <widget class="QPushButton" name="delCommand">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="toolTip">
+        <string>Delete</string>
+       </property>
        <property name="text">
-        <string>fork/exec</string>
+        <string>-</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QComboBox" name="execCombo">
+      <widget class="QPushButton" name="editCommand">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="toolTip">
+        <string>Edit/Add</string>
+       </property>
+       <property name="text">
+        <string>+</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="execCommand">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="toolTip">
+        <string>Exec</string>
+       </property>
+       <property name="text">
+        <string>!</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="commandCombo">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-       <item>
-        <property name="text">
-         <string>xterm -e ssh -t @HOST@ gdb --pid=@PID@</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>konsole -e ssh -t @HOST@ gdb --pid=@PID@</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>xterm -e ssh @HOST@ kill -TERM @PID@</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>xterm -e ssh @HOST@ kill -KILL @PID@</string>
-        </property>
-       </item>
+       <property name="editable">
+        <bool>false</bool>
+       </property>
       </widget>
      </item>
     </layout>

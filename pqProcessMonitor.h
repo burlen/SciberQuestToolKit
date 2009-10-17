@@ -21,6 +21,8 @@ class pqProcessMonitor : public pqNamedObjectPanel
 public:
   pqProcessMonitor(pqProxy* proxy, QWidget* p = NULL);
   ~pqProcessMonitor();
+  void Restore();
+  void Save();
 
 protected slots:
   // Description:
@@ -37,9 +39,11 @@ protected slots:
   // This is where we have to communicate our state to the server.
   void accept();
   // Description:
-  // Attach a debugger to the selected process.
-  void ForkExec();
-  // void Signal();
+  // Manipulate command which can be run using fork/exec.
+  void ExecCommand();
+  void AddCommand();
+  void DelCommand();
+  void EditCommand(bool state);
 
 private:
 
