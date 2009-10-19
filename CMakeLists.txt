@@ -43,7 +43,10 @@ set(_SOURCES
   PrintUtils.cxx
   IntersectionSet.cxx
   TerminationCondition.cxx
-  vtkMetaDataKeys.cxx)
+  vtkMetaDataKeys.cxx
+  BOVTimeStepImage.cxx
+  BOVScalarImage.cxx
+  BOVVectorImage.cxx)
 
 SET_SOURCE_FILES_PROPERTIES(
 vtkOOCReader.cxx

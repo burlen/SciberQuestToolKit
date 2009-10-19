@@ -14,6 +14,7 @@ Copyright 2008 SciberQuest Inc.
 
 #include "BOVMetaData.h"
 #include "BOVReader.h"
+#include "BOVTimeStepImage.h"
 
 vtkCxxRevisionMacro(vtkOOCBOVReader, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkOOCBOVReader);
@@ -21,7 +22,8 @@ vtkStandardNewMacro(vtkOOCBOVReader);
 //-----------------------------------------------------------------------------
 vtkOOCBOVReader::vtkOOCBOVReader()
     :
-  Reader(0)
+  Reader(0),
+  Image(0)
 {
   this->Reader=new BOVReader;
 }
@@ -30,6 +32,10 @@ vtkOOCBOVReader::vtkOOCBOVReader()
 vtkOOCBOVReader::~vtkOOCBOVReader()
 {
   delete this->Reader;
+  if (this->Image)
+    {
+    this->Close();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -40,6 +46,29 @@ void vtkOOCBOVReader::SetReader(BOVReader *reader)
   *this->Reader=*reader;
   // Force solo reads!
   this->Reader->SetCommunicator(MPI_COMM_SELF);
+}
+
+//-----------------------------------------------------------------------------
+int vtkOOCBOVReader::Open()
+{
+  if (this->Image)
+    {
+    this->Close();
+    }
+  this->Image=this->Reader->OpenTimeStep(this->TimeIndex);
+  if (!this->Image)
+    {
+    vtkWarningMacro("Failed to open file image!");
+    return 0;
+    }
+  return 1;
+}
+
+//-----------------------------------------------------------------------------
+void vtkOOCBOVReader::Close()
+{
+  this->Reader->CloseTimeStep(this->Image);
+  this->Image=0;
 }
 
 //-----------------------------------------------------------------------------
@@ -92,7 +121,7 @@ vtkDataSet *vtkOOCBOVReader::ReadNeighborhood(double p[3], int size)
 
   // Actual read.
   this->Reader->GetMetaData()->SetDecomp(decomp);
-  int ok=this->Reader->ReadTimeStep(this->TimeIndex,idds);
+  int ok=this->Reader->ReadTimeStep(this->Image,idds,(vtkAlgorithm*)0);
   if (!ok)
     {
     vtkErrorMacro("Read failed. Aborting.");

@@ -148,11 +148,11 @@ size_t ParseValue(string &in,size_t at, string key, T &value)
 }
 
 //-----------------------------------------------------------------------------
-int GDAMetaData::Open(const char *fileName)
+int GDAMetaData::OpenDataset(const char *fileName)
 {
-  if (this->IsOpen())
+  if (this->IsDatasetOpen())
     {
-    this->Close();
+    this->CloseDataset();
     }
 
   // Open
@@ -194,7 +194,7 @@ int GDAMetaData::Open(const char *fileName)
 
   // FIXME!
   // assumptions, based on what we know of the SciberQuest code.
-  // BTW origin and spacing default to: x0={0,0,0}, dx={1,1,1}
+  // origin and spacing default to: x0={0,0,0}, dx={1,1,1}
 
   // We expect the bricks to be in the same directory as the metadata file.
   this->SetPathToBricks(StripFileNameFromPath(fileName).c_str());
@@ -227,6 +227,13 @@ int GDAMetaData::Open(const char *fileName)
     && Represented(path,"bz_"))
     {
     this->AddVector("b");
+    ++nArrays;
+    }
+  if (Represented(path,"ex_")
+    && Represented(path,"ey_")
+    && Represented(path,"ez_"))
+    {
+    this->AddVector("e");
     ++nArrays;
     }
   if (Represented(path,"vix_")
@@ -276,10 +283,10 @@ int GDAMetaData::Open(const char *fileName)
 }
 
 //-----------------------------------------------------------------------------
-int GDAMetaData::Close()
+int GDAMetaData::CloseDataset()
 {
   this->Ok=false;
-  BOVMetaData::Close();
+  BOVMetaData::CloseDataset();
   return 1;
 }
 

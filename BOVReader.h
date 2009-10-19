@@ -20,6 +20,9 @@ class vtkImageData;
 class vtkMultiBlockDataSet;
 class vtkMultiProcessController;
 class vtkAlgorithm;
+class BOVScalarImageIterator;
+class BOVVectorImageIterator;
+class BOVTimeStepImage;
 
 /// Low level reader for BOV files with domain decomposition capability.
 /**
@@ -69,20 +72,20 @@ public:
   /// Open a dataset. Pass the dataset's metadata file in. If this call succeeeds
   /// then ...
   int Open(const char *fileName){
-    return this->MetaData && fileName && this->MetaData->Open(fileName);
+    return this->MetaData && fileName && this->MetaData->OpenDataset(fileName);
     }
   /// Return's true if the dataset has been successfully opened.
   bool IsOpen(){
     if (this->MetaData)
       {
-      return this->MetaData->IsOpen();
+      return this->MetaData->IsDatasetOpen();
       }
     return false;
     }
   /// Close the dataset.
   int Close(){
     this->ClearDecomp();
-    return this->MetaData && this->MetaData->Close();
+    return this->MetaData && this->MetaData->CloseDataset();
     }
 
   /// Set number of ghost cells to use with each sub-domain default 
@@ -98,8 +101,10 @@ public:
 
   /// Read the named set of arrays from disk, use "Add" methods to add arrays
   /// to be read.
-  int ReadTimeStep(int stepNo, vtkMultiBlockDataSet *mbds);
-  int ReadTimeStep(int stepNo, vtkImageData *idds, vtkAlgorithm *exec=0);
+  BOVTimeStepImage *OpenTimeStep(int stepNo);
+  void CloseTimeStep(BOVTimeStepImage *handle);
+
+  int ReadTimeStep(BOVTimeStepImage *handle, vtkImageData *idds, vtkAlgorithm *exec=0);
   int ReadMetaTimeStep(int stepNo, vtkImageData *idds, vtkAlgorithm *exec=0);
 
   /// Print internal state.
@@ -114,6 +119,9 @@ private:
     }
   /// Read the array in the specified file and insert it into
   /// point data.
+  int ReadScalarArray(BOVScalarImageIterator *it, vtkImageData *grid);
+  int ReadVectorArray(BOVVectorImageIterator *it, vtkImageData *grid);
+
   int ReadScalarArray(
         const char *fileName,
         const char *scalarName,
@@ -126,12 +134,12 @@ private:
         vtkImageData *grid);
 
 private:
-  BOVMetaData *MetaData;    /// Object that knows how to interpret dataset.
-  int NGhost;               /// Number of ghost nodes, default is 1.
-  int ProcId;               /// My process id.
-  int NProcs;               /// Number of processes.
-  vector<vtkAMRBox> Blocks; /// Decomposed domain.
-  MPI_Comm Comm;            /// Communicator handle
+  BOVMetaData *MetaData;     /// Object that knows how to interpret dataset.
+  int NGhost;                /// Number of ghost nodes, default is 1.
+  int ProcId;                /// My process id.
+  int NProcs;                /// Number of processes.
+  vector<vtkAMRBox> Blocks;  /// Decomposed domain.
+  MPI_Comm Comm;             /// Communicator handle
 };
 
 #endif

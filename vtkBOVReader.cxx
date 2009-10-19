@@ -28,6 +28,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkOOCBOVReader.h"
 #include "BOVReader.h"
 #include "GDAMetaData.h"
+#include "BOVTimeStepImage.h"
 #include "PrintUtils.h"
 
 #if defined vtkBOVReaderTIME
@@ -162,7 +163,6 @@ void vtkBOVReader::SetFileName(const char* _arg)
   gettimeofday(&wallt,0x0);
   double walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
   #endif
-
 
   vtkDebugMacro(<< this->GetClassName() << ": setting FileName to " << (_arg?_arg:"(null)"));
   if (this->FileName == NULL && _arg == NULL) { return;}
@@ -566,7 +566,9 @@ int vtkBOVReader::RequestData(
     {
     // Actual read.
     this->Reader->GetMetaData()->SetDecomp(decomp);
-    ok=this->Reader->ReadTimeStep(stepId,idds,this);
+    BOVTimeStepImage *stepImg=this->Reader->OpenTimeStep(stepId);
+    ok=this->Reader->ReadTimeStep(stepImg,idds,this);
+    this->Reader->CloseTimeStep(stepImg);
     }
   if (!ok)
     {

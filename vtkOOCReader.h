@@ -49,6 +49,17 @@ public:
 
   /// \section IO \@{
   /**
+  Open the dataset for reading. In the case ofg an error 0 is
+  returned.
+  */
+  virtual int Open()=0;
+
+  /**
+  Close the dataset.
+  */
+  virtual void Close()=0;
+
+  /**
   Read the data in a neighborhood bounded by the box.
   */
   virtual vtkDataSet *Read(double b[6])=0;

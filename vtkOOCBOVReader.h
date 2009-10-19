@@ -13,6 +13,7 @@ Copyright 2008 SciberQuest Inc.
 
 class vtkDataSet;
 class BOVReader;
+class BOVTimeStepImage;
 
 /// Implementation class for Brick-Of-Values (BOV) Out-Of-Core (OOC) file access.
 /**
@@ -28,6 +29,17 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent);
 
   /// \section IO \@{
+  /**
+  Open the dataset for reading. In the case ofg an error 0 is
+  returned.
+  */
+  virtual int Open();
+
+  /**
+  Close the dataset.
+  */
+  virtual void Close();
+
   /**
   Read the data in a neighborhood bounded by the box.
   */
@@ -66,6 +78,7 @@ private:
 
 private:
   BOVReader *Reader;
+  BOVTimeStepImage *Image;
 };
 
 #endif

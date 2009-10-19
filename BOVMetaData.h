@@ -30,28 +30,8 @@ BOVReader to read your dataset.
 class VTK_EXPORT BOVMetaData
 {
 public:
-  /// Open the metadata file, and parse metadata. return 0 on error.
-  virtual int Open(const char *fileName)=0;
-  /// Return true if "Get" calls will succeed, i.e. there is an open metadata
-  /// file.
-  virtual bool IsOpen() const =0; 
-  /// Close the currently open metatdata file, free any resources and set 
-  /// the object into a default state. return 0 on error. Be sure to call
-  /// BOVMetaData::Close().
-  virtual int Close()
-    {
-    this->PathToBricks="";
-    this->Domain.Invalidate();
-    this->Subset.Invalidate();
-    this->Decomp.Invalidate();
-    this->Arrays.clear();
-    this->TimeSteps.clear();
-    return 1;
-    }
-
-  /// Virtual copy constructor. Create a new object and copy this into it. 
-  /// return the copy or 0 on error. Caller to delete.
-  virtual BOVMetaData *Duplicate() const=0;
+  /// Construct
+  BOVMetaData(){}
   /// Copy from other.
   BOVMetaData &operator=(const BOVMetaData &other)
     {
@@ -69,11 +49,32 @@ public:
     {
     *this=other;
     }
-  /// COnstruct
-  BOVMetaData(){}
+  /// Virtual copy constructor. Create a new object and copy this into it. 
+  /// return the copy or 0 on error. Caller to delete.
+  virtual BOVMetaData *Duplicate() const=0;
+
+
+  /// Open the metadata file, and parse metadata. return 0 on error.
+  virtual int OpenDataset(const char *fileName)=0;
+  /// Return true if "Get" calls will succeed, i.e. there is an open metadata
+  /// file.
+  virtual bool IsDatasetOpen() const =0;
+  /// Close the currently open metatdata file, free any resources and set 
+  /// the object into a default state. return 0 on error. Be sure to call
+  /// BOVMetaData::CloseDataset().
+  virtual int CloseDataset()
+    {
+    this->PathToBricks="";
+    this->Domain.Invalidate();
+    this->Subset.Invalidate();
+    this->Decomp.Invalidate();
+    this->Arrays.clear();
+    this->TimeSteps.clear();
+    return 1;
+    }
 
   /// Set/Get the domain/subset/decomp of the dataset. These are initialized
-  /// during Open(). The subset may be modified anytime there after by the user
+  /// during OpenDataset(). The subset may be modified anytime there after by the user
   /// to reduce the amount of memory used during the actual read. Definitions:
   /// The domain is index space of the data on disk, the subset is the index space
   /// user identifies to read from disk, and the decomp is the index space assigned
@@ -173,6 +174,19 @@ public:
     return this->Arrays.size();
     }
 
+  /// Return the number of scalars in the dataset.
+  virtual size_t GetNumberOfArrayFiles() const
+    {
+    size_t nFiles=0;
+    map<string,int>::const_iterator it=this->Arrays.begin();
+    map<string,int>::const_iterator end=this->Arrays.end();
+    for (;it!=end; ++it)
+      {
+      nFiles+=(it->second&VECTOR_BIT?3:1);
+      }
+    return nFiles;
+    }
+
   /// Return the requested array name.
   virtual const char *GetArrayName(size_t i) const
     {
@@ -235,12 +249,12 @@ public:
     }
 
 protected:
-  string PathToBricks;     // path to the brick files.
-  vtkAMRBox Domain;        // Dataset domain on disk.
-  vtkAMRBox Subset;        // Subset of interst to read.
-  vtkAMRBox Decomp;        // Part of the subset this process will read.
-  map<string,int> Arrays;  // map of srray names to a status flag.
-  vector<int> TimeSteps;   // Time values.
+  string PathToBricks;            // path to the brick files.
+  vtkAMRBox Domain;               // Dataset domain on disk.
+  vtkAMRBox Subset;               // Subset of interst to read.
+  vtkAMRBox Decomp;               // Part of the subset this process will read.
+  map<string,int> Arrays;         // map of srray names to a status flag.
+  vector<int> TimeSteps;          // Time values.
 };
 
 // TODO develop workable traits model.

@@ -24,7 +24,7 @@ public:
   /// Destructor.
   virtual ~GDAMetaData()
     {
-    this->Close();
+    this->CloseDataset();
     }
   /// Virtual copy constructor. Create a new object and copy. return the copy.
   /// or 0 on error. Caller to delete.
@@ -37,17 +37,17 @@ public:
 
   /// Open the metadata file, and parse metadata.
   /// return 0 on error.
-  virtual int Open(const char *fileName);
+  virtual int OpenDataset(const char *fileName);
   /// Return true if "Get" calls will succeed, i.e. there is an open metadata
   /// file.
-  virtual bool IsOpen() const
+  virtual bool IsDatasetOpen() const
     {
     return this->Ok;
     }
   /// Free any resources and set the object into a default
   /// state.
   /// return 0 on error.
-  virtual int Close();
+  virtual int CloseDataset();
 
   /// Return the file extension used by the format for brick files.
   /// The BOV reader will make use of this in its pattern matching logic.

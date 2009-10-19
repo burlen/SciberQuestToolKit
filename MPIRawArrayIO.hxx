@@ -112,12 +112,6 @@ int ReadDataArray(
         const vtkAMRBox &decomp, // region to be read, block extents
         T *data)                 // pointer to a buffer to read into.
 {
-  //  clock_t start=clock(); 
-  //  int nProcs=1;
-  //  MPI_Comm_size(comm,&nProcs);
-  //  int rank=0;
-  //  MPI_Comm_rank(comm,&rank);
-
   int iErr;
   const int eStrLen=2048;
   char eStr[eStrLen]={'\0'};
@@ -188,8 +182,8 @@ int ReadDataArray(
   // Read
   MPI_Status status;
   iErr=MPI_File_read_all(file,data,nCells,nativeType,&status);
-  MPI_File_close(&file);
   MPI_Type_free(&subarray);
+  MPI_File_close(&file);
   if (iErr!=MPI_SUCCESS)
     {
     #ifndef NDEBUG
@@ -199,13 +193,63 @@ int ReadDataArray(
     #endif
     return 0;
     }
-  //  clock_t end=clock();
-  //  char hostname[HOST_NAME_MAX];
-  //  gethostname(hostname,HOST_NAME_MAX);
-  //  hostname[4]='\0';
-  //  double elapsed=static_cast<double>((end-start))/CLOCKS_PER_SEC;
-  //  cerr << hostname << " " << elapsed << endl; 
+  return 1;
+}
 
+//*****************************************************************************
+template <typename T>
+int ReadDataArray(
+        MPI_File file,
+        const vtkAMRBox &domain, // entire region, dataset extents
+        const vtkAMRBox &decomp, // region to be read, block extents
+        T *data)                 // pointer to a buffer to read into.
+{
+  int iErr;
+  const int eStrLen=2048;
+  char eStr[eStrLen]={'\0'};
+
+  // Locate our data.
+  int domainDims[3];
+  domain.GetNumberOfCells(domainDims);
+  int decompDims[3];
+  decomp.GetNumberOfCells(decompDims);
+  int decompStart[3];
+  decomp.GetLoCorner(decompStart);
+
+  unsigned long long nCells=decomp.GetNumberOfCells();
+
+  // Create the subarray
+  MPI_Datatype nativeType=DataTraits<T>::Type();
+  MPI_Datatype subarray;
+  MPI_Type_create_subarray(3,
+      domainDims,
+      decompDims,
+      decompStart,
+      MPI_ORDER_FORTRAN,
+      nativeType,
+      &subarray);
+  MPI_Type_commit(&subarray);
+  // Set the file view
+  MPI_File_set_view(
+      file,
+      0,
+      nativeType,
+      subarray,
+      "native", // FIXME option to select, portable or native.
+      MPI_INFO_NULL); // FIXME make use of hints.
+  // Read
+  MPI_Status status;
+  iErr=MPI_File_read_all(file,data,nCells,nativeType,&status);
+  MPI_Type_free(&subarray);
+  if (iErr!=MPI_SUCCESS)
+    {
+    #ifndef NDEBUG
+    MPI_Error_string(iErr,eStr,const_cast<int *>(&eStrLen));
+    cerr << "Error reading file." << endl;
+    cerr << eStr << endl;
+    #endif
+    return 0;
+    }
   return 1;
 }
 

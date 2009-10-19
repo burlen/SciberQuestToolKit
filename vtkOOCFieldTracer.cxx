@@ -320,6 +320,7 @@ int vtkOOCFieldTracer::RequestData(
   //oocr->Register(0);
   oocr->DeActivateAllArrays();
   oocr->ActivateArray(fieldName);
+  oocr->Open();
 
   // also the bounds (problem domain) of the data should be available.
   if (!info->Has(vtkOOCReader::BOUNDS()))
@@ -379,10 +380,6 @@ int vtkOOCFieldTracer::RequestData(
     return 1;
     }
 
-
-
-
-
   // There are two modes of operation, the traditional
   // FieldLine mode and a Topology mode. In FieldLine mode the output contains
   // field lines. In Topology mode the output contains seed cells colored by
@@ -433,6 +430,8 @@ int vtkOOCFieldTracer::RequestData(
     // copy into output (also deletes the lines).
     this->FieldLinesToPolydata(lines,nPtsTotal,output);
     }
+
+  oocr->Close();
 
   return 1;
 }
