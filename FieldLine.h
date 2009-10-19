@@ -62,6 +62,8 @@ public:
     this->BwdTrace->Delete();
     this->BwdTrace=other.BwdTrace;
     this->BwdTrace->Register(0);
+
+    return *this;
     }
   void PushPoint(int dir,float *p)
     {
