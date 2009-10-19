@@ -479,7 +479,7 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
       line->PushPoint(i,p0);
 
       #if defined vtkOOCFieldTracerDEBUG
-      cerr << "   " << p0[0] << ", " << p0[1] << ", " << p0[2] << endl;
+      // cerr << "   " << p0[0] << ", " << p0[1] << ", " << p0[2] << endl;
       #endif
 
       // check integration limit
