@@ -102,7 +102,7 @@ vtkDataSet *vtkOOCBOVReader::ReadNeighborhood(double p[3], int size)
   decomp&=domain;
 
   #if defined vtkOOCBOVReaderDEBUG
-  static ww=0;
+  static int ww=0;
   ++ww;
   cerr << ww
        << " Reading ("
