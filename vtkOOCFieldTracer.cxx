@@ -465,7 +465,8 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
     // vtkDataSet *nhood=0;            // data in a neighborhood of the seed point
     int numSteps=0;                 // number of steps taken in integration
     double stepSize=this->MaxStep;  // next recommended step size
-    vtkInterpolatedVelocityField *interp;
+    static
+    vtkInterpolatedVelocityField *interp=0;
 
     line->GetSeedPoint(p0);
     // tcon->ResetWorkingDomain();
@@ -527,7 +528,7 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
         }
 
       // interpolate vector field at seed point.
-      interp->FunctionValues(p0,V0);
+      interp ->FunctionValues(p0,V0);
       double speed=vtkMath::Norm(V0);
       // check for field null
       if ((speed==0) || (speed<=this->TerminalSpeed))
