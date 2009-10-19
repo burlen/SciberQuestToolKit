@@ -380,13 +380,18 @@ int vtkOOCFieldTracer::RequestData(
     return 1;
     }
 
+
+  // cache
+  vtkDataSet *cache=0;
+  // internal point set for the generated lines
+  vector<FieldLine *> lines;
+
   // There are two modes of operation, the traditional
   // FieldLine mode and a Topology mode. In FieldLine mode the output contains
   // field lines. In Topology mode the output contains seed cells colored by
   // where the field line terminated.
   if (this->TopologyMode)
     {
-    vector<FieldLine *> lines;
     // compute seed points (centered on cells of input). Copy the cells
     // on which we operate into the output.
     vtkIdType nLines
@@ -401,7 +406,7 @@ int vtkOOCFieldTracer::RequestData(
       {
       FieldLine *line=lines[i];
       this->UpdateProgress(i*progInc+0.10);
-      this->OOCIntegrateOne(oocr,fieldName,line,&tcon);
+      this->OOCIntegrateOne(oocr,fieldName,line,&tcon,cache);
       pColor[i]
       =tcon.GetTerminationColor(line->GetForwardTerminator(),line->GetBackwardTerminator());
       delete line;
@@ -414,7 +419,6 @@ int vtkOOCFieldTracer::RequestData(
     }
   else
     {
-    vector<FieldLine *> lines;
     // compute seed points.
     vtkIdType nLines=this->PolyDataToSeeds(procId,nProcs,seedSource,lines);
     // integrate
@@ -424,7 +428,7 @@ int vtkOOCFieldTracer::RequestData(
       {
       FieldLine *line=lines[i];
       this->UpdateProgress(i*progInc+0.10);
-      this->OOCIntegrateOne(oocr,fieldName,line,&tcon);
+      this->OOCIntegrateOne(oocr,fieldName,line,&tcon,cache);
       nPtsTotal+=line->GetNumberOfPoints();
       }
     // copy into output (also deletes the lines).
@@ -432,6 +436,9 @@ int vtkOOCFieldTracer::RequestData(
     }
 
   oocr->Close();
+
+  // free cache
+  if (cache){ cache->Delete(); }
 
   return 1;
 }
@@ -441,7 +448,8 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
       vtkOOCReader *oocR,
       const char *fieldName,
       FieldLine *line,
-      TerminationCondition *tcon)
+      TerminationCondition *tcon,
+      vtkDataSet *&nhood)
 {
   // we integrate twice, once forward and once backward starting
   // from the single seed point.
@@ -453,13 +461,14 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
     double V0[3]={0.0};             // vector field interpolated at the start point
     double p0[3]={0.0};             // a start point
     double p1[3]={0.0};             // intergated point
-    vtkDataSet *nhood=0;            // data in a neighborhood of the seed point
+    // static
+    // vtkDataSet *nhood=0;            // data in a neighborhood of the seed point
     int numSteps=0;                 // number of steps taken in integration
     double stepSize=this->MaxStep;  // next recommended step size
     vtkInterpolatedVelocityField *interp;
 
     line->GetSeedPoint(p0);
-    tcon->ResetWorkingDomain();
+    // tcon->ResetWorkingDomain();
 
     // Integrate until the maximum line length is reached, maximum number of 
     // steps is reached or until a termination surface is encountered.
@@ -587,7 +596,7 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
       p0[1]=p1[1];
       p0[2]=p1[2];
       } /// End Integration
-    nhood->Delete();
+    // nhood->Delete();
     } /// End fwd/backwd trace
   return;
 }

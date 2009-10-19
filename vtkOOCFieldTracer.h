@@ -158,12 +158,14 @@ private:
   // Description:
   // Trace one field line from the given seed point, using the given out-of-core
   // reader. As segments are generated they are tested using the stermination 
-  // condition and terminated imediately.
+  // condition and terminated imediately. The last neighborhood read is stored
+  // in the nhood parameter. It is up to the caller to delete this.
   void OOCIntegrateOne(
         vtkOOCReader *oocR,
         const char *fieldName,
         FieldLine *line,
-        TerminationCondition *tcon);
+        TerminationCondition *tcon,
+        vtkDataSet *&nhood);
   // Description:
   // USe the set of field lines to construct a vtk polydata set. Field line structures
   // are deleted as theya re coppied.
