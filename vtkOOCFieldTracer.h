@@ -140,6 +140,11 @@ private:
         int nProcs,
         vtkPolyData *seedSource,
         vector<FieldLine*> &lines);
+  int PolyDataToSeeds(
+        int procId,
+        int nProcs,
+        vtkDataSet *seedSource,
+        vector<FieldLine*> &lines);
   // Description:
   // Given a set of polygons (seedSource) that is assumed duplicated across
   // all process in the communicator, extract an equal number of polygons

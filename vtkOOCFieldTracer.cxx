@@ -820,6 +820,84 @@ int vtkOOCFieldTracer::PolyDataToSeeds(
   return nPolysLocal;
 }
 
+//-----------------------------------------------------------------------------
+int vtkOOCFieldTracer::PolyDataToSeeds(
+        int procId,
+        int nProcs,
+        vtkPointSet *seedSource,
+        vector<FieldLine *> &lines)
+{
+  // TODO to make this easier for now we only suppport polygonal cells,
+  // Here we break up the work load. This assumes that the seed source is duplicated
+  // on all processes. RequestInformation is configured to make this happen.
+  vtkIdType nPolys=seedSource->GetNumberOfPolys();
+  if (nPolys==0)
+    {
+    vtkWarningMacro("Did not find supported cell type in seed source. Aborting request.");
+    return 0;
+    }
+  vtkIdType nPolysPerProc=nPolys/nProcs;
+  vtkIdType nPolysLeft=nPolys%nProcs;
+  vtkIdType nPolysLocal=nPolysPerProc+(procId<nPolysLeft?1:0);
+  vtkIdType startPolyId=procId<nPolysLeft?procId*nPolysLocal:procId*nPolysLocal+nPolysLeft;
+
+  // Cells are sequentially acccessed (not random) so explicitly skip all cells
+  // we aren't interested in.
+  vtkCellArray *seedSourcePolys=seedSource->GetPolys();
+  seedSourcePolys->InitTraversal();
+  for (vtkIdType i=0; i<startPolyId; ++i)
+    {
+    vtkIdType n;
+    vtkIdType *ptIds;
+    seedSourcePolys->GetNextCell(n,ptIds);
+    }
+  // For each cell asigned to us we'll get its center (this is the seed point)
+  // and build corresponding cell in the output, The output only will have
+  // the cells assigned to this process.
+  vtkFloatArray *seedSourcePts
+    = dynamic_cast<vtkFloatArray*>(seedSource->GetPoints()->GetData());
+  if (seedSourcePts==0)
+    {
+    vtkWarningMacro("Seed source points are not float. Aborting request.");
+    return 0;
+    }
+  float *pSeedSourcePts=seedSourcePts->GetPointer(0);
+
+
+  vtkIdType polyId=startPolyId;
+
+  lines.resize(nPolysLocal,0);
+
+  for (vtkIdType i=0; i<nPolysLocal; ++i)
+    {
+    // Get the cell that belong to us.
+    vtkIdType nPtIds;
+    vtkIdType *ptIds;
+    seedSourcePolys->GetNextCell(nPtIds,ptIds);
+
+    // the seed point we will use the center of the cell
+    double seed[3]={0.0};
+    // transfer from input to output (only what we own)
+    for (vtkIdType j=0; j<nPtIds; ++j)
+      {
+      vtkIdType idx=3*ptIds[j];
+      // compute contribution to cell center.
+      seed[0]+=pSeedSourcePts[idx  ];
+      seed[1]+=pSeedSourcePts[idx+1];
+      seed[2]+=pSeedSourcePts[idx+2];
+      }
+    // finsih the seed point computation (at cell center).
+    seed[0]/=nPtIds;
+    seed[1]/=nPtIds;
+    seed[2]/=nPtIds;
+
+    lines[i]=new FieldLine(seed,polyId);
+    ++polyId;
+    }
+
+  return nPolysLocal;
+}
+
 
 //-----------------------------------------------------------------------------
 int vtkOOCFieldTracer::FieldLinesToPolydata(
