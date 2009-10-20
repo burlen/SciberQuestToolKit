@@ -140,7 +140,7 @@ private:
         int nProcs,
         vtkPolyData *seedSource,
         vector<FieldLine*> &lines);
-  int PolyDataToSeeds(
+  int DataSetToSeeds(
         int procId,
         int nProcs,
         vtkDataSet *seedSource,
@@ -159,6 +159,12 @@ private:
         int nProcs,
         vtkPolyData *seedSource,
         vtkPolyData *seedOut,
+        vector<FieldLine*> &lines);
+  int DataSetToSeeds(
+        int procId,
+        int nProcs,
+        vtkDataSet *seedSource,
+        vtkDataSet *seedOut,
         vector<FieldLine*> &lines);
   // Description:
   // Trace one field line from the given seed point, using the given out-of-core
