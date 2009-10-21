@@ -17,31 +17,34 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __vtkOOCFieldTracer_h
 #define __vtkOOCFieldTracer_h
 
-#include "vtkPolyDataAlgorithm.h"
+#include "vtkDataSetAlgorithm.h"
 
-#include "vtkInitialValueProblemSolver.h" // Needed for constants
+// // Needed for constants
 #include "TerminationCondition.h"
 
 
-class vtkCompositeDataSet;
-class vtkDataArray;
-class vtkDoubleArray;
-class vtkExecutive;
-class vtkGenericCell;
-class vtkIdList;
-class vtkIntArray;
-class vtkInterpolatedVelocityField;
+// class vtkCompositeDataSet;
+// class vtkDataArray;
+// class vtkDoubleArray;
+// class vtkExecutive;
+// class vtkGenericCell;
+// class vtkIdList;
+// class vtkIntArray;
+//class vtkInterpolatedVelocityField;
+class vtkUnstructuredGrid;
 class vtkOOCReader;
 class vtkMultiProcessController;
+class vtkInitialValueProblemSolver;
+class vtkPointSet;
 //BTX
 class FieldLine;
 //ETX
 
 
-class VTK_EXPORT vtkOOCFieldTracer : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkOOCFieldTracer : public vtkDataSetAlgorithm
 {
 public:
-  vtkTypeRevisionMacro(vtkOOCFieldTracer,vtkPolyDataAlgorithm);
+  vtkTypeRevisionMacro(vtkOOCFieldTracer,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkOOCFieldTracer *New();
 
@@ -124,6 +127,7 @@ protected:
   int RequestData(vtkInformation *req, vtkInformationVector **input, vtkInformationVector *output);
   int RequestInformation(vtkInformation* req, vtkInformationVector** input, vtkInformationVector* output);
   int RequestUpdateExtent(vtkInformation* req, vtkInformationVector** input, vtkInformationVector* output);
+  int RequestDataObject(vtkInformation *info,vtkInformationVector** input,vtkInformationVector* output);
 
 private:
   //BTX
@@ -135,15 +139,10 @@ private:
   // the callers responsibility to delete these structures.
   // Return 0 if an error occurs. Upon successful completion the number
   // of seed points is returned.
-  int PolyDataToSeeds(
+  int CellsToSeeds(
         int procId,
         int nProcs,
-        vtkPolyData *seedSource,
-        vector<FieldLine*> &lines);
-  int DataSetToSeeds(
-        int procId,
-        int nProcs,
-        vtkDataSet *seedSource,
+        vtkPointSet *seedSource,
         vector<FieldLine*> &lines);
   // Description:
   // Given a set of polygons (seedSource) that is assumed duplicated across
@@ -154,18 +153,27 @@ private:
   // to delete these structures.
   // Return 0 if an error occurs. Upon successful completion the number
   // of seed points is returned.
-  int PolyDataToSeeds(
+  int CellsToSeeds(
         int procId,
         int nProcs,
         vtkPolyData *seedSource,
         vtkPolyData *seedOut,
         vector<FieldLine*> &lines);
-  int DataSetToSeeds(
+  int CellsToSeeds(
         int procId,
         int nProcs,
-        vtkDataSet *seedSource,
-        vtkDataSet *seedOut,
+        vtkUnstructuredGrid *seedSource,
+        vtkUnstructuredGrid *seedOut,
         vector<FieldLine*> &lines);
+  // Description:
+  // Helper to call the right methods.
+  vtkIdType DispatchCellsToSeeds(
+        int procId,
+        int nProcs,
+        vtkDataSet *Source,
+        vtkDataSet *Out,
+        vector<FieldLine *> &lines);
+
   // Description:
   // Trace one field line from the given seed point, using the given out-of-core
   // reader. As segments are generated they are tested using the stermination 

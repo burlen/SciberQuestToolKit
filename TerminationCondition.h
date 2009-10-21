@@ -153,6 +153,9 @@ int TerminationCondition::SegmentTerminates(double *p0, double *p1)
       // The assumption here is that only one intersection
       // is likely and in the case where there are more than
       // one it isn't important which is identified.
+      p1[0]=x[0];
+      p1[1]=x[1];
+      p1[2]=x[2];
       return i+1;
       }
     }

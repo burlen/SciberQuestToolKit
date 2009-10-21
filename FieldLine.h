@@ -9,10 +9,33 @@ Copyright 2008 SciberQuest Inc.
 #ifndef FieldLine_h
 #define FieldLine_h
 
+#include<cassert>
+
 //=============================================================================
 class FieldLine
 {
 public:
+  ///
+  FieldLine()
+      :
+    FwdTrace(0),
+    BwdTrace(0),
+    SeedId(0),
+    FwdTerminator(0),
+    BwdTerminator(0)
+    {
+    this->Seed[0]=0.0;
+    this->Seed[1]=0.0;
+    this->Seed[2]=0.0;
+
+    this->FwdTrace=vtkFloatArray::New();
+    this->FwdTrace->SetNumberOfComponents(3);
+    this->FwdTrace->Allocate(128);
+    this->BwdTrace=vtkFloatArray::New();
+    this->BwdTrace->SetNumberOfComponents(3);
+    this->BwdTrace->Allocate(128);
+    }
+  ///
   FieldLine(double p[3], int seedId=0)
       :
     FwdTrace(0),
@@ -32,15 +55,18 @@ public:
     this->BwdTrace->SetNumberOfComponents(3);
     this->BwdTrace->Allocate(128);
     }
+  ///
   FieldLine(const FieldLine &other)
     {
     *this=other;
     }
+  ///
   ~FieldLine()
     {
     this->FwdTrace->Delete();
     this->BwdTrace->Delete();
     }
+  ///
   const FieldLine &operator=(const FieldLine &other)
     {
     if (&other==this)
@@ -65,63 +91,85 @@ public:
 
     return *this;
     }
+  ///
+  void Initialize(double p[3], int seedId)
+    {
+    this->Seed[0]=p[0];
+    this->Seed[1]=p[1];
+    this->Seed[2]=p[2];
+    this->SeedId=seedId;
+    this->FwdTrace->SetNumberOfTuples(0);
+    this->BwdTrace->SetNumberOfTuples(0);
+    this->BwdTerminator=this->FwdTerminator=0;
+    }
+  ///
   void PushPoint(int dir,float *p)
     {
     assert((dir>=0)&&(dir<=1));
     vtkFloatArray *line=dir==0?BwdTrace:FwdTrace;
     line->InsertNextTuple(p);
     }
+  ///
   void PushPoint(int dir,double *p)
     {
     assert((dir>=0)&&(dir<=1));
     vtkFloatArray *line=dir==0?BwdTrace:FwdTrace;
     line->InsertNextTuple(p);
     }
+  ///
   void SetTerminator(int dir, int code)
     {
     assert((dir>=0)&&(dir<=1));
     int *term=dir==0?&this->BwdTerminator:&this->FwdTerminator;
     *term=code;
     }
-
+  ///
   int GetForwardTerminator() const
     {
     return this->FwdTerminator;
     }
+  ///
   int GetBackwardTerminator() const
     {
     return this->BwdTerminator;
     }
+  ///
   int GetSeedId() const
     {
     return this->SeedId;
     }
+  ///
   float *GetSeedPoint()
     {
     return this->Seed;
     }
+  ///
   const float *GetSeedPoint() const
     {
     return this->Seed;
     }
+  ///
   void GetSeedPoint(float p[3]) const
     {
     p[0]=this->Seed[0];
     p[1]=this->Seed[1];
     p[2]=this->Seed[2];
     }
+  ///
   void GetSeedPoint(double p[3]) const
     {
     p[0]=this->Seed[0];
     p[1]=this->Seed[1];
     p[2]=this->Seed[2];
     }
+  ///
   vtkIdType GetNumberOfPoints()
     {
     return
     this->FwdTrace->GetNumberOfTuples()+this->BwdTrace->GetNumberOfTuples()-1;
     // less one because seed point is duplicated in both.
     }
+  ///
   vtkIdType CopyPointsTo(float *pts)
     {
     // Copy the bwd running field line, reversing its order
@@ -148,9 +196,6 @@ public:
       }
     return nPtsBwd+nPtsFwd-1;
     }
-
-private:
-  FieldLine();
 
 private:
   vtkFloatArray *FwdTrace;
