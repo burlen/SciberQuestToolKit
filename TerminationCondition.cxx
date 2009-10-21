@@ -118,6 +118,14 @@ void TerminationCondition::InitializeColorMapper()
 }
 
 //-----------------------------------------------------------------------------
+int TerminationCondition::GetTerminationColor(FieldLine *line)
+{
+  return
+    this->GetTerminationColor(line->GetForwardTerminator(),line->GetBackwardTerminator());
+}
+
+//-----------------------------------------------------------------------------
+inline
 int TerminationCondition::GetTerminationColor(int s1, int s2)
 {
   return this->CMap.LookupColor(s1,s2);

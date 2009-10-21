@@ -377,7 +377,7 @@ int vtkOOCFieldTracer::RequestData(
   // Configure the reader (TODO should I make a copy?)
   vtkInformation *arrayInfo=this->GetInputArrayInformation(0);
   const char *fieldName=arrayInfo->Get(vtkDataObject::FIELD_NAME());
-  //oocr->Register(0);
+  oocr->Register(0);
   oocr->DeActivateAllArrays();
   oocr->ActivateArray(fieldName);
   oocr->Open();
@@ -441,6 +441,10 @@ int vtkOOCFieldTracer::RequestData(
   vtkDataSet *cache=0;
   // internal point set for the generated lines
   vector<FieldLine *> lines;
+  // intersect colors 
+  vtkIntArray *intersectColor=vtkIntArray::New();
+  intersectColor->SetName("IntersectColor");
+
 
   // There are two modes of operation, the traditional
   // FieldLine mode and a Topology mode. In FieldLine mode the output contains
@@ -453,26 +457,21 @@ int vtkOOCFieldTracer::RequestData(
     // on which we operate into the output.
     vtkIdType nLines
       =this->DispatchCellsToSeeds(procId,nProcs,seedSource,output,lines);
-    // integrate and build surface intersection color array.
-    vtkIntArray *intersectColor=vtkIntArray::New();
+
     intersectColor->SetNumberOfTuples(nLines);
-    intersectColor->SetName("IntersectColor");
     int *pColor=intersectColor->GetPointer(0);
+
+    // integrate and build surface intersection color array.
     double progInc=0.8/(double)nLines;
     for (vtkIdType i=0; i<nLines; ++i)
       {
       FieldLine *line=lines[i];
       this->UpdateProgress(i*progInc+0.10);
       this->OOCIntegrateOne(oocr,fieldName,line,&tcon,cache);
-      pColor[i]
-      =tcon.GetTerminationColor(line->GetForwardTerminator(),line->GetBackwardTerminator());
+      pColor[i]=tcon.GetTerminationColor(line);
       delete line;
       lines[i]=0;
       }
-    // place the color color into the polygonal cell output.
-    tcon.SqueezeColorMap(intersectColor);
-    output->GetCellData()->AddArray(intersectColor);
-    intersectColor->Delete();
     }
   else
     {
@@ -484,6 +483,10 @@ int vtkOOCFieldTracer::RequestData(
       }
     // compute seed points.
     vtkIdType nLines=this->CellsToSeeds(procId,nProcs,seedSourcePs,lines);
+
+    intersectColor->SetNumberOfTuples(nLines);
+    int *pColor=intersectColor->GetPointer(0);
+
     // integrate
     vtkIdType nPtsTotal=0;
     double progInc=0.8/(double)nLines;
@@ -493,12 +496,19 @@ int vtkOOCFieldTracer::RequestData(
       this->UpdateProgress(i*progInc+0.10);
       this->OOCIntegrateOne(oocr,fieldName,line,&tcon,cache);
       nPtsTotal+=line->GetNumberOfPoints();
+      pColor[i]=tcon.GetTerminationColor(line);
       }
     // copy into output (also deletes the lines).
     this->FieldLinesToPolydata(lines,nPtsTotal,output);
     }
 
+  // place the color color into the polygonal cell output.
+  tcon.SqueezeColorMap(intersectColor);
+  output->GetCellData()->AddArray(intersectColor);
+  intersectColor->Delete();
+
   oocr->Close();
+  oocr->Delete();
 
   // free cache
   if (cache){ cache->Delete(); }
@@ -538,30 +548,9 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
       // add the point to the line.
       if (!this->TopologyMode) line->PushPoint(i,p0);
 
-      #if defined vtkOOCFieldTracerDEBUG
-      // cerr << "   " << p0[0] << ", " << p0[1] << ", " << p0[2] << endl;
+      #if defined vtkOOCFieldTracerDEBUG5
+      cerr << "   " << p0[0] << ", " << p0[1] << ", " << p0[2] << endl;
       #endif
-
-      // check integration limit
-      if (lineLength>this->MaxLineLength
-       || numSteps>this->MaxNumberOfSteps)
-        {
-        #if defined vtkOOCFieldTracerDEBUG
-        // cerr << "Terminated: Integration limmit exceeded." << endl;
-        #endif
-        line->SetTerminator(i,tcon->GetShortIntegrationId());
-        break; // stop integrating
-        }
-
-      // We are now integrated through all available.
-      if (tcon->OutsideProblemDomain(p0))
-        {
-        #if defined vtkOOCFieldTracerDEBUG
-        // cerr << "Terminated: Integration outside problem domain." << endl;
-        #endif
-        line->SetTerminator(i,tcon->GetProblemDomainSurfaceId());
-        break; // stop integrating
-        }
 
       // We are now integrated through data in memory we need to
       // fetch another neighborhood about the seed point from disk.
@@ -593,8 +582,8 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
       // check for field null
       if ((speed==0) || (speed<=this->TerminalSpeed))
         {
-        #if defined vtkOOCFieldTracerDEBUG
-        // cerr << "Terminated: Field null encountered." << endl;
+        #if defined vtkOOCFieldTracerDEBUG4
+        cerr << "Terminated: Field null encountered." << endl;
         #endif
         line->SetTerminator(i,tcon->GetFieldNullId());
         break; // stop integrating
@@ -620,6 +609,44 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
           error);
       interp->SetNormalizeVector(false);
 
+      // Update the lineLength
+      lineLength+=fabs(stepTaken);
+
+
+      // check for line crossing a termination surface.
+      int surfIsect=tcon->SegmentTerminates(p0,p1);
+      if (surfIsect)
+        {
+        #if defined vtkOOCFieldTracerDEBUG4
+        cerr << "Terminated: Surface " << surfIsect-1 << " hit." << endl;
+        #endif
+        line->SetTerminator(i,surfIsect);
+        if (!this->TopologyMode) line->PushPoint(i,p1);
+        break;
+        }
+
+      // We are now integrated through all available.
+      if (tcon->OutsideProblemDomain(p1))
+        {
+        #if defined vtkOOCFieldTracerDEBUG4
+        cerr << "Terminated: Integration outside problem domain." << endl;
+        #endif
+        line->SetTerminator(i,tcon->GetProblemDomainSurfaceId());
+        if (!this->TopologyMode) line->PushPoint(i,p1);
+        break; // stop integrating
+        }
+
+      // check integration limit
+      if (lineLength>this->MaxLineLength || numSteps>this->MaxNumberOfSteps)
+        {
+        #if defined vtkOOCFieldTracerDEBUG4
+        cerr << "Terminated: Integration limmit exceeded." << endl;
+        #endif
+        line->SetTerminator(i,tcon->GetShortIntegrationId());
+        if (!this->TopologyMode) line->PushPoint(i,p1);
+        break; // stop integrating
+        }
+
       // Use v=dx/dt to calculate speed and check if it is below
       // stagnation threshold
       double dx=0;
@@ -631,26 +658,13 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
       double v=dx/(dt+1E-12);
       if (v<=this->TerminalSpeed)
         {
-        #if defined vtkOOCFieldTracerDEBUG
-        // cerr << "Terminated: Field null encountered." << endl;
+        #if defined vtkOOCFieldTracerDEBUG4
+        cerr << "Terminated: Field null encountered." << endl;
         #endif
         line->SetTerminator(i,tcon->GetFieldNullId());
+        if (!this->TopologyMode) line->PushPoint(i,p1);
         break; // stop integrating
         }
-
-      // check for line crossing a termination surface.
-      int surfIsect=tcon->SegmentTerminates(p0,p1);
-      if (surfIsect)
-        {
-        #if defined vtkOOCFieldTracerDEBUG
-        // cerr << "Terminated: Surface " << surfIsect-1 << " hit." << endl;
-        #endif
-        line->SetTerminator(i,surfIsect);
-        break;
-        }
-
-      // Update the lineLength
-      lineLength+=fabs(stepTaken);
 
       // new start point
       p0[0]=p1[0];
@@ -1116,13 +1130,13 @@ int vtkOOCFieldTracer::FieldLinesToPolydata(
   lineCells->SetNumberOfTuples(nPtsTotal+nLines);
   vtkIdType *pLineCells=lineCells->GetPointer(0);
   vtkIdType ptId=0;
-  #if defined vtkOOCFieldTracerDEBUG
+  ///#if defined vtkOOCFieldTracerDEBUG
   // cell data
   vtkFloatArray *lineIds=vtkFloatArray::New();
   lineIds->SetName("line id");
   lineIds->SetNumberOfTuples(nLines);
   float *pLineIds=lineIds->GetPointer(0);
-  #endif
+  ///#endif
   for (size_t i=0; i<nLines; ++i)
     {
     // copy the points
@@ -1138,11 +1152,11 @@ int vtkOOCFieldTracer::FieldLinesToPolydata(
       ++pLineCells;
       ++ptId;
       }
-    #if defined vtkOOCFieldTracerDEBUG
+    ///#if defined vtkOOCFieldTracerDEBUG
     // build the cell data
     *pLineIds=lines[i]->GetSeedId();
     ++pLineIds;
-    #endif
+    ///#endif
 
     delete lines[i];
     }
@@ -1158,11 +1172,11 @@ int vtkOOCFieldTracer::FieldLinesToPolydata(
   fieldLines->SetLines(fieldLineCells);
   fieldLineCells->Delete();
   lineCells->Delete();
-  #if defined vtkOOCFieldTracerDEBUG
+  ///#if defined vtkOOCFieldTracerDEBUG
   // cell data
   fieldLines->GetCellData()->AddArray(lineIds);
   lineIds->Delete();
-  #endif
+  ///#endif
 
   return 1;
 }

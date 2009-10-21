@@ -10,7 +10,7 @@ Copyright 2008 SciberQuest Inc.
 #ifndef TerminationCondition_h
 #define TerminationCondition_h
 
-
+#include "FieldLine.h"
 #include "IntersectionSetColorMapper.h"
 #include "vtkCellLocator.h"
 #include<vector>
@@ -84,6 +84,7 @@ public:
   // , that of the problem domain returned by
   // GetProblemDoainSurfaceId().
   void InitializeColorMapper();
+  int GetTerminationColor(FieldLine *line);
   int GetTerminationColor(int sId1, int sId2);
   int GetProblemDomainSurfaceId();
   int GetFieldNullId();
@@ -96,8 +97,6 @@ public:
 private:
   // Helper, to generate a polygonal box from a set of bounds.
   void DomainToLocator(vtkCellLocator *cellLoc, double dom[6]);
-  // Helper, test if a point is inside a box.
-  int Outside(double box[6], double pt[3]);
   // Reset domain.
   void ResetDomain(double dom[6]);
 
@@ -111,29 +110,36 @@ private:
 
 //-----------------------------------------------------------------------------
 inline
-int TerminationCondition::Outside(double box[6], double pt[3])
+int TerminationCondition::OutsideProblemDomain(double *pt)
 {
-  if((pt[0]>=box[0] && pt[0]<=box[1])
-  && (pt[1]>=box[2] && pt[1]<=box[3])
-  && (pt[2]>=box[4] && pt[2]<=box[5]))
+
+  if((pt[0]>=this->ProblemDomain[0] && pt[0]<=this->ProblemDomain[1])
+  && (pt[1]>=this->ProblemDomain[2] && pt[1]<=this->ProblemDomain[3])
+  && (pt[2]>=this->ProblemDomain[4] && pt[2]<=this->ProblemDomain[5]))
     {
     return 0;
     }
+  // clip
+  pt[0]=max(pt[0],this->ProblemDomain[0]);
+  pt[0]=min(pt[0],this->ProblemDomain[1]);
+  pt[1]=max(pt[1],this->ProblemDomain[2]);
+  pt[1]=min(pt[1],this->ProblemDomain[3]);
+  pt[2]=max(pt[2],this->ProblemDomain[4]);
+  pt[2]=min(pt[2],this->ProblemDomain[5]);
   return 1;
 }
 
 //-----------------------------------------------------------------------------
 inline
-int TerminationCondition::OutsideProblemDomain(double *p)
+int TerminationCondition::OutsideWorkingDomain(double *pt)
 {
-  return this->Outside(this->ProblemDomain,p);
-}
-
-//-----------------------------------------------------------------------------
-inline
-int TerminationCondition::OutsideWorkingDomain(double *p)
-{
-  return this->Outside(this->WorkingDomain,p);
+  if((pt[0]>=this->WorkingDomain[0] && pt[0]<=this->WorkingDomain[1])
+  && (pt[1]>=this->WorkingDomain[2] && pt[1]<=this->WorkingDomain[3])
+  && (pt[2]>=this->WorkingDomain[4] && pt[2]<=this->WorkingDomain[5]))
+    {
+    return 0;
+    }
+  return 1;
 }
 
 //-----------------------------------------------------------------------------
@@ -150,9 +156,7 @@ int TerminationCondition::SegmentTerminates(double *p0, double *p1)
     int hitSurface=this->Surfaces[i]->IntersectWithLine(p0,p1,1E-6,t,x,p,c);
     if (hitSurface)
       {
-      // The assumption here is that only one intersection
-      // is likely and in the case where there are more than
-      // one it isn't important which is identified.
+      // replace input with the location of the intersection
       p1[0]=x[0];
       p1[1]=x[1];
       p1[2]=x[2];

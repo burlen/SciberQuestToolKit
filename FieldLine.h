@@ -10,6 +10,7 @@ Copyright 2008 SciberQuest Inc.
 #define FieldLine_h
 
 #include<cassert>
+#include "vtkFloatArray.h"
 
 //=============================================================================
 class FieldLine
