@@ -1068,7 +1068,7 @@ int vtkOOCFieldTracer::CellsToSeeds(
   float *pSourcePts=sourcePts->GetPointer(0);
 
   vtkIdList *ptIds=vtkIdList::New();
-  for (vtkIdType cId=startId; cId<endId; ++cId)
+  for (vtkIdType cId=startId,lId=0; cId<endId; ++cId,++lId)
     {
     // get the point ids for this cell.
     Source->GetCellPoints(cId,ptIds);
@@ -1090,7 +1090,7 @@ int vtkOOCFieldTracer::CellsToSeeds(
     seed[1]/=nPtIds;
     seed[2]/=nPtIds;
 
-    lines[cId]=new FieldLine(seed,cId);
+    lines[lId]=new FieldLine(seed,cId);
     }
   ptIds->Delete();
 
@@ -1103,6 +1103,9 @@ int vtkOOCFieldTracer::FieldLinesToPolydata(
         vtkIdType nPtsTotal,
         vtkPolyData *fieldLines)
 {
+  #if defined vtkOOCFieldTracerDEBUG
+  cerr << "====================================================================FieldLinesToPolydata" << endl;
+  #endif
   size_t nLines=lines.size();
   // construct lines from the integrations.
   vtkFloatArray *linePts=vtkFloatArray::New();
