@@ -13,7 +13,7 @@ PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
 #include "vtkOOCFieldTracer.h"
-#define vtkOOCFieldTracerDEBUG
+// #define vtkOOCFieldTracerDEBUG
 
 
 #include "vtkSmartPointer.h"
