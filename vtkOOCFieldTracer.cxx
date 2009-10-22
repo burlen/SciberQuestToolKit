@@ -466,7 +466,7 @@ int vtkOOCFieldTracer::RequestData(
     for (vtkIdType i=0; i<nLines; ++i)
       {
       FieldLine *line=lines[i];
-      this->UpdateProgress(i*progInc+0.10);
+      this->UpdateProgress(i*progInc+0.10); cerr << "."; 
       this->OOCIntegrateOne(oocr,fieldName,line,&tcon,cache);
       pColor[i]=tcon.GetTerminationColor(line);
       delete line;
@@ -493,7 +493,7 @@ int vtkOOCFieldTracer::RequestData(
     for (vtkIdType i=0; i<nLines; ++i)
       {
       FieldLine *line=lines[i];
-      this->UpdateProgress(i*progInc+0.10);
+      this->UpdateProgress(i*progInc+0.10); cerr << ".";
       this->OOCIntegrateOne(oocr,fieldName,line,&tcon,cache);
       nPtsTotal+=line->GetNumberOfPoints();
       pColor[i]=tcon.GetTerminationColor(line);

@@ -219,6 +219,8 @@ void pqProcessMonitor::PullServerConfig()
       pid_t serverPid;
       is >> serverPid;
       serverConfig->setText(2,QString("%1").arg(serverPid));
+
+      cerr << serverHostName << " " << serverPid << endl;
       }
     }
   else
