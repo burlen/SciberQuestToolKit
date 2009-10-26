@@ -83,7 +83,7 @@ vtkOOCFieldTracer::vtkOOCFieldTracer()
   TerminalSpeed(1E-6),
   OOCNeighborhoodSize(15),
   TopologyMode(0),
-  SimpleColorMap(0)
+  SqueezeColorMap(0)
 {
   this->Integrator=vtkRungeKutta45::New();
   this->Controller=vtkMultiProcessController::GetGlobalController();
@@ -502,7 +502,14 @@ int vtkOOCFieldTracer::RequestData(
     }
 
   // place the color color into the polygonal cell output.
-  tcon.SqueezeColorMap(intersectColor);
+  if (this->SqueezeColorMap)
+    {
+    tcon.SqueezeColorMap(intersectColor);
+    }
+  else
+    {
+    tcon.PrintColorMap();
+    }
   output->GetCellData()->AddArray(intersectColor);
   intersectColor->Delete();
 

@@ -109,11 +109,10 @@ public:
   vtkGetMacro(TopologyMode,int);
 
   // Description:
-  // Set the simple color map to on/off. In this mode all of the topological
-  // classes that contain one or more field line ending in out of bounds,
-  // stagnation, or short intagration are mapped to the same color.
-  vtkSetMacro(SimpleColorMap,int);
-  vtkGetMacro(SimpleColorMap,int);
+  // If on then color map produced will only contain used colors. NOTE: requires
+  // a global communication,
+  vtkSetMacro(SqueezeColorMap,int);
+  vtkGetMacro(SqueezeColorMap,int);
 
 protected:
   vtkOOCFieldTracer();
@@ -229,7 +228,7 @@ private:
 
   // Output controls
   int TopologyMode;
-  int SimpleColorMap;
+  int SqueezeColorMap;
 
 
   //BTX

@@ -165,6 +165,52 @@ public:
         }
       }
     }
+  /// Process 0 send the used colors in the color map to the terminal.
+  void PrintUsed(){
+    int procId=0;
+    MPI_Comm_rank(MPI_COMM_WORLD,&procId);
+    for (int j=0; j<this->NSurfaces+1; ++j)
+      {
+      for (int i=j; i<this->NSurfaces+1; ++i)
+        {
+        int x=max(i,j);
+        int y=min(i,j);
+        int idx=x+(this->NSurfaces+1)*y;
+        int colorUsed=0;
+        MPI_Allreduce(&this->ColorsUsed[idx],&colorUsed,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
+        if (colorUsed)
+          {
+          // print the lengend.
+          if (procId==0)
+            {
+            cerr << this->ColorLegend[idx] << "->" << this->Colors[idx] << endl;
+            }
+          }
+        }
+      }
+    }
+  /// Process 0 send the color map to the terminal.
+  void PrintAll()
+    {
+    int procId=0;
+    MPI_Comm_rank(MPI_COMM_WORLD,&procId);
+    if (procId!=0)
+      {
+      return;
+      }
+    for (int j=0; j<this->NSurfaces+1; ++j)
+      {
+      for (int i=j; i<this->NSurfaces+1; ++i)
+        {
+        int x=max(i,j);
+        int y=min(i,j);
+        int idx=x+(this->NSurfaces+1)*y;
+        // print the lengend.
+        cerr << this->ColorLegend[idx] << "->" << this->Colors[idx] << endl;
+        }
+      }
+    }
+
 
 private:
   int NSurfaces;

@@ -99,6 +99,13 @@ public:
     {
     this->CMap.SqueezeColorMap(colors);
     }
+  // Description:
+  // Send a legend of the used colors to the terminal on proc 0. This
+  // requires global communication all processes must be involved.
+  void PrintColorMap()
+    {
+    this->CMap.PrintUsed();
+    }
 
 private:
   // Helper, to generate a polygonal box from a set of bounds.

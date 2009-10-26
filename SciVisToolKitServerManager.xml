@@ -676,8 +676,8 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
      </DoubleVectorProperty>
 
      <IntVectorProperty 
-        name="Simple Color Map" 
-        command="SetSimpleColorMap" 
+        name="Squeeze Color Map" 
+        command="SetSqueezeColorMap" 
         number_of_elements="1"
         default_values="0" > 
        <BooleanDomain name="bool"/>
