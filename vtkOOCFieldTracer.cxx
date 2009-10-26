@@ -63,6 +63,9 @@ using std::map;
 using std::pair;
 
 #include "FieldLine.h"
+#include "TerminationCondition.h"
+#include "SimpleTerminationCondition.h"
+#include "ClosedTerminationCondition.h"
 
 vtkCxxRevisionMacro(vtkOOCFieldTracer, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkOOCFieldTracer);
@@ -81,10 +84,10 @@ vtkOOCFieldTracer::vtkOOCFieldTracer()
   MaxLineLength(1E6),
   TerminalSpeed(1E-6),
   OOCNeighborhoodSize(15),
-  TopologyMode(0)
+  TopologyMode(0),
+  SimpleColorMap(0)
 {
   this->Integrator=vtkRungeKutta45::New();
-  this->TermCon=new TerminationCondition;
   this->Controller=vtkMultiProcessController::GetGlobalController();
   this->SetNumberOfInputPorts(3);
   this->SetNumberOfOutputPorts(1);
@@ -94,7 +97,6 @@ vtkOOCFieldTracer::vtkOOCFieldTracer()
 vtkOOCFieldTracer::~vtkOOCFieldTracer()
 {
   this->Integrator->Delete();
-  delete this->TermCon;
 }
 
 //-----------------------------------------------------------------------------
@@ -394,8 +396,16 @@ int vtkOOCFieldTracer::RequestData(
 
   // Make sure the termionation conditions include the problem
   // domain, any other termination conditions are optional.
-  TerminationCondition tcon;
-  tcon.SetProblemDomain(pDomain);
+  TerminationCondition *tcon;
+  if (this->SimpleColorMap)
+    {
+    tcon=new SimpleTerminationCondition;
+    }
+  else
+    {
+    tcon=new ClosedTerminationCondition;
+    }
+  tcon->SetProblemDomain(pDomain);
   // Include and additional termination surfaces from the third and
   // optional input.
   int nSurf=inputVector[2]->GetNumberOfInformationObjects();
@@ -414,9 +424,9 @@ int vtkOOCFieldTracer::RequestData(
       {
       surfName=info->Get(vtkMetaDataKeys::DESCRIPTIVE_NAME());
       }
-    tcon.PushSurface(pd,surfName);
+    tcon->PushSurface(pd,surfName);
     }
-  tcon.InitializeColorMapper();
+  tcon->InitializeColorMapper();
 
 
   // TODO for now we consider a seed single source, but we should handle
@@ -435,7 +445,6 @@ int vtkOOCFieldTracer::RequestData(
     vtkWarningMacro("Output polydata was not present. Aborting request.");
     return 1;
     }
-
 
   // cache
   vtkDataSet *cache=0;
@@ -467,8 +476,8 @@ int vtkOOCFieldTracer::RequestData(
       {
       FieldLine *line=lines[i];
       this->UpdateProgress(i*progInc+0.10); cerr << "."; 
-      this->OOCIntegrateOne(oocr,fieldName,line,&tcon,cache);
-      pColor[i]=tcon.GetTerminationColor(line);
+      this->OOCIntegrateOne(oocr,fieldName,line,tcon,cache);
+      pColor[i]=tcon->GetTerminationColor(line);
       delete line;
       lines[i]=0;
       }
@@ -494,18 +503,19 @@ int vtkOOCFieldTracer::RequestData(
       {
       FieldLine *line=lines[i];
       this->UpdateProgress(i*progInc+0.10); cerr << ".";
-      this->OOCIntegrateOne(oocr,fieldName,line,&tcon,cache);
+      this->OOCIntegrateOne(oocr,fieldName,line,tcon,cache);
       nPtsTotal+=line->GetNumberOfPoints();
-      pColor[i]=tcon.GetTerminationColor(line);
+      pColor[i]=tcon->GetTerminationColor(line);
       }
     // copy into output (also deletes the lines).
     this->FieldLinesToPolydata(lines,nPtsTotal,output);
     }
 
   // place the color color into the polygonal cell output.
-  tcon.SqueezeColorMap(intersectColor);
+  tcon->SqueezeColorMap(intersectColor);
   output->GetCellData()->AddArray(intersectColor);
   intersectColor->Delete();
+  delete tcon;
 
   oocr->Close();
   oocr->Delete();
@@ -577,7 +587,7 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
         }
 
       // interpolate vector field at seed point.
-      interp ->FunctionValues(p0,V0);
+      interp->FunctionValues(p0,V0);
       double speed=vtkMath::Norm(V0);
       // check for field null
       if ((speed==0) || (speed<=this->TerminalSpeed))

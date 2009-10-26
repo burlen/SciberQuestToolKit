@@ -592,7 +592,7 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
        label="OOC Read Size"
        command="SetOOCNeighborhoodSize"
        number_of_elements="1"
-       default_values="15" >
+       default_values="0" >
        <IntRangeDomain name="range" min="-1"/>
        <Documentation>
          Control the size of the OOC reads (context dependent meaning).
@@ -636,7 +636,7 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
      </DoubleVectorProperty>  
 
      <IntVectorProperty 
-       name="MaxNumberOfSteps" 
+       name="MaxNumberOfSteps"
        label="Maximum Steps"
        command="SetMaxNumberOfSteps" 
        number_of_elements="1"
@@ -674,6 +674,17 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
          This property specifies the terminal speed, below which particle advection/integration is terminated.
        </Documentation>
      </DoubleVectorProperty>
+
+     <IntVectorProperty 
+        name="Simple Color Map" 
+        command="SetSimpleColorMap" 
+        number_of_elements="1"
+        default_values="0" > 
+       <BooleanDomain name="bool"/>
+       <Documentation>
+        Set the color map to simple where termination due to out of bounds,stagnation, and short integration map to the same case.
+       </Documentation>
+     </IntVectorProperty>
 
      <!-- Always use this error -->
      <DoubleVectorProperty

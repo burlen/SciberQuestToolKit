@@ -18,19 +18,9 @@ Copyright 2008 SciberQuest Inc.
 #define __vtkOOCFieldTracer_h
 
 #include "vtkDataSetAlgorithm.h"
+#include <vector>
+using std::vector;
 
-// // Needed for constants
-#include "TerminationCondition.h"
-
-
-// class vtkCompositeDataSet;
-// class vtkDataArray;
-// class vtkDoubleArray;
-// class vtkExecutive;
-// class vtkGenericCell;
-// class vtkIdList;
-// class vtkIntArray;
-//class vtkInterpolatedVelocityField;
 class vtkUnstructuredGrid;
 class vtkOOCReader;
 class vtkMultiProcessController;
@@ -38,6 +28,7 @@ class vtkInitialValueProblemSolver;
 class vtkPointSet;
 //BTX
 class FieldLine;
+class TerminationCondition;
 //ETX
 
 
@@ -116,6 +107,13 @@ public:
   // serve as two ParaView filters, the OOCFieldTracer and the OOCTopologyMapper.
   vtkSetMacro(TopologyMode,int);
   vtkGetMacro(TopologyMode,int);
+
+  // Description:
+  // Set the simple color map to on/off. In this mode all of the topological
+  // classes that contain one or more field line ending in out of bounds,
+  // stagnation, or short intagration are mapped to the same color.
+  vtkSetMacro(SimpleColorMap,int);
+  vtkGetMacro(SimpleColorMap,int);
 
 protected:
   vtkOOCFieldTracer();
@@ -228,10 +226,10 @@ private:
 
   // Reader related
   int OOCNeighborhoodSize;
-  TerminationCondition *TermCon;
 
   // Output controls
   int TopologyMode;
+  int SimpleColorMap;
 
 
   //BTX

@@ -21,18 +21,12 @@ class vtkPolyData;
 // Description:
 // Defines and interface for testing whether or not
 // a feild line should be terminated.
-//
-// 0   -> field null
-// 1   -> s1
-//    ...
-// n   -> sn
-// n+1 -> problem domain
-// n+2 -> short integration
+
 class TerminationCondition
 {
 public:
   TerminationCondition();
-  ~TerminationCondition();
+  virtual ~TerminationCondition();
 
   // Description:
   // Return a value of zero if the field line with last segment 
@@ -77,18 +71,23 @@ public:
   void ClearSurfaces();
 
   // Description:
-  // Get a unique color using two surface ids returned
-  // from SegmentTerminates(). There are two special ids
-  // that may additionally be used, that of a stagnation
-  // of field null retruned by GetFieldNullId and
-  // , that of the problem domain returned by
-  // GetProblemDoainSurfaceId().
-  void InitializeColorMapper();
+  // Convert implementation defined surface ids into a unique color.
   int GetTerminationColor(FieldLine *line);
   int GetTerminationColor(int sId1, int sId2);
-  int GetProblemDomainSurfaceId();
-  int GetFieldNullId();
-  int GetShortIntegrationId();
+
+  // Description:
+  // Implementation to define how surface map to colors, and which
+  // ids are used for the special cases of problem domain termination,
+  // stagnation, and short integration.
+  virtual void InitializeColorMapper()=0;
+  virtual int GetProblemDomainSurfaceId()=0;
+  virtual int GetFieldNullId()=0;
+  virtual int GetShortIntegrationId()=0;
+
+  // Description:
+  // Eliminate unused colors from the the lookup table and send
+  // a legend to the terminal on proc 0. This requires global
+  // communication all processes must be involved.
   void SqueezeColorMap(vtkIntArray *colors)
     {
     this->CMap.SqueezeColorMap(colors);
@@ -103,6 +102,7 @@ private:
 private:
   double ProblemDomain[6];
   double WorkingDomain[6];
+protected:
   vector<vtkCellLocator*> Surfaces;
   vector<string> SurfaceNames;
   IntersectionSetColorMapper CMap;

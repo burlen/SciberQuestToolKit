@@ -43,6 +43,8 @@ set(_SOURCES
   PrintUtils.cxx
   IntersectionSet.cxx
   TerminationCondition.cxx
+  ClosedTerminationCondition.cxx
+  SimpleTerminationCondition.cxx
   vtkMetaDataKeys.cxx
   BOVTimeStepImage.cxx
   BOVScalarImage.cxx
