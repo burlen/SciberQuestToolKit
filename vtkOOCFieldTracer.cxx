@@ -64,8 +64,6 @@ using std::pair;
 
 #include "FieldLine.h"
 #include "TerminationCondition.h"
-#include "SimpleTerminationCondition.h"
-#include "ClosedTerminationCondition.h"
 
 vtkCxxRevisionMacro(vtkOOCFieldTracer, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkOOCFieldTracer);
@@ -396,16 +394,8 @@ int vtkOOCFieldTracer::RequestData(
 
   // Make sure the termionation conditions include the problem
   // domain, any other termination conditions are optional.
-  TerminationCondition *tcon;
-  if (this->SimpleColorMap)
-    {
-    tcon=new SimpleTerminationCondition;
-    }
-  else
-    {
-    tcon=new ClosedTerminationCondition;
-    }
-  tcon->SetProblemDomain(pDomain);
+  TerminationCondition tcon;
+  tcon.SetProblemDomain(pDomain);
   // Include and additional termination surfaces from the third and
   // optional input.
   int nSurf=inputVector[2]->GetNumberOfInformationObjects();
@@ -424,9 +414,9 @@ int vtkOOCFieldTracer::RequestData(
       {
       surfName=info->Get(vtkMetaDataKeys::DESCRIPTIVE_NAME());
       }
-    tcon->PushSurface(pd,surfName);
+    tcon.PushSurface(pd,surfName);
     }
-  tcon->InitializeColorMapper();
+  tcon.InitializeColorMapper();
 
 
   // TODO for now we consider a seed single source, but we should handle
@@ -476,8 +466,8 @@ int vtkOOCFieldTracer::RequestData(
       {
       FieldLine *line=lines[i];
       this->UpdateProgress(i*progInc+0.10); cerr << "."; 
-      this->OOCIntegrateOne(oocr,fieldName,line,tcon,cache);
-      pColor[i]=tcon->GetTerminationColor(line);
+      this->OOCIntegrateOne(oocr,fieldName,line,&tcon,cache);
+      pColor[i]=tcon.GetTerminationColor(line);
       delete line;
       lines[i]=0;
       }
@@ -503,19 +493,18 @@ int vtkOOCFieldTracer::RequestData(
       {
       FieldLine *line=lines[i];
       this->UpdateProgress(i*progInc+0.10); cerr << ".";
-      this->OOCIntegrateOne(oocr,fieldName,line,tcon,cache);
+      this->OOCIntegrateOne(oocr,fieldName,line,&tcon,cache);
       nPtsTotal+=line->GetNumberOfPoints();
-      pColor[i]=tcon->GetTerminationColor(line);
+      pColor[i]=tcon.GetTerminationColor(line);
       }
     // copy into output (also deletes the lines).
     this->FieldLinesToPolydata(lines,nPtsTotal,output);
     }
 
   // place the color color into the polygonal cell output.
-  tcon->SqueezeColorMap(intersectColor);
+  tcon.SqueezeColorMap(intersectColor);
   output->GetCellData()->AddArray(intersectColor);
   intersectColor->Delete();
-  delete tcon;
 
   oocr->Close();
   oocr->Delete();

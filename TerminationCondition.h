@@ -76,13 +76,20 @@ public:
   int GetTerminationColor(int sId1, int sId2);
 
   // Description:
-  // Implementation to define how surface map to colors, and which
-  // ids are used for the special cases of problem domain termination,
-  // stagnation, and short integration.
-  virtual void InitializeColorMapper()=0;
-  virtual int GetProblemDomainSurfaceId()=0;
-  virtual int GetFieldNullId()=0;
-  virtual int GetShortIntegrationId()=0;
+  // Build the color mapper with the folowing scheme:
+  //
+  // 0   -> field null
+  // 1   -> s1
+  //    ...
+  // n   -> sn
+  // n+1 -> problem domain
+  // n+2 -> short integration
+  void InitializeColorMapper();
+  // Description:
+  // Return the indentifier for the special termination cases.
+  int GetProblemDomainSurfaceId(){ return 0; }
+  int GetFieldNullId(){ return this->Surfaces.size()+1; }
+  int GetShortIntegrationId(){ return this->Surfaces.size()+2; }
 
   // Description:
   // Eliminate unused colors from the the lookup table and send
@@ -102,7 +109,6 @@ private:
 private:
   double ProblemDomain[6];
   double WorkingDomain[6];
-protected:
   vector<vtkCellLocator*> Surfaces;
   vector<string> SurfaceNames;
   IntersectionSetColorMapper CMap;

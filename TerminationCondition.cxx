@@ -130,3 +130,23 @@ void TerminationCondition::DomainToLocator(vtkCellLocator *cellLoc, double dom[6
 
   surface->Delete();
 }
+
+//-----------------------------------------------------------------------------
+void TerminationCondition::InitializeColorMapper()
+{
+  // Initialize the mapper, color scheme as follows:
+  // 0   -> problem domain
+  // 1   -> s1
+  //    ...
+  // n   -> sn
+  // n+1 -> field null
+  // n+2 -> short integration
+  vector<string> names;
+  names.push_back("domain bounds");
+  names.insert(names.end(),this->SurfaceNames.begin(),this->SurfaceNames.end());
+  names.push_back("feild null");
+  names.push_back("short integration");
+
+  size_t nSurf=this->Surfaces.size()+2; // only 2 bc problem domain is automatically included.
+  this->CMap.BuildColorMap(nSurf,names);
+}
