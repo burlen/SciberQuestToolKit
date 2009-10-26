@@ -18,10 +18,12 @@ void SimpleTerminationCondition::InitializeColorMapper()
   // 1   -> s1
   //    ...
   // n   -> sn
+  // n+1 -> noise
   vector<string> names;
-  names.push_back("noise");
+  names.push_back("problem domain");
   names.insert(names.end(),this->SurfaceNames.begin(),this->SurfaceNames.end());
+  names.push_back("noise");
 
-  size_t nSurf=this->Surfaces.size(); // not adding any since cmap obj uses n+1.
+  size_t nSurf=this->Surfaces.size()+1; // not 2 because cmap obj assumes n+1.
   this->CMap.BuildColorMap(nSurf,names);
 }

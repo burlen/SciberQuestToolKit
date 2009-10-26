@@ -22,17 +22,18 @@ public:
   // Description:
   // Build the color mapper with the folowing scheme:
   //
-  // 0   -> noise=(problem domain,field null,short integration)
+  // 0   -> problem domain
   // 1   -> s1
   //    ...
   // n   -> sn
+  // n+1 -> noise=(field null,short integration)
   virtual void InitializeColorMapper();
 
   // Description:
   // Return the indentifier for the special termination cases.
   virtual int GetProblemDomainSurfaceId(){ return 0; };
-  virtual int GetFieldNullId(){ return 0; }
-  virtual int GetShortIntegrationId(){ return 0; }
+  virtual int GetFieldNullId(){ return this->Surfaces.size()+1; }
+  virtual int GetShortIntegrationId(){ return this->Surfaces.size()+1; }
 };
 
 #endif
