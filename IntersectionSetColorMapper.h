@@ -25,18 +25,8 @@ using std::string;
 #include<sstream>
 using std::ostringstream;
 
-#include"vtkIntArray.h"
-
-
-namespace {
-//*****************************************************************************
-template<typename T>
-T max(T a, T b){ return a<b?b:a; }
-
-//*****************************************************************************
-template<typename T>
-T min(T a, T b){ return a<b?a:b; }
-};
+#include "vtkIntArray.h"
+#include "minmax.h"
 
 /**
 /// Class that manages color assignement operation for insterection sets.

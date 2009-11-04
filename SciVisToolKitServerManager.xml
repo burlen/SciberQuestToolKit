@@ -768,6 +768,146 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
    <!-- End FieldTracer -->
 </SourceProxy>
 
+
+
+
+
+
+
+<!-- ==================================================================== -->
+<SourceProxy name="vtkOOCDFieldTracer" 
+    class="vtkOOCDFieldTracer"
+    label="OOCD Field Tracer"
+    base_proxyname="vtkOOCFieldTracerUI"
+    base_proxygroup="filters">
+
+  <!-- Out -->
+  <OutputPort name="Field Lines" index="0" />
+
+  <!-- Topo Flag -->
+  <IntVectorProperty 
+    name="TopologyMode" 
+    command="SetTopologyMode" 
+    number_of_elements="1"
+    default_values="0">
+    <BooleanDomain name="bool"/>
+    <Documentation>
+    If checked topology mode is active and the filter produces a topology
+    map rather than field lines.
+    </Documentation>
+  </IntVectorProperty>
+
+  <!-- Load balancing controls -->
+  <IntVectorProperty 
+    name="MasterBlockSize"
+    command="SetMasterBlockSize"
+    number_of_elements="1"
+    default_values="16"
+    animateable="0">
+    <IntRangeDomain name="range" min="1" max="131072"/>
+    <Documentation>
+      Controls how much work the master does in between servicing work requests
+      from the workers. Should be much smaller the WorkerBlockSize.
+    </Documentation>
+  </IntVectorProperty>
+    <IntVectorProperty 
+    name="WorkerBlockSize"
+    command="SetWorkerBlockSize"
+    number_of_elements="1"
+    default_values="512"
+    animateable="0">
+    <IntRangeDomain name="range" min="1" max="131072"/>
+    <Documentation>
+      Controls how much work is given to the worker processes at each
+      request.
+    </Documentation>
+  </IntVectorProperty>
+
+  <Hints>
+    <Property name="TopologyMode" show="0"/>
+    <Property name="StepUnit" show="0"/>
+    <Property name="MaxError" show="0"/>
+  </Hints>
+   <!-- End OOCFieldTracer -->
+</SourceProxy>
+
+<!-- ==================================================================== -->
+<SourceProxy name="vtkOOCDFieldTopologyMapper" 
+    class="vtkOOCDFieldTracer"
+    label="OOCD Field Topology Mapper"
+    base_proxyname="vtkOOCFieldTracerUI"
+    base_proxygroup="filters">
+
+  <!-- Out -->
+  <OutputPort name="Topology Map" index="0" />
+
+  <!-- Topo Flag -->
+  <IntVectorProperty 
+    name="TopologyMode" 
+    command="SetTopologyMode" 
+    number_of_elements="1"
+    default_values="1">
+    <BooleanDomain name="bool"/>
+    <Documentation>
+    If checked topology mode is active and the filter produces a topology
+    map rather than field lines.
+    </Documentation>
+  </IntVectorProperty>
+
+  <!-- Load balancing controls -->
+  <IntVectorProperty 
+    name="MasterBlockSize"
+    command="SetMasterBlockSize"
+    number_of_elements="1"
+    default_values="16"
+    animateable="0">
+    <IntRangeDomain name="range" min="1" max="131072"/>
+    <Documentation>
+      Controls how much work the master does in between servicing work requests
+      from the workers. Should be much smaller the WorkerBlockSize.
+    </Documentation>
+  </IntVectorProperty>
+    <IntVectorProperty 
+    name="WorkerBlockSize"
+    command="SetWorkerBlockSize"
+    number_of_elements="1"
+    default_values="512"
+    animateable="0">
+    <IntRangeDomain name="range" min="1" max="131072"/>
+    <Documentation>
+      Controls how much work is given to the worker processes at each
+      request.
+    </Documentation>
+  </IntVectorProperty>
+
+  <Hints>
+    <Property name="TopologyMode" show="0"/>
+    <Property name="StepUnit" show="0"/>
+    <Property name="MaxError" show="0"/>
+  </Hints>
+   <!-- End FieldTracer -->
+</SourceProxy>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <!-- ==================================================================== -->
   <SourceProxy 
     name="vtkFieldAnalysis" 

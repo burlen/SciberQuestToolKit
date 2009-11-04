@@ -427,12 +427,13 @@ int vtkOOCFieldTracer::RequestData(
 
 
   // Get the filter's output.
+  // Get the filter's output.
   info=outputVector->GetInformationObject(0);
-  vtkPolyData *output
-    = dynamic_cast<vtkPolyData*>(info->Get(vtkDataObject::DATA_OBJECT()));
+  vtkPointSet *output
+    = dynamic_cast<vtkPointSet*>(info->Get(vtkDataObject::DATA_OBJECT()));
   if (output==0)
     {
-    vtkWarningMacro("Output polydata was not present. Aborting request.");
+    vtkWarningMacro("Output dataset was not present. Aborting request.");
     return 1;
     }
 
@@ -465,7 +466,7 @@ int vtkOOCFieldTracer::RequestData(
     for (vtkIdType i=0; i<nLines; ++i)
       {
       FieldLine *line=lines[i];
-      this->UpdateProgress(i*progInc+0.10); cerr << "."; 
+      this->UpdateProgress(i*progInc+0.10); 
       this->OOCIntegrateOne(oocr,fieldName,line,&tcon,cache);
       pColor[i]=tcon.GetTerminationColor(line);
       delete line;
@@ -492,13 +493,13 @@ int vtkOOCFieldTracer::RequestData(
     for (vtkIdType i=0; i<nLines; ++i)
       {
       FieldLine *line=lines[i];
-      this->UpdateProgress(i*progInc+0.10); cerr << ".";
+      this->UpdateProgress(i*progInc+0.10);
       this->OOCIntegrateOne(oocr,fieldName,line,&tcon,cache);
       nPtsTotal+=line->GetNumberOfPoints();
       pColor[i]=tcon.GetTerminationColor(line);
       }
     // copy into output (also deletes the lines).
-    this->FieldLinesToPolydata(lines,nPtsTotal,output);
+    this->FieldLinesToPolydata(lines,nPtsTotal,dynamic_cast<vtkPolyData*>(output));
     }
 
   // place the color color into the polygonal cell output.

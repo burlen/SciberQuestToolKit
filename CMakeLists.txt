@@ -30,6 +30,7 @@ set(SM_SOURCES
   vtkDistributedFieldTracer.cxx
   vtkFieldAnalysis.cxx
   vtkOOCFieldTracer.cxx
+  vtkOOCDFieldTracer.cxx
   vtkSQPlaneSource.cxx
   vtkSQSphereSource.cxx
   vtkProcessMonitor.cxx)
@@ -46,7 +47,8 @@ set(_SOURCES
   vtkMetaDataKeys.cxx
   BOVTimeStepImage.cxx
   BOVScalarImage.cxx
-  BOVVectorImage.cxx)
+  BOVVectorImage.cxx
+  WorkQueue.cxx)
 
 SET_SOURCE_FILES_PROPERTIES(
 vtkOOCReader.cxx

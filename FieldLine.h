@@ -64,8 +64,15 @@ public:
   ///
   ~FieldLine()
     {
-    this->FwdTrace->Delete();
-    this->BwdTrace->Delete();
+    this->DeleteTrace();
+    }
+  ///
+  void DeleteTrace()
+    {
+    if (this->FwdTrace){ this->FwdTrace->Delete(); }
+    if (this->BwdTrace){ this->BwdTrace->Delete(); }
+    this->FwdTrace=0;
+    this->BwdTrace=0;
     }
   ///
   const FieldLine &operator=(const FieldLine &other)
@@ -83,10 +90,11 @@ public:
     this->FwdTerminator=other.FwdTerminator;
     this->BwdTerminator=other.BwdTerminator;
 
-    this->FwdTrace->Delete();
+    this->DeleteTrace();
+
     this->FwdTrace=other.FwdTrace;
     this->FwdTrace->Register(0);
-    this->BwdTrace->Delete();
+
     this->BwdTrace=other.BwdTrace;
     this->BwdTrace->Register(0);
 
@@ -106,21 +114,21 @@ public:
   ///
   void PushPoint(int dir,float *p)
     {
-    assert((dir>=0)&&(dir<=1));
+    // assert((dir>=0)&&(dir<=1));
     vtkFloatArray *line=dir==0?BwdTrace:FwdTrace;
     line->InsertNextTuple(p);
     }
   ///
   void PushPoint(int dir,double *p)
     {
-    assert((dir>=0)&&(dir<=1));
+    // assert((dir>=0)&&(dir<=1));
     vtkFloatArray *line=dir==0?BwdTrace:FwdTrace;
     line->InsertNextTuple(p);
     }
   ///
   void SetTerminator(int dir, int code)
     {
-    assert((dir>=0)&&(dir<=1));
+    // assert((dir>=0)&&(dir<=1));
     int *term=dir==0?&this->BwdTerminator:&this->FwdTerminator;
     *term=code;
     }

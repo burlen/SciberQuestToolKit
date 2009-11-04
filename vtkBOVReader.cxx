@@ -30,6 +30,7 @@ Copyright 2008 SciberQuest Inc.
 #include "GDAMetaData.h"
 #include "BOVTimeStepImage.h"
 #include "PrintUtils.h"
+#include "minmax.h"
 
 #if defined vtkBOVReaderTIME
 #include <sys/time.h>
@@ -40,17 +41,7 @@ Copyright 2008 SciberQuest Inc.
 vtkCxxRevisionMacro(vtkBOVReader, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkBOVReader);
 
-//Min max
-inline
-double min(double a, double b)
-  {
-  return a<b?a:b;
-  }
-inline
-double max(double a, double b)
-  {
-  return a<b?b:a;
-  }
+
 
 // Compare two doubles.
 int fequal(double a, double b, double tol)

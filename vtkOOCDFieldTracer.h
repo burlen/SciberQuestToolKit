@@ -18,9 +18,11 @@ Copyright 2008 SciberQuest Inc.
 #define __vtkOOCDFieldTracer_h
 
 #include "vtkDataSetAlgorithm.h"
-
-// // Needed for constants
 #include "TerminationCondition.h"
+#include "WorkQueue.h"
+#include<map>
+using std::map;
+using std::pair;
 
 
 // class vtkCompositeDataSet;
@@ -38,6 +40,8 @@ class vtkInitialValueProblemSolver;
 class vtkPointSet;
 //BTX
 class FieldLine;
+class CellIdBlock;
+class SeedGeometryCache;
 //ETX
 
 
@@ -60,7 +64,6 @@ public:
   // Specify a set of surfaces to use.
   void AddTerminatorInputConnection(vtkAlgorithmOutput* algOutput);
   void ClearTerminatorInputConnections();
-
 
   // Description:
   // Specify a uniform integration step unit for MinimumIntegrationStep, 
@@ -117,6 +120,25 @@ public:
   vtkSetMacro(TopologyMode,int);
   vtkGetMacro(TopologyMode,int);
 
+  // Description:
+  // If on then color map produced will only contain used colors. NOTE: requires
+  // a global communication,
+  vtkSetMacro(SqueezeColorMap,int);
+  vtkGetMacro(SqueezeColorMap,int);
+
+  // Description:
+  // Sets the work unit (in number of seed points) for slave processes.
+  vtkSetClampMacro(WorkerBlockSize,int,1,VTK_INT_MAX);
+  vtkGetMacro(WorkerBlockSize,int);
+
+  // Description:
+  // Sets the work unit (in number of seed points) for the master. This should
+  // be much less than the slave block size, so that the master can respond
+  // timely to slave requests.
+  vtkSetClampMacro(MasterBlockSize,int,1,VTK_INT_MAX);
+  vtkGetMacro(MasterBlockSize,int);
+
+
 protected:
   vtkOOCDFieldTracer();
   ~vtkOOCDFieldTracer();
@@ -132,6 +154,21 @@ protected:
 private:
   //BTX
   // Description:
+  // Integrate field lines seeded from a block of consecutive cell ids. This is
+  // designed for multiple calls. After completeing all integrations the caller
+  // should delete the cache.
+  int IntegrateBlock(
+        CellIdBlock *sourceIds,           // + inputs
+        SeedGeometryCache *seedGeom,      // |
+        TerminationCondition *tcon,       // |
+        const char *fieldName,            // |
+        vtkOOCReader *oocr,               // |
+        vtkDataSet *&oocrCache,           // |
+        vtkDataSet *out,                  // + outputs
+        vtkIntArray *intersectColor,      // |
+        vtkIntArray *sourceId);           // |
+
+  // Description:
   // Given a set of polygons (seedSource) that is assumed duplicated across
   // all process in the communicator, extract an equal number of polygons
   // on each process and compute seed points at the center of each local
@@ -140,10 +177,11 @@ private:
   // Return 0 if an error occurs. Upon successful completion the number
   // of seed points is returned.
   int CellsToSeeds(
-        int procId,
-        int nProcs,
-        vtkPointSet *seedSource,
-        vector<FieldLine*> &lines);
+        CellIdBlock *SourceIds,
+        vtkCellArray *SourceCells,
+        vtkFloatArray *SourcePts,
+        vector<FieldLine *> &lines);
+
   // Description:
   // Given a set of polygons (seedSource) that is assumed duplicated across
   // all process in the communicator, extract an equal number of polygons
@@ -154,24 +192,29 @@ private:
   // Return 0 if an error occurs. Upon successful completion the number
   // of seed points is returned.
   int CellsToSeeds(
-        int procId,
-        int nProcs,
-        vtkPolyData *seedSource,
-        vtkPolyData *seedOut,
-        vector<FieldLine*> &lines);
+        CellIdBlock *SourceIds,
+        vtkCellArray *SourceCells,
+        vtkFloatArray *SourcePts,
+        vtkCellArray *OutCells,
+        vtkFloatArray *OutPts,
+        map<vtkIdType,vtkIdType> &idMap,
+        vector<FieldLine *> &lines);
   int CellsToSeeds(
-        int procId,
-        int nProcs,
-        vtkUnstructuredGrid *seedSource,
-        vtkUnstructuredGrid *seedOut,
-        vector<FieldLine*> &lines);
+        CellIdBlock *SourceIds,
+        vtkCellArray *SourceCells,
+        vtkFloatArray *SourcePts,
+        vtkUnsingedCharArray *SourceTypes,
+        vtkCellArray *OutCells,
+        vtkFloatArray *OutPts,
+        vtkUnsingedCharArray *OutTypes,
+        vtkIdTypeArray *OutLocs,
+        map<vtkIdType,vtkIdType> &idMap,
+        vector<FieldLine *> &lines);
   // Description:
   // Helper to call the right methods.
-  vtkIdType DispatchCellsToSeeds(
-        int procId,
-        int nProcs,
-        vtkDataSet *Source,
-        vtkDataSet *Out,
+  vtkIdType CellsToSeeds(
+        CellIdBlock *sourceIds,
+        SeedGeometryCache *seedGeom,
         vector<FieldLine *> &lines);
 
   // Description:
@@ -179,7 +222,7 @@ private:
   // reader. As segments are generated they are tested using the stermination 
   // condition and terminated imediately. The last neighborhood read is stored
   // in the nhood parameter. It is up to the caller to delete this.
-  void OOCIntegrateOne(
+  void IntegrateOne(
         vtkOOCReader *oocR,
         const char *fieldName,
         FieldLine *line,
@@ -191,7 +234,8 @@ private:
   int FieldLinesToPolydata(
         vector<FieldLine*> &lines,
         vtkIdType nPtsTotal,
-        vtkPolyData *fieldLines);
+        vtkCellArray *OutCells,
+        vtkFloatArray *OutPts);
   //ETX
 
   // Description:
@@ -215,7 +259,7 @@ private:
   vtkMultiProcessController *Controller;
 
   // Parameter controlling load balance
-  int BlockSize;
+  int WorkerBlockSize;
   int MasterBlockSize;
 
   // Parameters controlling integration,
@@ -236,7 +280,7 @@ private:
 
   // Output controls
   int TopologyMode;
-
+  int SqueezeColorMap;
 
   //BTX
   // units

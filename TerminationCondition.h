@@ -10,6 +10,7 @@ Copyright 2008 SciberQuest Inc.
 #ifndef TerminationCondition_h
 #define TerminationCondition_h
 
+#include "minmax.h"
 #include "FieldLine.h"
 #include "IntersectionSetColorMapper.h"
 #include "vtkCellLocator.h"
