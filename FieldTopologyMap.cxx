@@ -8,8 +8,9 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "FieldTopologyMap.h"
 
-#include "CellIdBlock.h"
-#include "Fieldline.h"
+#include "WorkQueue.h"
+//#include "FieldLine.h"
+#include "TerminationCondition.h"
 #include "vtkDataSet.h"
 #include "vtkCellData.h"
 
@@ -24,6 +25,8 @@ FieldTopologyMap::FieldTopologyMap()
 
   this->SourceId=vtkIntArray::New();
   this->SourceId->SetName("SourceId");
+
+  this->Tcon=new TerminationCondition;
 }
 
 //-----------------------------------------------------------------------------
@@ -31,6 +34,9 @@ FieldTopologyMap::~FieldTopologyMap()
 {
   this->IntersectColor->Delete();
   this->SourceId->Delete();
+  this->ClearFieldLines();
+
+  delete this->Tcon;
 }
 
 //-----------------------------------------------------------------------------
@@ -59,14 +65,14 @@ void FieldTopologyMap::ClearFieldLines()
 }
 
 //-----------------------------------------------------------------------------
-void FieldTopologyMap::SyncScalars()
+int FieldTopologyMap::SyncScalars()
 {
   vtkIdType nLines=this->Lines.size();
 
   vtkIdType lastLineId=this->IntersectColor->GetNumberOfTuples();
 
-  int *pColor=intersectColor->WritePointer(lastLineId,nLines);
-  int *pId=sourceId->WritePointer(lastLineId,nLines);
+  int *pColor=this->IntersectColor->WritePointer(lastLineId,nLines);
+  int *pId=this->SourceId->WritePointer(lastLineId,nLines);
 
   for (vtkIdType i=0; i<nLines; ++i)
     {
@@ -77,5 +83,19 @@ void FieldTopologyMap::SyncScalars()
 
     *pId=line->GetSeedId();
     ++pId;
+    }
+  return 1;
+}
+
+//-----------------------------------------------------------------------------
+void FieldTopologyMap::PrintLegend(int reduce)
+{
+  if (reduce)
+    {
+    this->Tcon->SqueezeColorMap(this->IntersectColor);
+    }
+  else
+    {
+    this->Tcon->PrintColorMap();
     }
 }

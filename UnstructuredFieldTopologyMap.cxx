@@ -8,9 +8,12 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "UnstructuredFieldTopologyMap.h"
 
-#include "CellIdBlock.h"
+#include "WorkQueue.h"
 #include "FieldLine.h"
+#include "TerminationCondition.h"
 #include "vtkDataSet.h"
+#include "vtkPoints.h"
+#include "vtkUnstructuredGrid.h"
 #include "vtkFloatArray.h"
 #include "vtkCellArray.h"
 #include "vtkUnsignedCharArray.h"
@@ -32,7 +35,7 @@ void UnstructuredFieldTopologyMap::ClearSource()
   this->SourcePts=0;
   this->SourceCells=0;
   this->SourceTypes=0;
-  this->IdMap.Clear();
+  this->IdMap.clear();
 }
 
 //-----------------------------------------------------------------------------
@@ -46,7 +49,7 @@ void UnstructuredFieldTopologyMap::ClearOut()
   this->OutCells=0;
   this->OutTypes=0;
   this->OutLocs=0;
-  this->IdMap.Clear();
+  this->IdMap.clear();
 }
 
 //-----------------------------------------------------------------------------
@@ -54,7 +57,7 @@ void UnstructuredFieldTopologyMap::SetSource(vtkDataSet *s)
 {
   this->ClearSource();
 
-  vtkUnstructuredGrid *source=dynamic_cast<vtkUnstructuredGrid>(s);
+  vtkUnstructuredGrid *source=dynamic_cast<vtkUnstructuredGrid*>(s);
   if (source==0)
     {
     cerr << "Error: Source must be unstructured. " << s->GetClassName() << endl;
@@ -62,7 +65,7 @@ void UnstructuredFieldTopologyMap::SetSource(vtkDataSet *s)
     }
 
   this->SourcePts=dynamic_cast<vtkFloatArray*>(source->GetPoints()->GetData());
-  if (this->SourcePoints==0)
+  if (this->SourcePts==0)
     {
     cerr << "Error: Points are not float precision." << endl;
     return;
@@ -108,9 +111,7 @@ void UnstructuredFieldTopologyMap::SetOutput(vtkDataSet *o)
 }
 
 //-----------------------------------------------------------------------------
-int UnstructuredFieldTopologyMap::InsertCells(
-      CellIdBlock *SourceIds,
-      vector<FieldLine *> &lines)
+int UnstructuredFieldTopologyMap::InsertCells(CellIdBlock *SourceIds)
 {
   vtkIdType startCellId=SourceIds->first();
   vtkIdType nCellsLocal=SourceIds->size();
@@ -128,7 +129,8 @@ int UnstructuredFieldTopologyMap::InsertCells(
   float *pSourcePts=this->SourcePts->GetPointer(0);
   unsigned char *pSourceTypes=this->SourceTypes->GetPointer(0);
 
-  vtkIdTypeArray *OutCellPtIds=this->OutCells->GetData();
+  ///vtkIdTypeArray *OutCellPtIds=this->OutCells->GetData();
+
   vtkIdType endOfTypes=this->OutTypes->GetNumberOfTuples();
   unsigned char *pOutTypes=this->OutTypes->WritePointer(endOfTypes,nCellsLocal);
 
@@ -136,12 +138,12 @@ int UnstructuredFieldTopologyMap::InsertCells(
   vtkIdType *pOutLocs=this->OutLocs->WritePointer(endOfLocs,nCellsLocal);
 
   vtkIdType nCellIds=this->OutCells->GetNumberOfCells();
-  vtkIdType nOutPts=this->OutPts->GetNumberOfPoints();
+  vtkIdType nOutPts=this->OutPts->GetNumberOfTuples();
 
   vtkIdType sourceCellId=startCellId;
 
-  int lId=lines.size();
-  lines.resize(lId+nCellsLocal,0);
+  int lId=this->Lines.size();
+  this->Lines.resize(lId+nCellsLocal,0);
 
   // For each cell asigned to us we'll get its center (this is the seed point)
   // and build corresponding cell in the output, The output only will have
@@ -180,7 +182,7 @@ int UnstructuredFieldTopologyMap::InsertCells(
       vtkIdType idx=3*ptIds[j];
       // do we already have this point?
       MapElement elem(ptIds[j],nOutPts);
-      MapInsert ret=idMap.insert(elem);
+      MapInsert ret=this->IdMap.insert(elem);
       if (ret.second==true)
         {
         // this point hasn't previsouly been coppied
@@ -200,7 +202,7 @@ int UnstructuredFieldTopologyMap::InsertCells(
         // insert the other point id.
         *pOutCells=(*ret.first).second;
         }
-      ++pOutCells
+      ++pOutCells;
 
       // compute contribution to cell center.
       seed[0]+=pSourcePts[idx  ];
@@ -212,7 +214,7 @@ int UnstructuredFieldTopologyMap::InsertCells(
     seed[1]/=nPtIds;
     seed[2]/=nPtIds;
 
-    lines[lId]=new FieldLine(seed,sourceCellId);
+    this->Lines[lId]=new FieldLine(seed,sourceCellId);
     ++sourceCellId;
     ++lId;
     }

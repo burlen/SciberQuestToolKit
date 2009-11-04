@@ -48,7 +48,11 @@ set(_SOURCES
   BOVTimeStepImage.cxx
   BOVScalarImage.cxx
   BOVVectorImage.cxx
-  WorkQueue.cxx)
+  WorkQueue.cxx
+  FieldTopologyMap.cxx
+  PolyDataFieldTopologyMap.cxx
+  UnstructuredFieldTopologyMap.cxx
+  TracerFieldTopologyMap.cxx)
 
 SET_SOURCE_FILES_PROPERTIES(
 vtkOOCReader.cxx

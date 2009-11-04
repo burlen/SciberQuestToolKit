@@ -8,9 +8,12 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "PolyDataFieldTopologyMap.h"
 
-#include "CellIdBlock.h"
+#include "WorkQueue.h"
 #include "FieldLine.h"
+#include "TerminationCondition.h"
 #include "vtkDataSet.h"
+#include "vtkPoints.h"
+#include "vtkPolyData.h"
 #include "vtkFloatArray.h"
 #include "vtkCellArray.h"
 #include "vtkUnsignedCharArray.h"
@@ -30,7 +33,7 @@ void PolyDataFieldTopologyMap::ClearSource()
   if (this->SourceCells){ this->SourceCells->Delete(); }
   this->SourcePts=0;
   this->SourceCells=0;
-  this->IdMap.Clear();
+  this->IdMap.clear();
   this->CellType=NONE;
 }
 
@@ -41,8 +44,8 @@ void PolyDataFieldTopologyMap::ClearOut()
   if (this->OutCells){ this->OutCells->Delete(); }
   this->OutPts=0;
   this->OutCells=0;
-  this->IdMap.Clear();
-  this->CellType=NONE;
+  this->IdMap.clear();
+  // this->CellType=NONE;
 }
 
 //-----------------------------------------------------------------------------
@@ -50,7 +53,7 @@ void PolyDataFieldTopologyMap::SetSource(vtkDataSet *s)
 {
   this->ClearSource();
 
-  vtkPolyDataGrid *source=dynamic_cast<vtkPolyDataGrid>(s);
+  vtkPolyData *source=dynamic_cast<vtkPolyData*>(s);
   if (source==0)
     {
     cerr << "Error: Source must be polydata. " << s->GetClassName() << endl;
@@ -58,7 +61,7 @@ void PolyDataFieldTopologyMap::SetSource(vtkDataSet *s)
     }
 
   this->SourcePts=dynamic_cast<vtkFloatArray*>(source->GetPoints()->GetData());
-  if (this->SourcePoints==0)
+  if (this->SourcePts==0)
     {
     cerr << "Error: Points are not float precision." << endl;
     return;
@@ -120,9 +123,7 @@ void PolyDataFieldTopologyMap::SetOutput(vtkDataSet *o)
 }
 
 //-----------------------------------------------------------------------------
-int PolyDataFieldTopologyMap::InsertCells(
-      CellIdBlock *SourceIds,
-      vector<FieldLine *> &lines)
+int PolyDataFieldTopologyMap::InsertCells(CellIdBlock *SourceIds)
 {
   vtkIdType startCellId=SourceIds->first();
   vtkIdType nCellsLocal=SourceIds->size();
@@ -148,8 +149,8 @@ int PolyDataFieldTopologyMap::InsertCells(
   vtkIdType nOutCellPts=this->OutPts->GetNumberOfTuples();
   vtkIdType polyId=startCellId;
 
-  int lId=lines.size();
-  lines.resize(lId+nCellsLocal,0);
+  int lId=this->Lines.size();
+  this->Lines.resize(lId+nCellsLocal,0);
 
   // For each cell asigned to us we'll get its center (this is the seed point)
   // and build corresponding cell in the output, The output only will have
@@ -210,7 +211,7 @@ int PolyDataFieldTopologyMap::InsertCells(
     seed[1]/=nPtIds;
     seed[2]/=nPtIds;
 
-    lines[lId]=new FieldLine(seed,polyId);
+    this->Lines[lId]=new FieldLine(seed,polyId);
     ++polyId;
     ++lId;
     }

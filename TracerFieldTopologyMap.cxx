@@ -8,9 +8,13 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "TracerFieldTopologyMap.h"
 
-#include "CellIdBlock.h"
+#include "WorkQueue.h"
 #include "FieldLine.h"
+#include "TerminationCondition.h"
 #include "vtkDataSet.h"
+#include "vtkPoints.h"
+#include "vtkPolyData.h"
+#include "vtkUnstructuredGrid.h"
 #include "vtkFloatArray.h"
 #include "vtkCellArray.h"
 #include "vtkUnsignedCharArray.h"
@@ -30,8 +34,6 @@ void TracerFieldTopologyMap::ClearSource()
   if (this->SourceCells){ this->SourceCells->Delete(); }
   this->SourcePts=0;
   this->SourceCells=0;
-  this->IdMap.Clear();
-  this->CellType=NONE;
 }
 
 //-----------------------------------------------------------------------------
@@ -41,8 +43,6 @@ void TracerFieldTopologyMap::ClearOut()
   if (this->OutCells){ this->OutCells->Delete(); }
   this->OutPts=0;
   this->OutCells=0;
-  this->IdMap.Clear();
-  this->CellType=NONE;
 }
 
 //-----------------------------------------------------------------------------
@@ -51,11 +51,11 @@ void TracerFieldTopologyMap::SetSource(vtkDataSet *s)
   this->ClearSource();
 
   // unstructured (the easier)
-  vtkUnstructuredGrid *sourceug=dynamic_cast<vtkUnstructuredGrid>(s);
+  vtkUnstructuredGrid *sourceug=dynamic_cast<vtkUnstructuredGrid*>(s);
   if (sourceug)
     {
     this->SourcePts=dynamic_cast<vtkFloatArray*>(sourceug->GetPoints()->GetData());
-    if (this->SourcePoints==0)
+    if (this->SourcePts==0)
       {
       cerr << "Error: Points are not float precision." << endl;
       return;
@@ -69,11 +69,11 @@ void TracerFieldTopologyMap::SetSource(vtkDataSet *s)
     }
 
   // polydata
-  vtkPolyDataGrid *sourcepd=dynamic_cast<vtkPolyDataGrid>(s);
+  vtkPolyData *sourcepd=dynamic_cast<vtkPolyData*>(s);
   if (sourcepd)
     {
     this->SourcePts=dynamic_cast<vtkFloatArray*>(sourcepd->GetPoints()->GetData());
-    if (this->SourcePoints==0)
+    if (this->SourcePts==0)
       {
       cerr << "Error: Points are not float precision." << endl;
       return;
@@ -127,23 +127,21 @@ void TracerFieldTopologyMap::SetOutput(vtkDataSet *o)
 }
 
 //-----------------------------------------------------------------------------
-int TracerFieldTopologyMap::InsertCells(
-      CellIdBlock *SourceIds,
-      vector<FieldLine *> &lines)
+int TracerFieldTopologyMap::InsertCells(CellIdBlock *SourceIds)
 {
   vtkIdType startId=SourceIds->first();
   vtkIdType endId=SourceIds->last();
   vtkIdType nCellsLocal=SourceIds->size();
 
-  int lId=lines.size();
-  lines.resize(lId+nCellsLocal,0);
+  int lId=this->Lines.size();
+  this->Lines.resize(lId+nCellsLocal,0);
 
   float *pSourcePts=this->SourcePts->GetPointer(0);
 
   // Cells are sequentially acccessed (not random) so explicitly skip all cells
   // we aren't interested in.
   this->SourceCells->InitTraversal();
-  for (vtkIdType i=0; i<startCellId; ++i)
+  for (vtkIdType i=0; i<startId; ++i)
     {
     vtkIdType n;
     vtkIdType *ptIds;
@@ -177,7 +175,7 @@ int TracerFieldTopologyMap::InsertCells(
     seed[1]/=nPtIds;
     seed[2]/=nPtIds;
 
-    lines[lId]=new FieldLine(seed,cId);
+    this->Lines[lId]=new FieldLine(seed,cId);
     ++lId;
     }
   ptIds->Delete();
@@ -197,12 +195,14 @@ int TracerFieldTopologyMap::SyncGeometry()
     nPtsTotal+=this->Lines[i]->GetNumberOfPoints();
     }
 
-  vtkIdType nOutPts=this->OutPts->GetNumberOfTuples();
-  float *pOutPts=this->OutPts->WritePointer(3*nOutPts,3*nPtsTotal);
+  vtkIdType nLinePts=this->OutPts->GetNumberOfTuples();
+  float *pLinePts=this->OutPts->WritePointer(3*nLinePts,3*nPtsTotal);
 
-  vtkIdType nLineCells=this->OutCells->GetNumberOfCells();
   vtkIdTypeArray *lineCells=this->OutCells->GetData();
-  vtkIdType *pLineCells=lineCells->WritePointer(nLineCells,nPtsTotal+nLines);
+  vtkIdType *pLineCells=lineCells->WritePointer(lineCells->GetNumberOfTuples(),nPtsTotal+nLines);
+
+  // before we forget
+  this->OutCells->SetNumberOfCells(this->OutCells->GetNumberOfCells()+nLines);
 
   vtkIdType ptId=nLinePts;
 
@@ -222,8 +222,12 @@ int TracerFieldTopologyMap::SyncGeometry()
       ++ptId;
       }
 
-    this->Lines[i]->DeleteTrace();
+    // NOTE assume we are done after syncing geom.
+    delete this->Lines[i];
+    this->Lines[i]=0;
     }
+
+  this->Lines.clear();
 
   return 1;
 }

@@ -48,6 +48,12 @@ PURPOSE.  See the above copyright notice for more information.
 #endif
 
 #include "FieldLine.h"
+#include "TerminationCondition.h"
+#include "WorkQueue.h"
+#include "FieldTopologyMap.h"
+#include "PolyDataFieldTopologyMap.h"
+#include "UnstructuredFieldTopologyMap.h"
+#include "TracerFieldTopologyMap.h"
 #include "minmax.h"
 
 #include "mpi.h"
@@ -132,6 +138,7 @@ int vtkOOCDFieldTracer::FillOutputPortInformation(int port, vtkInformation *info
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataSet");
   return 1;
 
+  // NOTE my recolection is that this doesn't work quite right.
   switch (port)
     {
     case 0:
@@ -260,14 +267,14 @@ int vtkOOCDFieldTracer::RequestDataObject(
   else
     {
     if (!outData)
-        {
-        // consrtruct a polydata for the field line output.
-        outData=vtkPolyData::New();
-        outData->SetPipelineInformation(outInfo);
-        outData->Delete();
-        vtkInformation *portInfo=this->GetOutputPortInformation(0);
-        portInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(),VTK_PIECES_EXTENT);
-        }
+      {
+      // consrtruct a polydata for the field line output.
+      outData=vtkPolyData::New();
+      outData->SetPipelineInformation(outInfo);
+      outData->Delete();
+      vtkInformation *portInfo=this->GetOutputPortInformation(0);
+      portInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(),VTK_PIECES_EXTENT);
+      }
     }
   return 1;
 }
@@ -357,6 +364,9 @@ int vtkOOCDFieldTracer::RequestData(
   int nProcs=this->Controller->GetNumberOfProcesses();
 
   vtkInformation *info;
+
+
+  /// Reader
   // Get the input on the first port. This should be the dummy dataset 
   // produced by ameta-reader. The information object should have the
   // OOC Reader.
@@ -382,8 +392,11 @@ int vtkOOCDFieldTracer::RequestData(
   oocr->DeActivateAllArrays();
   oocr->ActivateArray(fieldName);
   oocr->Open();
+  // cache
+  vtkDataSet *oocrCache=0;
 
-  // also the bounds (problem domain) of the data should be available.
+  // also the bounds (problem domain) of the data should be provided by the
+  // meta reader.
   if (!info->Has(vtkOOCReader::BOUNDS()))
     {
     vtkWarningMacro(
@@ -393,10 +406,71 @@ int vtkOOCDFieldTracer::RequestData(
   double pDomain[6];
   info->Get(vtkOOCReader::BOUNDS(),pDomain);
 
-  // Make sure the termionation conditions include the problem
+
+  /// Seed source
+  // TODO for now we consider a seed single source, but we should handle
+  // multiple sources.
+  info=inputVector[1]->GetInformationObject(0);
+  vtkDataSet *source
+    = dynamic_cast<vtkDataSet*>(info->Get(vtkDataObject::DATA_OBJECT()));
+  if (source==0)
+    {
+    vtkWarningMacro("Seed source input was not present. Aborting request.");
+    return 1;
+    }
+
+  /// Output
+  // Get the filter's output.
+  info=outputVector->GetInformationObject(0);
+  vtkDataSet *out
+    = dynamic_cast<vtkDataSet*>(info->Get(vtkDataObject::DATA_OBJECT()));
+  if (out==0)
+    {
+    vtkWarningMacro("Output dataset was not present. Aborting request.");
+    return 1;
+    }
+
+  /// Map
+  // Configure the map.
+  FieldTopologyMap *topoMap;
+
+  // There are two distinct modes the filter can be used in. The first is topology
+  // mode. Here a topology map is produced on a set of cells(source). Field lines
+  // are imediately freed and not passed to the output. In the second mode (trace mode)
+  // the topology map is projected onto the field lines them selves. This mode uses
+  // quite a bit more memory! 
+  if (this->TopologyMode)
+    {
+    vtkPolyData *sourcePd, *outPd;
+    vtkUnstructuredGrid *sourceUg, *outUg;
+
+    if ((sourcePd=dynamic_cast<vtkPolyData*>(source))
+      && (outPd=dynamic_cast<vtkPolyData*>(out)))
+      {
+      topoMap=new PolyDataFieldTopologyMap;
+      topoMap->SetSource(sourcePd);
+      topoMap->SetOutput(outPd);
+      }
+    else
+    if ((sourceUg=dynamic_cast<vtkUnstructuredGrid*>(source))
+      && (outUg=dynamic_cast<vtkUnstructuredGrid*>(out)))
+      {
+      topoMap=new UnstructuredFieldTopologyMap;
+      topoMap->SetSource(sourceUg);
+      topoMap->SetOutput(outUg);
+      }
+    }
+  else
+    {
+    topoMap=new TracerFieldTopologyMap;
+    topoMap->SetSource(source);
+    topoMap->SetOutput(out);
+    }
+
+  // Make sure the termination conditions include the problem
   // domain, any other termination conditions are optional.
-  TerminationCondition tcon;
-  tcon.SetProblemDomain(pDomain);
+  TerminationCondition *tcon=topoMap->GetTerminationCondition();
+  tcon->SetProblemDomain(pDomain);
   // Include and additional termination surfaces from the third and
   // optional input.
   int nSurf=inputVector[2]->GetNumberOfInformationObjects();
@@ -410,65 +484,18 @@ int vtkOOCDFieldTracer::RequestData(
       vtkWarningMacro("Termination surface is not polydata. Skipping.");
       continue;
       }
+    // SciberQuest filters provide a name that is use when creating
+    // the legend. (optional).
     const char *surfName=0;
     if (info->Has(vtkMetaDataKeys::DESCRIPTIVE_NAME()))
       {
       surfName=info->Get(vtkMetaDataKeys::DESCRIPTIVE_NAME());
       }
-    tcon.PushSurface(pd,surfName);
+    tcon->PushSurface(pd,surfName);
     }
-  tcon.InitializeColorMapper();
+  tcon->InitializeColorMapper();
 
-
-  // TODO for now we consider a seed single source, but we should handle
-  // multiple sources.
-  info=inputVector[1]->GetInformationObject(0);
-  vtkDataSet *source
-    = dynamic_cast<vtkDataSet*>(info->Get(vtkDataObject::DATA_OBJECT()));
-  if (source==0)
-    {
-    vtkWarningMacro("Seed source input was not present. Aborting request.");
-    return 1;
-    }
-
-  // Get the filter's output.
-  info=outputVector->GetInformationObject(0);
-  vtkPointSet *out
-    = dynamic_cast<vtkPointSet*>(info->Get(vtkDataObject::DATA_OBJECT()));
-  if (out==0)
-    {
-    vtkWarningMacro("Output dataset was not present. Aborting request.");
-    return 1;
-    }
-
-
-  // cache
-  vtkDataSet *oocrCache=0;
-
-  // intersect colors
-  vtkIntArray *intersectColor=vtkIntArray::New();
-  intersectColor->SetName("IntersectColor");
-  out->GetCellData()->AddArray(intersectColor);
-  intersectColor->Delete();
-  // cell ids
-  vtkIntArray *sourceId=vtkIntArray::New();
-  sourceId->SetName("SourceId");
-  out->GetCellData()->AddArray(sourceId);
-  sourceId->Delete();
-
-  GeometryCache *seedGeom;
-  if (this->TopologyMode)
-    {
-    seedGeom=new TopoGeometryCache(source,out);
-    }
-  else
-    {
-    seedGeom=new TraceGeometryCache(source,out);
-    }
-
-  // prevents multiple insert of points.
-  map<vtkIdType,vtkIdType> idMap;
-
+  /// Work loops
   const int BLOCK_REQ=2222;
   // Master process distributes the work and integrates
   // in between servicing requests for work.
@@ -523,13 +550,10 @@ int vtkOOCDFieldTracer::RequestData(
         #endif
         this->IntegrateBlock(
                 &sourceIds,
-                seedGeom,
-                &tcon,
+                topoMap,
                 fieldName,
                 oocr.GetPointer(),
-                oocrCache,
-                intersectColor,
-                sourceId);
+                oocrCache);
         }
       }
     }
@@ -556,28 +580,18 @@ int vtkOOCDFieldTracer::RequestData(
       if (sourceIds.size()==0){ break; }
 
       // integrate this block
-      this->IntegrateBlock(
+        this->IntegrateBlock(
                 &sourceIds,
-                seedGeom,
-                &tcon,
-                idMap,
+                topoMap,
                 fieldName,
                 oocr.GetPointer(),
-                oocrCache,
-                intersectColor,
-                sourceId);
+                oocrCache);
       }
     }
 
-  // print a legend, and (optionally) reduce the number of colors to that which are used.
-  if (this->SqueezeColorMap)
-    {
-    tcon.SqueezeColorMap(intersectColor);
-    }
-  else
-    {
-    tcon.PrintColorMap();
-    }
+  // print a legend, and (optionally) reduce the number of colors to that which
+  // are used. This makes use of global communication!
+  topoMap->PrintLegend(this->SqueezeColorMap);
 
   // close the open file and release reader.
   oocr->Close();
@@ -585,7 +599,7 @@ int vtkOOCDFieldTracer::RequestData(
   // free cache
   if (oocrCache){ oocrCache->Delete(); }
 
-  delete seedGeom;
+  delete topoMap;
 
   #if defined vtkOOCDFieldTracerTIME
   gettimeofday(&wallt,0x0);
@@ -600,79 +614,35 @@ int vtkOOCDFieldTracer::RequestData(
 int vtkOOCDFieldTracer::IntegrateBlock(
       CellIdBlock *sourceIds,
       FieldTopologyMap *topoMap,
-      TerminationCondition *tcon,
       const char *fieldName,
       vtkOOCReader *oocr,
       vtkDataSet *&oocrCache)
 
 {
-  // internal point set for the generated lines
-  vector<FieldLine *> lines;
+  // build the output.
+  vtkIdType nLines=topoMap->InsertCells(sourceIds);
 
-  // There are two modes of operation, the traditional
-  // FieldLine mode and a Topology mode. In FieldLine mode the output contains
-  // field lines. In Topology mode the output contains seed cells colored by
-  // where the field line terminated.
-  if (this->TopologyMode)
+  TerminationCondition *tcon=topoMap->GetTerminationCondition();
+
+  // integrate from each source cell.
+  for (vtkIdType i=0; i<nLines; ++i)
     {
-    // compute seed points (centred on cells of input). Copy the cells
-    // on which we operate into the output.
-    vtkIdType nLines=this->CellsToSeeds(sourceIds,seedGeom,lines);
-
-    vtkIdType lastLineId=intersectColor->GetNumberOfTuples();
-    int *pColor=intersectColor->WritePointer(lastLineId,nLines);
-    int *pId=sourceId->WritePointer(lastLineId,nLines);
-
-    // integrate and build surface intersection color array.
-    ///double progInc=0.8/(double)nLines;
-    for (vtkIdType i=0; i<nLines; ++i)
+    FieldLine *line=topoMap->GetFieldLine(i);
+    this->IntegrateOne(oocr,oocrCache,fieldName,line,tcon);
+    if (this->TopologyMode)
       {
-      FieldLine *line=lines[i];
-      ///this->UpdateProgress(i*progInc+0.10);
-      this->IntegrateOne(oocr,fieldName,line,tcon,oocrCache);
-      *pColor=tcon->GetTerminationColor(line);
-      ++pColor;
-      *pId=line->GetSeedId();
-      ++pId;
-      delete line;
-      lines[i]=0;
+      // free the trace geometry, we don't need it for topo map
+      // and it's very likely to be large.
+      line->DeleteTrace();
       }
     }
-  else
-    {
-    // compute seed points.
-    vtkIdType nLines
-      = this->CellsToSeeds(
-            sourceIds,
-            seedGeom->GetSourceCells(),
-            seedGeom->GetSourcePoints(),
-            lines);
 
-    vtkIdType lastLineId=intersectColor->GetNumberOfTuples();
-    int *pColor=intersectColor->WritePointer(lastLineId,nLines);
-    int *pId=sourceId->WritePointer(lastLineId,nLines);
+  // sync results to output. (minimizes the calls to realloc)
+  topoMap->SyncScalars();
+  topoMap->SyncGeometry();
 
-    // integrate
-    vtkIdType nPtsTotal=0;
-    ///double progInc=0.8/(double)nLines;
-    for (vtkIdType i=0; i<nLines; ++i)
-      {
-      FieldLine *line=lines[i];
-      ///this->UpdateProgress(i*progInc+0.10);
-      this->IntegrateOne(oocr,fieldName,line,tcon,oocrCache);
-      nPtsTotal+=line->GetNumberOfPoints();
-      *pColor=tcon->GetTerminationColor(line);
-      ++pColor;
-      *pId=line->GetSeedId();
-      ++pId;
-      }
-    // copy into output (also deletes the lines).
-    this->FieldLinesToPolydata(
-          lines,
-          nPtsTotal,
-          seedGeom->GetOutCells(),
-          seedGeom->GetOutPoints());
-    }
+  // free resources in preparation for the next pass.
+  topoMap->ClearFieldLines();
 
   return 1;
 }
@@ -680,10 +650,10 @@ int vtkOOCDFieldTracer::IntegrateBlock(
 //-----------------------------------------------------------------------------
 void vtkOOCDFieldTracer::IntegrateOne(
       vtkOOCReader *oocR,
+      vtkDataSet *&oocRCache,
       const char *fieldName,
       FieldLine *line,
-      TerminationCondition *tcon,
-      vtkDataSet *&nhood)
+      TerminationCondition *tcon)
 {
   // we integrate twice, once forward and once backward starting
   // from the single seed point.
@@ -718,19 +688,19 @@ void vtkOOCDFieldTracer::IntegrateOne(
       if (tcon->OutsideWorkingDomain(p0))
         {
         // Read data in the neighborhood of the seed point.
-        if (nhood){ nhood->Delete(); }
-        nhood=oocR->ReadNeighborhood(p0,this->OOCNeighborhoodSize);
-        if (!nhood)
+        if (oocRCache){ oocRCache->Delete(); }
+        oocRCache=oocR->ReadNeighborhood(p0,this->OOCNeighborhoodSize);
+        if (!oocRCache)
           {
           vtkWarningMacro("Failed to read neighborhood. Aborting.");
           return;
           }
         // update the working domain. It will be used to validate the next read.
-        tcon->SetWorkingDomain(nhood->GetBounds());
+        tcon->SetWorkingDomain(oocRCache->GetBounds());
 
         // Initialize the vector field interpolator.
         interp=vtkInterpolatedVelocityField::New();
-        interp->AddDataSet(nhood);
+        interp->AddDataSet(oocRCache);
         interp->SelectVectors(fieldName);
 
         this->Integrator->SetFunctionSet(interp);
@@ -751,7 +721,7 @@ void vtkOOCDFieldTracer::IntegrateOne(
         }
 
       // Convert intervals from cell fractions into lengths.
-      vtkCell* cell=nhood->GetCell(interp->GetLastCellId());
+      vtkCell* cell=oocRCache->GetCell(interp->GetLastCellId());
       double cellLength=sqrt(cell->GetLength2());
       this->ClipStep(stepSize,stepSign,minStep,maxStep,cellLength,lineLength);
 
@@ -897,7 +867,62 @@ void vtkOOCDFieldTracer::PrintSelf(ostream& os, vtkIndent indent)
   // TODO
 }
 
-
+//   // Description:
+//   // USe the set of field lines to construct a vtk polydata set. Field line structures
+//   // are deleted as theya re coppied.
+//   int FieldLinesToPolydata(
+//         vector<FieldLine*> &lines,
+//         vtkIdType nPtsTotal,
+//         vtkCellArray *OutCells,
+//         vtkFloatArray *OutPts);
+//   // Description:
+//   // Given a set of polygons (seedSource) that is assumed duplicated across
+//   // all process in the communicator, extract an equal number of polygons
+//   // on each process and compute seed points at the center of each local
+//   // poly. The computed points are stored in new FieldLine structures. It is
+//   // the callers responsibility to delete these structures.
+//   // Return 0 if an error occurs. Upon successful completion the number
+//   // of seed points is returned.
+//   int CellsToSeeds(
+//         CellIdBlock *SourceIds,
+//         vtkCellArray *SourceCells,
+//         vtkFloatArray *SourcePts,
+//         vector<FieldLine *> &lines);
+// 
+//   // Description:
+//   // Given a set of polygons (seedSource) that is assumed duplicated across
+//   // all process in the communicator, extract an equal number of polygons
+//   // on each process and compute seed points at the center of each local
+//   // poly. In addition copy the local polys (seedOut). The computed points
+//   // are stored in new FieldLine structures. It is the callers responsibility
+//   // to delete these structures.
+//   // Return 0 if an error occurs. Upon successful completion the number
+//   // of seed points is returned.
+//   int CellsToSeeds(
+//         CellIdBlock *SourceIds,
+//         vtkCellArray *SourceCells,
+//         vtkFloatArray *SourcePts,
+//         vtkCellArray *OutCells,
+//         vtkFloatArray *OutPts,
+//         map<vtkIdType,vtkIdType> &idMap,
+//         vector<FieldLine *> &lines);
+//   int CellsToSeeds(
+//         CellIdBlock *SourceIds,
+//         vtkCellArray *SourceCells,
+//         vtkFloatArray *SourcePts,
+//         vtkUnsingedCharArray *SourceTypes,
+//         vtkCellArray *OutCells,
+//         vtkFloatArray *OutPts,
+//         vtkUnsingedCharArray *OutTypes,
+//         vtkIdTypeArray *OutLocs,
+//         map<vtkIdType,vtkIdType> &idMap,
+//         vector<FieldLine *> &lines);
+//   // Description:
+//   // Helper to call the right methods.
+//   vtkIdType CellsToSeeds(
+//         CellIdBlock *sourceIds,
+//         SeedGeometryCache *seedGeom,
+//         vector<FieldLine *> &lines);
 
 // //-----------------------------------------------------------------------------
 // inline

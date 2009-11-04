@@ -9,14 +9,17 @@ Copyright 2008 SciberQuest Inc.
 #ifndef FieldTopologyMap_h
 #define FieldTopologyMap_h
 
+#include "FieldLine.h"
+
 #include "vtkIntArray.h"
 #include <vector>
 using std::vector;
 
 class CellIdBlock;
-class Fieldline;
+class FieldLine;
 class vtkDataSet;
 class vtkIntArray;
+class TerminationCondition;
 
 /// Interface to the topology map.
 /**
@@ -39,14 +42,14 @@ public:
   virtual void SetOutput(vtkDataSet *o);
 
   // Description:
-  // Convert a list of seed cells (sourceIds) to FieldLine
-  // structures and build the output (if any).
+  // compute seed points (centred on cells of input). Copy the cells
+  // on which we operate into the output.
   virtual int InsertCells(CellIdBlock *SourceIds)=0;
 
 
   // Description:
   // Get a specific field line.
-  FieldLine *GetTrace(int i){ return this->Lines[i]; }
+  FieldLine *GetFieldLine(int i){ return this->Lines[i]; }
 
   // Description:
   // Free resources holding the trace geometry. This can be quite large.
@@ -63,17 +66,22 @@ public:
   // Description:
   // Move scalar data (IntersectColor, SourceId) from the internal 
   // structure into the vtk output data.
-  virtual void SyncScalars();
+  virtual int SyncScalars();
 
   // Description:
   // Move field line geometry (trace) from the internal structure
   // into the vtk output data.
-  virtual void SyncGeometry(){};
+  virtual int SyncGeometry(){ return 0; }
 
   // Description:
   // Access to the termination object.
   TerminationCondition *GetTerminationCondition(){ return this->Tcon; }
 
+  // Description:
+  // Print a legend, can be reduced to the minimal number of colors needed
+  // or all posibilities may be included. The latter is better for temporal
+  // animations.
+  void PrintLegend(int reduce);
 
 protected:
   int *Append(vtkIntArray *ia, int nn);
@@ -84,7 +92,7 @@ protected:
   vtkIntArray *SourceId;
   int *pSourceId;
   vector<FieldLine *> Lines;
-  TerminiationCondition *Tcon;
+  TerminationCondition *Tcon;
 };
 
 #endif

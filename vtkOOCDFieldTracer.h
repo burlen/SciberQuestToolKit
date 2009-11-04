@@ -18,21 +18,11 @@ Copyright 2008 SciberQuest Inc.
 #define __vtkOOCDFieldTracer_h
 
 #include "vtkDataSetAlgorithm.h"
-#include "TerminationCondition.h"
-#include "WorkQueue.h"
+
 #include<map>
 using std::map;
 using std::pair;
 
-
-// class vtkCompositeDataSet;
-// class vtkDataArray;
-// class vtkDoubleArray;
-// class vtkExecutive;
-// class vtkGenericCell;
-// class vtkIdList;
-// class vtkIntArray;
-//class vtkInterpolatedVelocityField;
 class vtkUnstructuredGrid;
 class vtkOOCReader;
 class vtkMultiProcessController;
@@ -41,7 +31,8 @@ class vtkPointSet;
 //BTX
 class FieldLine;
 class CellIdBlock;
-class SeedGeometryCache;
+class FieldTopologyMap;
+class TerminationCondition;
 //ETX
 
 
@@ -158,64 +149,12 @@ private:
   // designed for multiple calls. After completeing all integrations the caller
   // should delete the cache.
   int IntegrateBlock(
-        CellIdBlock *sourceIds,           // + inputs
-        SeedGeometryCache *seedGeom,      // |
-        TerminationCondition *tcon,       // |
-        const char *fieldName,            // |
-        vtkOOCReader *oocr,               // |
-        vtkDataSet *&oocrCache,           // |
-        vtkDataSet *out,                  // + outputs
-        vtkIntArray *intersectColor,      // |
-        vtkIntArray *sourceId);           // |
-
-  // Description:
-  // Given a set of polygons (seedSource) that is assumed duplicated across
-  // all process in the communicator, extract an equal number of polygons
-  // on each process and compute seed points at the center of each local
-  // poly. The computed points are stored in new FieldLine structures. It is
-  // the callers responsibility to delete these structures.
-  // Return 0 if an error occurs. Upon successful completion the number
-  // of seed points is returned.
-  int CellsToSeeds(
-        CellIdBlock *SourceIds,
-        vtkCellArray *SourceCells,
-        vtkFloatArray *SourcePts,
-        vector<FieldLine *> &lines);
-
-  // Description:
-  // Given a set of polygons (seedSource) that is assumed duplicated across
-  // all process in the communicator, extract an equal number of polygons
-  // on each process and compute seed points at the center of each local
-  // poly. In addition copy the local polys (seedOut). The computed points
-  // are stored in new FieldLine structures. It is the callers responsibility
-  // to delete these structures.
-  // Return 0 if an error occurs. Upon successful completion the number
-  // of seed points is returned.
-  int CellsToSeeds(
-        CellIdBlock *SourceIds,
-        vtkCellArray *SourceCells,
-        vtkFloatArray *SourcePts,
-        vtkCellArray *OutCells,
-        vtkFloatArray *OutPts,
-        map<vtkIdType,vtkIdType> &idMap,
-        vector<FieldLine *> &lines);
-  int CellsToSeeds(
-        CellIdBlock *SourceIds,
-        vtkCellArray *SourceCells,
-        vtkFloatArray *SourcePts,
-        vtkUnsingedCharArray *SourceTypes,
-        vtkCellArray *OutCells,
-        vtkFloatArray *OutPts,
-        vtkUnsingedCharArray *OutTypes,
-        vtkIdTypeArray *OutLocs,
-        map<vtkIdType,vtkIdType> &idMap,
-        vector<FieldLine *> &lines);
-  // Description:
-  // Helper to call the right methods.
-  vtkIdType CellsToSeeds(
         CellIdBlock *sourceIds,
-        SeedGeometryCache *seedGeom,
-        vector<FieldLine *> &lines);
+        FieldTopologyMap *topoMap,
+        const char *fieldName,
+        vtkOOCReader *oocr,
+        vtkDataSet *&oocrCache);
+
 
   // Description:
   // Trace one field line from the given seed point, using the given out-of-core
@@ -224,18 +163,10 @@ private:
   // in the nhood parameter. It is up to the caller to delete this.
   void IntegrateOne(
         vtkOOCReader *oocR,
+        vtkDataSet *&oocRCache,
         const char *fieldName,
         FieldLine *line,
-        TerminationCondition *tcon,
-        vtkDataSet *&nhood);
-  // Description:
-  // USe the set of field lines to construct a vtk polydata set. Field line structures
-  // are deleted as theya re coppied.
-  int FieldLinesToPolydata(
-        vector<FieldLine*> &lines,
-        vtkIdType nPtsTotal,
-        vtkCellArray *OutCells,
-        vtkFloatArray *OutPts);
+        TerminationCondition *tcon);
   //ETX
 
   // Description:
@@ -247,6 +178,8 @@ private:
       double& maxStep,
       double cellLength,
       double lineLength);
+
+  // TODO use only arc-length
   // Description:
   // Convert from cell fractional unit into length.
   static double ConvertToLength(double interval,int unit,double cellLength);

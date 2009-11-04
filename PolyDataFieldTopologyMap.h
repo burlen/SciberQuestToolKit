@@ -9,6 +9,8 @@ Copyright 2008 SciberQuest Inc.
 #ifndef PolyDataFieldTopologyMap_h
 #define PolyDataFieldTopologyMap_h
 
+#include "FieldTopologyMap.h"
+
 #include<vector>
 using std::vector;
 
@@ -30,7 +32,7 @@ Abstract collection of datastructures needed to build the topology map.
 The details of building the map change drastically depending on the input
 data type. Concrete classes deal with these specifics.
 */
-class PolyDataFieldTopologyMap
+class PolyDataFieldTopologyMap : public FieldTopologyMap
 {
 public:
   PolyDataFieldTopologyMap()
@@ -55,9 +57,7 @@ public:
   // Description:
   // Convert a list of seed cells (sourceIds) to FieldLine
   // structures and build the output (if any).
-  virtual int InsertCells(
-        CellIdBlock *SourceIds,
-        vector<FieldLine *> &lines);
+  virtual int InsertCells(CellIdBlock *SourceIds);
 
 
 private:
