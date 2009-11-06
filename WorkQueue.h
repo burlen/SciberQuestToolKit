@@ -27,7 +27,7 @@ public:
   int *data(){ return m_data; }
   int dataSize(){ return 2; }
 private:
-  int m_data[2];
+  int m_data[2];// m_data={first, size}
 private:
   friend ostream &operator<<(ostream &os, const CellIdBlock &b);
 };

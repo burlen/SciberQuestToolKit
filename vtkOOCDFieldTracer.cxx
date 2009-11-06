@@ -73,6 +73,9 @@ const double vtkOOCDFieldTracer::EPSILON = 1.0E-12;
 //-----------------------------------------------------------------------------
 vtkOOCDFieldTracer::vtkOOCDFieldTracer()
       :
+  UseDynamicScheduler(1),
+  WorkerBlockSize(16),
+  MasterBlockSize(256),
   StepUnit(CELL_FRACTION),
   InitialStep(0.1),
   MinStep(0.1),
@@ -290,16 +293,18 @@ int vtkOOCDFieldTracer::RequestUpdateExtent(
   #endif
 
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
-  // int piece
-  //   =outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
-  // int numPieces
-  //   =outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
   int ghostLevel =
     outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
 
   // This has the effect to run the source on all procs, without it
   // only process 0 gets the source data.
-
+  int piece=0;
+  int numPieces=1;
+  if (!this->UseDynamicScheduler)
+    {
+    piece=outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+    numPieces=outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+    }
   // Seed point input.
   int nSources=inputVector[1]->GetNumberOfInformationObjects();
   for (int i=0; i<nSources; ++i)
@@ -307,13 +312,13 @@ int vtkOOCDFieldTracer::RequestUpdateExtent(
     vtkInformation *sourceInfo = inputVector[1]->GetInformationObject(i);
     if (sourceInfo)
       {
-      sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(),0);
-      sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(),1);
+      sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(),piece);
+      sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(),numPieces);
       sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(),ghostLevel);
       }
     }
 
-  // Terminator surface input.
+  // Terminator surface input. Always request all data onall procs.
   nSources=inputVector[2]->GetNumberOfInformationObjects();
   for (int i=0; i<nSources; ++i)
     {
@@ -392,7 +397,9 @@ int vtkOOCDFieldTracer::RequestData(
   oocr->DeActivateAllArrays();
   oocr->ActivateArray(fieldName);
   oocr->Open();
-  // cache
+  // We provide the integrator a pointer to a cache. The integrator
+  // uses this as it sees fit to reduce the number of reads. If its
+  // not null after the integrator returns we have to delete.
   vtkDataSet *oocrCache=0;
 
   // also the bounds (problem domain) of the data should be provided by the
@@ -496,6 +503,83 @@ int vtkOOCDFieldTracer::RequestData(
   tcon->InitializeColorMapper();
 
   /// Work loops
+  if (this->UseDynamicScheduler)
+    {
+    // This requires all process to have all the seed source data
+    // present.
+
+    // TODO implement a test to verify this is so. Eg.all should have the same first point
+    // and number of cells.
+    this->IntegrateDynamic(procId,nProcs,source,out,fieldName,oocr.GetPointer(),oocrCache,topoMap);
+    }
+  else
+    {
+    // This assumes that seed source is distrubuted such that each 
+    // process has a unique portion of the work.
+
+    // TODO implement a test to verify this is so. Eg.all should have the same first point
+    // and number of cells.
+    this->IntegrateStatic(source,out,fieldName,oocr.GetPointer(),oocrCache,topoMap);
+    }
+
+  // free cache
+  if (oocrCache){ oocrCache->Delete(); }
+
+  /// Clean up
+  // print a legend, and (optionally) reduce the number of colors to that which
+  // are used. The reduction makes use of global communication.
+  topoMap->PrintLegend(this->SqueezeColorMap);
+
+  // close the open file and release reader.
+  oocr->Close();
+  oocr->Delete();
+
+  delete topoMap;
+
+  #if defined vtkOOCDFieldTracerTIME
+  gettimeofday(&wallt,0x0);
+  double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+  cerr << procId << " finished " << walle-walls << endl;
+  #endif
+
+  return 1;
+}
+
+//-----------------------------------------------------------------------------
+inline
+int vtkOOCDFieldTracer::IntegrateStatic(
+      vtkDataSet *source,
+      vtkDataSet *out,
+      const char *fieldName,
+      vtkOOCReader *oocr,
+      vtkDataSet *oocrCache,
+      FieldTopologyMap *topoMap)
+{
+  // do all local ids in a single pass.
+  CellIdBlock sourceIds;
+  sourceIds.first()=0;
+  sourceIds.size()=source->GetNumberOfCells();
+
+  return
+    this->IntegrateBlock(
+            &sourceIds,
+            topoMap,
+            fieldName,
+            oocr,
+            oocrCache);
+}
+
+//-----------------------------------------------------------------------------
+int vtkOOCDFieldTracer::IntegrateDynamic(
+      int procId,
+      int nProcs,
+      vtkDataSet *source,
+      vtkDataSet *out,
+      const char *fieldName,
+      vtkOOCReader *oocr,
+      vtkDataSet *oocrCache,
+      FieldTopologyMap *topoMap)
+{
   const int BLOCK_REQ=2222;
   // Master process distributes the work and integrates
   // in between servicing requests for work.
@@ -552,7 +636,7 @@ int vtkOOCDFieldTracer::RequestData(
                 &sourceIds,
                 topoMap,
                 fieldName,
-                oocr.GetPointer(),
+                oocr,
                 oocrCache);
         }
       }
@@ -580,33 +664,14 @@ int vtkOOCDFieldTracer::RequestData(
       if (sourceIds.size()==0){ break; }
 
       // integrate this block
-        this->IntegrateBlock(
+      this->IntegrateBlock(
                 &sourceIds,
                 topoMap,
                 fieldName,
-                oocr.GetPointer(),
+                oocr,
                 oocrCache);
       }
     }
-
-  // print a legend, and (optionally) reduce the number of colors to that which
-  // are used. This makes use of global communication!
-  topoMap->PrintLegend(this->SqueezeColorMap);
-
-  // close the open file and release reader.
-  oocr->Close();
-  oocr->Delete();
-  // free cache
-  if (oocrCache){ oocrCache->Delete(); }
-
-  delete topoMap;
-
-  #if defined vtkOOCDFieldTracerTIME
-  gettimeofday(&wallt,0x0);
-  double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-  cerr << procId << " finished " << walle-walls << endl;
-  #endif
-
   return 1;
 }
 

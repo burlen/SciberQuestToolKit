@@ -129,6 +129,9 @@ public:
   vtkSetClampMacro(MasterBlockSize,int,1,VTK_INT_MAX);
   vtkGetMacro(MasterBlockSize,int);
 
+  // Description:
+  vtkSetMacro(UseDynamicScheduler,int);
+  vtkGetMacro(UseDynamicScheduler,int);
 
 protected:
   vtkOOCDFieldTracer();
@@ -145,9 +148,45 @@ protected:
 private:
   //BTX
   // Description:
-  // Integrate field lines seeded from a block of consecutive cell ids. This is
-  // designed for multiple calls. After completeing all integrations the caller
-  // should delete the cache.
+  // Helper calls the right integration scheduler.
+  int Integrate(
+      vtkDataSet *source,
+      vtkDataSet *out,
+      const char *fieldName,
+      vtkOOCReader *oocr,
+      FieldTopologyMap *topoMap);
+
+  // Description:
+  // Integrate over all local cells. This assumes that each process has a unique
+  // subset of the work (i.e. seed source cells are statically distributed),
+  // The cache should initially  be null and after the caller should delete the
+  // cache.
+  int IntegrateStatic(
+      vtkDataSet *source,
+      vtkDataSet *out,
+      const char *fieldName,
+      vtkOOCReader *oocr,
+      vtkDataSet *oocrCache,
+      FieldTopologyMap *topoMap);
+
+  // Description:
+  // Distribute the work load according to a master-slave self scheduling scheme. All
+  // seed cells must be present on all process, work is dished out by process 0 in 
+  // contiguous blocks of cell ids.
+  // The ooc reader cache should initially  be null and after the caller should delete
+  // the cache.
+  int IntegrateDynamic(
+      int procId,
+      int nProcs,
+      vtkDataSet *source,
+      vtkDataSet *out,
+      const char *fieldName,
+      vtkOOCReader *oocr,
+      vtkDataSet *oocrCache,
+      FieldTopologyMap *topoMap);
+
+  // Description:
+  // Integrate field lines seeded from a block of consecutive cell ids.
   int IntegrateBlock(
         CellIdBlock *sourceIds,
         FieldTopologyMap *topoMap,
@@ -192,6 +231,7 @@ private:
   vtkMultiProcessController *Controller;
 
   // Parameter controlling load balance
+  int UseDynamicScheduler;
   int WorkerBlockSize;
   int MasterBlockSize;
 

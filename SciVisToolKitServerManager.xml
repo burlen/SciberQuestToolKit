@@ -183,10 +183,7 @@
 
 </ProxyGroup>
 
-  <ProxyGroup name="filters">
-
- 
-    
+<ProxyGroup name="filters">
 <!--==================================================================== -->
   <SourceProxy 
     name="vtkFieldTopologyAnalyzer" 
@@ -675,6 +672,7 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
        </Documentation>
      </DoubleVectorProperty>
 
+      <!-- Colormap/Legened control -->
      <IntVectorProperty 
         name="Squeeze Color Map" 
         command="SetSqueezeColorMap" 
@@ -717,7 +715,6 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
 
   <!-- Out -->
   <OutputPort name="Field Lines" index="0" />
-
   <!-- Meta Flag -->
   <IntVectorProperty 
     name="TopologyMode" 
@@ -747,7 +744,6 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
 
   <!-- Out -->
   <OutputPort name="Topology Map" index="0" />
-
   <!-- Meta Flag -->
   <IntVectorProperty 
     name="TopologyMode" 
@@ -760,6 +756,7 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
     map rather than field lines.
     </Documentation>
   </IntVectorProperty>
+
   <Hints>
     <Property name="TopologyMode" show="0"/>
     <Property name="StepUnit" show="0"/>
@@ -794,6 +791,19 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
     <Documentation>
     If checked topology mode is active and the filter produces a topology
     map rather than field lines.
+    </Documentation>
+  </IntVectorProperty>
+  
+  <!-- Load balancing/work scheduling control -->
+  <IntVectorProperty 
+    name="Use Dynamic Scheduler"
+    command="SetUseDynamicScheduler"
+    number_of_elements="1"
+    default_values="0" > 
+    <BooleanDomain name="bool"/>
+    <Documentation>
+    When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
+    on all processes. This must be off if this is not the case.
     </Documentation>
   </IntVectorProperty>
 
@@ -851,6 +861,19 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
     <Documentation>
     If checked topology mode is active and the filter produces a topology
     map rather than field lines.
+    </Documentation>
+  </IntVectorProperty>
+
+  <!-- Load balancing/work scheduling control -->
+  <IntVectorProperty 
+    name="Use Dynamic Scheduler"
+    command="SetUseDynamicScheduler"
+    number_of_elements="1"
+    default_values="1" > 
+    <BooleanDomain name="bool"/>
+    <Documentation>
+    When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
+    on all processes. This must be off if this is not the case.
     </Documentation>
   </IntVectorProperty>
 
