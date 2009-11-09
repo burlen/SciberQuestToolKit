@@ -522,6 +522,12 @@ int vtkOOCDFieldTracer::RequestData(
     this->IntegrateStatic(source,out,fieldName,oocr.GetPointer(),oocrCache,topoMap);
     }
 
+  #if defined vtkOOCDFieldTracerTIME
+  gettimeofday(&wallt,0x0);
+  double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+  cerr << procId << " finished " << walle-walls << endl;
+  #endif
+
   // free cache
   if (oocrCache){ oocrCache->Delete(); }
 
@@ -535,12 +541,6 @@ int vtkOOCDFieldTracer::RequestData(
   oocr->Delete();
 
   delete topoMap;
-
-  #if defined vtkOOCDFieldTracerTIME
-  gettimeofday(&wallt,0x0);
-  double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-  cerr << procId << " finished " << walle-walls << endl;
-  #endif
 
   return 1;
 }
