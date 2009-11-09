@@ -108,6 +108,7 @@ void Helicity(int *I, double *dX, T *V, T *mV, T *H)
 // I   -> number of points
 // dX  -> grid spacing triple
 // V   -> vector field
+// mV  -> vector magnitude
 // xV  -> vorticity
 // mxV -> vorticity magnitude
 template <typename T>
@@ -147,10 +148,9 @@ void Rotation(int *I, double *dX, T *V, T *mV, T *xV, T *mxV)
           //cerr << "(" << vilo << ", " << vihi << ", " << vjlo << ", " << vjhi << ", " << vklo << ", " << vkhi << ")" << endl;
 
           const double modV
-          //    = mV[p];
+          // = mV[p];
            = 1.0;
           // = sqrt(V[vpId]*V[vpId]+V[vpId+1]*V[vpId+1]+V[vpId+2]*V[vpId+2]);
-          //const double modVsq=1.0;
 
           //      __   -> ->
           //  R = \/ x V/|V|

@@ -65,6 +65,10 @@ using std::pair;
 #include "FieldLine.h"
 #include "TerminationCondition.h"
 
+#if defined vtkOOCDFieldTracerTIME
+  #include<sys/time.h>
+#endif
+
 vtkCxxRevisionMacro(vtkOOCFieldTracer, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkOOCFieldTracer);
 
@@ -351,6 +355,11 @@ int vtkOOCFieldTracer::RequestData(
   #if defined vtkOOCFieldTracerDEBUG
   cerr << "====================================================================RequestData" << endl;
   #endif
+  #if defined vtkOOCFieldTracerTIME
+  timeval wallt;
+  gettimeofday(&wallt,0x0);
+  double walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+  #endif
 
   int procId=this->Controller->GetLocalProcessId();
   int nProcs=this->Controller->GetNumberOfProcesses();
@@ -519,6 +528,12 @@ int vtkOOCFieldTracer::RequestData(
 
   // free cache
   if (cache){ cache->Delete(); }
+
+  #if defined vtkOOCFieldTracerTIME
+  gettimeofday(&wallt,0x0);
+  double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+  cerr << procId << " finished " << walle-walls << endl;
+  #endif
 
   return 1;
 }
