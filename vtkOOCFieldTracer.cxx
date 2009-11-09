@@ -511,6 +511,12 @@ int vtkOOCFieldTracer::RequestData(
     this->FieldLinesToPolydata(lines,nPtsTotal,dynamic_cast<vtkPolyData*>(output));
     }
 
+  #if defined vtkOOCFieldTracerTIME
+  gettimeofday(&wallt,0x0);
+  double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+  cerr << procId << " finished " << walle-walls << endl;
+  #endif
+
   // place the color color into the polygonal cell output.
   if (this->SqueezeColorMap)
     {
@@ -528,12 +534,6 @@ int vtkOOCFieldTracer::RequestData(
 
   // free cache
   if (cache){ cache->Delete(); }
-
-  #if defined vtkOOCFieldTracerTIME
-  gettimeofday(&wallt,0x0);
-  double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-  cerr << procId << " finished " << walle-walls << endl;
-  #endif
 
   return 1;
 }
