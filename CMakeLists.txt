@@ -37,6 +37,7 @@ set(SM_SOURCES
 
 # Sources which aren't for use by the server manager.
 set(_SOURCES
+  FsUtils.cxx
   vtkOOCReader.cxx
   vtkOOCBOVReader.cxx
   BOVReader.cxx
@@ -104,3 +105,18 @@ add_paraview_plugin(
   SOURCES ${_SOURCES} )
 
 install(TARGETS SciVisToolKit DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+# gentp -- command line utility
+if (UNIX)
+set(BUILD_GENTP OFF CACHE BOOL "Build gentp the utility to generate temperature and pressure arrays.")
+  if (BUILD_GENTP)
+    include(FindMPI)
+    if (NOT MPI_FOUND)
+      error("MPI is required for the gentp utility.")
+    endif(NOT MPI_FOUND)
+    add_definitions("-DMPICH_IGNORE_CXX_SEEK")
+    add_executable(gentp gentp.cpp FsUtils.cxx)
+    target_link_libraries(gentp ${MPI_LIBRARIES})
+    install(TARGETS gentp DESTINATION ${CMAKE_INSTALL_PREFIX})
+  endif (BUILD_GENTP)
+endif (UNIX)

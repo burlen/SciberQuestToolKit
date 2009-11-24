@@ -1,122 +1,28 @@
+/*   ____    _ __           ____               __    ____
+  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
+ _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+
+Copyright 2008 SciberQuest Inc.
+*/
 #include "GDAMetaData.h"
 
-#include<cstring>
-#include<cstdlib>
+//#include<cstring>
+//#include<cstdlib>
 #include<iostream>
 #include<sstream>
-#include<algorithm>
+//#include<algorithm>
 
-#ifndef WIN32
-  #define PATH_SEP "/"
-  #include<dirent.h>
-#else
-  #define PATH_SEP "\\"
-#include "windirent.h"
-#endif
+// #ifndef WIN32
+//   #define PATH_SEP "/"
+//   #include<dirent.h>
+// #else
+//   #define PATH_SEP "\\"
+// #include "windirent.h"
+// #endif
 
 #include "PrintUtils.h"
-
-// Return 1 if a file is found with the prefix in the directory given by path.
-//******************************************************************************
-int Represented(const char *path, const char *prefix)
-{
-  size_t prefixLen=strlen(prefix);
-  #ifndef NDEBUG
-  if (prefix[prefixLen-1]!='_')
-    {
-    cerr << __LINE__ << " Error: prefix is expected to end with '_' but it does not." << endl;
-    return 0;
-    }
-  #endif
-  DIR *ds=opendir(path);
-  if (ds)
-    {
-    struct dirent *de;
-    while ((de=readdir(ds)))
-      {
-      char *fname=de->d_name;
-      if (strncmp(fname,prefix,prefixLen)==0)
-        {
-        // Found at least one file beginning with the given prefix.
-        closedir(ds);
-        return 1;
-        }
-      }
-    closedir(ds);
-    }
-  else
-    {
-    #ifndef NDEBUG
-    cerr << __LINE__ << " Error: Failed to open the given directory. " << endl
-         << path << endl;
-    #endif
-    }
-  //We failed to find any files starting with the given prefix
-  return 0;
-}
-
-// Collect the ids from a collection of files that start with
-// the same prefix (eg. prefix_ID.ext). The prefix should include
-// the underscore.
-//*****************************************************************************
-int GetSeriesIds(const char *path, const char *prefix, vector<int> &ids)
-{
-  size_t prefixLen=strlen(prefix);
-  #ifndef NDEBUG
-  if (prefix[prefixLen-1]!='_')
-    {
-    cerr << __LINE__ << " Error: prefix is expected to end with '_' but it does not." << endl;
-    return 0;
-    }
-  #endif
-
-  DIR *ds=opendir(path);
-  if (ds)
-    {
-    struct dirent *de;
-    while ((de=readdir(ds)))
-      {
-      char *fname=de->d_name;
-      if (strncmp(fname,prefix,prefixLen)==0)
-        {
-        if (isdigit(fname[prefixLen]))
-          {
-          int id=atoi(fname+prefixLen);
-          ids.push_back(id);
-          }
-        }
-      }
-    closedir(ds);
-    sort(ids.begin(),ids.end());
-    return 1;
-    }
-  else
-    {
-    #ifndef NDEBUG
-    cerr << __LINE__ << " Error: Failed to open the given directory. " << endl
-         << path << endl;
-    #endif
-    }
-  //We failed to find any files starting with the given prefix
-  return 0;
-}
-
-
-// Returns the path not including the file name and not
-// including the final PATH_SEP. If PATH_SEP isn't found 
-// then ".PATH_SEP" is returned.
-//*****************************************************************************
-string StripFileNameFromPath(const string fileName)
-{
-  size_t p;
-  p=fileName.find_last_of(PATH_SEP);
-  if (p==string::npos)
-    {
-    // current directory
-    return "." PATH_SEP;
-    }
-  return fileName.substr(0,p); // TODO Why does this leak?
-}
+#include "FsUtils.h"
 
 //*****************************************************************************
 void ToLower(string &in)
@@ -219,6 +125,16 @@ int GDAMetaData::OpenDataset(const char *fileName)
   if (Represented(path,"tperp_"))
     {
     this->AddScalar("tperp");
+    ++nArrays;
+    }
+  if (Represented(path,"t_"))
+    {
+    this->AddScalar("t");
+    ++nArrays;
+    }
+  if (Represented(path,"p_"))
+    {
+    this->AddScalar("p");
     ++nArrays;
     }
   // vectors ...

@@ -95,8 +95,8 @@ public:
 
   // Description
   // Specify the terminal speed value, below which integration is terminated.
-  vtkSetMacro(TerminalSpeed,double);
-  vtkGetMacro(TerminalSpeed,double);
+  vtkSetMacro(NullThreshold,double);
+  vtkGetMacro(NullThreshold,double);
 
   // Description:
   // Control of the OOC read size. This parameter may have different
@@ -243,7 +243,7 @@ private:
   double MaxError;
   vtkIdType MaxNumberOfSteps;
   double MaxLineLength;
-  double TerminalSpeed;
+  double NullThreshold;
 
   static const double EPSILON;
 

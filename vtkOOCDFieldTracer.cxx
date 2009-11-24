@@ -1,3 +1,10 @@
+/*   ____    _ __           ____               __    ____
+  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
+ _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+
+Copyright 2008 SciberQuest Inc.
+*/
 /*=========================================================================
 
 Program:   Visualization Toolkit
@@ -83,7 +90,7 @@ vtkOOCDFieldTracer::vtkOOCDFieldTracer()
   MaxError(1E-5),
   MaxNumberOfSteps(1000),
   MaxLineLength(1E6),
-  TerminalSpeed(1E-6),
+  NullThreshold(1E-6),
   OOCNeighborhoodSize(15),
   TopologyMode(0),
   SqueezeColorMap(0)
@@ -776,7 +783,7 @@ void vtkOOCDFieldTracer::IntegrateOne(
       interp->FunctionValues(p0,V0);
       double speed=vtkMath::Norm(V0);
       // check for field null
-      if ((speed==0) || (speed<=this->TerminalSpeed))
+      if ((speed==0) || (speed<=this->NullThreshold))
         {
         #ifdef vtkOOCDFieldTracerDEBUG4
         cerr << "Terminated: Field null encountered." << endl;
@@ -852,7 +859,7 @@ void vtkOOCDFieldTracer::IntegrateOne(
       dx=sqrt(dx);
       double dt=fabs(stepTaken);
       double v=dx/(dt+1E-12);
-      if (v<=this->TerminalSpeed)
+      if (v<=this->NullThreshold)
         {
         #ifdef vtkOOCDFieldTracerDEBUG4
         cerr << "Terminated: Field null encountered." << endl;
