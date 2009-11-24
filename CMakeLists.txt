@@ -112,7 +112,7 @@ set(BUILD_GENTP OFF CACHE BOOL "Build gentp the utility to generate temperature 
   if (BUILD_GENTP)
     include(FindMPI)
     if (NOT MPI_FOUND)
-      error("MPI is required for the gentp utility.")
+      message(SEND_ERROR "MPI is required for the gentp utility.")
     endif(NOT MPI_FOUND)
     add_definitions("-DMPICH_IGNORE_CXX_SEEK")
     add_executable(gentp gentp.cpp FsUtils.cxx)
