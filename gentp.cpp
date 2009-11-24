@@ -99,12 +99,12 @@ int main(int argc, char **argv)
     }
 
 
-  cerr << procId << " " << nLocalIds << " -> ";
-  for (int i=0; i<nLocalIds; ++i)
-    {
-    cerr << localIds[i] << " ";
-    }
-  cerr << endl;
+  // cerr << procId << " " << nLocalIds << " -> ";
+  // for (int i=0; i<nLocalIds; ++i)
+  //   {
+  //   cerr << localIds[i] << " ";
+  //   }
+  // cerr << endl;
 
 
   // do the work assigned to us.
@@ -198,7 +198,8 @@ int main(int argc, char **argv)
         if (t!=(float*)-1){ munmap(t,fsize); }
         if (p!=(float*)-1){ munmap(p,fsize); }
 
-        cerr << procId << ", " << localIds[id] << "|";
+        // cerr << procId << ", " << localIds[id] << "|";
+        cerr << ".";
         }
       }
     // close any files we opened.
@@ -208,7 +209,6 @@ int main(int argc, char **argv)
     if (tfd!=-1){ close(tfd); }
     if (pfd!=-1){ close(pfd); }
     }
-
 
   MPI_Barrier(MPI_COMM_WORLD);
   if (procId==0) cerr << endl;
