@@ -1,5 +1,10 @@
 <ParaViewFilters>
   <Reader
+    name="PVImageReader"
+    extensions="gda"
+    file_description="Parallel brick time series reader.">
+  </Reader>
+  <Reader
     name="BOVReader"
     extensions="bov"
     file_description="Parallel brick time series reader.">

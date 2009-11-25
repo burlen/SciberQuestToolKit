@@ -5,7 +5,6 @@
 /___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
 
 Copyright 2008 SciberQuest Inc.
-
 */ 
 #include "vtkBOVReader.h"
 
@@ -34,14 +33,11 @@ Copyright 2008 SciberQuest Inc.
 
 #if defined vtkBOVReaderTIME
 #include <sys/time.h>
-#include <ctime>
 #include <unistd.h>
 #endif
 
 vtkCxxRevisionMacro(vtkBOVReader, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkBOVReader);
-
-
 
 // Compare two doubles.
 int fequal(double a, double b, double tol)
@@ -92,6 +88,7 @@ vtkBOVReader::vtkBOVReader()
       this->HostName[i]=hostname[i];
       }
     }
+
   // Configure the internal reader.
   this->Reader=new BOVReader;
   int status
@@ -150,9 +147,13 @@ void vtkBOVReader::SetFileName(const char* _arg)
   cerr << "Set FileName from " << safeio(this->FileName) << " to " << safeio(_arg) << "." << endl;
   #endif
   #if defined vtkBOVReaderTIME
+  double walls=0.0;
   timeval wallt;
-  gettimeofday(&wallt,0x0);
-  double walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+  if (this->ProcId==0)
+    {
+    gettimeofday(&wallt,0x0);
+    walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+    }
   #endif
 
   vtkDebugMacro(<< this->GetClassName() << ": setting FileName to " << (_arg?_arg:"(null)"));
@@ -191,20 +192,21 @@ void vtkBOVReader::SetFileName(const char* _arg)
     this->JSubsetRange[0]=this->Subset[2]; this->JSubsetRange[1]=this->Subset[3];
     this->KSubsetRange[0]=this->Subset[4]; this->KSubsetRange[1]=this->Subset[5];
 
-    #if defined vtkBOVReaderDEBUG or vtkBOVReaderTIME
-    cerr << this->HostName << " " << this->ProcId << " Open succeeded." << endl;
+    #if defined vtkBOVReaderDEBUG
+    cerr << "vtkBOVReader " << this->HostName << " " << this->ProcId << " Open succeeded." << endl;
     #endif
     }
 
   this->Modified();
 
   #if defined vtkBOVReaderTIME
-  gettimeofday(&wallt,0x0);
-  double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-  cerr << "SetFileName "
-       << this->HostName << " "
-       << this->ProcId << " "
-       << walle-walls << endl;
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (this->ProcId==0)
+    {
+    gettimeofday(&wallt,0x0);
+    double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+    cerr << "vtkBOVReader::SetFileName " << walle-walls << endl;
+    }
   #endif
 }
 
@@ -427,9 +429,13 @@ int vtkBOVReader::RequestData(
   cerr << "====================================================================RequestData" << endl;
   #endif
   #if defined vtkBOVReaderTIME
+  double walls=0.0;
   timeval wallt;
-  gettimeofday(&wallt,0x0);
-  double walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+  if (this->ProcId==0)
+    {
+    gettimeofday(&wallt,0x0);
+    walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+    }
   #endif
 
   vtkInformation *info=outInfos->GetInformationObject(0);
@@ -517,7 +523,7 @@ int vtkBOVReader::RequestData(
   idds->SetSpacing(dX);
   idds->SetExtent(decomp);
 
-  #if defined vtkBOVReaderTIME or defined vtkBOVReaderDEBUG
+  #if defined vtkBOVReaderDEBUG
   cerr << "RequestData "
        << this->HostName << " "
        << this->ProcId << " "
@@ -574,12 +580,13 @@ int vtkBOVReader::RequestData(
   #endif
 
   #if defined vtkBOVReaderTIME
-  gettimeofday(&wallt,0x0);
-  double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-  cerr << "RequestData " 
-       << this->HostName << " " 
-       << this->ProcId << " "
-       << walle-walls << endl;
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (this->ProcId==0)
+    {
+    gettimeofday(&wallt,0x0);
+    double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+    cerr << "vtkBOVReader::RequestData " << walle-walls << endl;
+    }
   #endif
 
   return 1;

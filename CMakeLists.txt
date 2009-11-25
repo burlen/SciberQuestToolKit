@@ -13,9 +13,6 @@ cmake_policy(SET CMP0003 NEW)
 # |                                                                           |
 # +---------------------------------------------------------------------------+
 #
-# Plugin that reads "raw" files, in parallel, handles time series and
-# vector data.
-#
 project(SciVisToolKit)
 
 # Locate our PV build/development install.
@@ -23,6 +20,7 @@ include(ParaViewConfig.cmake)
 
 # Server manager sources.
 set(SM_SOURCES
+  vtkPVImageReader.cxx
   vtkBOVReader.cxx
   vtkFieldTracer.cxx
   vtkPFieldTracer.cxx

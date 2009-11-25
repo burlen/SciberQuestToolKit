@@ -200,6 +200,7 @@ int main(int argc, char **argv)
 
         // cerr << procId << ", " << localIds[id] << "|";
         cerr << ".";
+        cerr.flush();
         }
       }
     // close any files we opened.
