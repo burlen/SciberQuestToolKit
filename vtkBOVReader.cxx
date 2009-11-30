@@ -36,6 +36,10 @@ Copyright 2008 SciberQuest Inc.
 #include <unistd.h>
 #endif
 
+#ifndef HOST_NAME_MAX
+  #define HOST_NAME_MAX 255
+#endif
+
 vtkCxxRevisionMacro(vtkBOVReader, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkBOVReader);
 

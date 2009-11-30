@@ -46,6 +46,10 @@ vtkCxxSetObjectMacro(vtkPVImageReader,Transform,vtkTransform);
 #undef close
 #endif
 
+#ifndef HOST_NAME_MAX
+  #define HOST_NAME_MAX 255
+#endif
+
 //----------------------------------------------------------------------------
 vtkPVImageReader::vtkPVImageReader()
 {
