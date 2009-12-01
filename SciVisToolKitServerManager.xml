@@ -816,9 +816,9 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
      </DoubleVectorProperty>
 
      <DoubleVectorProperty
-       name="TerminalSpeed"
-       label="Terminal Speed"
-       command="SetTerminalSpeed"
+       name="NullThreshold"
+       label="Null Threshold"
+       command="SetNullThreshold"
        number_of_elements="1"
        default_values="0.000001" >
        <DoubleRangeDomain name="range"/>
