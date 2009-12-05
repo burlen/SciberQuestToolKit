@@ -166,7 +166,7 @@ private:
       vtkDataSet *out,
       const char *fieldName,
       vtkOOCReader *oocr,
-      vtkDataSet *oocrCache,
+      vtkDataSet *&oocrCache,
       FieldTopologyMap *topoMap);
 
   // Description:
@@ -182,7 +182,7 @@ private:
       vtkDataSet *out,
       const char *fieldName,
       vtkOOCReader *oocr,
-      vtkDataSet *oocrCache,
+      vtkDataSet *&oocrCache,
       FieldTopologyMap *topoMap);
 
   // Description:

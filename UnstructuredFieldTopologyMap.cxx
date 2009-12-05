@@ -79,7 +79,6 @@ void UnstructuredFieldTopologyMap::SetSource(vtkDataSet *s)
   this->SourceTypes->Register(0);
 }
 
-
 //-----------------------------------------------------------------------------
 void UnstructuredFieldTopologyMap::SetOutput(vtkDataSet *o)
 {

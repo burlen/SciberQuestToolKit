@@ -84,7 +84,7 @@ vtkOOCFieldTracer::vtkOOCFieldTracer()
   MaxError(1E-5),
   MaxNumberOfSteps(1000),
   MaxLineLength(1E6),
-  TerminalSpeed(1E-6),
+  NullThreshold(1E-6),
   OOCNeighborhoodSize(15),
   TopologyMode(0),
   SqueezeColorMap(0)
@@ -602,7 +602,7 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
       interp->FunctionValues(p0,V0);
       double speed=vtkMath::Norm(V0);
       // check for field null
-      if ((speed==0) || (speed<=this->TerminalSpeed))
+      if ((speed==0) || (speed<=this->NullThreshold))
         {
         #if defined vtkOOCFieldTracerDEBUG4
         cerr << "Terminated: Field null encountered." << endl;
@@ -678,7 +678,7 @@ void vtkOOCFieldTracer::OOCIntegrateOne(
       dx=sqrt(dx);
       double dt=fabs(stepTaken);
       double v=dx/(dt+1E-12);
-      if (v<=this->TerminalSpeed)
+      if (v<=this->NullThreshold)
         {
         #if defined vtkOOCFieldTracerDEBUG4
         cerr << "Terminated: Field null encountered." << endl;

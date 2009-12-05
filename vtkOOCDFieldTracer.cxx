@@ -565,7 +565,7 @@ int vtkOOCDFieldTracer::IntegrateStatic(
       vtkDataSet *out,
       const char *fieldName,
       vtkOOCReader *oocr,
-      vtkDataSet *oocrCache,
+      vtkDataSet *&oocrCache,
       FieldTopologyMap *topoMap)
 {
   // do all local ids in a single pass.
@@ -590,7 +590,7 @@ int vtkOOCDFieldTracer::IntegrateDynamic(
       vtkDataSet *out,
       const char *fieldName,
       vtkOOCReader *oocr,
-      vtkDataSet *oocrCache,
+      vtkDataSet *&oocrCache,
       FieldTopologyMap *topoMap)
 {
   const int BLOCK_REQ=2222;

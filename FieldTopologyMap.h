@@ -89,8 +89,8 @@ protected:
 protected:
   vtkIntArray *IntersectColor;
   int *pIntersectColor;
-  vtkIntArray *SourceId;
-  int *pSourceId;
+  // vtkIntArray *SourceId;
+  // int *pSourceId;
   vector<FieldLine *> Lines;
   TerminationCondition *Tcon;
 };

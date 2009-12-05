@@ -17,14 +17,14 @@ Copyright 2008 SciberQuest Inc.
 //-----------------------------------------------------------------------------
 FieldTopologyMap::FieldTopologyMap()
       :
-    IntersectColor(0),
-    SourceId(0)
+    IntersectColor(0)//,
+    //SourceId(0)
 {
   this->IntersectColor=vtkIntArray::New();
   this->IntersectColor->SetName("IntersectColor");
 
-  this->SourceId=vtkIntArray::New();
-  this->SourceId->SetName("SourceId");
+  // this->SourceId=vtkIntArray::New();
+  // this->SourceId->SetName("SourceId");
 
   this->Tcon=new TerminationCondition;
 }
@@ -33,7 +33,7 @@ FieldTopologyMap::FieldTopologyMap()
 FieldTopologyMap::~FieldTopologyMap()
 {
   this->IntersectColor->Delete();
-  this->SourceId->Delete();
+  // this->SourceId->Delete();
   this->ClearFieldLines();
 
   delete this->Tcon;
@@ -43,7 +43,7 @@ FieldTopologyMap::~FieldTopologyMap()
 void FieldTopologyMap::SetOutput(vtkDataSet *o)
 {
   o->GetCellData()->AddArray(this->IntersectColor);
-  o->GetCellData()->AddArray(this->SourceId);
+  // o->GetCellData()->AddArray(this->SourceId);
 }
 
 //-----------------------------------------------------------------------------
@@ -72,7 +72,7 @@ int FieldTopologyMap::SyncScalars()
   vtkIdType lastLineId=this->IntersectColor->GetNumberOfTuples();
 
   int *pColor=this->IntersectColor->WritePointer(lastLineId,nLines);
-  int *pId=this->SourceId->WritePointer(lastLineId,nLines);
+  // int *pId=this->SourceId->WritePointer(lastLineId,nLines);
 
   for (vtkIdType i=0; i<nLines; ++i)
     {
@@ -81,8 +81,8 @@ int FieldTopologyMap::SyncScalars()
     *pColor=this->Tcon->GetTerminationColor(line);
     ++pColor;
 
-    *pId=line->GetSeedId();
-    ++pId;
+    // *pId=line->GetSeedId();
+    // ++pId;
     }
   return 1;
 }
