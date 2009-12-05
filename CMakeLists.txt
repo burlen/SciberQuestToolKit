@@ -83,14 +83,28 @@ ADD_PARAVIEW_OBJECT_PANEL(
   CLASS_NAME pqProcessMonitor
   XML_NAME vtkProcessMonitor
   XML_GROUP sources)
+# set (_SOURCES
+#   ${_SOURCES}
+#   ${MOC_SRCS}
+#   ${UI_SRCS}
+#   ${IFACE_SRCS}
+#   pqProcessMonitor.cxx)
 
-# panel sources
+QT4_WRAP_CPP(MOC_SRCS pqSQPlaneSource.h)
+QT4_WRAP_UI(UI_SRCS pqSQPlaneSourceForm.ui)
+ADD_PARAVIEW_OBJECT_PANEL(
+  IFACES IFACE_SRCS
+  CLASS_NAME pqSQPlaneSource
+  XML_NAME vtkSQPlaneSource
+  XML_GROUP sources)
 set (_SOURCES
   ${_SOURCES}
   ${MOC_SRCS}
   ${UI_SRCS}
   ${IFACE_SRCS}
+  pqSQPlaneSource.cxx
   pqProcessMonitor.cxx)
+
 endif (PARAVIEW_BUILD_QT_GUI)
 
 # Generate the plugin, servermanager and wrapped language bindings.

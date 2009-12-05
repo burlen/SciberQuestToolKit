@@ -1180,7 +1180,7 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
 <ProxyGroup name="sources">
 
   <!-- ==================================================================== -->
-  <SourceProxy name="vtkSQPlaneSource" class="vtkSQPlaneSource" label="Plane">
+  <SourceProxy name="vtkSQPlaneSource" class="vtkSQPlaneSource" label="SQ Plane">
       <Documentation
         long_help="Create a parallelogram given an origin and two points. The resolution indicates the number of division along each axis of the plane." 
         short_help="Create a parallelogram from an origin and two points">
@@ -1195,28 +1195,42 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
           Give the object a name that may be used downstream to identify it.
         </Documentation>
       </StringVectorProperty>
+     <!--<StringVectorProperty name="GetName"
+        command="GetDescriptiveName"
+        information_only="1" >
+        <SimpleStringInformationHelper />
+     </StringVectorProperty>-->
 
       <DoubleVectorProperty
          name="Origin"
          command="SetOrigin"
          number_of_elements="3"
          animateable="1"
-         default_values="-0.5 -0.5 0.0" >
+         default_values="0.0 0.0 0.0">
         <DoubleRangeDomain name="range"/>
         <Documentation>
           This property specifies the 3D coordinate of the origin (one corner) of the plane.
         </Documentation>
       </DoubleVectorProperty>
+      <!--
+      information_property="OriginInfo"
+      <DoubleVectorProperty name="OriginInfo"
+        command="GetOrigin"
+        information_only="1"
+        number_of_elements="3"
+        default_values="0.0 0.0 0.0">
+        <SimpleDoubleInformationHelper />
+     </DoubleVectorProperty>-->
 
       <DoubleVectorProperty
          name="Point1"
          command="SetPoint1"
          number_of_elements="3"
          animateable="1"
-         default_values="0.5 -0.5 0.0" >
+         default_values="1.0 0.0 0.0" >
         <DoubleRangeDomain name="range"/>
         <Documentation>
-          This property specifies the 3D coordinate a second corner of the parallelogram. The line connecting this point and that specified by the Origin property define one edge of the parallelogram (its X axis).
+          This property specifies the 3D coordinate a second corner of the parallelogram.
         </Documentation>
       </DoubleVectorProperty>
 
@@ -1225,10 +1239,10 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
          command="SetPoint2"
          number_of_elements="3"
          animateable="1"
-         default_values="-0.5 0.5 0.0" >
+         default_values="0.0 1.0 0.0" >
         <DoubleRangeDomain name="range"/>
         <Documentation>
-          This property specifies the 3D coordinate a third corner of the parallelogram. The line connecting this point and that specified by the Origin property define a second edge of the parallelogram (its Y axis).
+          This property specifies the 3D coordinate a third corner of the parallelogram.
         </Documentation>
       </DoubleVectorProperty>
 

@@ -750,6 +750,15 @@ void vtkOOCDFieldTracer::IntegrateOne(
 
     line->GetSeedPoint(p0);
 
+    if (tcon->OutsideProblemDomain(p0))
+      {
+      vtkWarningMacro(
+        "Seed point " << p0[0] << ", " << p0[1] << ", " << p0[2]
+        << " is outside of the problem domain. Seed source is expected"
+        << " to be contained by the problem domain. Aborting integration.");
+      return;
+      }
+
     // Integrate until the maximum line length is reached, maximum number of 
     // steps is reached or until a termination surface is encountered.
     while (1)

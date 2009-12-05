@@ -2,6 +2,7 @@
 #include<cstdlib>
 #include<iostream>
 #include<sstream>
+#include<fstream>
 #include<string>
 #include<vector>
 #include<algorithm>
@@ -118,4 +119,109 @@ string StripFileNameFromPath(const string fileName)
   return fileName.substr(0,p); // TODO Why does this leak?
 }
 
+//*****************************************************************************
+int LoadLines(const char *fileName, vector<string> &lines)
+{
+  // Load each line in the given file into a the vector.
+  int nRead=0;
+  const int bufSize=1024;
+  char buf[bufSize]={'\0'};
+  ifstream file(fileName);
+  if (!file.is_open())
+    {
+    cerr << "ERROR: File " << fileName << " could not be opened." << endl;
+    return 0;
+    }
+  while(file.good())
+    {
+    file.getline(buf,bufSize);
+    if (file.gcount()>1)
+      {
+      lines.push_back(buf);
+      ++nRead;
+      }
+    }
+  file.close();
+  return nRead;
+}
 
+//*****************************************************************************
+int LoadText(const string &fileName, string &text)
+{
+  ifstream file(fileName.c_str());
+  if (!file.is_open())
+    {
+    cerr << "ERROR: File " << fileName << " could not be opened." << endl;
+    return 0;
+    }
+  // Determine the length of the file ...
+  file.seekg (0,ios::end);
+  size_t nBytes=file.tellg();
+  file.seekg (0, ios::beg);
+  // and allocate a buffer to hold its contents.
+  char *buf=new char [nBytes];
+  memset(buf,0,nBytes);
+  // Read the file and convert to a string.
+  file.read (buf,nBytes);
+  file.close();
+  text=buf;
+  return nBytes;
+}
+
+//*****************************************************************************
+int WriteText(string &fileName, string &text)
+{
+  ofstream file(fileName.c_str());
+  if (!file.is_open())
+    {
+    cerr << "ERROR: File " << fileName << " could not be opened." << endl;
+    return 0;
+    }
+  file << text << endl;
+  file.close();
+  return 1;
+}
+
+//*****************************************************************************
+int SearchAndReplace(
+        const string &searchFor,
+        const string &replaceWith,
+        string &inText)
+{
+  int nFound=0;
+  const size_t n=searchFor.size();
+  size_t at=string::npos;
+  while ((at=inText.find(searchFor))!=string::npos)
+    {
+    inText.replace(at,n,replaceWith);
+    ++nFound;
+    }
+  return nFound;
+}
+
+//*****************************************************************************
+ostream &operator<<(ostream &os, vector<string> v)
+{
+  size_t n=v.size();
+  if (n>0)
+    {
+    os << v[0];
+    for (size_t i=1; i<n; ++i)
+      {
+      os << " " << v[i];
+      }
+    }
+  return os;
+}
+
+//*****************************************************************************
+bool operator&(vector<string> &v, const string &s)
+{
+  // test for set inclusion.
+  const size_t n=v.size();
+  for (size_t i=0; i<n; ++i)
+    {
+    if (v[i]==s) return true;
+    }
+  return false;
+}

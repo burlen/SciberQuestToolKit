@@ -76,7 +76,8 @@ public:
 
   // Description:
   // Specify a point defining the origin of the plane.
-  vtkSetVector3Macro(Origin,double);
+  void SetOrigin(double x, double y, double z);
+  void SetOrigin(double pnt[3]);
   vtkGetVectorMacro(Origin,double,3);
 
   // Description:

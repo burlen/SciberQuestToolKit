@@ -126,13 +126,12 @@ vtkDataSet *vtkOOCBOVReader::ReadNeighborhood(double p[3], int size)
     return 0;
     }
 
-
   #if defined vtkOOCBOVReaderDEBUG
   static int ww=0;
   ++ww;
-  cerr << ww
-      << " Read ("
-      << p[0] << ", " << p[1] << ", " << p[2] << ") -> ";
+  cerr << this->Reader->GetProcId() << " " << ww
+       << " Read (" << p[0] << ", " << p[1] << ", " << p[2]
+       << ") -> ";
   cerr << decomp.Print(cerr) << endl;
   #endif
   return idds;

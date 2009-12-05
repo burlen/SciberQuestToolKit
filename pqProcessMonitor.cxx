@@ -21,18 +21,17 @@
 #include <unistd.h>
 
 #if defined pqProcessMonitorDEBUG
-#include <PrintUtils.h>
+#include "PrintUtils.h"
 #endif
+#include "FsUtils.h"
 
 #include <vtkstd/vector>
 using vtkstd::vector;
 #include <vtkstd/string>
 using vtkstd::string;
-
 #include <sstream>
 using std::ostringstream;
 using std::istringstream;
-
 #include <iostream>
 using std::cerr;
 using std::endl;
@@ -43,23 +42,6 @@ enum {
   PROCESS_TYPE_LOCAL,
   PROCESS_TYPE_REMOTE
 };
-
-//*****************************************************************************
-int SearchAndReplace(
-        const string &searchFor,
-        const string &replaceWith,
-        string &inText)
-{
-  int nFound=0;
-  const size_t n=searchFor.size();
-  size_t at=string::npos;
-  while ((at=inText.find(searchFor))!=string::npos)
-    {
-    inText.replace(at,n,replaceWith);
-    ++nFound;
-    }
-  return nFound;
-}
 
 //-----------------------------------------------------------------------------
 pqProcessMonitor::pqProcessMonitor(

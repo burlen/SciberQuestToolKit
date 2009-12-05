@@ -108,6 +108,3 @@ ostream &operator<<(ostream &os, const BOVTimeStepImage &si)
 
   return os;
 }
-
-
-    

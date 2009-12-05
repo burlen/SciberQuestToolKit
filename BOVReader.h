@@ -56,8 +56,14 @@ public:
   void SetProcId(int procId){
     this->ProcId=procId;
     }
+  int GetProcId(){
+    return this->ProcId;
+    }
   void SetNProcs(int nProcs){
     this->NProcs=nProcs;
+    }
+  int GetNProcsId(){
+    return this->NProcs;
     }
 
   /// Set the metadata object that will interpret the metadata file,
