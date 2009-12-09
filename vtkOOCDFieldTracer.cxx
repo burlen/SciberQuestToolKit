@@ -593,10 +593,11 @@ int vtkOOCDFieldTracer::IntegrateDynamic(
       vtkDataSet *&oocrCache,
       FieldTopologyMap *topoMap)
 {
+  const int masterProcId=1; // NOTE: proc 0 is busy with PV overhead.
   const int BLOCK_REQ=2222;
   // Master process distributes the work and integrates
   // in between servicing requests for work.
-  if (procId==0)
+  if (procId==masterProcId)
     {
     int nCells=source->GetNumberOfCells();
     int workerBlockSize=min(this->WorkerBlockSize,max(nCells/nProcs,1));
@@ -654,7 +655,7 @@ int vtkOOCDFieldTracer::IntegrateDynamic(
         }
       }
     }
-  // Work processes reveive chunks of seed cell ids and 
+  // Work processes receive chunks of seed cell ids and 
   // integrate.
   else
     {
@@ -664,10 +665,10 @@ int vtkOOCDFieldTracer::IntegrateDynamic(
       cerr << "Slave " << procId << " requesting work" << endl;
       #endif
       // get a block of seed cell ids to process.
-      MPI_Send(&procId,1,MPI_INT,0,BLOCK_REQ,MPI_COMM_WORLD);
+      MPI_Send(&procId,1,MPI_INT,masterProcId,BLOCK_REQ,MPI_COMM_WORLD);
       MPI_Status stat;
       CellIdBlock sourceIds;
-      MPI_Recv(sourceIds.data(),sourceIds.dataSize(),MPI_INT,0,BLOCK_REQ,MPI_COMM_WORLD,&stat);
+      MPI_Recv(sourceIds.data(),sourceIds.dataSize(),MPI_INT,masterProcId,BLOCK_REQ,MPI_COMM_WORLD,&stat);
 
       #ifdef vtkOOCDFieldTracerDEBUG
       cerr << "Slave " << procId << " received " << sourceIds << endl;
