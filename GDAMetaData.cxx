@@ -6,20 +6,10 @@
 Copyright 2008 SciberQuest Inc.
 */
 #include "GDAMetaData.h"
+#include "GDAMetaDataKeys.h"
 
-//#include<cstring>
-//#include<cstdlib>
 #include<iostream>
 #include<sstream>
-//#include<algorithm>
-
-// #ifndef WIN32
-//   #define PATH_SEP "/"
-//   #include<dirent.h>
-// #else
-//   #define PATH_SEP "\\"
-// #include "windirent.h"
-// #endif
 
 #include "PrintUtils.h"
 #include "FsUtils.h"
@@ -97,6 +87,52 @@ int GDAMetaData::OpenDataset(const char *fileName)
     }
   vtkAMRBox domain(0,0,0,nx-1,ny-1,nz-1);
   this->SetDomain(domain);
+
+
+  // Look for the dipole center
+  double di_i,di_j,di_k;
+  if ( ParseValue(metaData,0,"i_dipole=",di_i)==string::npos
+    || ParseValue(metaData,0,"j_dipole=",di_j)==string::npos
+    || ParseValue(metaData,0,"k_dipole=",di_k)==string::npos)
+    {
+    #ifndef NDEBUG
+    cerr << __LINE__ << " Warning: Parsing " << fileName
+         << " dipole center not found." << endl;
+    #endif
+    this->HasDipoleCenter=false;
+    }
+  else
+    {
+    this->HasDipoleCenter=true;
+    this->DipoleCenter[0]=di_i;
+    this->DipoleCenter[1]=di_j;
+    this->DipoleCenter[2]=di_k;
+    }
+
+//   double r_mp;
+//   double r_obs_to_mp;
+//   if ( ParseValue(metaData,0,"R_MP=",r_mp)==string::npos
+//     || ParseValue(metaData,0,"R_obstacle_to_MP=",r_obs_to_mp)==string::npos)
+//     {
+//     #ifndef NDEBUG
+//     cerr << __LINE__ << " Warning: Parsing " << fileName 
+//          << " magnetopause dimension not found." << endl;
+//     #endif
+//     this->CellSizeRe=-1.0;
+//     }
+//   else
+//     {
+//     this->CellSizeRe=r_mp*r_obs_to_mp/100.0;
+//     }
+//   double 
+// 
+//       i_dipole=100,
+//       j_dipole=128,
+//       k_dipole=128,
+//       R_MP=16.,
+//       R_obstacle_to_MP=0.57732,
+
+
 
   // FIXME!
   // assumptions, based on what we know of the SciberQuest code.
@@ -206,6 +242,17 @@ int GDAMetaData::CloseDataset()
   return 1;
 }
 
+
+//-----------------------------------------------------------------------------
+void GDAMetaData::PushPipelineInformation(vtkInformation *pinfo)
+{
+  if (this->HasDipoleCenter)
+    {
+    pinfo->Set(GDAMetaDataKeys::DIPOLE_CENTER(),this->DipoleCenter,3);
+    }
+  // pinfo->Set(GDAMetaDataKeys::CELL_SIZE_RE(),this->CellSizeRe);
+}
+
 //-----------------------------------------------------------------------------
 GDAMetaData &GDAMetaData::operator=(const GDAMetaData &other)
 {
@@ -221,7 +268,14 @@ GDAMetaData &GDAMetaData::operator=(const GDAMetaData &other)
 void GDAMetaData::Print(ostream &os) const
 {
   os << "GDAMetaData: " << this << endl;
-  os << "\tOk: " << this->Ok << endl;
+  os << "\tOk:         " << this->Ok << endl;
+  os << "\tDipole:     "
+     << this->DipoleCenter[0] << ", "
+     << this->DipoleCenter[1] << ", "
+     << this->DipoleCenter[2] << endl;
+  //os << "\tCellSizeRe: " << this->CellSizeRe << endl;
+
   this->BOVMetaData::Print(os);
+
   os << endl;
 }

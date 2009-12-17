@@ -65,11 +65,15 @@ public:
   /// Return the file extension used by metadata files.
   //virtual const char *GetMetadataFileExtension() const =0;
 
+  /// Add our keys to the pipeline information.
+  virtual void PushPipelineInformation(vtkInformation *pinfo);
+
   /// Print internal state.
   virtual void Print(ostream &os) const;
 private:
   bool Ok;
-  
+  bool HasDipoleCenter;
+  double DipoleCenter[3];
 };
 
 #endif

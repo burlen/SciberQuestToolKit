@@ -578,6 +578,11 @@ int vtkBOVReader::RequestData(
     return 1;
     }
 
+  // Give implementation classes a chance to push specialized
+  // keys.
+  this->Reader->GetMetaData()->PushPipelineInformation(info);
+
+
   #if defined vtkBOVReaderDEBUG
   this->Reader->Print(cerr);
   idds->Print(cerr);

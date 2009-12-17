@@ -7,29 +7,29 @@
 Copyright 2008 SciberQuest Inc.
 
 */
-#ifndef pqSQPlaneSource_h
-#define pqSQPlaneSource_h
+#ifndef pqSQHemisphereSource_h
+#define pqSQHemisphereSource_h
 
 #include "pqNamedObjectPanel.h"
 #include "pqComponentsExport.h"// no comment
 #include <vtkstd/vector>// no comment
 
-#include "ui_pqSQPlaneSourceForm.h"//  no comment
-using Ui::pqSQPlaneSourceForm;
+#include "ui_pqSQHemisphereSourceForm.h"//  no comment
+using Ui::pqSQHemisphereSourceForm;
 
 // Define the following to enable debug io
-// #define pqSQPlaneSourceDEBUG
+// #define pqSQHemisphereSourceDEBUG
 
 class pqProxy;
 class vtkEventQtSlotConnect;
 class QWidget;
 
-class pqSQPlaneSource : public pqNamedObjectPanel
+class pqSQHemisphereSource : public pqNamedObjectPanel
 {
   Q_OBJECT
 public:
-  pqSQPlaneSource(pqProxy* proxy, QWidget* p = NULL);
-  ~pqSQPlaneSource();
+  pqSQHemisphereSource(pqProxy* proxy, QWidget* p = NULL);
+  ~pqSQHemisphereSource();
 
 
 protected slots:
@@ -39,22 +39,6 @@ protected slots:
   // Description:
   // write state to disk.
   void Save();
-
-  // Description:
-  // check if cooridnates produce a good plane.
-  int ValidateCoordinates();
-
-  // Description:
-  // calculate plane's dimensions for display.
-  void CalculateDims();
-
-  // Description:
-  // calculate plane's grid spacing for display.
-  void CalculateSpacing();
-
-  // Description:
-  // correct the aspect so that pixels are square if enabled,
-  void CorrectAspect();
 
   // Description:
   // Update the UI with values from the server.
@@ -70,16 +54,13 @@ protected slots:
   // Description:
   // This is where we have to communicate our state to the server.
   void accept();
-
-private:
-  double dims[2];
-  double dx[2];
-  int nx[2];
-
+  //Description:
+  // UI driven reset of widget to current server manager values.
+  void reset();
 
 
 private:
-  pqSQPlaneSourceForm *Form;
+  pqSQHemisphereSourceForm *Form;
   vtkEventQtSlotConnect *VTKConnect;
 };
 

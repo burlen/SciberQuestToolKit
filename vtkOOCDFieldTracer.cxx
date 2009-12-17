@@ -593,7 +593,7 @@ int vtkOOCDFieldTracer::IntegrateDynamic(
       vtkDataSet *&oocrCache,
       FieldTopologyMap *topoMap)
 {
-  const int masterProcId=1; // NOTE: proc 0 is busy with PV overhead.
+  const int masterProcId=(nProcs>1?1:0); // NOTE: proc 0 is busy with PV overhead.
   const int BLOCK_REQ=2222;
   // Master process distributes the work and integrates
   // in between servicing requests for work.

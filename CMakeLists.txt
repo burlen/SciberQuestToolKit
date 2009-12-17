@@ -31,6 +31,7 @@ set(SM_SOURCES
   vtkOOCDFieldTracer.cxx
   vtkSQPlaneSource.cxx
   vtkSQSphereSource.cxx
+  vtkSQHemisphereSource.cxx
   vtkProcessMonitor.cxx)
 
 # Sources which aren't for use by the server manager.
@@ -40,6 +41,7 @@ set(_SOURCES
   vtkOOCBOVReader.cxx
   BOVReader.cxx
   GDAMetaData.cxx
+  GDAMetaDataKeys.cxx
   PrintUtils.cxx
   IntersectionSet.cxx
   TerminationCondition.cxx
@@ -83,12 +85,6 @@ ADD_PARAVIEW_OBJECT_PANEL(
   CLASS_NAME pqProcessMonitor
   XML_NAME vtkProcessMonitor
   XML_GROUP sources)
-# set (_SOURCES
-#   ${_SOURCES}
-#   ${MOC_SRCS}
-#   ${UI_SRCS}
-#   ${IFACE_SRCS}
-#   pqProcessMonitor.cxx)
 
 QT4_WRAP_CPP(MOC_SRCS pqSQPlaneSource.h)
 QT4_WRAP_UI(UI_SRCS pqSQPlaneSourceForm.ui)
@@ -97,11 +93,21 @@ ADD_PARAVIEW_OBJECT_PANEL(
   CLASS_NAME pqSQPlaneSource
   XML_NAME vtkSQPlaneSource
   XML_GROUP sources)
+
+QT4_WRAP_CPP(MOC_SRCS pqSQHemisphereSource.h)
+QT4_WRAP_UI(UI_SRCS pqSQHemisphereSourceForm.ui)
+ADD_PARAVIEW_OBJECT_PANEL(
+  IFACES IFACE_SRCS
+  CLASS_NAME pqSQHemisphereSource
+  XML_NAME vtkSQHemisphereSource
+  XML_GROUP sources)
+
 set (_SOURCES
   ${_SOURCES}
   ${MOC_SRCS}
   ${UI_SRCS}
   ${IFACE_SRCS}
+  pqSQHemisphereSource.cxx
   pqSQPlaneSource.cxx
   pqProcessMonitor.cxx)
 

@@ -1,9 +1,11 @@
 <ParaViewFilters>
+  <!--
   <Reader
     name="PVImageReader"
     extensions="gda"
     file_description="Parallel brick time series reader.">
   </Reader>
+  -->
   <Reader
     name="BOVReader"
     extensions="bov"
@@ -25,6 +27,7 @@
     <Filter name="vtkFieldAnalysis"/>
     <Source name="vtkSQPlaneSource"/>
     <Source name="vtkSQSphereSource"/>
+    <Source name="vtkSQHemisphereSource"/>
     <Source name="vtkProcessMonitor"/>
   </Category>
 

@@ -15,6 +15,7 @@ Copyright 2008 SciberQuest Inc.
 #else
   #include "vtkAMRBox.h"
 #endif
+#include "vtkInformation.h"
 
 #include "PrintUtils.h"
 #include <cstdlib>
@@ -244,6 +245,11 @@ public:
   virtual const char *GetBrickFileExtension() const =0;
   /// Return the file extension used by metadata files.
   //virtual const char *GetMetadataFileExtension() const =0;
+
+  /// Implemantion's chance to add any specialized key,value pairs
+  /// it needs into the pipeline information.
+  virtual void PushPipelineInformation(vtkInformation *pinfo){}
+
 
   /// Print internal state.
   virtual void Print(ostream &os) const

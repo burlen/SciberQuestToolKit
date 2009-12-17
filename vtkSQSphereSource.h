@@ -98,7 +98,6 @@ public:
   vtkGetMacro(LatLongTessellation,int);
   vtkBooleanMacro(LatLongTessellation,int);
 
-
   // Description:
   // Set a name that will be placed into the output vtkInformation object
   // in the vtkMetaDataKeys::DESCRIPTIVE_NAME() key.
