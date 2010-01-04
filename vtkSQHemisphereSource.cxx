@@ -40,6 +40,9 @@ vtkSQHemisphereSource::vtkSQHemisphereSource()
       NorthHemisphereName(0),
       SouthHemisphereName(0)
 {
+  #ifdef vtkSQHemisphereSourceDEBUG
+  cerr << "====================================================================vtkSQHemisphereSource" << endl;
+  #endif
   this->Radius=1.0;
 
   this->Center[0]=0.0;
@@ -58,6 +61,9 @@ vtkSQHemisphereSource::vtkSQHemisphereSource()
 //----------------------------------------------------------------------------
 vtkSQHemisphereSource::~vtkSQHemisphereSource()
 {
+  #ifdef vtkSQHemisphereSourceDEBUG
+  cerr << "====================================================================~vtkSQHemisphereSource" << endl;
+  #endif
   this->SetNorthHemisphereName(0);
   this->SetSouthHemisphereName(0);
 }
@@ -65,6 +71,9 @@ vtkSQHemisphereSource::~vtkSQHemisphereSource()
 //----------------------------------------------------------------------------
 int vtkSQHemisphereSource::FillInputPortInformation(int port,vtkInformation *info)
 {
+  #ifdef vtkSQHemisphereSourceDEBUG
+  cerr << "====================================================================FillInputPortInformation" << endl;
+  #endif
   // The input is optional, if used we'll look for some keys that define
   // the sphere's attriibutes coming from upstram (e.g from a reader).
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(),"vtkDataSet");
@@ -78,6 +87,9 @@ int vtkSQHemisphereSource::RequestInformation(
       vtkInformationVector** inInfos,
       vtkInformationVector* outInfos)
 {
+  #ifdef vtkSQHemisphereSourceDEBUG
+  cerr << "====================================================================RequestInformation" << endl;
+  #endif
   // The GDA meta data reader will insert information about
   // the center and radius of the dipole. If its there we'll
   // initialize the object from these.
@@ -86,7 +98,12 @@ int vtkSQHemisphereSource::RequestInformation(
   if (inInfo && inInfo->Has(GDAMetaDataKeys::DIPOLE_CENTER()))
       {
       inInfo->Get(GDAMetaDataKeys::DIPOLE_CENTER(),this->Center);
+      double fakeCenter[3]={-1,-1,-1};
+      inInfo->Set(GDAMetaDataKeys::DIPOLE_CENTER(),fakeCenter,3);
+      inInfo->Set(GDAMetaDataKeys::DIPOLE_CENTER(),this->Center,3);
+      inInfo->Modified();
       this->Modified();
+      //inInfo->Modified((vtkInformationKey*)GDAMetaDataKeys::DIPOLE_CENTER());
       cerr << "Found DIPOLE_CENTER." << endl;
       }
 
@@ -120,7 +137,10 @@ int vtkSQHemisphereSource::RequestData(
       vtkInformationVector **inInfos,
       vtkInformationVector *outInfos)
 {
+  #ifdef vtkSQHemisphereSourceDEBUG
+  cerr << "====================================================================RequestData" << endl;
   this->Print(cerr);
+  #endif
 
   // configure sphere source
   vtkSphereSource *ss=vtkSphereSource::New();
@@ -172,6 +192,9 @@ int vtkSQHemisphereSource::RequestData(
 //----------------------------------------------------------------------------
 void vtkSQHemisphereSource::PrintSelf(ostream& os, vtkIndent indent)
 {
+  #ifdef vtkSQHemisphereSourceDEBUG
+  cerr << "====================================================================PrintSelf" << endl;
+  #endif
   // this->Superclass::PrintSelf(os,indent);
 
   os << indent << "Center "

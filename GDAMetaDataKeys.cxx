@@ -11,9 +11,13 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkInformationKey.h"
 #include "vtkInformationDoubleKey.h"
 #include "vtkInformationDoubleVectorKey.h"
+#include "vtkInformationIntegerKey.h"
 
 //-----------------------------------------------------------------------------
 vtkInformationKeyRestrictedMacro(GDAMetaDataKeys,DIPOLE_CENTER,DoubleVector,3);
 
 //-----------------------------------------------------------------------------
 vtkInformationKeyMacro(GDAMetaDataKeys,CELL_SIZE_RE,Double);
+
+//-----------------------------------------------------------------------------
+vtkInformationKeyMacro(GDAMetaDataKeys,PULL_DIPOLE_CENTER,Integer);

@@ -12,11 +12,13 @@ Copyright 2008 SciberQuest Inc.
 
 class vtkInformationDoubleKey;
 class vtkInformationDoubleVectorKey;
+class vtkInformationIntegerKey;
 
 class GDAMetaDataKeys
 {
 public:
   static vtkInformationDoubleVectorKey* DIPOLE_CENTER();
+  static vtkInformationIntegerKey *PULL_DIPOLE_CENTER();
   static vtkInformationDoubleKey* CELL_SIZE_RE();
 };
 

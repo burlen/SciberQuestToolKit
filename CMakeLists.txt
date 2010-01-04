@@ -100,7 +100,13 @@ ADD_PARAVIEW_OBJECT_PANEL(
   IFACES IFACE_SRCS
   CLASS_NAME pqSQHemisphereSource
   XML_NAME vtkSQHemisphereSource
-  XML_GROUP sources)
+  XML_GROUP sources filters)
+
+# ADD_PARAVIEW_OBJECT_PANEL(
+#   IFACES IFACE_SRCS
+#   CLASS_NAME pqSQHemisphereSource
+#   XML_NAME vtkSQHemisphereFilter
+#   XML_GROUP filters)
 
 set (_SOURCES
   ${_SOURCES}
@@ -138,3 +144,10 @@ set(BUILD_GENTP OFF CACHE BOOL "Build gentp the utility to generate temperature 
     install(TARGETS gentp DESTINATION ${CMAKE_INSTALL_PREFIX})
   endif (BUILD_GENTP)
 endif (UNIX)
+
+# instrument -- command line utility
+set(BUILD_INSTRUMENT OFF CACHE BOOL "Build intrumentation utility to intrument cxx classes.")
+if (BUILD_INSTRUMENT)
+  add_executable(instrumentClass InstrumentClass.cpp FsUtils.cxx)
+endif (BUILD_INSTRUMENT)
+

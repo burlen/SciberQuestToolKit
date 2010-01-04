@@ -68,13 +68,13 @@ pqSQHemisphereSource::pqSQHemisphereSource(
 
   vtkSMProxy* pProxy=this->referenceProxy()->getProxy();
 
-  // Connect to server side pipeline's UpdateInformation events.
-  // The server side will look for keys during request information.
-  this->VTKConnect=vtkEventQtSlotConnect::New();
-  this->VTKConnect->Connect(
-      pProxy,
-      vtkCommand::UpdateInformationEvent,
-      this, SLOT(PullServerConfig()));
+//   // Connect to server side pipeline's UpdateInformation events.
+//   // The server side will look for keys during request information.
+//   this->VTKConnect=vtkEventQtSlotConnect::New();
+//   this->VTKConnect->Connect(
+//       pProxy,
+//       vtkCommand::UpdateInformationEvent,
+//       this, SLOT(PullServerConfig()));
 
   // Set up configuration viewer
   this->PullServerConfig();
@@ -123,8 +123,8 @@ pqSQHemisphereSource::~pqSQHemisphereSource()
 
   delete this->Form;
 
-  this->VTKConnect->Delete();
-  this->VTKConnect=0;
+//   this->VTKConnect->Delete();
+//   this->VTKConnect=0;
 }
 
 //-----------------------------------------------------------------------------
@@ -222,7 +222,6 @@ void pqSQHemisphereSource::UpdateInformationEvent()
   #if defined pqSQHemisphereSourceDEBUG
   cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::UpdateInformationEvent" << endl;
   #endif
-  // vtkSMProxy* pProxy=this->referenceProxy()->getProxy();
 
   this->PullServerConfig();
 }
@@ -238,7 +237,7 @@ void pqSQHemisphereSource::PullServerConfig()
 
   // Center
   vtkSMDoubleVectorProperty *cProp
-    = dynamic_cast<vtkSMDoubleVectorProperty*>(pProxy->GetProperty("Center"));
+    = dynamic_cast<vtkSMDoubleVectorProperty*>(pProxy->GetProperty("GetCenter"));
   pProxy->UpdatePropertyInformation(cProp);
   double *c=cProp->GetElements();
   this->Form->c_x->setText(QString("%1").arg(c[0]));
@@ -246,16 +245,24 @@ void pqSQHemisphereSource::PullServerConfig()
   this->Form->c_z->setText(QString("%1").arg(c[2]));
   // Radius
   vtkSMDoubleVectorProperty *rProp
-    = dynamic_cast<vtkSMDoubleVectorProperty*>(pProxy->GetProperty("Radius"));
+    = dynamic_cast<vtkSMDoubleVectorProperty*>(pProxy->GetProperty("GetRadius"));
   pProxy->UpdatePropertyInformation(rProp);
   double r=rProp->GetElement(0);
   this->Form->r->setText(QString("%1").arg(r));
   // Resolution
   vtkSMIntVectorProperty *resProp
-    = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("Resolution"));
+    = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("GetResolution"));
   pProxy->UpdatePropertyInformation(resProp);
   int res=resProp->GetElement(0);
   this->Form->res->setValue(res);
+
+  #if defined pqSQHemisphereSourceDEBUG
+  cerr << "Pulled: " << endl
+       << "C   " << c[0] << ", " << c[1] << ", " << c[2] << endl
+       << "r   " << r << endl
+       << "res " << res << endl
+       << endl;
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -289,11 +296,13 @@ void pqSQHemisphereSource::PushServerConfig()
     = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("Resolution"));
   resProp->SetElement(0,res);
 
+  #if defined pqSQHemisphereSourceDEBUG
   cerr << "Pushed: " << endl
        << "C   " << c[0] << ", " << c[1] << ", " << c[2] << endl
        << "r   " << r << endl
        << "res " << res << endl
        << endl;
+  #endif
 
   // Let proxy send updated values.
   pProxy->UpdateVTKObjects();

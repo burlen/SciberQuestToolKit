@@ -25,6 +25,7 @@
     <Filter name="vtkOOCDFieldTracer"/>
     <Filter name="vtkOOCDFieldTopologyMapper"/>
     <Filter name="vtkFieldAnalysis"/>
+    <Filter name="vtkSQHemisphereSource"/>
     <Source name="vtkSQPlaneSource"/>
     <Source name="vtkSQSphereSource"/>
     <Source name="vtkSQHemisphereSource"/>

@@ -9,14 +9,20 @@ Copyright 2008 SciberQuest Inc.
 #define fsutil_h
 
 #include<vector>
+using std::vector;
 #include<string>
 using std::string;
-using std::vector;
+#include<iostream>
+using std::ostream;
+
 
 int Represented(const char *path, const char *prefix);
 int GetSeriesIds(const char *path, const char *prefix, vector<int> &ids);
 string StripFileNameFromPath(const string fileName);
+string StripExtensionFromFileName(const string fileName);
+string StripPathFromFileName(const string fileName);
 int LoadLines(const char *fileName, vector<string> &lines);
+int LoadText(const string &fileName, string &text);
 int WriteText(string &fileName, string &text);
 int SearchAndReplace(const string &searchFor,const string &replaceWith,string &inText);
 ostream &operator<<(ostream &os, vector<string> v);

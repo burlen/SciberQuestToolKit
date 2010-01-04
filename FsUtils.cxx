@@ -119,6 +119,37 @@ string StripFileNameFromPath(const string fileName)
   return fileName.substr(0,p); // TODO Why does this leak?
 }
 
+// Returns the file name not including the extension (ie what ever is after
+// the last ".". If there is no "." then the fileName is retnurned unmodified.
+//*****************************************************************************
+string StripExtensionFromFileName(const string fileName)
+{
+  size_t p;
+  p=fileName.rfind(".");
+  if (p==string::npos)
+    {
+    // current directory
+    return fileName;
+    }
+  return fileName.substr(0,p); // TODO Why does this leak?
+}
+
+// Returns the file name from the given path. If PATH_SEP isn't found
+// then the filename is returned unmodified.
+//*****************************************************************************
+string StripPathFromFileName(const string fileName)
+{
+  size_t p;
+  p=fileName.find_last_of(PATH_SEP);
+  if (p==string::npos)
+    {
+    // current directory
+    return fileName;
+    }
+  return fileName.substr(p+1,string::npos); // TODO Why does this leak?
+}
+
+
 //*****************************************************************************
 int LoadLines(const char *fileName, vector<string> &lines)
 {
