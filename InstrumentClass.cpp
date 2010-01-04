@@ -15,7 +15,7 @@ int main(int argc, char **argv)
     {
     cerr << "Error exiting." << endl
          << "Usage:" << endl
-         << "    " << argv[0] << "/path/to/class.cxx" << endl
+         << "    " << argv[0] << " /path/to/class.cxx" << endl
          << endl;
     return 1;
     }
@@ -65,6 +65,13 @@ int main(int argc, char **argv)
    if (nextSemi!=string::npos && nextSemi<nextCurly)
     {
     // static method call.
+    pos=nextSemi;
+    continue;
+    }
+   // If this is not member class call then open paren occurs before the next semi.
+   if (nextSemi!=string::npos && nextSemi<nextParen)
+    {
+    // member class
     pos=nextSemi;
     continue;
     }
