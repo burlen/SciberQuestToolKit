@@ -149,5 +149,6 @@ endif (UNIX)
 set(BUILD_INSTRUMENT OFF CACHE BOOL "Build intrumentation utility to intrument cxx classes.")
 if (BUILD_INSTRUMENT)
   add_executable(instrumentClass InstrumentClass.cpp FsUtils.cxx)
+  install(TARGETS instrumentClass DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif (BUILD_INSTRUMENT)
 
