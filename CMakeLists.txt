@@ -102,12 +102,6 @@ ADD_PARAVIEW_OBJECT_PANEL(
   XML_NAME vtkSQHemisphereSource
   XML_GROUP sources filters)
 
-# ADD_PARAVIEW_OBJECT_PANEL(
-#   IFACES IFACE_SRCS
-#   CLASS_NAME pqSQHemisphereSource
-#   XML_NAME vtkSQHemisphereFilter
-#   XML_GROUP filters)
-
 set (_SOURCES
   ${_SOURCES}
   ${MOC_SRCS}
@@ -119,13 +113,18 @@ set (_SOURCES
 
 endif (PARAVIEW_BUILD_QT_GUI)
 
+set (CLIENT_XML
+  SciVisToolKitClientReaders.xml
+  SciVisToolKitClientSources.xml
+  SciVisToolKitClientFilters.xml)
+
 # Generate the plugin, servermanager and wrapped language bindings.
 add_paraview_plugin(
   SciVisToolKit "1.0"
   GUI_INTERFACES ${IFACES}
   SERVER_MANAGER_SOURCES ${SM_SOURCES}
   SERVER_MANAGER_XML SciVisToolKitServerManager.xml
-  GUI_RESOURCE_FILES SciVisToolKitClient.xml
+  GUI_RESOURCE_FILES ${CLIENT_XML}
   SOURCES ${_SOURCES} )
 
 install(TARGETS SciVisToolKit DESTINATION ${CMAKE_INSTALL_PREFIX})
