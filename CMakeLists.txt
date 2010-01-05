@@ -77,6 +77,8 @@ endif (PV_VER LESS 3.6)
 
 
 if(PARAVIEW_BUILD_QT_GUI)
+set(_IFACES)
+set(_IFACE_SRCS)
 # Qt custom panels
 QT4_WRAP_CPP(MOC_SRCS pqProcessMonitor.h)
 QT4_WRAP_UI(UI_SRCS pqProcessMonitorForm.ui)
@@ -85,14 +87,8 @@ ADD_PARAVIEW_OBJECT_PANEL(
   CLASS_NAME pqProcessMonitor
   XML_NAME vtkProcessMonitor
   XML_GROUP sources)
-
-QT4_WRAP_CPP(MOC_SRCS pqSQPlaneSource.h)
-QT4_WRAP_UI(UI_SRCS pqSQPlaneSourceForm.ui)
-ADD_PARAVIEW_OBJECT_PANEL(
-  IFACES IFACE_SRCS
-  CLASS_NAME pqSQPlaneSource
-  XML_NAME vtkSQPlaneSource
-  XML_GROUP sources)
+set(_IFACES ${_IFACES} ${IFACES})
+set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
 QT4_WRAP_CPP(MOC_SRCS pqSQHemisphereSource.h)
 QT4_WRAP_UI(UI_SRCS pqSQHemisphereSourceForm.ui)
@@ -101,12 +97,24 @@ ADD_PARAVIEW_OBJECT_PANEL(
   CLASS_NAME pqSQHemisphereSource
   XML_NAME vtkSQHemisphereSource
   XML_GROUP sources filters)
+set(_IFACES ${_IFACES} ${IFACES})
+set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+
+QT4_WRAP_CPP(MOC_SRCS pqSQPlaneSource.h)
+QT4_WRAP_UI(UI_SRCS pqSQPlaneSourceForm.ui)
+ADD_PARAVIEW_OBJECT_PANEL(
+  IFACES IFACE_SRCS
+  CLASS_NAME pqSQPlaneSource
+  XML_NAME vtkSQPlaneSource
+  XML_GROUP sources)
+set(_IFACES ${_IFACES} ${IFACES})
+set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
 set (_SOURCES
   ${_SOURCES}
   ${MOC_SRCS}
   ${UI_SRCS}
-  ${IFACE_SRCS}
+  ${_IFACE_SRCS}
   pqSQHemisphereSource.cxx
   pqSQPlaneSource.cxx
   pqProcessMonitor.cxx)
@@ -121,7 +129,7 @@ set (CLIENT_XML
 # Generate the plugin, servermanager and wrapped language bindings.
 add_paraview_plugin(
   SciVisToolKit "1.0"
-  GUI_INTERFACES ${IFACES}
+  GUI_INTERFACES ${_IFACES}
   SERVER_MANAGER_SOURCES ${SM_SOURCES}
   SERVER_MANAGER_XML SciVisToolKitServerManager.xml
   GUI_RESOURCE_FILES ${CLIENT_XML}
