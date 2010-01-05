@@ -138,6 +138,7 @@ Copyright 2008 SciberQuest Inc.
 </ProxyGroup>
 
 <ProxyGroup name="sources">
+
 <!--========================================================================-->
 <SourceProxy
     name="BOVReader"
