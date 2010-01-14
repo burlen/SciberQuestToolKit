@@ -50,6 +50,15 @@ void TracerFieldTopologyMap::SetSource(vtkDataSet *s)
 {
   this->ClearSource();
 
+  // some process may not have any work, in that case we still
+  // should initialize with empty objects.
+  if (s->GetNumberOfCells()==0)
+    {
+    this->SourceCells=vtkCellArray::New();
+    this->SourcePts=vtkFloatArray::New();
+    return;
+    }
+
   // unstructured (the easier)
   vtkUnstructuredGrid *sourceug=dynamic_cast<vtkUnstructuredGrid*>(s);
   if (sourceug)
@@ -97,7 +106,6 @@ void TracerFieldTopologyMap::SetSource(vtkDataSet *s)
     this->SourceCells->Register(0);
     return;
     }
-
 
   cerr << "Error: Unsupported input data type." << endl;
 }

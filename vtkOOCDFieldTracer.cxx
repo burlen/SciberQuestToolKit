@@ -572,11 +572,6 @@ int vtkOOCDFieldTracer::IntegrateStatic(
   sourceIds.first()=0;
   sourceIds.size()=source->GetNumberOfCells();
 
-  if (sourceIds.size()==0)
-    {
-    return 1;
-    }
-
   return
     this->IntegrateBlock(
             &sourceIds,
