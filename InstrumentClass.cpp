@@ -55,11 +55,22 @@ int main(int argc, char **argv)
   while ((pos=classText.find(methodKey,pos))!=string::npos)
     {
     // pos points to the posible method name, now we have to find the opening
-    // of the method, if its a method declaration not a static method call.
+    // of the method, if its a method definiton not a static method call or
+    // a member class declaration.
     size_t nextSemi=classText.find(";",pos);
     size_t nextCurly=classText.find("{",pos);
     size_t nextParen=classText.find("(",pos);
-    // In any case there must be a open curly for the method.
+    size_t prevLine=classText.rfind("\n",pos);
+    size_t nextLine=classText.find("\n",pos);
+    // If the key word class is found on the same line as the methodKey
+    // the we can safely assume this is a member class declaration.
+    if (classText.substr(prevLine,nextLine-prevLine+1).find("class")!=string::npos)
+      {
+      // member class.
+      pos=nextLine;
+      continue;
+      }
+    // There must be a open curly for the method definition.
     if (nextCurly==string::npos || nextParen==string::npos)
       {
       cerr
@@ -69,20 +80,21 @@ int main(int argc, char **argv)
         << endl;
       return 1;
       }
-   // If this is not a static method call then  open curly occurs before the next semi.
+   // If this is not a static method call then open curly occurs before the next semi.
    if (nextSemi!=string::npos && nextSemi<nextCurly)
     {
     // static method call.
     pos=nextSemi;
     continue;
     }
-   // If this is not member class call then open paren occurs before the next semi.
-   if (nextSemi!=string::npos && nextSemi<nextParen)
-    {
-    // member class
-    pos=nextSemi;
-    continue;
-    }
+
+//    // If this is not member class call then open paren occurs before the next semi.
+//    if (nextSemi!=string::npos && nextSemi<nextParen)
+//     {
+//     // member class
+//     pos=nextSemi;
+//     continue;
+//     }
 
     ++nMethods;
     methodLoc.push_back(nextCurly+1);

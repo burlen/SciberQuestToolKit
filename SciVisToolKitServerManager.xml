@@ -8,6 +8,136 @@ Copyright 2008 SciberQuest Inc.
 -->
 
 <ServerManagerConfiguration>
+
+<!--
+*******************************************************************************
+*                                                                             *
+*                                  3D-Widgets                                 *
+*                                                                             *
+*******************************************************************************
+-->
+<ProxyGroup name="3d_widgets">
+  <Proxy name="SQHandleWidget" class="vtkSQHandleWidget">
+    <ProxyProperty name="Representation" command="SetRepresentation">
+      <ProxyGroupDomain name="groups">
+        <Group name="props" />
+      </ProxyGroupDomain>
+    </ProxyProperty>
+
+    <IntVectorProperty
+      name="Enabled"
+      command="SetEnabled"
+      number_of_elements="1"
+      default_values="0">
+      <BooleanDomain/>
+    </IntVectorProperty>
+  </Proxy>
+</ProxyGroup>
+
+<!--
+*******************************************************************************
+*                                                                             *
+*                               3D-Widget-Props                               *
+*                                                                             *
+*******************************************************************************
+-->
+<ProxyGroup name="props">
+  <Proxy
+    name="SQHandleRepresentation"
+    class="vtkSQPointHandleRepresentation3D">
+
+    <IntVectorProperty
+        name="Visibility"
+        command="SetVisibility"
+        number_of_elements="1"
+        default_values="1"
+        animateable="1">
+        <BooleanDomain name="bool" />
+     </IntVectorProperty>
+
+     <DoubleVectorProperty 
+        name="WorldPosition"
+        command="SetWorldPosition"
+        number_of_elements="3"
+        argument_is_array="1"
+        information_property="WorldPositionInfo"
+        default_values="0 0 0">
+        <DoubleRangeDomain name="range"/>
+     </DoubleVectorProperty>
+
+     <DoubleVectorProperty 
+        name="WorldPositionInfo"
+        command="GetWorldPosition"
+        information_only="1">
+        <SimpleDoubleInformationHelper/>
+     </DoubleVectorProperty>
+
+     <ProxyProperty name="Renderer" command="SetRenderer">
+       <ProxyGroupDomain name="groups">
+         <Group name="renderers"/>
+       </ProxyGroupDomain>
+     </ProxyProperty>
+   </Proxy>
+</ProxyGroup>
+
+<!--
+*******************************************************************************
+*                                                                             *
+*                            3D-Widget-Representaitons                        *
+*                                                                             *
+*******************************************************************************
+-->
+<ProxyGroup name="representations">
+  <NewWidgetRepresentationProxy name="SQHandleWidgetRepresentation">
+    <SubProxy>
+      <Proxy
+        name="Prop"
+        proxygroup="props"
+        proxyname="SQHandleRepresentation">
+      </Proxy>
+      <ExposedProperties>
+        <Property name="Visibility" />
+        <Property name="WorldPositionInfo" />
+        <Property name="WorldPosition" />
+      </ExposedProperties>
+    </SubProxy>
+
+    <SubProxy>
+      <Proxy name="Widget"
+        proxygroup="3d_widgets"
+        proxyname="SQHandleWidget">
+      </Proxy>
+      <ExposedProperties>
+        <Property name="Enabled" />
+      </ExposedProperties>
+    </SubProxy>
+  </NewWidgetRepresentationProxy>
+
+  <NewWidgetRepresentationProxy
+    name="SQPointSourceWidgetRepresentation"
+    base_proxygroup="representations"
+    base_proxyname="SQHandleWidgetRepresentation">
+    <!-- 
+      This is same as handle widget except that it provides
+      dummy properties for the radius/number of points in a point 
+      source. 
+    -->
+    <DoubleVectorProperty
+      name="Radius"
+      number_of_elements="1"
+      default_values="1.0">
+      <DoubleRangeDomain name="range" min="0" />
+    </DoubleVectorProperty>
+  
+    <IntVectorProperty
+      name="NumberOfPoints"
+      number_of_elements="1"
+      default_values="1">
+      <IntRangeDomain name="range" min="1" />
+    </IntVectorProperty>
+  </NewWidgetRepresentationProxy>
+</ProxyGroup>
+
 <!--
 *******************************************************************************
 *                                                                             *
@@ -355,11 +485,6 @@ Copyright 2008 SciberQuest Inc.
 </ProxyGroup>
 
 
-
-
-
-
-
 <!--
 *******************************************************************************
 *                                                                             *
@@ -435,6 +560,57 @@ Copyright 2008 SciberQuest Inc.
 </ProxyGroup>
 
 <ProxyGroup name="sources">
+   <!-- ==================================================================== -->
+   <SourceProxy name="vtkSQPointSource" class="vtkSQPointSource" label="SQ Point Source">
+      <Documentation long_help="Create a point cloud of a certain size, radius, and center."
+                     short_help="Create a point cloud">
+        The point source creates a specified number of points within a given radius about a specified center point.
+      </Documentation>
+      <DoubleVectorProperty
+         name="Center"
+         command="SetCenter"
+         number_of_elements="3"
+         animateable="1"
+         default_values="0.0 0.0 0.0" >
+        <DoubleRangeDomain name="range"/>
+        <Documentation>
+          This property specifies the 3D coordinates of the center of the point cloud.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <IntVectorProperty
+         name="NumberOfPoints"
+         command="SetNumberOfPoints"
+         number_of_elements="1"
+         animateable="1"
+         default_values="1" >
+         <IntRangeDomain name="range" min="1"/>
+         <Documentation>
+           This property specifies the number of points in the point cloud.
+         </Documentation>
+      </IntVectorProperty>
+
+      <DoubleVectorProperty
+         name="Radius"
+         command="SetRadius"
+         number_of_elements="1"
+         animateable="1"
+         default_values="0.0" >
+        <DoubleRangeDomain name="range" min="0"/>
+        <Documentation>
+          This property specifies the radius of the point cloud, measured from the value of the Center property.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <Hints>
+        <PropertyGroup type="SQPointSource" >
+          <Property function="WorldPosition"  name="Center" />
+          <Property function="Radius"         name="Radius" />
+          <Property function="NumberOfPoints" name="NumberOfPoints" />
+        </PropertyGroup>
+      </Hints>
+   <!-- End PointSource -->
+   </SourceProxy>
 
   <!-- ==================================================================== -->
   <SourceProxy name="vtkSQPlaneSource" class="vtkSQPlaneSource" label="SQ Plane">

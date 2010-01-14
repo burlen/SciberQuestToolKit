@@ -530,8 +530,7 @@ int vtkOOCDFieldTracer::RequestData(
     // This assumes that seed source is distrubuted such that each 
     // process has a unique portion of the work.
 
-    // TODO implement a test to verify this is so. Eg.all should have the same first point
-    // and number of cells.
+    // TODO implement a test to verify this is so.
     this->IntegrateStatic(source,out,fieldName,oocr.GetPointer(),oocrCache,topoMap);
     }
 
@@ -572,6 +571,11 @@ int vtkOOCDFieldTracer::IntegrateStatic(
   CellIdBlock sourceIds;
   sourceIds.first()=0;
   sourceIds.size()=source->GetNumberOfCells();
+
+  if (sourceIds.size()==0)
+    {
+    return 1;
+    }
 
   return
     this->IntegrateBlock(

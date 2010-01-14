@@ -20,6 +20,9 @@ include(ParaViewConfig.cmake)
 
 # Server manager sources.
 set(SM_SOURCES
+  vtkSQPointSource.cxx
+  vtkSQHandleWidget.cxx
+  vtkSQPointHandleRepresentation3D.cxx
   vtkPVImageReader.cxx
   vtkBOVReader.cxx
   vtkFieldTracer.cxx
@@ -77,6 +80,7 @@ endif (PV_VER LESS 3.6)
 
 
 if(PARAVIEW_BUILD_QT_GUI)
+message("-- Including custom panels.")
 set(_IFACES)
 set(_IFACE_SRCS)
 # Qt custom panels
@@ -110,6 +114,36 @@ ADD_PARAVIEW_OBJECT_PANEL(
 set(_IFACES ${_IFACES} ${IFACES})
 set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
+QT4_WRAP_CPP(MOC_SRCS pqSQHandleWidget.h)
+QT4_WRAP_UI(UI_SRCS pqSQHandleWidgetForm.ui)
+# ADD_PARAVIEW_OBJECT_PANEL(
+#   IFACES IFACE_SRCS
+#   CLASS_NAME pqSQHanldeWidget
+#   XML_NAME vtkpqSQPointSource
+#   XML_GROUP sources)
+# set(_IFACES ${_IFACES} ${IFACES})
+# set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+
+QT4_WRAP_CPP(MOC_SRCS pqSQPointSourceWidget.h)
+QT4_WRAP_UI(UI_SRCS pqSQPointSourceWidgetForm.ui)
+# ADD_PARAVIEW_OBJECT_PANEL(
+#   IFACES IFACE_SRCS
+#   CLASS_NAME pqSQPointSourceWidget
+#   XML_NAME vtkSQPointSource
+#   XML_GROUP sources)
+# set(_IFACES ${_IFACES} ${IFACES})
+# set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+
+QT4_WRAP_CPP(MOC_SRCS pqSQPointSourcePanel.h)
+QT4_WRAP_UI(UI_SRCS pqSQPointSourcePanelForm.ui)
+ADD_PARAVIEW_OBJECT_PANEL(
+  IFACES IFACE_SRCS
+  CLASS_NAME pqSQPointSourcePanel
+  XML_NAME vtkSQPointSource
+  XML_GROUP sources)
+set(_IFACES ${_IFACES} ${IFACES})
+set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+
 set (_SOURCES
   ${_SOURCES}
   ${MOC_SRCS}
@@ -117,7 +151,10 @@ set (_SOURCES
   ${_IFACE_SRCS}
   pqSQHemisphereSource.cxx
   pqSQPlaneSource.cxx
-  pqProcessMonitor.cxx)
+  pqProcessMonitor.cxx
+  pqSQPointSourcePanel.cxx
+  pqSQHandleWidget.cxx
+  pqSQPointSourceWidget.cxx)
 
 endif (PARAVIEW_BUILD_QT_GUI)
 
@@ -141,6 +178,7 @@ install(TARGETS SciVisToolKit DESTINATION ${CMAKE_INSTALL_PREFIX})
 if (UNIX)
 set(BUILD_GENTP OFF CACHE BOOL "Build gentp the utility to generate temperature and pressure arrays.")
   if (BUILD_GENTP)
+    message("-- Including gentp.")
     include(FindMPI)
     if (NOT MPI_FOUND)
       message(SEND_ERROR "MPI is required for the gentp utility.")
@@ -155,6 +193,7 @@ endif (UNIX)
 # instrument -- command line utility
 set(BUILD_INSTRUMENT OFF CACHE BOOL "Build intrumentation utility to intrument cxx classes.")
 if (BUILD_INSTRUMENT)
+  message("-- Including InstrumentClass.")
   add_executable(instrumentClass InstrumentClass.cpp FsUtils.cxx)
   install(TARGETS instrumentClass DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif (BUILD_INSTRUMENT)

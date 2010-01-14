@@ -13,6 +13,7 @@ Copyright 2008 SciberQuest Inc.
     <Proxy group="sources" name="vtkSQSphereSource"/>
     <Proxy group="sources" name="vtkSQHemisphereSource"/>
     <Proxy group="sources" name="vtkProcessMonitor"/>
+    <Proxy group="sources" name="vtkSQPointSource"/>
   </Category>
 
 </ParaViewSources>
