@@ -20,9 +20,9 @@ include(ParaViewConfig.cmake)
 
 # Server manager sources.
 set(SM_SOURCES
-  vtkSQPointSource.cxx
-  vtkSQHandleWidget.cxx
-  vtkSQPointHandleRepresentation3D.cxx
+  #vtkSQPointSource.cxx
+  #vtkSQHandleWidget.cxx
+  #vtkSQPointHandleRepresentation3D.cxx
   vtkPVImageReader.cxx
   vtkBOVReader.cxx
   vtkFieldTracer.cxx
@@ -114,8 +114,8 @@ ADD_PARAVIEW_OBJECT_PANEL(
 set(_IFACES ${_IFACES} ${IFACES})
 set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
-QT4_WRAP_CPP(MOC_SRCS pqSQHandleWidget.h)
-QT4_WRAP_UI(UI_SRCS pqSQHandleWidgetForm.ui)
+#QT4_WRAP_CPP(MOC_SRCS pqSQHandleWidget.h)
+#QT4_WRAP_UI(UI_SRCS pqSQHandleWidgetForm.ui)
 # ADD_PARAVIEW_OBJECT_PANEL(
 #   IFACES IFACE_SRCS
 #   CLASS_NAME pqSQHanldeWidget
@@ -124,8 +124,8 @@ QT4_WRAP_UI(UI_SRCS pqSQHandleWidgetForm.ui)
 # set(_IFACES ${_IFACES} ${IFACES})
 # set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
-QT4_WRAP_CPP(MOC_SRCS pqSQPointSourceWidget.h)
-QT4_WRAP_UI(UI_SRCS pqSQPointSourceWidgetForm.ui)
+#QT4_WRAP_CPP(MOC_SRCS pqSQPointSourceWidget.h)
+#QT4_WRAP_UI(UI_SRCS pqSQPointSourceWidgetForm.ui)
 # ADD_PARAVIEW_OBJECT_PANEL(
 #   IFACES IFACE_SRCS
 #   CLASS_NAME pqSQPointSourceWidget
@@ -134,15 +134,15 @@ QT4_WRAP_UI(UI_SRCS pqSQPointSourceWidgetForm.ui)
 # set(_IFACES ${_IFACES} ${IFACES})
 # set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
-QT4_WRAP_CPP(MOC_SRCS pqSQPointSourcePanel.h)
-QT4_WRAP_UI(UI_SRCS pqSQPointSourcePanelForm.ui)
-ADD_PARAVIEW_OBJECT_PANEL(
-  IFACES IFACE_SRCS
-  CLASS_NAME pqSQPointSourcePanel
-  XML_NAME vtkSQPointSource
-  XML_GROUP sources)
-set(_IFACES ${_IFACES} ${IFACES})
-set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+#QT4_WRAP_CPP(MOC_SRCS pqSQPointSourcePanel.h)
+#QT4_WRAP_UI(UI_SRCS pqSQPointSourcePanelForm.ui)
+#ADD_PARAVIEW_OBJECT_PANEL(
+#  IFACES IFACE_SRCS
+#  CLASS_NAME pqSQPointSourcePanel
+#  XML_NAME vtkSQPointSource
+#  XML_GROUP sources)
+#set(_IFACES ${_IFACES} ${IFACES})
+#set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
 set (_SOURCES
   ${_SOURCES}
@@ -151,10 +151,10 @@ set (_SOURCES
   ${_IFACE_SRCS}
   pqSQHemisphereSource.cxx
   pqSQPlaneSource.cxx
-  pqProcessMonitor.cxx
-  pqSQPointSourcePanel.cxx
-  pqSQHandleWidget.cxx
-  pqSQPointSourceWidget.cxx)
+  pqProcessMonitor.cxx)
+  #pqSQPointSourcePanel.cxx
+  #pqSQHandleWidget.cxx
+  #pqSQPointSourceWidget.cxx)
 
 endif (PARAVIEW_BUILD_QT_GUI)
 
