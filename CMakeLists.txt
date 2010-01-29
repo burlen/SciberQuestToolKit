@@ -63,6 +63,10 @@ vtkOOCReader.cxx
 ABSTRACT
 )
 
+# Just incase we're using mpich...
+add_definitions("-DMPICH_IGNORE_CXX_SEEK")
+
+# Augment windows with some posix codes.
 if (WIN32)
   set(_SOURCES ${_SOURCES} windirent.cxx)
 endif (WIN32)
@@ -70,7 +74,7 @@ endif (WIN32)
 # Verison dependent sources.
 set(PV_VER ${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR})
 if (PV_VER LESS 3.6)
-  message("-- Using ParaView 3.7 classes in build for ParaView ${PV_VER}.")
+  message(STATUS "-- Using ParaView 3.7 classes in build for ParaView ${PV_VER}.")
   set(_SOURCES 
     ${_SOURCES} 
     vtkAMRBox_3.7.cxx
@@ -80,7 +84,7 @@ endif (PV_VER LESS 3.6)
 
 
 if(PARAVIEW_BUILD_QT_GUI)
-message("-- Including custom panels.")
+message(STATUS "-- Including custom panels.")
 set(_IFACES)
 set(_IFACE_SRCS)
 # Qt custom panels
@@ -193,7 +197,7 @@ endif (UNIX)
 # instrument -- command line utility
 set(BUILD_INSTRUMENT OFF CACHE BOOL "Build intrumentation utility to intrument cxx classes.")
 if (BUILD_INSTRUMENT)
-  message("-- Including InstrumentClass.")
+  message(STATUS "-- Including InstrumentClass.")
   add_executable(instrumentClass InstrumentClass.cpp FsUtils.cxx)
   install(TARGETS instrumentClass DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif (BUILD_INSTRUMENT)

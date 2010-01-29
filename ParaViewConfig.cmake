@@ -4,23 +4,10 @@
 # |                                                                           |
 # +---------------------------------------------------------------------------+
 #ParaView3
-if (UNIX OR CYGWIN)
-  # +------------------+
-  # | Unix/Linux/Cygwin|
-  # +------------------+
-  set(ParaView_DIR 
-    /home/burlen/ext/kitware_cvs/PV3-VisIt
-    CACHE FILEPATH
-    "Path to ParaView build.")
-else (UNIX OR CYGWIN)
-  # +------------------+
-  # |     Windows      |
-  # +------------------+
-  set(ParaView_DIR 
-    C:/PV3
-    CACHE FILEPATH
-    "Path to ParaView build.")
-endif (UNIX OR CYGWIN)
+set(ParaView_DIR 
+  ${CMAKE_BINARY_DIR}/PV3-3.7
+  CACHE FILEPATH
+  "Path to ParaView build.")
 
 if (NOT EXISTS ${ParaView_DIR})
   MESSAGE( FATAL_ERROR 
