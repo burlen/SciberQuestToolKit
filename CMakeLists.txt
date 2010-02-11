@@ -17,6 +17,7 @@ project(SciVisToolKit)
 
 # Locate our PV build/development install.
 include(ParaViewConfig.cmake)
+include(EigenConfig.cmake)
 
 # Server manager sources.
 set(SM_SOURCES
@@ -30,6 +31,7 @@ set(SM_SOURCES
   vtkFieldTopologyAnalyzer.cxx
   vtkDistributedFieldTracer.cxx
   vtkFieldAnalysis.cxx
+  vtkSQVortexFilter.cxx
   vtkOOCFieldTracer.cxx
   vtkOOCDFieldTracer.cxx
   vtkSQPlaneSource.cxx
@@ -182,7 +184,7 @@ install(TARGETS SciVisToolKit DESTINATION ${CMAKE_INSTALL_PREFIX})
 if (UNIX)
 set(BUILD_GENTP OFF CACHE BOOL "Build gentp the utility to generate temperature and pressure arrays.")
   if (BUILD_GENTP)
-    message("-- Including gentp.")
+    message(STATUS "-- Including gentp.")
     include(FindMPI)
     if (NOT MPI_FOUND)
       message(SEND_ERROR "MPI is required for the gentp utility.")

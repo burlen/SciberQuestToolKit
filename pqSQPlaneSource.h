@@ -11,10 +11,10 @@ Copyright 2008 SciberQuest Inc.
 #define pqSQPlaneSource_h
 
 #include "pqNamedObjectPanel.h"
-#include "pqComponentsExport.h"// no comment
-#include <vtkstd/vector>// no comment
+#include "pqComponentsExport.h"
+#include <vtkstd/vector>
 
-#include "ui_pqSQPlaneSourceForm.h"//  no comment
+#include "ui_pqSQPlaneSourceForm.h"
 using Ui::pqSQPlaneSourceForm;
 
 // Define the following to enable debug io
@@ -36,9 +36,11 @@ protected slots:
   // Description:
   // read state from disk.
   void Restore();
+  void loadPlaneState();
   // Description:
   // write state to disk.
   void Save();
+  void savePlaneState();
 
   // Description:
   // check if cooridnates produce a good plane.

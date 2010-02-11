@@ -1,4 +1,4 @@
-<ColorMap name="NOISE-2" space="RGB">
+<ColorMap name="Topo-2" space="RGB">
   <!-- 0 = red -->
   <Point x="-0.5"  o="1" r="1" g="0" b="0"/>
   <Point x="0.5"   o="1" r="1" g="0" b="0"/>

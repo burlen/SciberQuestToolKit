@@ -1651,17 +1651,52 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
         </Documentation>
      </IntVectorProperty>
 
-     <IntVectorProperty
-        name="ComputeCurrentHelicity"
-        label="Current-Helicity"
-        command="SetComputeCurrentHelicity"
-        number_of_elements="1"
-        default_values="0">
-        <BooleanDomain name="bool" />
-        <Documentation>
-          Compute the current/velocity helicity of the vector field using a point centered stencil.
-        </Documentation>
-     </IntVectorProperty>
+  <!-- End vtkFieldAnalysis -->
+  </SourceProxy>
+
+  <!-- ==================================================================== -->
+  <SourceProxy 
+    name="vtkSQVortexFilter" 
+    class="vtkSQVortexFilter"
+    label="SQ Vortex Detect">
+    <Documentation
+      long_help="Long Documentation"
+      short_help="Short Documentation">
+      Textual Documentation.
+    </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+           <InputArrayDomain name="input_array" attribute_type="point"
+                             number_of_components="3"/>
+           <Documentation>
+             This property specifies the input to the Warp (vector) filter.
+           </Documentation>
+      </InputProperty>
+
+      <StringVectorProperty 
+         name="SelectInputVectors" 
+         command="SetInputArrayToProcess"
+         number_of_elements="5"
+         element_types="0 0 0 0 2"
+         label="Vectors">
+            <ArrayListDomain name="array_list" attribute_type="Vectors">
+              <RequiredProperties>
+                 <Property name="Input" function="Input"/>
+              </RequiredProperties>
+            </ArrayListDomain>
+            <Documentation>
+              Identifies the vector field on which to operate.
+            </Documentation>
+      </StringVectorProperty> 
 
      <IntVectorProperty
         name="ComputeRotation"
@@ -1671,10 +1706,59 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
         default_values="0">
         <BooleanDomain name="bool" />
         <Documentation>
-          Compute the rotation of the vector field using a point centered stencil.
+          Compute the rotation (curl) of the vector field using a point centered stencil.
         </Documentation>
      </IntVectorProperty>
-  <!-- End vtkFieldAnalysis -->
+
+      <IntVectorProperty
+        name="ComputeHelicity"
+        label="Helicity"
+        command="SetComputeHelicity"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the helicity (dot of vector and its curl) of the vector field using a point centered stencil.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeNormalizedHelicity"
+        label="Normalized helicity"
+        command="SetComputeNormalizedHelicity"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the normailzed helicity of the vector field using a point centered stencil.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeLambda"
+        label="Lambda-(1,2,3)"
+        command="SetComputeLambda"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the 3 eigenvalues of corrected pressure hessian.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeLambda2"
+        label="Lambda-2"
+        command="SetComputeLambda2"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the second eigenvalue of corrected pressure hessian.
+        </Documentation>
+     </IntVectorProperty>
+
+  <!-- End vtkSQVortexFilter -->
   </SourceProxy>
 
   <!-- ==================================================================== -->

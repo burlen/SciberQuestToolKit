@@ -23,8 +23,6 @@ public:
   static vtkFieldAnalysis *New();
 
   vtkSetMacro(ComputeFaceDivergence,int);
-  vtkSetMacro(ComputeCurrentHelicity,int);
-  vtkSetMacro(ComputeRotation,int);
 
 protected:
   //int FillInputPortInformation(int port, vtkInformation *info);
@@ -36,8 +34,6 @@ protected:
 
 private:
   int ComputeFaceDivergence;
-  int ComputeCurrentHelicity;
-  int ComputeRotation;
 
 private:
   vtkFieldAnalysis(const vtkFieldAnalysis &); // Not implemented

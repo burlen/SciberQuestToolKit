@@ -19,7 +19,6 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-
   MPI_Init(&argc,&argv);
 
   int procId=0;
@@ -73,7 +72,6 @@ int main(int argc, char **argv)
       cnt[i]=nIdsPerProc+(i<nIdsLeft?1:0);
       disp[i]=at;
       at+=cnt[i];
-
       // cerr << cnt[i] << " " << disp[i] << endl;
       }
 

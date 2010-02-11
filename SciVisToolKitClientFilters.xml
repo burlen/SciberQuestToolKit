@@ -16,6 +16,7 @@ Copyright 2008 SciberQuest Inc.
     <Proxy group="filters" name="vtkOOCDFieldTracer"/>
     <Proxy group="filters" name="vtkOOCDFieldTopologyMapper"/>
     <Proxy group="filters" name="vtkFieldAnalysis"/>
+    <Proxy group="filters" name="vtkSQVortexFilter"/>
     <Proxy group="filters" name="vtkSQHemisphereSource"/>
   </Category>
 

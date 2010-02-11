@@ -1,3 +1,12 @@
+/*
+   ____    _ __           ____               __    ____
+  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
+ _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+
+Copyright 2008 SciberQuest Inc.
+
+*/
 #include "vtkFieldAnalysis.h"
 
 #include "vtkImageData.h"
@@ -15,177 +24,7 @@
 #include <vtkstd/string>
 using vtkstd::string;
 
-template <typename T>
-void FaceDiv(int *I, double *dX, T *V, T *mV, T *div)
-{
-  // *hi variables are numbe of cells in the out cell centered
-  // array. The in array is a point centered array of face data
-  // with the last face left off.
-  const int pihi=I[0]+1;
-  const int pjhi=I[1]+1;
-  // const int pkhi=I[2]+1;
-
-  for (int k=0; k<I[2]; ++k) {
-    for (int j=0; j<I[1]; ++j) {
-      for (int i=0; i<I[0]; ++i) {
-        const int c=k*I[0]*I[1]+j*I[0]+i;
-        const int p=k*pihi*pjhi+j*pihi+i;
-
-        const int vilo = 3 * (k*pihi*pjhi+j*pihi+ i   );
-        const int vihi = 3 * (k*pihi*pjhi+j*pihi+(i+1));
-        const int vjlo = 3 * (k*pihi*pjhi+   j *pihi+i) + 1;
-        const int vjhi = 3 * (k*pihi*pjhi+(j+1)*pihi+i) + 1;
-        const int vklo = 3 * (   k *pihi*pjhi+j*pihi+i) + 2;
-        const int vkhi = 3 * ((k+1)*pihi*pjhi+j*pihi+i) + 2;
-
-        //cerr << "(" << vilo << ", " << vihi << ", " << vjlo << ", " << vjhi << ", " << vklo << ", " << vkhi << ")" << endl;
-
-        // const double modV=mV[cId];
-        // (sqrt(V[vilo]*V[vilo] + V[vjlo]*V[vjlo] + V[vklo]*V[vklo])
-        // + sqrt(V[vihi]*V[vihi] + V[vjhi]*V[vjhi] + V[vkhi]*V[vkhi]))/2.0;
-
-        div[c] =(V[vihi]-V[vilo])/dX[0]/mV[p];
-        div[c]+=(V[vjhi]-V[vjlo])/dX[1]/mV[p];
-        div[c]+=(V[vkhi]-V[vklo])/dX[2]/mV[p];
-        }
-      }
-    }
-}
-
-// I  -> number of points
-// dX -> grid spacing triple
-// V  -> vector field
-// H  -> helicity
-template <typename T>
-void Helicity(int *I, double *dX, T *V, T *mV, T *H)
-{
-  const int N[3]={I[0]-1,I[1]-1,I[2]-1};
-  const double dx[3]={dX[0]*2.0,dX[1]*2.0,dX[2]*2.0};
-
-  for (int k=0; k<I[2]; ++k) {
-    for (int j=0; j<I[1]; ++j) {
-      for (int i=0; i<I[0]; ++i) {
-
-        const int pId=k*I[0]*I[1]+j*I[0]+i;
-        const int vpId=3*pId;
-
-        // No ghost cells, check to see if full stenccil is available.
-        if ( i==0 || j==0 || k==0 || i==N[0] || j==N[1] || k==N[2] )
-          {
-          // Nope, just zero the memory out.
-          H[pId]=0.0;
-          }
-        else
-          {
-          // Yes, compute helicity.
-          const int vilo = 3 * (k*I[0]*I[1]+j*I[0]+(i-1));
-          const int vihi = 3 * (k*I[0]*I[1]+j*I[0]+(i+1));
-          const int vjlo = 3 * (k*I[0]*I[1]+(j-1)*I[0]+i) + 1;
-          const int vjhi = 3 * (k*I[0]*I[1]+(j+1)*I[0]+i) + 1;
-          const int vklo = 3 * ((k-1)*I[0]*I[1]+j*I[0]+i) + 2;
-          const int vkhi = 3 * ((k+1)*I[0]*I[1]+j*I[0]+i) + 2;
-
-          //cerr << "(" << vilo << ", " << vihi << ", " << vjlo << ", " << vjhi << ", " << vklo << ", " << vkhi << ")" << endl;
-
-          const double modVsq
-          // = mV[pId]*mV[pId];
-            = 1.0;
-          // = V[vpId]*V[vpId]+V[vpId+1]*V[vpId+1]+V[vpId+2]*V[vpId+2];
-          //const double modVsq=1.0;
-
-          //      __   -> ->   -> ->
-          //  H = \/ x V/|V| . V/|V|
-          H[pId]
-            =V[vpId  ]*((V[vkhi]-V[vklo])/dx[1]-(V[vjhi]-V[vjlo])/dx[2])/modVsq
-            +V[vpId+1]*((V[vihi]-V[vilo])/dx[2]-(V[vkhi]-V[vklo])/dx[0])/modVsq
-            +V[vpId+2]*((V[vjhi]-V[vjlo])/dx[0]-(V[vihi]-V[vilo])/dx[1])/modVsq;
-          }
-        }
-      }
-    }
-}
-
-// I   -> number of points
-// dX  -> grid spacing triple
-// V   -> vector field
-// mV  -> vector magnitude
-// xV  -> vorticity
-// mxV -> vorticity magnitude
-template <typename T>
-void Rotation(int *I, double *dX, T *V, T *mV, T *xV, T *mxV)
-{
-  const int N[3]={I[0]-1,I[1]-1,I[2]-1};
-  const double dx[3]={dX[0]*2.0,dX[1]*2.0,dX[2]*2.0};
-
-  for (int k=0; k<I[2]; ++k) {
-    for (int j=0; j<I[1]; ++j) {
-      for (int i=0; i<I[0]; ++i) {
-
-        const int p  = k*I[0]*I[1]+j*I[0]+i;
-        const int vi = 3*p;
-        const int vj = vi + 1;
-        const int vk = vi + 2;
-
-        // No ghost cells, check to see if full stenccil is available.
-        if ( i==0 || j==0 || k==0 || i==N[0] || j==N[1] || k==N[2] )
-          {
-          // Nope, just zero the memory out.
-          xV[vi]=0.0;
-          xV[vj]=0.0;
-          xV[vk]=0.0;
-          mxV[p]=0.0;
-          }
-        else
-          {
-          // Yes, compute rotation.
-          const int vilo = 3 * (k*I[0]*I[1]+j*I[0]+(i-1));
-          const int vihi = 3 * (k*I[0]*I[1]+j*I[0]+(i+1));
-          const int vjlo = 3 * (k*I[0]*I[1]+(j-1)*I[0]+i) + 1;
-          const int vjhi = 3 * (k*I[0]*I[1]+(j+1)*I[0]+i) + 1;
-          const int vklo = 3 * ((k-1)*I[0]*I[1]+j*I[0]+i) + 2;
-          const int vkhi = 3 * ((k+1)*I[0]*I[1]+j*I[0]+i) + 2;
-
-          //cerr << "(" << vilo << ", " << vihi << ", " << vjlo << ", " << vjhi << ", " << vklo << ", " << vkhi << ")" << endl;
-
-          const double modV
-          // = mV[p];
-           = 1.0;
-          // = sqrt(V[vpId]*V[vpId]+V[vpId+1]*V[vpId+1]+V[vpId+2]*V[vpId+2]);
-
-          //      __   -> ->
-          //  R = \/ x V/|V|
-          xV[vi]=((V[vkhi]-V[vklo])/dx[1]-(V[vjhi]-V[vjlo])/dx[2])/modV;
-          xV[vj]=((V[vihi]-V[vilo])/dx[2]-(V[vkhi]-V[vklo])/dx[0])/modV;
-          xV[vk]=((V[vjhi]-V[vjlo])/dx[0]-(V[vihi]-V[vilo])/dx[1])/modV;
-          //  ->
-          // |R|
-          mxV[p]=sqrt(xV[vi]*xV[vi]+xV[vj]*xV[vj]+xV[vk]*xV[vk]);
-          }
-        }
-      }
-    }
-}
-
-// I  -> number of points
-// V  -> vector field
-// mV -> Magnitude
-template <typename T>
-void Magnitude(int *I, T *V, T *mV)
-{
-  for (int k=0; k<I[2]; ++k) {
-    for (int j=0; j<I[1]; ++j) {
-      for (int i=0; i<I[0]; ++i) 
-        {
-        const int p  = k*I[0]*I[1]+j*I[0]+i;
-        const int vi = 3*p;
-        const int vj = vi + 1;
-        const int vk = vi + 2;
-        mV[p]=sqrt(V[vi]*V[vi]+V[vj]*V[vj]+V[vk]*V[vk]);
-        }
-      }
-    }
-}
-
+#include "Numerics.hxx"
 
 vtkCxxRevisionMacro(vtkFieldAnalysis, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkFieldAnalysis);
@@ -193,9 +32,7 @@ vtkStandardNewMacro(vtkFieldAnalysis);
 //-----------------------------------------------------------------------------
 vtkFieldAnalysis::vtkFieldAnalysis()
     :
-  ComputeFaceDivergence(1),
-  ComputeCurrentHelicity(1),
-  ComputeRotation(1)
+  ComputeFaceDivergence(1)
 {
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
@@ -306,11 +143,8 @@ int vtkFieldAnalysis::RequestData(
       {
       vtkFloatArray *V=dynamic_cast<vtkFloatArray *>(da);
       vtkFloatArray *mV;
-
-      // magnitude. need to scale by it.
-      if (this->ComputeFaceDivergence
-        || this->ComputeCurrentHelicity
-        || this->ComputeRotation)
+      // face centered divergence.
+      if (this->ComputeFaceDivergence)
         {
         mV=vtkFloatArray::New();
         outImData->GetPointData()->AddArray(mV);
@@ -320,11 +154,7 @@ int vtkFieldAnalysis::RequestData(
         mVName+=V->GetName();
         mV->SetName(mVName.c_str());
         Magnitude(P,V->GetPointer(0),mV->GetPointer(0));
-        }
 
-      // face centered divergence.
-      if (this->ComputeFaceDivergence)
-        {
         vtkFloatArray *divV=vtkFloatArray::New();
         outImData->GetCellData()->AddArray(divV);
         divV->Delete();
@@ -333,40 +163,6 @@ int vtkFieldAnalysis::RequestData(
         divVName+=V->GetName();
         divV->SetName(divVName.c_str());
         FaceDiv(C,dX,V->GetPointer(0),mV->GetPointer(0),divV->GetPointer(0));
-        }
-      // (current) Helicity.
-      if (this->ComputeCurrentHelicity)
-        {
-        vtkFloatArray *H=vtkFloatArray::New();
-        outImData->GetPointData()->AddArray(H);
-        H->Delete();
-        H->SetNumberOfTuples(V->GetNumberOfTuples());
-        string HName("Hel-");
-        HName+=V->GetName();
-        H->SetName(HName.c_str());
-        Helicity(P,dX,V->GetPointer(0),mV->GetPointer(0),H->GetPointer(0));
-        }
-      // Rotation.
-      if (this->ComputeRotation)
-        {
-        vtkFloatArray *xV=vtkFloatArray::New();
-        outImData->GetPointData()->AddArray(xV);
-        xV->Delete();
-        xV->SetNumberOfComponents(3);
-        xV->SetNumberOfTuples(V->GetNumberOfTuples());
-        string xVName("Rot-");
-        xVName+=V->GetName();
-        xV->SetName(xVName.c_str());
-        //
-        vtkFloatArray *mxV=vtkFloatArray::New();
-        outImData->GetPointData()->AddArray(mxV);
-        mxV->Delete();
-        mxV->SetNumberOfTuples(V->GetNumberOfTuples());
-        string mxVName("Mod-Rot-");
-        mxVName+=V->GetName();
-        mxV->SetName(mxVName.c_str());
-        //
-        Rotation(P,dX,V->GetPointer(0),mV->GetPointer(0),xV->GetPointer(0),mxV->GetPointer(0));
         }
       }
     else

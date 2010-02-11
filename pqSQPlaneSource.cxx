@@ -1,13 +1,18 @@
 #include "pqSQPlaneSource.h"
 
+#include "pqApplicationCore.h"
 #include "pqProxy.h"
+#include "pqSettings.h"
 #include "vtkSMProxy.h"
 #include "vtkSMProperty.h"
 #include "vtkSMStringVectorProperty.h"
 #include "vtkSMIntVectorProperty.h"
 #include "vtkSMDoubleVectorProperty.h"
 #include "vtkSMPropertyHelper.h"
+#include "vtkPVXMLElement.h"
+#include "vtkPVXMLParser.h"
 #include "vtkMath.h"
+#include "vtkSmartPointer.h"
 
 
 #include "vtkEventQtSlotConnect.h"
@@ -95,8 +100,8 @@ pqSQPlaneSource::pqSQPlaneSource(
   this->CalculateDims();
 
   // set up save/restore buttons
-  QObject::connect(this->Form->save,SIGNAL(clicked()),this,SLOT(Save()));
-  QObject::connect(this->Form->restore,SIGNAL(clicked()),this,SLOT(Restore()));
+  QObject::connect(this->Form->save,SIGNAL(clicked()),this,SLOT(savePlaneState()));
+  QObject::connect(this->Form->restore,SIGNAL(clicked()),this,SLOT(loadPlaneState()));
 
   // set up the dimension calculator
   QObject::connect(
@@ -344,6 +349,119 @@ void pqSQPlaneSource::Save()
 }
 
 //-----------------------------------------------------------------------------
+void pqSQPlaneSource::savePlaneState()
+{
+  pqSettings* settings=pqApplicationCore::instance()->settings();
+  QString lastUsedPath=settings->value("SQPlaneSourceStateIO/lastUsedPath","").toString();
+
+  char filters[]="SQ Plane State Files (*.sqps);;XML files (*.xml);;All Files (*.*)";
+
+  QString filename
+    = QFileDialog::getSaveFileName(this,"Save Plane Source State",lastUsedPath,filters);
+  if (filename.size())
+    {
+    // add the default extension
+    if (!filename.endsWith(".sqps"))
+      {
+      filename+=".sqps";
+      }
+    // Save the path as a convinience to put the dialog in the right spot
+    // next time.
+    QString path;
+    path=QDir(filename).absolutePath();
+    path=path.left(path.lastIndexOf("/"));
+    settings->setValue("SQPlaneSourceStateIO/lastUsedPath",path);
+
+    // Save the camer state
+    vtkPVXMLElement* root=vtkPVXMLElement::New();
+    root->SetName("SciberQuestPlaneSourceState");
+    root->SetAttribute("version","1.0");
+
+    vtkSMProxy *proxy=this->proxy();
+    proxy->GetProperty("Name")->SaveConfiguration(root);
+    proxy->GetProperty("Origin")->SaveConfiguration(root);
+    proxy->GetProperty("Point1")->SaveConfiguration(root);
+    proxy->GetProperty("Point2")->SaveConfiguration(root);
+    proxy->GetProperty("XResolution")->SaveConfiguration(root);
+    proxy->GetProperty("YResolution")->SaveConfiguration(root);
+
+    ofstream os(filename.toStdString().c_str(),ios::out);
+    root->PrintXML(os,vtkIndent());
+    root->Delete();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::loadPlaneState()
+{
+  pqSettings* settings=pqApplicationCore::instance()->settings();
+  QString lastUsedPath=settings->value("SQPlaneSourceStateIO/lastUsedPath","").toString();
+
+  char filters[]="SQ Plane State Files (*.sqps);;XML files (*.xml);;All Files (*.*)";
+
+  QString filename
+    = QFileDialog::getOpenFileName(this,"Load Plane Source State",lastUsedPath,filters);
+  if (filename.size())
+    {
+    // Save the path as a convinience to put the dialog in the right spot
+    // next time.
+    QString path;
+    path=QDir(filename).absolutePath();
+    path=path.left(path.lastIndexOf("/"));
+    settings->setValue("SQPlaneSourceStateIO/lastUsedPath",path);
+
+    vtkSmartPointer<vtkPVXMLParser> parser=vtkSmartPointer<vtkPVXMLParser>::New();
+    parser->SetFileName(filename.toStdString().c_str());
+    if (parser->Parse()==0)
+      {
+      vtkGenericWarningMacro("Failed to load plane state. Aborting.");
+      return;
+      }
+
+    vtkPVXMLElement *root=parser->GetRootElement();
+
+    vtkstd::string requiredType("SciberQuestPlaneSourceState");
+    vtkstd::string requiredVersion("1.0");
+    const char *foundType=root->GetName();
+    if (foundType==0 || foundType!=requiredType)
+      {
+      vtkGenericWarningMacro("This is not a valid SciberQuest Plane State file. Aborting.");
+      return;
+      }
+    const char *foundVersion=root->GetAttribute("version");
+    if (foundVersion==0)
+      {
+      vtkGenericWarningMacro("No \"version\" attribute was found. Aborting.");
+      return;
+      }
+    if (foundVersion!=requiredVersion)
+      {
+      vtkGenericWarningMacro(
+          << "Unsupported file version " << foundVersion
+          << "!=" << requiredVersion << ". Aborting.");
+      return;
+      }
+
+    vtkSMProxy *proxy=this->proxy();
+    int ok=1;
+    ok&=proxy->GetProperty("Name")->LoadConfiguration(root);
+    ok&=proxy->GetProperty("Origin")->LoadConfiguration(root);
+    ok&=proxy->GetProperty("Point1")->LoadConfiguration(root);
+    ok&=proxy->GetProperty("Point2")->LoadConfiguration(root);
+    ok&=proxy->GetProperty("XResolution")->LoadConfiguration(root);
+    ok&=proxy->GetProperty("YResolution")->LoadConfiguration(root);
+    if (!ok)
+      {
+      vtkGenericWarningMacro("There was an error loading a property. Aborting.");
+      // TODO this->Internal->CameraLinks.reset();
+      // return;
+      }
+
+    proxy->UpdateVTKObjects();
+
+    this->PullServerConfig(); // sync up ui
+    }
+}
 
 
 //-----------------------------------------------------------------------------
