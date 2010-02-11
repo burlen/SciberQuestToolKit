@@ -49,19 +49,34 @@ vtkSQVortexFilter::vtkSQVortexFilter()
   ComputeLambda(0),
   ComputeLambda2(1)
 {
+  #ifdef vtkSQVortexFilterDEBUG
+    cerr << "=====================================================vtkSQVortexFilter::vtkSQVortexFilter" << endl;
+  #endif
+
+
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
+
 }
 
 //-----------------------------------------------------------------------------
 vtkSQVortexFilter::~vtkSQVortexFilter()
-{}
+{
+  #ifdef vtkSQVortexFilterDEBUG
+    cerr << "=====================================================vtkSQVortexFilter::~vtkSQVortexFilter" << endl;
+  #endif
+
+}
 
 // //-----------------------------------------------------------------------------
 // int vtkSQVortexFilter::FillInputPortInformation(
 //     int port,
 //     vtkInformation *info)
 // {
+//   #ifdef vtkSQVortexFilterDEBUG
+//     cerr << "=====================================================vtkSQVortexFilter::FillInputPortInformation" << endl;
+//   #endif
+//
 //   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
 //   return 1;
 // }
@@ -71,6 +86,10 @@ vtkSQVortexFilter::~vtkSQVortexFilter()
 //     int port,
 //     vtkInformation *info)
 // {
+//   #ifdef vtkSQVortexFilterDEBUG
+//     cerr << "=====================================================vtkSQVortexFilter::FillOutputPortInformation" << endl;
+//   #endif
+//
 //   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
 //   return 1;
 // }
@@ -81,6 +100,11 @@ int vtkSQVortexFilter::RequestDataObject(
     vtkInformationVector** inInfoVec,
     vtkInformationVector* outInfoVec)
 {
+  #ifdef vtkSQVortexFilterDEBUG
+    cerr << "=====================================================vtkSQVortexFilter::RequestDataObject" << endl;
+  #endif
+
+
   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
   vtkDataObject *inData=inInfo->Get(vtkDataObject::DATA_OBJECT());
   const char *inputType=inData->GetClassName();
@@ -100,50 +124,138 @@ int vtkSQVortexFilter::RequestDataObject(
   return 1;
 }
 
+//-----------------------------------------------------------------------------
+int vtkSQVortexFilter::RequestInformation(
+      vtkInformation *req,
+      vtkInformationVector **inInfos,
+      vtkInformationVector *outInfos)
+{
+  #ifdef vtkSQVortexFilterDEBUG
+    cerr << "=====================================================vtkSQVortexFilter::RequestInformation" << endl;
+  #endif
+  //this->Superclass::RequestInformation(req,inInfos,outInfos);
+
+  // We will work in a restricted problem domain so that we have
+  // always a single layer of ghost cells available. To make it so
+  // we'll take the upstream's domain and shrink it by 1.
+  vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
+  int ext[6];
+  inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext);
+  vtkAMRBox inputDomain(ext);
+  inputDomain.Shrink(1);
+  inputDomain.GetDimensions(ext);
+  vtkInformation* outInfo=outInfos->GetInformationObject(0);
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext,6);
+
+  // other keys that need to be coppied
+  double dX[3];
+  inInfo->Get(vtkDataObject::SPACING(),dX);
+  outInfo->Set(vtkDataObject::SPACING(),dX,3);
+
+  double X0[3];
+  inInfo->Get(vtkDataObject::ORIGIN(),X0);
+//   X0[0]=X0[0]+ext[0]*dX[0];
+//   X0[1]=X0[1]+ext[2]*dX[1];
+//   X0[2]=X0[2]+ext[4]*dX[2];
+  outInfo->Set(vtkDataObject::ORIGIN(),X0,3);
+
+  cerr
+    << "WHOLE_EXTENT=" << Tuple<int>(ext,6) << endl
+    << "ORIGIN" << Tuple<double>(X0,3) << endl
+    << "SPACING" << Tuple<double>(dX,3) << endl
+    << endl;
+
+//   vtkInformation* outInfo=outInfos->GetInformationObject(0);
+//   // request that our output is trimmed at the domain bounds so that
+//   // we have a full stencil for the finite difference operations. The
+//   // problem domain iteself also has to be trimmed.
+//   //outInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext);
+//   vtkAMRBox outputExt(this->OutputExt);
+//   vtkAMRBox domainExt(this->DomainExt);
+//   domainExt.Shrink(1);
+//   int ext[6];
+//   domainExt.GetDimensions(ext);
+//   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext,6);
+// 
+// 
+//   outputDomain.GetDimensions(ext);
+//   //outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext,6);
+//   cerr << "outputDomain=" << outputDomain << endl;
+// 
+//   outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext);
+//   vtkAMRBox outputExt(ext);
+//   outputExt&=outputDomain;
+//   outputExt.GetDimensions(ext);
+//   outInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext,6);
+//   cerr << "outputExt=" << outputExt << endl;
+  return 1;
+}
 
 //-----------------------------------------------------------------------------
 int vtkSQVortexFilter::RequestUpdateExtent(
       vtkInformation * /* request */,
-      vtkInformationVector **inInfoVec,
-      vtkInformationVector *outInfoVec)
+      vtkInformationVector **inInfos,
+      vtkInformationVector *outInfos)
 {
-  vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
+  #ifdef vtkSQVortexFilterDEBUG
+    cerr << "=====================================================vtkSQVortexFilter::RequestUpdateExtent" << endl;
+  #endif
+
+  // We will modify the extents we request from our input so
+  // that we will have a single layer of ghost cells.
+  vtkInformation* outInfo=outInfos->GetInformationObject(0);
+  int ext[6];
+  outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext);
+  vtkAMRBox outputExt(ext);
+  outputExt.Grow(1);
+  outputExt.GetDimensions(ext);
+
+  vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
+  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext,6);
+
+  cerr
+    << "UPDATE_EXTENT=" << Tuple<int>(ext,6) << endl
+    << endl;
+/*
+  vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
   // request a ghost layer on the input. Note PV does the domain
   // decomposition for us, we just have to add a ghost layer, then
   // trim the result so that its contained in the problem domain.
-  int ext[6];
-  inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext);
-  vtkAMRBox inputDomain(ext);
+  inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),this->DomainExt);
+  vtkAMRBox inputDomain(this->DomainExt);
   cerr << "inputDomain=" << inputDomain << endl;
 
-  inInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext);
-  vtkAMRBox inputExt(ext);
+  inInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),this->OutputExt);
+  vtkAMRBox inputExt(this->OutputExt);
   inputExt.Grow(1);
   inputExt&=inputDomain;
+  int ext[6];
   inputExt.GetDimensions(ext);
   inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext,6);
-  cerr << "inputExt=" << inputExt << endl;
+  cerr << "inputExt=" << inputExt << endl;*/
 
-  vtkInformation* outInfo=outInfoVec->GetInformationObject(0);
-  // request that our output is trimmed at the domain bounds so that
-  // we have a full stencil for the finite difference operations. The
-  // problem domain iteself also has to be trimmed.
-  outInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext);
-  vtkAMRBox outputDomain(ext);
-  outputDomain.Shrink(1);
-  outputDomain.GetDimensions(ext);
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext,6);
-  cerr << "outputDomain=" << outputDomain << endl;
-
-  outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext);
-  vtkAMRBox outputExt(ext);
-  outputExt&=outputDomain;
-  outputExt.GetDimensions(ext);
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext,6);
-  cerr << "outputExt=" << outputExt << endl;
+//   vtkInformation* outInfo=outInfos->GetInformationObject(0);
+//   // request that our output is trimmed at the domain bounds so that
+//   // we have a full stencil for the finite difference operations. The
+//   // problem domain iteself also has to be trimmed.
+//   outInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext);
+//   vtkAMRBox outputDomain(ext);
+//   outputDomain.Shrink(1);
+//   outputDomain.GetDimensions(ext);
+//   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext,6);
+//   cerr << "outputDomain=" << outputDomain << endl;
+//
+//   outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext);
+//   vtkAMRBox outputExt(ext);
+//   outputExt&=outputDomain;
+//   outputExt.GetDimensions(ext);
+//   outInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext,6);
+//   cerr << "outputExt=" << outputExt << endl;
 
   return 1;
 }
+
+
 
 //-----------------------------------------------------------------------------
 int vtkSQVortexFilter::RequestData(
@@ -151,6 +263,11 @@ int vtkSQVortexFilter::RequestData(
     vtkInformationVector **inInfoVec,
     vtkInformationVector *outInfoVec)
 {
+  #ifdef vtkSQVortexFilterDEBUG
+    cerr << "=====================================================vtkSQVortexFilter::RequestData" << endl;
+  #endif
+
+
   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
   vtkDataObject *inData=inInfo->Get(vtkDataObject::DATA_OBJECT());
 
@@ -180,6 +297,8 @@ int vtkSQVortexFilter::RequestData(
   inInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),inputExt);
   int outputExt[6];
   outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),outputExt);
+  int domainExt[6];
+  outInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),domainExt);
   // Check that we have the ghost cells that we need (more is OK).
   vtkAMRBox inputBox(inputExt);
   vtkAMRBox outputBox(outputExt);
@@ -205,22 +324,30 @@ int vtkSQVortexFilter::RequestData(
 
     // set up the output.
     double X0[3];
-    inImData->GetOrigin(X0);
+    outInfo->Get(vtkDataObject::ORIGIN(),X0);
     outImData->SetOrigin(X0);
-    outInfo->Set(vtkDataObject::ORIGIN(),X0,3);
 
     double dX[3];
-    inImData->GetSpacing(dX);
+    outInfo->Get(vtkDataObject::SPACING(),dX);
     outImData->SetSpacing(dX);
-    outInfo->Set(vtkDataObject::SPACING(),dX,3);
+
+    outImData->SetExtent(outputExt);
 
     int dims[3]={
       outputExt[1]-outputExt[0]+1,
       outputExt[3]-outputExt[2]+1,
       outputExt[5]-outputExt[4]+1};
-    outImData->SetDimensions(dims);
+    //outImData->SetDimensions(dims);
 
-    vtkDataArray *V=this->GetInputArrayToProcess(0, inImData);
+    cerr
+      << "WHOLE_EXTENT=" << Tuple<int>(domainExt,6) << endl
+      << "UPDATE_EXTENT=" << Tuple<int>(outputExt,6) << endl
+      << "ORIGIN" << Tuple<double>(X0,3) << endl
+      << "SPACING" << Tuple<double>(dX,3) << endl
+      << endl;
+
+
+    vtkDataArray *V=this->GetInputArrayToProcess(0,inImData);
 
     if (!V->IsA("vtkFloatArray") && !V->IsA("vtkDoubleArray"))
       {
@@ -365,6 +492,8 @@ int vtkSQVortexFilter::RequestData(
         }
       }
 
+    outImData->Print(cerr);
+
     }
   else
   if (isRecti)
@@ -377,5 +506,11 @@ int vtkSQVortexFilter::RequestData(
 
 //-----------------------------------------------------------------------------
 void vtkSQVortexFilter::PrintSelf(ostream& os, vtkIndent indent)
-{}
+{
+  #ifdef vtkSQVortexFilterDEBUG
+    cerr << "=====================================================vtkSQVortexFilter::PrintSelf" << endl;
+  #endif
+
+}
+
 

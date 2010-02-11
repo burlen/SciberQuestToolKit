@@ -207,7 +207,7 @@ void Rotation(int *input, int *output, double *dX, T *V, T *W)
         // input array indices
         const int i=p-input[0];
         const int j=q-input[2];
-        const int k=q-input[4];
+        const int k=r-input[4];
         // stencil into the input array
         const int vilo=3*(k*ninj+j*ni+(i-1));
         const int vihi=3*(k*ninj+j*ni+(i+1));
@@ -270,7 +270,7 @@ void Helicity(int *input, int *output, double *dX, T *V, T *H)
         // input array indices
         const int i=p-input[0];
         const int j=q-input[2];
-        const int k=q-input[4];
+        const int k=r-input[4];
         // stencil
         const int vilo=3*(k*ninj+j*ni+(i-1));
         const int vihi=3*(k*ninj+j*ni+(i+1));
@@ -337,7 +337,7 @@ void NormalizedHelicity(int *input, int *output, double *dX, T *V, T *H)
         // input array indices
         const int i=p-input[0];
         const int j=q-input[2];
-        const int k=q-input[4];
+        const int k=r-input[4];
         // stencil
         const int vilo=3*(k*ninj+j*ni+(i-1));
         const int vihi=3*(k*ninj+j*ni+(i+1));
@@ -422,7 +422,7 @@ void Lambda(int *input, int *output, double *dX,T *V, T *L)
         // input array indices
         const int i=p-input[0];
         const int j=q-input[2];
-        const int k=q-input[4];
+        const int k=r-input[4];
         // stencil
         const int vilo=3*(k*ninj+j*ni+(i-1));
         const int vihi=3*(k*ninj+j*ni+(i+1));
@@ -553,7 +553,7 @@ void Lambda2(int *input, int *output, double *dX,T *V, T *L2)
         // input array indices
         const int i=p-input[0];
         const int j=q-input[2];
-        const int k=q-input[4];
+        const int k=r-input[4];
         // stencil
         const int vilo=3*(k*ninj+j*ni+(i-1));
         const int vihi=3*(k*ninj+j*ni+(i+1));

@@ -57,15 +57,21 @@ protected:
   int RequestDataObject(vtkInformation*,vtkInformationVector** inInfoVec,vtkInformationVector* outInfoVec);
   int RequestData(vtkInformation *req, vtkInformationVector **input, vtkInformationVector *output);
   int RequestUpdateExtent(vtkInformation *req, vtkInformationVector **input, vtkInformationVector *output);
+  int RequestInformation(vtkInformation *req, vtkInformationVector **input, vtkInformationVector *output);
   vtkSQVortexFilter();
   virtual ~vtkSQVortexFilter();
 
 private:
+  // controls to turn on/off array generation
   int ComputeRotation;
   int ComputeHelicity;
   int ComputeNormalizedHelicity;
   int ComputeLambda;
   int ComputeLambda2;
+
+  //
+  int OutputExt[6];
+  int DomainExt[6];
 
 private:
   vtkSQVortexFilter(const vtkSQVortexFilter &); // Not implemented
