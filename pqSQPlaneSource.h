@@ -31,6 +31,25 @@ public:
   pqSQPlaneSource(pqProxy* proxy, QWidget* p = NULL);
   ~pqSQPlaneSource();
 
+  // Description:
+  // Set/Get values to/from the UI.
+  void GetOrigin(double *o);
+  void SetOrigin(double *o);
+
+  void GetPoint1(double *p1);
+  void SetPoint1(double *p1);
+
+  void GetPoint2(double *p2);
+  void SetPoint2(double *p2);
+
+  void GetResolution(int *res);
+  void SetResolution(int *res);
+
+  void GetSpacing(double *dx);
+  void SetSpacing(double *dx);
+
+  void GetNormal(double *n);
+  void SetNormal(double *n);
 
 protected slots:
   // Description:
@@ -47,16 +66,32 @@ protected slots:
   int ValidateCoordinates();
 
   // Description:
-  // calculate plane's dimensions for display.
-  void CalculateDims();
+  // calculate plane's dimensions for display. Retun 0 in case
+  // an error occured.
+  void DimensionsModified();
 
   // Description:
-  // calculate plane's grid spacing for display.
-  void CalculateSpacing();
+  // calculate the normal to the plane for display. Return 0
+  // if the coordinate system is invalid.
+  int CalculateNormal(double *n);
+
+  // Description:
+  // update and display computed values, and enforce aspect ratio lock.
+  void SpacingModified();
+  void ResolutionModified();
 
   // Description:
   // correct the aspect so that pixels are square if enabled,
-  void CorrectAspect();
+  // void CorrectAspect();
+  // Description:
+  // calculate plane's grid spacing for display.
+  // void CalculateSpacing();
+
+
+  // Description:
+  // snap camera to the plane normal.
+  void SnapViewToNormal();
+
 
   // Description:
   // Update the UI with values from the server.
@@ -71,14 +106,17 @@ protected slots:
   void UpdateInformationEvent();
   // Description:
   // This is where we have to communicate our state to the server.
-  void accept();
+  virtual void accept();
+
+  // Description:
+  // Pull config from proxy
+  virtual void reset();
 
 private:
+  double N[3];
   double dims[2];
   double dx[2];
   int nx[2];
-
-
 
 private:
   pqSQPlaneSourceForm *Form;

@@ -1,9 +1,22 @@
+/*
+   ____    _ __           ____               __    ____
+  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
+ _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+
+Copyright 2008 SciberQuest Inc.
+
+*/
 #include "pqSQPlaneSource.h"
 
 #include "pqApplicationCore.h"
 #include "pqProxy.h"
 #include "pqSettings.h"
+#include "pqRenderView.h"
+
 #include "vtkSMProxy.h"
+#include "vtkSMRenderViewProxy.h"
+
 #include "vtkSMProperty.h"
 #include "vtkSMStringVectorProperty.h"
 #include "vtkSMIntVectorProperty.h"
@@ -33,6 +46,8 @@
 #if defined pqSQPlaneSourceDEBUG
 #include <PrintUtils.h>
 #endif
+
+#include "SQMacros.h"
 
 #include <vector>
 using vtkstd::vector;
@@ -67,9 +82,10 @@ pqSQPlaneSource::pqSQPlaneSource(
   cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::pqSQPlaneSource" << endl;
   #endif
 
-  this->dims[0]=this->dims[1]=0.0;
-  this->dx[0]=this->dx[1]=0.0;
+  this->dims[0]=this->dims[1]=1.0;
+  this->dx[0]=this->dx[1]=1.0;
   this->nx[0]=this->nx[1]=1;
+  this->N[0]=this->N[1]=this->N[2]=0.0;
 
   // Construct Qt form.
   this->Form=new pqSQPlaneSourceForm;
@@ -85,6 +101,12 @@ pqSQPlaneSource::pqSQPlaneSource(
   this->Form->p2_x->setValidator(new QDoubleValidator(this->Form->p2_x));
   this->Form->p2_y->setValidator(new QDoubleValidator(this->Form->p2_y));
   this->Form->p2_z->setValidator(new QDoubleValidator(this->Form->p2_z));
+  this->Form->dx->setValidator(new QDoubleValidator(this->Form->dx));
+  this->Form->dy->setValidator(new QDoubleValidator(this->Form->dy));
+
+  this->SetSpacing(this->dx);
+  this->SetResolution(this->nx);
+  this->SetNormal(this->N);
 
   //   vtkSMProxy* pProxy=this->referenceProxy()->getProxy();
   //   
@@ -97,67 +119,79 @@ pqSQPlaneSource::pqSQPlaneSource(
 
   // Set up configuration viewer
   this->PullServerConfig();
-  this->CalculateDims();
 
   // set up save/restore buttons
   QObject::connect(this->Form->save,SIGNAL(clicked()),this,SLOT(savePlaneState()));
   QObject::connect(this->Form->restore,SIGNAL(clicked()),this,SLOT(loadPlaneState()));
+  QObject::connect(this->Form->snap,SIGNAL(clicked()),this,SLOT(SnapViewToNormal()));
 
   // set up the dimension calculator
   QObject::connect(
       this->Form->o_x,
       SIGNAL(editingFinished()),
-      this, SLOT(CalculateDims()));
+      this, SLOT(DimensionsModified()));
   QObject::connect(
       this->Form->o_y,
       SIGNAL(editingFinished()),
-      this, SLOT(CalculateDims()));
+      this, SLOT(DimensionsModified()));
   QObject::connect(
       this->Form->o_z,
       SIGNAL(editingFinished()),
-      this, SLOT(CalculateDims()));
+      this, SLOT(DimensionsModified()));
   //
   QObject::connect(
       this->Form->p1_x,
       SIGNAL(editingFinished()),
-      this, SLOT(CalculateDims()));
+      this, SLOT(DimensionsModified()));
   QObject::connect(
       this->Form->p1_y,
       SIGNAL(editingFinished()),
-      this, SLOT(CalculateDims()));
+      this, SLOT(DimensionsModified()));
   QObject::connect(
       this->Form->p1_z,
       SIGNAL(editingFinished()),
-      this, SLOT(CalculateDims()));
+      this, SLOT(DimensionsModified()));
   //
   QObject::connect(
       this->Form->p2_x,
       SIGNAL(editingFinished()),
-      this, SLOT(CalculateDims()));
+      this, SLOT(DimensionsModified()));
   QObject::connect(
       this->Form->p2_y,
       SIGNAL(editingFinished()),
-      this, SLOT(CalculateDims()));
+      this, SLOT(DimensionsModified()));
   QObject::connect(
       this->Form->p2_z,
       SIGNAL(editingFinished()),
-      this, SLOT(CalculateDims()));
-  // set up the spacing calculator
+      this, SLOT(DimensionsModified()));
+
+  // link resolution to spacing
   QObject::connect(
       this->Form->res_x,
       SIGNAL(valueChanged(int)),
-      this, SLOT(CalculateSpacing()));
+      this, SLOT(ResolutionModified()));
   //
   QObject::connect(
       this->Form->res_y,
       SIGNAL(valueChanged(int)),
-      this, SLOT(CalculateSpacing()));
-  // 
+      this, SLOT(ResolutionModified()));
+
+  // link spacing to resolution
+  QObject::connect(
+      this->Form->dx,
+      SIGNAL(editingFinished()),
+      this, SLOT(SpacingModified()));
+  //
+  QObject::connect(
+      this->Form->dy,
+      SIGNAL(editingFinished()),
+      this, SLOT(SpacingModified()));
+
+  // make sure if uniform pixel aspect is changed the form is updated
   QObject::connect(
       this->Form->aspectLock,
       SIGNAL(toggled(bool)),
-      this, SLOT(CalculateSpacing()));
-
+      this, SLOT(SpacingModified()));
 
   // These connection let PV know that we have changed, and makes the apply 
   // button activated.
@@ -212,6 +246,15 @@ pqSQPlaneSource::pqSQPlaneSource(
   QObject::connect(
       this->Form->res_y,
       SIGNAL(valueChanged(int)),
+      this, SLOT(setModified()));
+  //
+  QObject::connect(
+      this->Form->dx,
+      SIGNAL(textChanged(QString)),
+      this, SLOT(setModified()));
+  QObject::connect(
+      this->Form->dy,
+      SIGNAL(textChanged(QString)),
       this, SLOT(setModified()));
 
   // Let the super class do the undocumented stuff that needs to hapen.
@@ -292,7 +335,7 @@ void pqSQPlaneSource::Restore()
         this->Form->res_y->setValue(r[0]);
 
         // update derived values.
-        this->CalculateDims();
+        this->DimensionsModified();
         }
       else
         {
@@ -310,6 +353,10 @@ void pqSQPlaneSource::Restore()
 //-----------------------------------------------------------------------------
 void pqSQPlaneSource::Save()
 {
+  #if defined pqSQPlaneSourceDEBUG
+  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::Save" << endl;
+  #endif
+
   QString fn=QFileDialog::getSaveFileName(this,"Save SQ Plane Source","","*.sqps");
   if (fn.size())
     {
@@ -351,6 +398,10 @@ void pqSQPlaneSource::Save()
 //-----------------------------------------------------------------------------
 void pqSQPlaneSource::savePlaneState()
 {
+  #if defined pqSQPlaneSourceDEBUG
+  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::savePlaneState" << endl;
+  #endif
+
   pqSettings* settings=pqApplicationCore::instance()->settings();
   QString lastUsedPath=settings->value("SQPlaneSourceStateIO/lastUsedPath","").toString();
 
@@ -394,6 +445,10 @@ void pqSQPlaneSource::savePlaneState()
 //-----------------------------------------------------------------------------
 void pqSQPlaneSource::loadPlaneState()
 {
+  #if defined pqSQPlaneSourceDEBUG
+  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::loadPlaneState" << endl;
+  #endif
+
   pqSettings* settings=pqApplicationCore::instance()->settings();
   QString lastUsedPath=settings->value("SQPlaneSourceStateIO/lastUsedPath","").toString();
 
@@ -459,28 +514,140 @@ void pqSQPlaneSource::loadPlaneState()
 
     proxy->UpdateVTKObjects();
 
-    this->PullServerConfig(); // sync up ui
+    this->PullServerConfig();
     }
 }
-
 
 //-----------------------------------------------------------------------------
 int pqSQPlaneSource::ValidateCoordinates()
 {
-  double o[3];
+  double n[3]={0.0};
+  int ok=this->CalculateNormal(n);
+  if (ok)
+    {
+    // this->Form->coordStatus->setText("OK");
+    // this->Form->coordStatus->setStyleSheet("color:green; background-color:white;");
+    }
+  else
+    {
+    // this->Form->coordStatus->setText("Error");
+    // this->Form->coordStatus->setStyleSheet("color:red; background-color:lightyellow;");
+    // this->Form->n_x->setText("");
+    // this->Form->n_y->setText("");
+    // this->Form->n_z->setText("");
+    // this->Form->dim_x->setText("");
+    // this->Form->dim_y->setText("");
+    }
+  return ok;
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::GetOrigin(double *o)
+{
   o[0]=this->Form->o_x->text().toDouble();
   o[1]=this->Form->o_y->text().toDouble();
   o[2]=this->Form->o_z->text().toDouble();
+}
 
-  double p1[3];
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::SetOrigin(double *o)
+{
+  this->Form->o_x->setText(QString("%1").arg(o[0]));
+  this->Form->o_y->setText(QString("%1").arg(o[1]));
+  this->Form->o_z->setText(QString("%1").arg(o[2]));
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::GetPoint1(double *p1)
+{
   p1[0]=this->Form->p1_x->text().toDouble();
   p1[1]=this->Form->p1_y->text().toDouble();
   p1[2]=this->Form->p1_z->text().toDouble();
+}
 
-  double p2[3];
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::SetPoint1(double *p1)
+{
+  this->Form->p1_x->setText(QString("%1").arg(p1[0]));
+  this->Form->p1_y->setText(QString("%1").arg(p1[1]));
+  this->Form->p1_z->setText(QString("%1").arg(p1[2]));
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::GetPoint2(double *p2)
+{
   p2[0]=this->Form->p2_x->text().toDouble();
   p2[1]=this->Form->p2_y->text().toDouble();
   p2[2]=this->Form->p2_z->text().toDouble();
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::SetPoint2(double *p2)
+{
+  this->Form->p2_x->setText(QString("%1").arg(p2[0]));
+  this->Form->p2_y->setText(QString("%1").arg(p2[1]));
+  this->Form->p2_z->setText(QString("%1").arg(p2[2]));
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::GetResolution(int *res)
+{
+  res[0]=this->Form->res_x->text().toInt();
+  res[1]=this->Form->res_y->text().toInt();
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::SetResolution(int *res)
+{
+  this->Form->res_x->setValue(res[0]);
+  this->Form->res_y->setValue(res[1]);
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::GetSpacing(double *dx)
+{
+  dx[0]=this->Form->dx->text().toDouble();
+  dx[1]=this->Form->dy->text().toDouble();
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::SetSpacing(double *dx)
+{
+  this->Form->dx->setText(QString("%1").arg(dx[0]));
+  this->Form->dy->setText(QString("%1").arg(dx[1]));
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::GetNormal(double *n)
+{
+  n[0]=this->Form->p2_x->text().toDouble();
+  n[1]=this->Form->p2_y->text().toDouble();
+  n[2]=this->Form->p2_z->text().toDouble();
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::SetNormal(double *n)
+{
+  this->Form->n_x->setText(QString("%1").arg(n[0]));
+  this->Form->n_y->setText(QString("%1").arg(n[1]));
+  this->Form->n_z->setText(QString("%1").arg(n[2]));
+}
+
+//-----------------------------------------------------------------------------
+int pqSQPlaneSource::CalculateNormal(double *n)
+{
+  #if defined pqSQPlaneSourceDEBUG
+  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::CaclulateNormal" << endl;
+  #endif
+
+  double o[3];
+  this->GetOrigin(o);
+
+  double p1[3];
+  this->GetPoint1(p1);
+
+  double p2[3];
+  this->GetPoint2(p2);
 
   double v1[3];
   v1[0]=p1[0]-o[0];
@@ -492,103 +659,215 @@ int pqSQPlaneSource::ValidateCoordinates()
   v2[1]=p2[1]-o[1];
   v2[2]=p2[2]-o[2];
 
-  double n[3];
   vtkMath::Cross(v1,v2,n);
-  if (vtkMath::Normalize(n)==0.0)
+  int ok=vtkMath::Normalize(n);
+  if (!ok)
     {
-    this->Form->coordStatus->setText("Error");
-    this->Form->coordStatus->setStyleSheet("color:red; background-color:lightyellow;");
+    pqErrorMacro("Invalid coordinate system.");
     return 0;
-    }
-  else
-    {
-    this->Form->coordStatus->setText("OK");
-    this->Form->coordStatus->setStyleSheet("color:green; background-color:white;");
-    return 1;
     }
 
   return 1;
 }
 
 //-----------------------------------------------------------------------------
-void pqSQPlaneSource::CalculateDims()
+void pqSQPlaneSource::DimensionsModified()
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::CalculateDims" << endl;
+  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::DimensionsModified" << endl;
   #endif
 
-  if (!this->ValidateCoordinates())
+  int ok=this->CalculateNormal(this->N);
+  if (!ok)
     {
+    this->N[0]=this->N[1]=this->N[2]=0.0;
     return;
     }
+  this->SetNormal(this->N);
+
 
   double o[3];
-  o[0]=this->Form->o_x->text().toDouble();
-  o[1]=this->Form->o_y->text().toDouble();
-  o[2]=this->Form->o_z->text().toDouble();
+  this->GetOrigin(o);
 
   double p1[3];
-  p1[0]=this->Form->p1_x->text().toDouble();
-  p1[1]=this->Form->p1_y->text().toDouble();
-  p1[2]=this->Form->p1_z->text().toDouble();
+  this->GetPoint1(p1);
 
   double p2[3];
-  p2[0]=this->Form->p2_x->text().toDouble();
-  p2[1]=this->Form->p2_y->text().toDouble();
-  p2[2]=this->Form->p2_z->text().toDouble();
+  this->GetPoint2(p2);
 
   double x,y,z,dim;
   x=p1[0]-o[0];
   y=p1[1]-o[1];
   z=p1[2]-o[2];
   dim=sqrt(x*x+y*y+z*z);
-  this->Form->dim_x->setText(QString("%1").arg(dim));
   this->dims[0]=dim;
 
   x=p2[0]-o[0];
   y=p2[1]-o[1];
   z=p2[2]-o[2];
   dim=sqrt(x*x+y*y+z*z);
-  this->Form->dim_y->setText(QString("%1").arg(dim));
   this->dims[1]=dim;
 
-  this->CalculateSpacing();
-  this->CorrectAspect();
+  this->Form->dim_x->setText(QString("%1").arg(this->dims[0]));
+  this->Form->dim_y->setText(QString("%1").arg(this->dims[1]));
+
+  // recompute resolution based on the current grid spacing
+  // settings.
+  this->SpacingModified();
+
+  return;
 }
 
 //-----------------------------------------------------------------------------
-void pqSQPlaneSource::CalculateSpacing()
+void pqSQPlaneSource::SpacingModified()
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::CalculateSpacing" << endl;
+  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::SpacingModified" << endl;
   #endif
 
-  this->nx[0]=this->Form->res_x->value();
+  // retreive the requested spacing.
+  this->GetSpacing(this->dx);
+
+  // enforce uniform pixel aspect ratio
+  if (this->Form->aspectLock->isChecked())
+    {
+    this->dx[1]=this->dx[0];
+    this->Form->dy->setText(QString("%1").arg(this->dx[0]));
+    }
+
+  // update the grid resolution to match the requested grid spacing
+  // as closely as possible.
+  this->nx[0]=ceil(this->dims[0]/this->dx[0]);
+  this->nx[1]=ceil(this->dims[1]/this->dx[1]);
+  this->SetResolution(nx);
+
+  // compute the new number of cells.
+  int nCells=this->nx[0]*this->nx[1];
+  this->Form->nCells->setText(QString("%1").arg(nCells));
+
+  // update the spacing to match the actual spacing that will be used.
   this->dx[0]=this->dims[0]/this->nx[0];
-  this->Form->dx->setText(QString("%1").arg(this->dx[0]));
-
-  this->nx[1]=this->Form->res_y->value();
   this->dx[1]=this->dims[1]/this->nx[1];
-  this->Form->dy->setText(QString("%1").arg(this->dx[1]));
-
-  this->Form->nCells->setText(QString("%1").arg(this->nx[0]*this->nx[1]));
-
-  this->CorrectAspect();
+  this->SetSpacing(this->dx);
 }
 
 //-----------------------------------------------------------------------------
-void pqSQPlaneSource::CorrectAspect()
+void pqSQPlaneSource::ResolutionModified()
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::CorrectAspect" << endl;
+  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::ResolutionModified" << endl;
   #endif
 
+  // retreive the requested resolution.
+  this->GetResolution(this->nx);
+
+  // enforce a uniform pixel aspect ratio
   if (this->Form->aspectLock->isChecked())
     {
     this->nx[1]=(this->dims[0]>1E-6?this->nx[0]*dims[1]/dims[0]:1);
     this->nx[1]=(this->nx[1]<1?1:this->nx[1]);
-    this->Form->res_y->setValue(this->nx[1]);
+    this->SetResolution(this->nx);
     }
+
+  // compute the new spacing
+  this->dx[0]=this->dims[0]/this->nx[0];
+  this->dx[1]=this->dims[1]/this->nx[1];
+
+  this->SetSpacing(this->dx);
+
+  // compute the new number of cells.
+  int nCells=this->nx[0]*this->nx[1];
+  this->Form->nCells->setText(QString("%1").arg(nCells));
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::SnapViewToNormal()
+{
+  #if defined pqSQPlaneSourceDEBUG
+  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::SnapViewToNormal" << endl;
+  #endif
+
+  double o[3];
+  this->GetOrigin(o);
+
+  double p1[3];
+  this->GetPoint1(p1);
+
+  double p2[3];
+  this->GetPoint2(p2);
+
+  // compute the plane's center, this will become the camera focal point.
+  double a[3];
+  a[0]=o[0]+0.5*(p1[0]-o[0]);
+  a[1]=o[1]+0.5*(p1[1]-o[1]);
+  a[2]=o[2]+0.5*(p1[2]-o[2]);
+
+  double b[3];
+  b[0]=o[0]+0.5*(p2[0]-o[0]);
+  b[1]=o[1]+0.5*(p2[1]-o[1]);
+  b[2]=o[2]+0.5*(p2[2]-o[2]);
+
+  double cen[3];
+  cen[0]=a[0]+b[0]-o[0];
+  cen[1]=a[1]+b[1]-o[1];
+  cen[2]=a[2]+b[2]-o[2];
+
+  // compute the camera center, 2 polane diagonals along its normal from
+  // its center.
+  double diag
+    = sqrt(this->dims[0]*this->dims[0]+this->dims[1]*this->dims[1]);
+
+  double pos[3];
+  pos[0]=cen[0]+this->N[0]*2.0*diag;
+  pos[1]=cen[1]+this->N[1]*2.0*diag;
+  pos[2]=cen[2]+this->N[2]*2.0*diag;
+
+  // compute the camera up from one of the planes axis.
+  double up[3];
+  if (this->Form->viewUp1->isChecked())
+    {
+    up[0]=p1[0]-o[0];
+    up[1]=p1[1]-o[1];
+    up[2]=p1[2]-o[2];
+    }
+  else
+    {
+    up[0]=p2[0]-o[0];
+    up[1]=p2[1]-o[1];
+    up[2]=p2[2]-o[2];
+    }
+  double mup=sqrt(up[0]*up[0]+up[1]*up[1]+up[2]*up[2]);
+  up[0]/=mup;
+  up[1]/=mup;
+  up[2]/=mup;
+
+
+  pqRenderView *view=dynamic_cast<pqRenderView*>(this->view());
+  if (!view)
+    {
+    pqErrorMacro("Failed to get the current view.");
+    return;
+    }
+
+  vtkSMRenderViewProxy *proxy=view->getRenderViewProxy();
+
+  vtkSMDoubleVectorProperty *prop;
+
+  prop=dynamic_cast<vtkSMDoubleVectorProperty*>(proxy->GetProperty("CameraPosition"));
+  prop->SetElements(pos);
+
+  prop=dynamic_cast<vtkSMDoubleVectorProperty*>(proxy->GetProperty("CameraFocalPoint"));
+  prop->SetElements(cen);
+
+  prop=dynamic_cast<vtkSMDoubleVectorProperty*>(proxy->GetProperty("CameraViewUp"));
+  prop->SetElements(up);
+
+  prop=dynamic_cast<vtkSMDoubleVectorProperty*>(proxy->GetProperty("CenterOfRotation"));
+  prop->SetElements(cen);
+
+  proxy->UpdateVTKObjects();
+
+  view->render();
 }
 
 //-----------------------------------------------------------------------------
@@ -618,42 +897,40 @@ void pqSQPlaneSource::PullServerConfig()
     {
     this->Form->name->setText(name.c_str());
     }
+
   // Origin
   vtkSMDoubleVectorProperty *oProp
     = dynamic_cast<vtkSMDoubleVectorProperty*>(pProxy->GetProperty("Origin"));
   pProxy->UpdatePropertyInformation(oProp);
   double *o=oProp->GetElements();
-  this->Form->o_x->setText(QString("%1").arg(o[0]));
-  this->Form->o_y->setText(QString("%1").arg(o[1]));
-  this->Form->o_z->setText(QString("%1").arg(o[2]));
+  this->SetOrigin(o);
+
   // Point 1
   vtkSMDoubleVectorProperty *p1Prop
     = dynamic_cast<vtkSMDoubleVectorProperty*>(pProxy->GetProperty("Point1"));
   pProxy->UpdatePropertyInformation(p1Prop);
   double *p1=p1Prop->GetElements();
-  this->Form->p1_x->setText(QString("%1").arg(p1[0]));
-  this->Form->p1_y->setText(QString("%1").arg(p1[1]));
-  this->Form->p1_z->setText(QString("%1").arg(p1[2]));
+  this->SetPoint1(p1);
+
   // Point 2
   vtkSMDoubleVectorProperty *p2Prop
     = dynamic_cast<vtkSMDoubleVectorProperty*>(pProxy->GetProperty("Point2"));
   pProxy->UpdatePropertyInformation(p2Prop);
   double *p2=p2Prop->GetElements();
-  this->Form->p2_x->setText(QString("%1").arg(p2[0]));
-  this->Form->p2_y->setText(QString("%1").arg(p2[1]));
-  this->Form->p2_z->setText(QString("%1").arg(p2[2]));
-  // Resolution x
+  this->SetPoint2(p2);
+
+  // Resolution
   vtkSMIntVectorProperty *rxProp
     = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("XResolution"));
   pProxy->UpdatePropertyInformation(rxProp);
-  int rx=rxProp->GetElement(0);
-  this->Form->res_x->setValue(rx);
-  // y
   vtkSMIntVectorProperty *ryProp
     = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("YResolution"));
   pProxy->UpdatePropertyInformation(ryProp);
-  int ry=rxProp->GetElement(0);
-  this->Form->res_y->setValue(ry);
+  int res[2]={rxProp->GetElement(0),ryProp->GetElement(0)};
+  this->SetResolution(res);
+
+  // update derived/computed values.
+  this->DimensionsModified();
 }
 
 //-----------------------------------------------------------------------------
@@ -669,44 +946,33 @@ void pqSQPlaneSource::PushServerConfig()
     = dynamic_cast<vtkSMStringVectorProperty*>(pProxy->GetProperty("Name"));
   nameProp->SetElement(0,this->Form->name->text().toStdString().c_str());
 
-  // coordinates
   // Origin
   double o[3];
-  o[0]=this->Form->o_x->text().toDouble();
-  o[1]=this->Form->o_y->text().toDouble();
-  o[2]=this->Form->o_z->text().toDouble();
-  //
+  this->GetOrigin(o);
   vtkSMDoubleVectorProperty *oProp
     = dynamic_cast<vtkSMDoubleVectorProperty*>(pProxy->GetProperty("Origin"));
   oProp->SetElements(o,3);
+
   // Point 1
   double p1[3];
-  p1[0]=this->Form->p1_x->text().toDouble();
-  p1[1]=this->Form->p1_y->text().toDouble();
-  p1[2]=this->Form->p1_z->text().toDouble();
-  //
+  this->GetPoint1(p1);
   vtkSMDoubleVectorProperty *p1Prop
     = dynamic_cast<vtkSMDoubleVectorProperty*>(pProxy->GetProperty("Point1"));
   p1Prop->SetElements(p1,3);
-  // Point 1
+
+  // Point 2
   double p2[3];
-  p2[0]=this->Form->p2_x->text().toDouble();
-  p2[1]=this->Form->p2_y->text().toDouble();
-  p2[2]=this->Form->p2_z->text().toDouble();
-  //
+  this->GetPoint2(p2);
   vtkSMDoubleVectorProperty *p2Prop
     = dynamic_cast<vtkSMDoubleVectorProperty*>(pProxy->GetProperty("Point2"));
   p2Prop->SetElements(p2,3);
 
   // Resolution
   int nx[2];
-  // x
-  nx[0]=this->Form->res_x->value();
+  this->GetResolution(nx);
   vtkSMIntVectorProperty *rxProp
     = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("XResolution"));
   rxProp->SetElement(0,nx[0]);
-  // y
-  nx[1]=this->Form->res_y->value();
   vtkSMIntVectorProperty *ryProp
     = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("YResolution"));
   ryProp->SetElement(0,nx[1]);
@@ -726,6 +992,21 @@ void pqSQPlaneSource::accept()
 
   // Let our superclass do the undocumented stuff that needs to be done.
   pqNamedObjectPanel::accept();
+}
+
+
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::reset()
+{
+  #if defined pqSQPlaneSourceDEBUG
+  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::reset" << endl;
+  #endif
+
+  this->PullServerConfig();
+
+  // Let our superclass do the undocumented stuff that needs to be done.
+  pqNamedObjectPanel::reset();
 }
 
 /// VTK stuffs
