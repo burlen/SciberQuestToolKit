@@ -559,8 +559,8 @@ int vtkBOVReader::RequestData(
     // marked for reading.
     double subsetBounds[6];
     subsetBounds[0]=X0[0]; subsetBounds[1]=X0[0]+dX[0]*((double)this->NProcs);
-    subsetBounds[2]=X0[0]; subsetBounds[3]=X0[0]+dX[1];
-    subsetBounds[4]=X0[0]; subsetBounds[5]=X0[0]+dX[2];
+    subsetBounds[2]=X0[1]; subsetBounds[3]=X0[1]+dX[1];
+    subsetBounds[4]=X0[2]; subsetBounds[5]=X0[2]+dX[2];
     info->Set(vtkOOCReader::BOUNDS(),subsetBounds,6);
     }
   else
