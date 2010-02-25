@@ -154,9 +154,6 @@ int vtkSQVortexFilter::RequestInformation(
 
   double X0[3];
   inInfo->Get(vtkDataObject::ORIGIN(),X0);
-//   X0[0]=X0[0]+ext[0]*dX[0];
-//   X0[1]=X0[1]+ext[2]*dX[1];
-//   X0[2]=X0[2]+ext[4]*dX[2];
   outInfo->Set(vtkDataObject::ORIGIN(),X0,3);
 
   cerr
@@ -165,29 +162,6 @@ int vtkSQVortexFilter::RequestInformation(
     << "SPACING" << Tuple<double>(dX,3) << endl
     << endl;
 
-//   vtkInformation* outInfo=outInfos->GetInformationObject(0);
-//   // request that our output is trimmed at the domain bounds so that
-//   // we have a full stencil for the finite difference operations. The
-//   // problem domain iteself also has to be trimmed.
-//   //outInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext);
-//   vtkAMRBox outputExt(this->OutputExt);
-//   vtkAMRBox domainExt(this->DomainExt);
-//   domainExt.Shrink(1);
-//   int ext[6];
-//   domainExt.GetDimensions(ext);
-//   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext,6);
-// 
-// 
-//   outputDomain.GetDimensions(ext);
-//   //outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext,6);
-//   cerr << "outputDomain=" << outputDomain << endl;
-// 
-//   outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext);
-//   vtkAMRBox outputExt(ext);
-//   outputExt&=outputDomain;
-//   outputExt.GetDimensions(ext);
-//   outInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext,6);
-//   cerr << "outputExt=" << outputExt << endl;
   return 1;
 }
 
@@ -216,41 +190,6 @@ int vtkSQVortexFilter::RequestUpdateExtent(
   cerr
     << "UPDATE_EXTENT=" << Tuple<int>(ext,6) << endl
     << endl;
-/*
-  vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
-  // request a ghost layer on the input. Note PV does the domain
-  // decomposition for us, we just have to add a ghost layer, then
-  // trim the result so that its contained in the problem domain.
-  inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),this->DomainExt);
-  vtkAMRBox inputDomain(this->DomainExt);
-  cerr << "inputDomain=" << inputDomain << endl;
-
-  inInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),this->OutputExt);
-  vtkAMRBox inputExt(this->OutputExt);
-  inputExt.Grow(1);
-  inputExt&=inputDomain;
-  int ext[6];
-  inputExt.GetDimensions(ext);
-  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext,6);
-  cerr << "inputExt=" << inputExt << endl;*/
-
-//   vtkInformation* outInfo=outInfos->GetInformationObject(0);
-//   // request that our output is trimmed at the domain bounds so that
-//   // we have a full stencil for the finite difference operations. The
-//   // problem domain iteself also has to be trimmed.
-//   outInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext);
-//   vtkAMRBox outputDomain(ext);
-//   outputDomain.Shrink(1);
-//   outputDomain.GetDimensions(ext);
-//   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext,6);
-//   cerr << "outputDomain=" << outputDomain << endl;
-//
-//   outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext);
-//   vtkAMRBox outputExt(ext);
-//   outputExt&=outputDomain;
-//   outputExt.GetDimensions(ext);
-//   outInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext,6);
-//   cerr << "outputExt=" << outputExt << endl;
 
   return 1;
 }
@@ -333,19 +272,17 @@ int vtkSQVortexFilter::RequestData(
 
     outImData->SetExtent(outputExt);
 
-    int dims[3]={
-      outputExt[1]-outputExt[0]+1,
-      outputExt[3]-outputExt[2]+1,
-      outputExt[5]-outputExt[4]+1};
-    //outImData->SetDimensions(dims);
+    int outputDims[3];
+    outImData->GetDimensions(outputDims);
+    int outputTups=outputDims[0]*outputDims[1]*outputDims[2];
 
     cerr
       << "WHOLE_EXTENT=" << Tuple<int>(domainExt,6) << endl
-      << "UPDATE_EXTENT=" << Tuple<int>(outputExt,6) << endl
+      << "UPDATE_EXTENT(input)=" << Tuple<int>(inputExt,6) << endl
+      << "UPDATE_EXTENT(output)=" << Tuple<int>(outputExt,6) << endl
       << "ORIGIN" << Tuple<double>(X0,3) << endl
       << "SPACING" << Tuple<double>(dX,3) << endl
       << endl;
-
 
     vtkDataArray *V=this->GetInputArrayToProcess(0,inImData);
 
@@ -364,7 +301,7 @@ int vtkSQVortexFilter::RequestData(
       outImData->GetPointData()->AddArray(R);
       R->Delete();
       R->SetNumberOfComponents(3);
-      R->SetNumberOfTuples(V->GetNumberOfTuples());
+      R->SetNumberOfTuples(outputTups);
       string name("rot-");
       name+=V->GetName();
       R->SetName(name.c_str());
@@ -391,7 +328,7 @@ int vtkSQVortexFilter::RequestData(
       outImData->GetPointData()->AddArray(H);
       H->Delete();
       H->SetNumberOfComponents(1);
-      H->SetNumberOfTuples(V->GetNumberOfTuples());
+      H->SetNumberOfTuples(outputTups);
       string name("hel-");
       name+=V->GetName();
       H->SetName(name.c_str());
@@ -418,7 +355,7 @@ int vtkSQVortexFilter::RequestData(
       outImData->GetPointData()->AddArray(HN);
       HN->Delete();
       HN->SetNumberOfComponents(1);
-      HN->SetNumberOfTuples(V->GetNumberOfTuples());
+      HN->SetNumberOfTuples(outputTups);
       string name("heln-");
       name+=V->GetName();
       HN->SetName(name.c_str());
@@ -445,7 +382,7 @@ int vtkSQVortexFilter::RequestData(
       outImData->GetPointData()->AddArray(L);
       L->Delete();
       L->SetNumberOfComponents(3);
-      L->SetNumberOfTuples(V->GetNumberOfTuples());
+      L->SetNumberOfTuples(outputTups);
       string name("lam-");
       name+=V->GetName();
       L->SetName(name.c_str());
@@ -472,7 +409,7 @@ int vtkSQVortexFilter::RequestData(
       outImData->GetPointData()->AddArray(L2);
       L2->Delete();
       L2->SetNumberOfComponents(1);
-      L2->SetNumberOfTuples(V->GetNumberOfTuples());
+      L2->SetNumberOfTuples(outputTups);
       string name("lam2-");
       name+=V->GetName();
       L2->SetName(name.c_str());
@@ -491,9 +428,7 @@ int vtkSQVortexFilter::RequestData(
         Lambda2(inputExt,outputExt,dX,dV->GetPointer(0),dL2->GetPointer(0));
         }
       }
-
-    outImData->Print(cerr);
-
+    // outImData->Print(cerr);
     }
   else
   if (isRecti)

@@ -10,6 +10,10 @@ Copyright 2008 SciberQuest Inc.
 #ifndef Numerics_h
 #define Numerics_h
 
+#include<iostream>
+using std::cerr;
+using std::endl;
+
 #include<Eigen/Core>
 #include<Eigen/QR>
 using namespace Eigen;
@@ -99,6 +103,110 @@ void sort(T *a, int l, int r)
         }
       }
     }
+}
+
+//*****************************************************************************
+template<typename T, int nComp>
+bool IsNan(T *V)
+{
+  bool nan=false;
+  for (int i=0; i<nComp; ++i)
+    {
+    if (isnan(V[i]))
+      {
+      nan=true;
+      break;
+      }
+    }
+  return nan;
+}
+
+//*****************************************************************************
+template<typename T, int nComp>
+void Init(T *V, T *V_0, int n)
+{
+  for (int i=0; i<n; ++i, V+=nComp)
+    {
+    for (int j=0; j<nComp; ++j)
+      {
+      V[j]=V_0[j];
+      }
+    }
+}
+
+//*****************************************************************************
+template<typename T, int nComp>
+bool Find(int *I, T *V, T *val)
+{
+  bool has=false;
+
+  int ni=I[0];
+  int nj=I[1];
+  int ninj=ni*nj;
+
+  for (int k=0; k<I[2]; ++k)
+    {
+    for (int j=0; j<I[1]; ++j)
+      {
+      for (int i=0; i<I[0]; ++i)
+        {
+        int q=k*ninj+j*ni+i;
+        int hit=0;
+
+        for (int q=0; q<nComp; ++q)
+          {
+          if (V[q]==val[q])
+            {
+            ++hit;
+            }
+          }
+
+         // match only if all comps match.
+         if (hit==nComp)
+          {
+          has=true;
+          cerr
+            << __LINE__ << " FOUND val=" << val
+            << " at " << Tuple<int>(i,j,k) << endl;
+          }
+        }
+      }
+    }
+  return has;
+}
+
+//*****************************************************************************
+template<typename T, int nComp>
+bool HasNans(int *I, T *V, T *val)
+{
+  bool has=false;
+
+  int ni=I[0];
+  int nj=I[1];
+  int ninj=ni*nj;
+
+  for (int k=0; k<I[2]; ++k)
+    {
+    for (int j=0; j<I[1]; ++j)
+      {
+      for (int i=0; i<I[0]; ++i)
+        {
+        int q=k*ninj+j*ni+i;
+        for (int q=0; q<nComp; ++q)
+          {
+          if (isnan(V[q]))
+            {
+            has=true;
+            cerr
+              << __LINE__ << " ERROR NAN. "
+              << "I+" << q <<"=" << Tuple<int>(i,j,k)
+              << endl;
+            }
+          }
+        }
+      }
+    }
+  return has;
 }
 
 // I  -> number of points
