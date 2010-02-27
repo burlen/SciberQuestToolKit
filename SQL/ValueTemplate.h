@@ -7,56 +7,56 @@
 Copyright 2008 SciberQuest Inc.
 
 */
-#ifndef ValueTemplate_h
-#define ValueTemplate_h
+#ifndef VariantTemplate_h
+#define VariantTemplate_h
 
 #include <cmath>
 
-#include "Value.h"
-#include "ValueTraits.h"
+#include "Variant.h"
+#include "VariantTraits.h"
 
-#define ValueTemplateUnaryOperatorDecl(RET_TYPE,METHOD_NAME)\
+#define VariantTemplateUnaryOperatorDecl(RET_TYPE,METHOD_NAME)\
 /* Apply the operator to this. */\
-ValueTemplate<RET_TYPE> *METHOD_NAME();\
+VariantTemplate<RET_TYPE> *METHOD_NAME();\
 
 /* Dispatch the correct templated operator based on this and rhs type. 
-virtual Value *METHOD_NAME() const;*/
+virtual Variant *METHOD_NAME() const;*/
 
-#define ValueTemplateBinaryOperatorDecl(RET_TYPE,METHOD_NAME)\
+#define VariantTemplateBinaryOperatorDecl(RET_TYPE,METHOD_NAME)\
 /* Apply the operator to this. */\
 template<typename S>\
-ValueTemplate<RET_TYPE> *METHOD_NAME(ValueTemplate<S> *rhs);\
+VariantTemplate<RET_TYPE> *METHOD_NAME(VariantTemplate<S> *rhs);\
 \
 /* Dispatch the correct templated operator based on this and rhs type. */\
-virtual Value *METHOD_NAME(Value *rhs);
+virtual Variant *METHOD_NAME(Variant *rhs);
 
 //=============================================================================
 template<typename T>
-class ValueTemplate : public Value
+class VariantTemplate : public Variant
 {
 public:
   // Refcounted pointer machinery
-  static ValueTemplate<T> *New(T data);
-  static ValueTemplate<T> *New(T data,int nTups);
-  static ValueTemplate<T> *New(T data,int nComp,int nTups);
-  virtual void Delete();
-  virtual void Register(){ ++this->RefCount; }
+  static VariantTemplate<T> *New(T data);
+  static VariantTemplate<T> *New(T data,int nTups);
+  static VariantTemplate<T> *New(T data,int nComp,int nTups);
+  // virtual void Delete();
+  // virtual void Register(){ ++this->RefCount; }
 
-  virtual ~ValueTemplate();
+  virtual ~VariantTemplate();
 
   virtual void Print(ostream &os);
 
   virtual int GetTypeId();
   virtual const char *GetTypeString();
 
-  typedef typename ValueTraits<T>::ValueType ValueType;
+  typedef typename VariantTraits<T>::VariantType VariantType;
 
-  virtual Value *NewInstance(){ return ValueTemplate<ValueType>::New(0); }
+  virtual Variant *NewInstance(){ return VariantTemplate<VariantType>::New(0); }
 
   // Description:
   // Access to the object's value by reference ie Set/Get
-  virtual  ValueType &GetValue() { return this->Traits.Access(this->Data); }
-  virtual  ValueType &GetValue(int i) { return this->Traits.Access(this->Data,i); }
+  virtual  VariantType &GetVariant() { return this->Traits.Access(this->Data); }
+  virtual  VariantType &GetVariant(int i) { return this->Traits.Access(this->Data,i); }
 
   // Description:
   // Initialize the object's value and number of components.
@@ -69,103 +69,92 @@ public:
   virtual void IteratorBegin() { this->Traits.IteratorBegin(); }
   virtual bool IteratorOk() { return this->Traits.IteratorOk(); }
 
-  // Logical operators - returns a new ValueTemplate<bool>
-  ValueTemplateBinaryOperatorDecl(bool,Equal)
-  ValueTemplateBinaryOperatorDecl(bool,NotEqual)
-  ValueTemplateBinaryOperatorDecl(bool,Less)
-  ValueTemplateBinaryOperatorDecl(bool,LessEqual)
-  ValueTemplateBinaryOperatorDecl(bool,Greater)
-  ValueTemplateBinaryOperatorDecl(bool,GreaterEqual)
-  ValueTemplateBinaryOperatorDecl(bool,And)
-  ValueTemplateBinaryOperatorDecl(bool,Or)
-  ValueTemplateUnaryOperatorDecl(bool,Not)
+  // Logical operators - returns a new VariantTemplate<bool>
+  VariantTemplateBinaryOperatorDecl(bool,Equal)
+  VariantTemplateBinaryOperatorDecl(bool,NotEqual)
+  VariantTemplateBinaryOperatorDecl(bool,Less)
+  VariantTemplateBinaryOperatorDecl(bool,LessEqual)
+  VariantTemplateBinaryOperatorDecl(bool,Greater)
+  VariantTemplateBinaryOperatorDecl(bool,GreaterEqual)
+  VariantTemplateBinaryOperatorDecl(bool,And)
+  VariantTemplateBinaryOperatorDecl(bool,Or)
+  VariantTemplateUnaryOperatorDecl(bool,Not)
 
-  // Arithmetic operators - returns a new ValueTemplate<double>
-  ValueTemplateBinaryOperatorDecl(double,Add)
-  ValueTemplateBinaryOperatorDecl(double,Subtract)
-  ValueTemplateBinaryOperatorDecl(double,Multiply)
-  ValueTemplateBinaryOperatorDecl(double,Divide)
-  ValueTemplateUnaryOperatorDecl(double,Sqrt)
-  ValueTemplateUnaryOperatorDecl(double,Negate)
-  // In-place arithmetic operators - returns a new ValueTemplate<T>
-  ValueTemplateBinaryOperatorDecl(T,AddAssign)
-  ValueTemplateBinaryOperatorDecl(T,SubtractAssign)
-  ValueTemplateBinaryOperatorDecl(T,MultiplyAssign)
-  ValueTemplateBinaryOperatorDecl(T,DivideAssign)
-  ValueTemplateBinaryOperatorDecl(T,Assign)
+  // Arithmetic operators - returns a new VariantTemplate<double>
+  VariantTemplateBinaryOperatorDecl(double,Add)
+  VariantTemplateBinaryOperatorDecl(double,Subtract)
+  VariantTemplateBinaryOperatorDecl(double,Multiply)
+  VariantTemplateBinaryOperatorDecl(double,Divide)
+  VariantTemplateUnaryOperatorDecl(double,Sqrt)
+  VariantTemplateUnaryOperatorDecl(double,Negate)
+  // In-place arithmetic operators - returns a new VariantTemplate<T>
+  VariantTemplateBinaryOperatorDecl(T,AddAssign)
+  VariantTemplateBinaryOperatorDecl(T,SubtractAssign)
+  VariantTemplateBinaryOperatorDecl(T,MultiplyAssign)
+  VariantTemplateBinaryOperatorDecl(T,DivideAssign)
+  VariantTemplateBinaryOperatorDecl(T,Assign)
 
-  // Vector arithmetic - return a new ValueTemplate<double>
-  virtual ValueTemplate<ValueType> *Component(int i);
-  virtual ValueTemplate<double> *L2Norm();
+  // Vector arithmetic - return a new VariantTemplate<double>
+  virtual VariantTemplate<VariantType> *Component(int i);
+  virtual VariantTemplate<double> *L2Norm();
 
 protected:
-  ValueTemplate(T data);
-  ValueTemplate(T data,int nComp,int nTups);
+  VariantTemplate(T data);
+  VariantTemplate(T data,int nComp,int nTups);
 
 private:
-  ValueTemplate(); // not implemented
+  VariantTemplate(); // not implemented
+  VariantTemplate(const VariantTemplate &);
+  VariantTemplate &operator=(const VariantTemplate &);
 
 private:
-  ValueTraits<T> Traits;
-  int RefCount;
+  VariantTraits<T> Traits;
 };
 
 //-----------------------------------------------------------------------------
 template<typename T>
-ValueTemplate<T> *ValueTemplate<T>::New(T data)
+VariantTemplate<T> *VariantTemplate<T>::New(T data)
 {
-  return new ValueTemplate<T>(data);
+  return new VariantTemplate<T>(data);
 }
 
 //-----------------------------------------------------------------------------
 template<typename T>
-ValueTemplate<T> *ValueTemplate<T>::New(T data,int nTups)
+VariantTemplate<T> *VariantTemplate<T>::New(T data,int nTups)
 {
-  return new ValueTemplate<T>(data,1,nTups);
+  return new VariantTemplate<T>(data,1,nTups);
 }
 
 //-----------------------------------------------------------------------------
 template<typename T>
-ValueTemplate<T> *ValueTemplate<T>::New(T data,int nComp,int nTups)
+VariantTemplate<T> *VariantTemplate<T>::New(T data,int nComp,int nTups)
 {
-  return new ValueTemplate<T>(data,nComp,nTups);
+  return new VariantTemplate<T>(data,nComp,nTups);
 }
 
 //-----------------------------------------------------------------------------
 template<typename T>
-ValueTemplate<T>::ValueTemplate(T data)
+VariantTemplate<T>::VariantTemplate(T data)
 {
-  this->RefCount=1;
   this->Initialize(data);
 }
 
 //-----------------------------------------------------------------------------
 template<typename T>
-void ValueTemplate<T>::Delete()
+VariantTemplate<T>::VariantTemplate(T data, int nComps, int nTups)
 {
-  --this->RefCount;
-  if (this->RefCount<=0)
-    {
-    delete this;
-    }
-}
-
-//-----------------------------------------------------------------------------
-template<typename T>
-ValueTemplate<T>::ValueTemplate(T data, int nComps, int nTups)
-{
-  this->RefCount=1;
+  //this->RefCount=1;
   this->Initialize(data,nComps,nTups);
 }
 
 //-----------------------------------------------------------------------------
 template<typename T>
-ValueTemplate<T>::~ValueTemplate()
+VariantTemplate<T>::~VariantTemplate()
 {}
 
 //-----------------------------------------------------------------------------
 template<typename T>
-void ValueTemplate<T>::Initialize(T data, int nComps, int nTups)
+void VariantTemplate<T>::Initialize(T data, int nComps, int nTups)
 {
   this->Traits.Assign(this->Data,data);
   this->Traits.InitializeIterator(nComps,nTups);
@@ -173,15 +162,15 @@ void ValueTemplate<T>::Initialize(T data, int nComps, int nTups)
 
 //-----------------------------------------------------------------------------
 template<typename T>
-ValueTemplate<typename ValueTraits<T>::ValueType> *ValueTemplate<T>::Component(int i)
+VariantTemplate<typename VariantTraits<T>::VariantType> *VariantTemplate<T>::Component(int i)
 {
-  typedef typename ValueTraits<T>::ValueType ValueType;
-  return ValueTemplate<ValueType>::New(this->Traits.Access(this->Data,i));
+  typedef typename VariantTraits<T>::VariantType VariantType;
+  return VariantTemplate<VariantType>::New(this->Traits.Access(this->Data,i));
 }
 
 //-----------------------------------------------------------------------------
 template<typename T>
-ValueTemplate<double> *ValueTemplate<T>::L2Norm()
+VariantTemplate<double> *VariantTemplate<T>::L2Norm()
 {
   double norm=0.0;
   int nComps=this->Traits.GetNComps();
@@ -191,140 +180,142 @@ ValueTemplate<double> *ValueTemplate<T>::L2Norm()
     norm+=v*v;
     }
   norm=sqrt(norm);
-  return ValueTemplate<double>::New(norm);
+  return VariantTemplate<double>::New(norm);
 }
 
 //-----------------------------------------------------------------------------
 template<typename T>
-void ValueTemplate<T>::Print(ostream &os)
+void VariantTemplate<T>::Print(ostream &os)
 {
-  os << this->GetValue();
+  this->RefCountedPointer::Print(os); cerr << " ";
+
+  os << this->GetVariant();
   int nComps=this->Traits.GetNComps();
   for (int i=1; i<nComps; ++i)
     {
-    os << ", " << this->GetValue(i);
+    os << ", " << this->GetVariant(i);
     }
 }
 
 //-----------------------------------------------------------------------------
 template<typename T>
-int ValueTemplate<T>::GetTypeId()
+int VariantTemplate<T>::GetTypeId()
 {
   return this->Traits.TypeId();
 }
 
 //-----------------------------------------------------------------------------
 template<typename T>
-const char *ValueTemplate<T>::GetTypeString()
+const char *VariantTemplate<T>::GetTypeString()
 {
   return this->Traits.TypeString();
 }
 
 
-#define ValueTemplateUnaryOperatorImpl(RET_TYPE,METHOD_NAME,CPP_OP)\
+#define VariantTemplateUnaryOperatorImpl(RET_TYPE,METHOD_NAME,CPP_OP)\
 /*-----------------------------------------------------------------------------*/\
 template<typename T>\
-ValueTemplate<RET_TYPE> *ValueTemplate<T>::METHOD_NAME()\
+VariantTemplate<RET_TYPE> *VariantTemplate<T>::METHOD_NAME()\
 {\
-  return ValueTemplate<RET_TYPE>::New(CPP_OP(this->GetValue()));\
+  return VariantTemplate<RET_TYPE>::New(CPP_OP(this->GetVariant()));\
 }
 
-#define ValueTemplateBinaryOperatorDispatchImpl(RET_TYPE,METHOD_NAME,CPP_OP)\
+#define VariantTemplateBinaryOperatorDispatchImpl(RET_TYPE,METHOD_NAME,CPP_OP)\
 /*-----------------------------------------------------------------------------*/\
 template<typename T>\
-Value *ValueTemplate<T>::METHOD_NAME(Value *rhs)\
+Variant *VariantTemplate<T>::METHOD_NAME(Variant *rhs)\
 {\
   /* Dsipatch the right method. LHS type is handled by polymorphism\
      RHS must be explicitly cast. */\
   switch (rhs->GetTypeId())\
     {\
     case CHAR_TYPE:\
-      return this->METHOD_NAME((ValueTemplate<char>*)rhs);\
+      return this->METHOD_NAME((VariantTemplate<char>*)rhs);\
       break;\
     case CHAR_PTR_TYPE:\
-      return this->METHOD_NAME((ValueTemplate<char*>*)rhs);\
+      return this->METHOD_NAME((VariantTemplate<char*>*)rhs);\
       break;\
     case BOOL_TYPE:\
-      return this->METHOD_NAME((ValueTemplate<bool>*)rhs);\
+      return this->METHOD_NAME((VariantTemplate<bool>*)rhs);\
       break;\
     case BOOL_PTR_TYPE:\
-      return this->METHOD_NAME((ValueTemplate<bool*>*)rhs);\
+      return this->METHOD_NAME((VariantTemplate<bool*>*)rhs);\
       break;\
     case INT_TYPE:\
-      return this->METHOD_NAME((ValueTemplate<int>*)rhs);\
+      return this->METHOD_NAME((VariantTemplate<int>*)rhs);\
       break;\
     case INT_PTR_TYPE:\
-      return this->METHOD_NAME((ValueTemplate<int*>*)rhs);\
+      return this->METHOD_NAME((VariantTemplate<int*>*)rhs);\
       break;\
     case FLOAT_TYPE:\
-      return this->METHOD_NAME((ValueTemplate<float>*)rhs);\
+      return this->METHOD_NAME((VariantTemplate<float>*)rhs);\
       break;\
     case FLOAT_PTR_TYPE:\
-      return this->METHOD_NAME((ValueTemplate<float*>*)rhs);\
+      return this->METHOD_NAME((VariantTemplate<float*>*)rhs);\
       break;\
     case DOUBLE_TYPE:\
-      return this->METHOD_NAME((ValueTemplate<double>*)rhs);\
+      return this->METHOD_NAME((VariantTemplate<double>*)rhs);\
       break;\
     case DOUBLE_PTR_TYPE:\
-      return this->METHOD_NAME((ValueTemplate<double*>*)rhs);\
+      return this->METHOD_NAME((VariantTemplate<double*>*)rhs);\
       break;\
     case LONGLONG_TYPE:\
-      return this->METHOD_NAME((ValueTemplate<long long>*)rhs);\
+      return this->METHOD_NAME((VariantTemplate<long long>*)rhs);\
       break;\
     case LONGLONG_PTR_TYPE:\
-      return this->METHOD_NAME((ValueTemplate<long long*>*)rhs);\
+      return this->METHOD_NAME((VariantTemplate<long long*>*)rhs);\
       break;\
     }\
   /* Execution never reaches this when used correctly. */\
   return 0;\
 }
 
-#define ValueTemplateBinaryOperatorImpl(RET_TYPE,METHOD_NAME,CPP_OP)\
+#define VariantTemplateBinaryOperatorImpl(RET_TYPE,METHOD_NAME,CPP_OP)\
 /*-----------------------------------------------------------------------------*/\
 template<typename T>\
 template<typename S>\
-ValueTemplate<RET_TYPE> *ValueTemplate<T>::METHOD_NAME(ValueTemplate<S> *rhs)\
+VariantTemplate<RET_TYPE> *VariantTemplate<T>::METHOD_NAME(VariantTemplate<S> *rhs)\
 {\
-  return ValueTemplate<RET_TYPE>::New(this->GetValue() CPP_OP rhs->GetValue());\
+  return VariantTemplate<RET_TYPE>::New(this->GetVariant() CPP_OP rhs->GetVariant());\
 }\
 \
-ValueTemplateBinaryOperatorDispatchImpl(RET_TYPE,METHOD_NAME,CPP_OP)
+VariantTemplateBinaryOperatorDispatchImpl(RET_TYPE,METHOD_NAME,CPP_OP)
 
-#define ValueTemplateInPlaceBinaryOperatorImpl(METHOD_NAME,CPP_OP)\
+#define VariantTemplateInPlaceBinaryOperatorImpl(METHOD_NAME,CPP_OP)\
 /*-----------------------------------------------------------------------------*/\
 template<typename T>\
 template<typename S>\
-ValueTemplate<T> *ValueTemplate<T>::METHOD_NAME(ValueTemplate<S> *rhs)\
+VariantTemplate<T> *VariantTemplate<T>::METHOD_NAME(VariantTemplate<S> *rhs)\
 {\
-  this->GetValue() CPP_OP rhs->GetValue();\
+  this->GetVariant() CPP_OP rhs->GetVariant();\
   return this;\
 }\
 \
-ValueTemplateBinaryOperatorDispatchImpl(T,METHOD_NAME,CPP_OP)
+VariantTemplateBinaryOperatorDispatchImpl(T,METHOD_NAME,CPP_OP)
 
 // Logical
-ValueTemplateBinaryOperatorImpl(bool,Equal,==)
-ValueTemplateBinaryOperatorImpl(bool,NotEqual,!=)
-ValueTemplateBinaryOperatorImpl(bool,Less,<)
-ValueTemplateBinaryOperatorImpl(bool,LessEqual,<=)
-ValueTemplateBinaryOperatorImpl(bool,Greater,>)
-ValueTemplateBinaryOperatorImpl(bool,GreaterEqual,>=)
-ValueTemplateBinaryOperatorImpl(bool,And,&&)
-ValueTemplateBinaryOperatorImpl(bool,Or,||)
-ValueTemplateUnaryOperatorImpl(bool,Not,!)
+VariantTemplateBinaryOperatorImpl(bool,Equal,==)
+VariantTemplateBinaryOperatorImpl(bool,NotEqual,!=)
+VariantTemplateBinaryOperatorImpl(bool,Less,<)
+VariantTemplateBinaryOperatorImpl(bool,LessEqual,<=)
+VariantTemplateBinaryOperatorImpl(bool,Greater,>)
+VariantTemplateBinaryOperatorImpl(bool,GreaterEqual,>=)
+VariantTemplateBinaryOperatorImpl(bool,And,&&)
+VariantTemplateBinaryOperatorImpl(bool,Or,||)
+VariantTemplateUnaryOperatorImpl(bool,Not,!)
 
 // Arithmetic
-ValueTemplateBinaryOperatorImpl(double,Add,+)
-ValueTemplateBinaryOperatorImpl(double,Subtract,-)
-ValueTemplateBinaryOperatorImpl(double,Multiply,*)
-ValueTemplateBinaryOperatorImpl(double,Divide,/)
-ValueTemplateUnaryOperatorImpl(double,Sqrt,sqrt)
-ValueTemplateUnaryOperatorImpl(double,Negate,-)
+VariantTemplateBinaryOperatorImpl(double,Add,+)
+VariantTemplateBinaryOperatorImpl(double,Subtract,-)
+VariantTemplateBinaryOperatorImpl(double,Multiply,*)
+VariantTemplateBinaryOperatorImpl(double,Divide,/)
+VariantTemplateUnaryOperatorImpl(double,Sqrt,sqrt)
+VariantTemplateUnaryOperatorImpl(double,Negate,-)
 // In-place arithmetic
-ValueTemplateInPlaceBinaryOperatorImpl(AddAssign,+=)
-ValueTemplateInPlaceBinaryOperatorImpl(SubtractAssign,-=)
-ValueTemplateInPlaceBinaryOperatorImpl(MultiplyAssign,*=)
-ValueTemplateInPlaceBinaryOperatorImpl(DivideAssign,/=)
-ValueTemplateInPlaceBinaryOperatorImpl(Assign,=)
+VariantTemplateInPlaceBinaryOperatorImpl(AddAssign,+=)
+VariantTemplateInPlaceBinaryOperatorImpl(SubtractAssign,-=)
+VariantTemplateInPlaceBinaryOperatorImpl(MultiplyAssign,*=)
+VariantTemplateInPlaceBinaryOperatorImpl(DivideAssign,/=)
+VariantTemplateInPlaceBinaryOperatorImpl(Assign,=)
 
 #endif

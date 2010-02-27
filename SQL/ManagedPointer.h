@@ -10,7 +10,6 @@ Copyright 2008 SciberQuest Inc.
 #ifndef ManagedPointer_h
 #define ManagedPointer_h
 
-
 template<typename T>
 class ManagedPointer
 {
@@ -22,35 +21,59 @@ public:
   ManagedPointer(T *p)
      :
     P(p)
-    {}
+    {
+    if (this->P){ this->P->Register();  cerr << " REGISTER " << *this->P;}
+    }
+  ManagedPointer(T *p, int addRef)
+     :
+    P(p)
+    {
+    if (addRef && this->P){ this->P->Register();  cerr << " REGISTER " << *this->P; }
+    }
+  ManagedPointer(ManagedPointer &other)
+     :
+    P(0)
+    {
+    if (this==&other) return;
+    this->operator=(other);
+    }
   ~ManagedPointer()
     {
-    if (P) P->Delete();
+    if (P) { cerr << " DELETE " << *this->P; this->P->Delete();}
     }
+
+  // return a smart pointer that owns a new object T
+  static ManagedPointer<T> New()
+    {
+    return ManagedPointer<T>(T::New(),0); 
+    }
+
   // cast to the pointee
   operator T*()
     {
     return this->P;
     }
 
-  // Copy a reference to. Increments ref count.
+  // Copy a reference to
   T *operator=(ManagedPointer<T> &other)
     {
     if (this==&other) return this->P;
-    if (other.P==this->P) return this->P;
-    if (this->P) P->Delete();
-    this->P=other.P;
-    if (this->P) this->P->Register();
+    return this->operator=(other.P);
     }
 
   // Description:
-  // Assign ownership, ref count is not incremented.
+  // Assign ownership
   T *operator=(T *p)
     {
-    if (p==this->P) return this->P;
-    if (this->P) P->Delete();
+    if (p==this->P)
+      {
+      this->P->Register();
+      cerr << " REGISTER " << *this->P;
+      return this->P;
+      }
+    if (this->P) { cerr << " DELETE " << *this->P; this->P->Delete();}
     this->P=p;
-    //this->P->Register();
+    if (this->P) { this->P->Register();  cerr << " REGISTER " << *this->P;}
     }
 
   // Member operator

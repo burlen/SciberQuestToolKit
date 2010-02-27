@@ -7,8 +7,8 @@
 Copyright 2008 SciberQuest Inc.
 
 */
-#ifndef ValueUnion_h
-#define ValueUnion_h
+#ifndef VariantUnion_h
+#define VariantUnion_h
 
 typedef union
     {
@@ -25,6 +25,6 @@ typedef union
     long long LongLong;
     long long *LongLongPtr;
     }
-ValueUnion;
+VariantUnion;
 
 #endif

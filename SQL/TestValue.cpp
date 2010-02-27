@@ -30,7 +30,7 @@ void TestIterator(Value *v)
 void TestAddAssign(Value *v)
 {
   cerr << "  " << v->GetTypeString() << " Sum(v) ";
-  PValue r=v->NewInstance();
+  MP_Value r=v->NewInstance();
   v->IteratorBegin();
   do
     {
@@ -45,7 +45,7 @@ void TestAddAssign(Value *v)
 void TestSubtractAssign(Value *v)
 {
   cerr << "  " << v->GetTypeString() << " -Sum(v) ";
-  PValue r=v->NewInstance();
+  MP_Value r=v->NewInstance();
   v->IteratorBegin();
   do
     {
@@ -63,7 +63,7 @@ void TestL2Norm(Value *v)
   v->IteratorBegin();
   do
     {
-    PValue n=v->L2Norm();
+    MP_Value n=v->L2Norm();
     cerr << "  |" <<  *v  << "|=" << *n << endl;
     v->IteratorAdvance();
     }
@@ -101,47 +101,47 @@ int main(int argc, char **argv)
   const int N=4;
 
   // for each type create 2 constant, 1 array, and 1 vector.
-  PValue cv0=CharValue::New('a');
-  PValue cv1=CharValue::New('b');
-  PValue cv2=CharValue::New('b');
+  MP_Value cv0=CharValue::New('a');
+  MP_Value cv1=CharValue::New('b');
+  MP_Value cv2=CharValue::New('b');
   char ca[N]={'a','b','c','d'};
-  PValue cvp=CharValuePointer::New(ca,4);
-  PValue cvv=CharValuePointer::New(ca,2,2);
+  MP_Value cvp=CharValuePointer::New(ca,4);
+  MP_Value cvv=CharValuePointer::New(ca,2,2);
 
-  PValue bv0=BoolValue::New(false);
-  PValue bv1=BoolValue::New(true);
-  PValue bv2=BoolValue::New(true);
+  MP_Value bv0=BoolValue::New(false);
+  MP_Value bv1=BoolValue::New(true);
+  MP_Value bv2=BoolValue::New(true);
   bool ba[N]={1,0,0,1};
-  PValue bvp=BoolValuePointer::New(ba,4);
-  PValue bvv=BoolValuePointer::New(ba,2,2);
+  MP_Value bvp=BoolValuePointer::New(ba,4);
+  MP_Value bvv=BoolValuePointer::New(ba,2,2);
 
-  PValue iv0=IntValue::New(2);
-  PValue iv1=IntValue::New(3);
-  PValue iv2=IntValue::New(3);
+  MP_Value iv0=IntValue::New(2);
+  MP_Value iv1=IntValue::New(3);
+  MP_Value iv2=IntValue::New(3);
   int ia[N]={-1,1,-2,2};
-  PValue ivp=IntValuePointer::New(ia,4);
-  PValue ivv=IntValuePointer::New(ia,2,2);
+  MP_Value ivp=IntValuePointer::New(ia,4);
+  MP_Value ivv=IntValuePointer::New(ia,2,2);
 
-  PValue fv0=FloatValue::New(2);
-  PValue fv1=FloatValue::New(3);
-  PValue fv2=FloatValue::New(3);
+  MP_Value fv0=FloatValue::New(2);
+  MP_Value fv1=FloatValue::New(3);
+  MP_Value fv2=FloatValue::New(3);
   float fa[N]={-1.1,1.1,-2.2,2.2};
-  PValue fvp=FloatValuePointer::New(fa,4);
-  PValue fvv=FloatValuePointer::New(fa,2,2);
+  MP_Value fvp=FloatValuePointer::New(fa,4);
+  MP_Value fvv=FloatValuePointer::New(fa,2,2);
 
-  PValue dv0=DoubleValue::New(2);
-  PValue dv1=DoubleValue::New(3);
-  PValue dv2=DoubleValue::New(3);
+  MP_Value dv0=DoubleValue::New(2);
+  MP_Value dv1=DoubleValue::New(3);
+  MP_Value dv2=DoubleValue::New(3);
   double da[N]={-1.1,1.1,-2.2,2.2};
-  PValue dvp=DoubleValuePointer::New(da,4);
-  PValue dvv=DoubleValuePointer::New(da,2,2);
+  MP_Value dvp=DoubleValuePointer::New(da,4);
+  MP_Value dvv=DoubleValuePointer::New(da,2,2);
 
-  PValue llv0=LongLongValue::New(2);
-  PValue llv1=LongLongValue::New(3);
-  PValue llv2=LongLongValue::New(3);
+  MP_Value llv0=LongLongValue::New(2);
+  MP_Value llv1=LongLongValue::New(3);
+  MP_Value llv2=LongLongValue::New(3);
   long long lla[N]={-1,1,-2,2};
-  PValue llvp=LongLongValuePointer::New(lla,4);
-  PValue llvv=LongLongValuePointer::New(lla,2,2);
+  MP_Value llvp=LongLongValuePointer::New(lla,4);
+  MP_Value llvv=LongLongValuePointer::New(lla,2,2);
 
 
   // Logical (return the result in a new Value)

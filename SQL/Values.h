@@ -7,26 +7,26 @@
 Copyright 2008 SciberQuest Inc.
 
 */
-#ifndef Values_h
-#define Values_h
+#ifndef Variants_h
+#define Variants_h
 
-#include "ValueTemplate.h"
+#include "VariantTemplate.h"
 #include "ManagedPointer.h"
 
-typedef ValueTemplate<char>       CharValue;
-typedef ValueTemplate<bool>       BoolValue;
-typedef ValueTemplate<int>        IntValue;
-typedef ValueTemplate<float>      FloatValue;
-typedef ValueTemplate<double>     DoubleValue;
-typedef ValueTemplate<long long>  LongLongValue;
+typedef VariantTemplate<char>       CharVariant;
+typedef VariantTemplate<bool>       BoolVariant;
+typedef VariantTemplate<int>        IntVariant;
+typedef VariantTemplate<float>      FloatVariant;
+typedef VariantTemplate<double>     DoubleVariant;
+typedef VariantTemplate<long long>  LongLongVariant;
 
-typedef ValueTemplate<char*>      CharValuePointer;
-typedef ValueTemplate<bool*>      BoolValuePointer;
-typedef ValueTemplate<int*>       IntValuePointer;
-typedef ValueTemplate<float*>     FloatValuePointer;
-typedef ValueTemplate<double*>    DoubleValuePointer;
-typedef ValueTemplate<long long*> LongLongValuePointer;
+typedef VariantTemplate<char*>      CharVariantPointer;
+typedef VariantTemplate<bool*>      BoolVariantPointer;
+typedef VariantTemplate<int*>       IntVariantPointer;
+typedef VariantTemplate<float*>     FloatVariantPointer;
+typedef VariantTemplate<double*>    DoubleVariantPointer;
+typedef VariantTemplate<long long*> LongLongVariantPointer;
 
-typedef ManagedPointer<Value>     PValue;
+typedef ManagedPointer<Variant>     MP_Variant;
 
 #endif

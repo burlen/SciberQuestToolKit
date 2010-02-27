@@ -7,8 +7,8 @@
 Copyright 2008 SciberQuest Inc.
 
 */
-#ifndef ValueTraits_h
-#define ValueTraits_h
+#ifndef VariantTraits_h
+#define VariantTraits_h
 
 //=============================================================================
 typedef
@@ -26,28 +26,28 @@ typedef
     LONGLONG_TYPE,
     LONGLONG_PTR_TYPE
     }
-ValueTypeIdentifier;
+VariantTypeIdentifier;
 
 //=============================================================================
 template <typename T>
-class ValueTraits {};
+class VariantTraits {};
 
 // Two types of scpecializations, one for values and one for pointers to
 // values. The latter need to be dereferenced during the access and can 
 // be advanced.
 
 
-#define ValueTraitsSpecialization(ID,TYPE,UTYPE)\
+#define VariantTraitsSpecialization(ID,TYPE,UTYPE)\
 template<>\
-class ValueTraits<TYPE>\
+class VariantTraits<TYPE>\
 {\
 public:\
-  ValueTraits(){}\
-  typedef TYPE ValueType;\
+  VariantTraits(){}\
+  typedef TYPE VariantType;\
   int TypeId(){ return ID; }\
   const char *TypeString(){ return #TYPE; }\
-  TYPE &Access(ValueUnion &vu, int ofs=0){ return vu.UTYPE; }\
-  void Assign(ValueUnion &vu, TYPE val){ vu.UTYPE=val; }\
+  TYPE &Access(VariantUnion &vu, int ofs=0){ return vu.UTYPE; }\
+  void Assign(VariantUnion &vu, TYPE val){ vu.UTYPE=val; }\
   void InitializeIterator(int nComps, int nTups){}\
   void IteratorAdvance(){}\
   void IteratorBegin(){}\
@@ -55,24 +55,24 @@ public:\
   int GetNComps(){ return 1; }\
 };
 
-#define ValueTraitsPtrSpecialization(ID,TYPE,UTYPE)\
+#define VariantTraitsPtrSpecialization(ID,TYPE,UTYPE)\
 template<>\
-class ValueTraits<TYPE *>\
+class VariantTraits<TYPE *>\
 {\
 public:\
-  ValueTraits()\
+  VariantTraits()\
       :\
     NComps(1),\
     End(0),\
     At(0)\
     {}\
-  typedef TYPE ValueType;\
+  typedef TYPE VariantType;\
   int TypeId(){ return ID; }\
   const char *TypeString(){ return #UTYPE; }\
-  TYPE &Access(const ValueUnion &vu){ return vu.UTYPE[this->At]; }\
-  TYPE &Access(const ValueUnion &vu, int ofs){ return vu.UTYPE[this->At+ofs]; }\
-  void Assign(ValueUnion &vu, TYPE *val){ vu.UTYPE=val; }\
-  void Assign(ValueUnion &vu, TYPE val){ vu.UTYPE[this->At]=val; }\
+  TYPE &Access(const VariantUnion &vu){ return vu.UTYPE[this->At]; }\
+  TYPE &Access(const VariantUnion &vu, int ofs){ return vu.UTYPE[this->At+ofs]; }\
+  void Assign(VariantUnion &vu, TYPE *val){ vu.UTYPE=val; }\
+  void Assign(VariantUnion &vu, TYPE val){ vu.UTYPE[this->At]=val; }\
   void InitializeIterator(int nComps, int nTups){\
     this->NComps=nComps;\
     this->End=nComps*nTups;\
@@ -87,18 +87,18 @@ private:\
   int At;\
 };
 
-ValueTraitsSpecialization(CHAR_TYPE,char,Char);
-ValueTraitsSpecialization(BOOL_TYPE,bool,Bool);
-ValueTraitsSpecialization(INT_TYPE,int,Int);
-ValueTraitsSpecialization(FLOAT_TYPE,float,Float);
-ValueTraitsSpecialization(DOUBLE_TYPE,double,Double);
-ValueTraitsSpecialization(LONGLONG_TYPE,long long,LongLong);
+VariantTraitsSpecialization(CHAR_TYPE,char,Char);
+VariantTraitsSpecialization(BOOL_TYPE,bool,Bool);
+VariantTraitsSpecialization(INT_TYPE,int,Int);
+VariantTraitsSpecialization(FLOAT_TYPE,float,Float);
+VariantTraitsSpecialization(DOUBLE_TYPE,double,Double);
+VariantTraitsSpecialization(LONGLONG_TYPE,long long,LongLong);
 
-ValueTraitsPtrSpecialization(CHAR_PTR_TYPE,char,CharPtr);
-ValueTraitsPtrSpecialization(BOOL_PTR_TYPE,bool,BoolPtr);
-ValueTraitsPtrSpecialization(INT_PTR_TYPE,int,IntPtr);
-ValueTraitsPtrSpecialization(FLOAT_PTR_TYPE,float,FloatPtr);
-ValueTraitsPtrSpecialization(DOUBLE_PTR_TYPE,double,DoublePtr);
-ValueTraitsPtrSpecialization(LONGLONG_PTR_TYPE,long long,LongLongPtr);
+VariantTraitsPtrSpecialization(CHAR_PTR_TYPE,char,CharPtr);
+VariantTraitsPtrSpecialization(BOOL_PTR_TYPE,bool,BoolPtr);
+VariantTraitsPtrSpecialization(INT_PTR_TYPE,int,IntPtr);
+VariantTraitsPtrSpecialization(FLOAT_PTR_TYPE,float,FloatPtr);
+VariantTraitsPtrSpecialization(DOUBLE_PTR_TYPE,double,DoublePtr);
+VariantTraitsPtrSpecialization(LONGLONG_PTR_TYPE,long long,LongLongPtr);
 
 #endif

@@ -54,8 +54,18 @@ void ArrayNameToIndex(string &in, vector<string> &arrayNames)
 }
 
 
+int ParseConstants(string &input, vector<MP_Value>)
+{
 
 
+}
+
+int ParseInfix(string input, vector<int> &rep)
+{
+  
+
+
+}
 
 
 
