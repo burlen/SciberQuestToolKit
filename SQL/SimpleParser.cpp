@@ -7,7 +7,7 @@ using std::vector;
 #include <exception>
 using std::exception;
 
-#include "Values.h"
+#include "Variants.h"
 
 #include "RefCountedPointer.h"
 
@@ -16,15 +16,7 @@ typedef enum
   {
   TERMINATOR_TYPE,
   OPERAND_TYPE,
-  OR_TYPE,
-  AND_TYPE,
-  EQUAL_TYPE,
-  ADD_TYPE,
-  SUBTRACT_TYPE,
-  MULTIPLY_TYPE,
-  DIVIDE_TYPE,
-  NEGATE_TYPE,
-  NOT_TYPE
+  INFIX_OPERATOR_TYPE
   }
 TokenTypeId;
 
@@ -32,14 +24,12 @@ typedef enum
   {
   TERMINATOR_LBP=0,
   OPERAND_LBP=0,
-  OR_LBP=30,
-  AND_LBP=30,
-  EQUAL_LBP=40,
-  NOT_EQUAL_LBP=40,
-  ADD_LBP=50,
-  MULTIPLY_LBP=60,
+  LOGICAL_LBP=30,
+  EQUIVALENCE_LBP=40,
+  ADDITION_LBP=50,
+  MULTIPLICATION_LBP=60,
   NEGATE_LBP=70,
-  GROUP_LBP=80
+  GROUPING_LBP=80
   }
 TokenLeftBindingPower;
 
@@ -68,14 +58,18 @@ class SyntaxError : public exception
 
 class Token;
 //=============================================================================
-class TokenTokenParser : public RefCountedPointer
+class TokenParser : public RefCountedPointer
 {
 public:
   static TokenParser *New(){ return new TokenParser; }
 
   // Description:
   // Append tokens to the list to be parsed.
-  void Append(Token *t){ this->Tokens.push_back(t); }
+  void AppendToken(Token *t){ this->Tokens.push_back(t); }
+
+  // Description:
+  // Convinience method that calls Delete on all of the tokens,
+  void DeleteTokens();
 
   // Description:
   // Token iterator
@@ -83,7 +77,7 @@ public:
   void IteratorIncrement(){ ++this->At; }
   bool IteratorOk(){ this->At<this->Tokens.size(); }
 
-  Value *Parse(int rbp);
+  Variant *Parse(int rbp);
 
   void CollectGarbage();
 
@@ -100,7 +94,7 @@ private:
 
 private:
   vector<Token*> Tokens;
-  vector<Value *> Garbage;
+  vector<Variant *> Garbage;
   int At;
 };
 
@@ -111,31 +105,37 @@ private:
 class Token : public RefCountedPointer
 {
 public:
+  virtual ~Token();
+
   virtual int GetTypeId()=0;
   virtual const char *GetTypeString()=0;
 
   // NOTE if a new value is not returned then
   // its reference count must be incremented.
-  virtual Value *Nud();
-  virtual Value *Led(Value *left);
+  virtual Variant *Nud();
+  virtual Variant *Led(Variant *left);
 
   virtual int Lbp(){ return 0; }
 
-  SetRefCountedPointer(Value,Value);
-  virtual Value *GetValue(){ return this->V; }
+  // Description
+  // Set/Get interanl data associated with the token. Mostly of
+  // concern for literals.
+  SetRefCountedPointer(Value,Variant);
+  virtual Variant *GetVariant(){ return this->Value; }
 
-  virtual void SetTokenParser(TokenParser *p){ this->P=p; }
-  virtual TokenParser *GetTokenParser(){ return this->P; }
+  // Set/Get the parser that operates on the tokens, tokens
+  // representing operators modify the parse to get their 
+  // operands etc etc.
+  SetRefCountedPointer(Parser,TokenParser);
+  virtual TokenParser *GetTokenParser(){ return this->Parser; }
 
   virtual void Print(ostream &os);
 
-  virtual ~Token();
-
 protected:
   Token();
-  Token(Value *v, TokenParser *p);
+  Token(Variant *v, TokenParser *p);
 
-  Value *Value;
+  Variant *Value;
   TokenParser *Parser;
 };
 
@@ -144,6 +144,17 @@ ostream &operator<<(ostream &os, Token &t)
 {
   t.Print(os);
   return os;
+}
+
+//-----------------------------------------------------------------------------
+void TokenParser::DeleteTokens()
+{
+  size_t n=this->Tokens.size();
+  for (size_t i=0; i<n; ++i)
+    {
+    this->Tokens[i]->Delete();
+    }
+  this->Tokens.clear();
 }
 
 //-----------------------------------------------------------------------------
@@ -161,18 +172,12 @@ TokenParser::~TokenParser()
 {
   cerr << " ~TokenParser" << endl;
   this->CollectGarbage();
-
-  size_t n=this->Tokens.size();
-  for (size_t i=0; i<n; ++i)
-    {
-    this->Tokens[i]->Delete();
-    }
 }
 
 //-----------------------------------------------------------------------------
-Value *TokenParser::Parse(int rbp)
+Variant *TokenParser::Parse(int rbp)
 {
-  Value *left;
+  Variant *left;
   Token *current=this->Tokens[this->At];
   cerr << "Parse : " << *current;
   ++this->At;
@@ -206,36 +211,36 @@ Value *TokenParser::Parse(int rbp)
 //-----------------------------------------------------------------------------
 Token::Token()
   :
-  V(0),
-  P(0)
+  Value(0),
+  Parser(0)
 {}
 
 //-----------------------------------------------------------------------------
-Token::Token(Value *v, TokenParser *p)
+Token::Token(Variant *v, TokenParser *p)
     :
-  V(0),
-  P(0)
+  Value(0),
+  Parser(0)
 {
   this->SetValue(v);
-  this->SetTokenParser(p);
+  this->SetParser(p);
 }
 
 //-----------------------------------------------------------------------------
 Token::~Token()
 {
   this->SetValue(0);
-  this->SetTokenParser(0);
+  this->SetParser(0);
 }
 
 //-----------------------------------------------------------------------------
-Value *Token::Nud()
+Variant *Token::Nud()
 {
   cerr << "Warning: " << GetTypeString() << "::Nud was not implemented." << endl;
   return 0;
 }
 
 //-----------------------------------------------------------------------------
-Value *Token::Led(Value *left)
+Variant *Token::Led(Variant *left)
 {
   cerr << "Warning: " << GetTypeString() << "::Led was not implemented." << endl;
   return 0;
@@ -247,7 +252,7 @@ void Token::Print(ostream &os)
   this->RefCountedPointer::Print(os); cerr << " ";
 
   os << this->GetTypeString();
-  Value *v=this->V;
+  Variant *v=this->Value;
   if (v)
     {
     os << " " << *v;
@@ -281,22 +286,22 @@ class Operand : public Token
 {
 public:
   static Operand *New(double d, TokenParser *p);
-  static Operand *New(Value *v, TokenParser *p);
+  static Operand *New(Variant *v, TokenParser *p);
 
   virtual const char *GetTypeString(){ return "Operand"; }
   virtual int GetTypeId(){ return OPERAND_TYPE; }
 
   virtual int Lbp(){ return OPERAND_LBP; }
 
-  virtual Value *Nud()
+  virtual Variant *Nud()
     {
-    Value *v=this->GetValue();
+    Variant *v=this->GetVariant();
     v->Register();
     return v; 
     }
 
 protected:
-  Operand(Value *v, TokenParser *p)
+  Operand(Variant *v, TokenParser *p)
       :
     Token(v,p)
       {}
@@ -309,20 +314,20 @@ private:
 //-----------------------------------------------------------------------------
 Operand *Operand::New(double d, TokenParser *p)
 {
-  Value *v=DoubleValue::New(d);
+  Variant *v=DoubleVariant::New(d);
   Operand *o=new Operand(v,p);
   v->Delete();
   return o;
 }
 
 //-----------------------------------------------------------------------------
-Operand *Operand::New(Value *v, TokenParser *p)
+Operand *Operand::New(Variant *v, TokenParser *p)
 {
   return new Operand(v,p);
 }
 
 
-#define InfixOperator(OPERATOR_NAME,OPERATOR_TYPE_ID,OPERATOR_LBP)\
+#define InfixOperator(OPERATOR_NAME,OPERATOR_LBP)\
 /*=============================================================================*/\
 class Operator##OPERATOR_NAME : public Token\
 {\
@@ -330,11 +335,11 @@ public:\
   static Operator##OPERATOR_NAME *New(TokenParser *p){ return new Operator##OPERATOR_NAME(p); }\
 \
   virtual const char *GetTypeString(){ return "Operator" #OPERATOR_NAME; }\
-  virtual int GetTypeId(){ return OPERATOR_TYPE_ID; }\
+  virtual int GetTypeId(){ return INFIX_OPERATOR_TYPE; }\
 \
   virtual int Lbp(){ return OPERATOR_LBP; }\
 \
-  virtual Value *Led(Value *left);\
+  virtual Variant *Led(Variant *left);\
 \
 protected:\
   Operator##OPERATOR_NAME(TokenParser *p)\
@@ -348,15 +353,16 @@ private:\
 };\
 \
 /*-----------------------------------------------------------------------------*/\
-Value *Operator##OPERATOR_NAME::Led(Value *left)\
+Variant *Operator##OPERATOR_NAME::Led(Variant *left)\
 {\
-  Value *right=this->GetTokenParser()->Parse(this->Lbp());\
+  Variant *right=this->GetTokenParser()->Parse(this->Lbp());\
   return left->OPERATOR_NAME(right);\
 }
 
-InfixOperator(Add,ADD_TYPE,ADD_LBP)
-InfixOperator(Multiply,MULTIPLY_TYPE,MULTIPLY_LBP)
-InfixOperator(Divide,DIVIDE_TYPE,DIVIDE_LBP)
+InfixOperator(Add,ADDITION_LBP)
+InfixOperator(Subtract,ADDITION_LBP)
+InfixOperator(Multiply,MULTIPLICATION_LBP)
+InfixOperator(Divide,MULTIPLICATION_LBP)
 
 
 
@@ -374,8 +380,8 @@ public:
 
   virtual int Lbp(){ return ADD_LBP; }
 
-  //virtual Value *Nud(){ return this->GetTokenParser()->Parse(this->Traits.Lbp()); }
-  virtual Value *Led(Value *left);
+  //virtual Variant *Nud(){ return this->GetTokenParser()->Parse(this->Traits.Lbp()); }
+  virtual Variant *Led(Variant *left);
 
 protected:
   OperatorAdd(TokenParser *p)
@@ -389,9 +395,9 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-Value *OperatorAdd::Led(Value *left)
+Variant *OperatorAdd::Led(Variant *left)
 {
-  Value *right=this->GetTokenParser()->Parse(this->Lbp());
+  Variant *right=this->GetTokenParser()->Parse(this->Lbp());
   return left->Add(right);
 }
 
@@ -406,7 +412,7 @@ public:
 
   virtual int Lbp(){ return MULTIPLY_LBP; }
 
-  virtual Value *Led(Value *left);
+  virtual Variant *Led(Variant *left);
 
 protected:
   OperatorMultiply(TokenParser *p)
@@ -420,9 +426,9 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-Value *OperatorMultiply::Led(Value *left)
+Variant *OperatorMultiply::Led(Variant *left)
 {
-  Value *right=this->GetTokenParser()->Parse(this->Lbp());
+  Variant *right=this->GetTokenParser()->Parse(this->Lbp());
   return left->Multiply(right);
 }*/
 
@@ -431,20 +437,28 @@ Value *OperatorMultiply::Led(Value *left)
 
 int main(int argc, char **argv)
 {
-  TokenParser P;
-  P.Push(Operand::New(3,&P));
-  P.Push(OperatorAdd::New(&P));
-  P.Push(Operand::New(4,&P));
-  P.Push(OperatorMultiply::New(&P));
-  P.Push(Operand::New(7,&P));
-  P.Push(OperatorAdd::New(&P));
-  P.Push(Operand::New(11,&P));
-  P.Push(OperatorMultiply::New(&P));
-  P.Push(Operand::New(13,&P));
-  P.Push(Terminator::New());
+  TokenParser *parser=TokenParser::New();
+  parser->AppendToken(Operand::New(3,parser));
+  parser->AppendToken(OperatorSubtract::New(parser));
+  parser->AppendToken(Operand::New(4,parser));
+  parser->AppendToken(OperatorMultiply::New(parser));
+  parser->AppendToken(Operand::New(7,parser));
+  parser->AppendToken(OperatorAdd::New(parser));
+  parser->AppendToken(Operand::New(11,parser));
+  parser->AppendToken(OperatorMultiply::New(parser));
+  parser->AppendToken(Operand::New(13,parser));
+  parser->AppendToken(OperatorDivide::New(parser));
+  parser->AppendToken(Operand::New(6,parser));
+  parser->AppendToken(Terminator::New());
 
-  Value *res=P.Parse(0);
-  cerr << "3+4*7+13*11=" << *res << endl;
+  Variant *res=parser->Parse(0);
+  cerr
+    << endl
+    << "3-4*7+13*11/6=" << *res << endl
+    << endl;
+
+  parser->DeleteTokens();
+  parser->Delete();
 
   return 0;
 }
@@ -554,11 +568,11 @@ int main(int argc, char **argv)
 // class Operand : public Token
 // {
 // public:
-//   Operand(Value *v)
+//   Operand(Variant *v)
 //       :
 //     Token
 //   virtual int GetTypeId(){ return this->Traits.TypeId(); }
-//   virtual Value *Nud(){ return this->GetValue(); }
+//   virtual Variant *Nud(){ return this->GetVariant(); }
 // 
 // private:
 //   TokenTraits<Operand> Traits;
@@ -571,17 +585,17 @@ int main(int argc, char **argv)
 // {
 // public:
 //   virtual int GetTypeId(){ return this->Traits.TypeId(); }
-//   //virtual Value *Nud(){ return this->GetTokenParser()->Parse(this->Traits.Lbp()); }
-//   virtual Value *Led(Value *left);
+//   //virtual Variant *Nud(){ return this->GetTokenParser()->Parse(this->Traits.Lbp()); }
+//   virtual Variant *Led(Variant *left);
 // 
 // private:
 //   TokenTraits<Operand> Traits;
 // };
 // 
 // //-----------------------------------------------------------------------------
-// Value *TokenTemplate<AddOperator>::Led(Value *left)
+// Variant *TokenTemplate<AddOperator>::Led(Variant *left)
 // {
-//   MP_Value *right=this->GetTokenParser()->Parse(this->Traits.Lbp());
+//   MP_Variant *right=this->GetTokenParser()->Parse(this->Traits.Lbp());
 //   return left->Add(right);
 // }
 // 
@@ -592,16 +606,16 @@ int main(int argc, char **argv)
 // {
 // public:
 //   virtual int GetTypeId(){ return this->Traits.TypeId(); }
-//   virtual Value *Led(Value *left);
+//   virtual Variant *Led(Variant *left);
 // 
 // private:
 //   TokenTraits<Operand> Traits;
 // };
 // 
 // //-----------------------------------------------------------------------------
-// Value *TokenTemplate<AddOperator>::Led(Value *left)
+// Variant *TokenTemplate<AddOperator>::Led(Variant *left)
 // {
-//   MP_Value *right=this->GetTokenParser()->Parse(this->Traits.Lbp());
+//   MP_Variant *right=this->GetTokenParser()->Parse(this->Traits.Lbp());
 //   return left->Multiply(right);
 // }
 

@@ -19,11 +19,17 @@ class RefCountedPointer
 {
 public:
   RefCountedPointer() : N(1) {}
+  virtual ~RefCountedPointer(){}
+
   virtual void Delete(){ if ((--this->N)==0){ delete this;} }
   virtual void Register(){ ++this->N; }
-  virtual int RefCount(){ return this->N; }
-  virtual ~RefCountedPointer(){}
-  virtual void Print(ostream &os){ /*os << "N=" << this->N;*/ }
+
+  virtual int GetRefCount(){ return this->N; }
+  virtual int SetRefCount(int rc){ this->N=rc; }
+
+  virtual void Print(ostream &os){}
+  virtual void PrintRefCount(ostream &os){ os << "RefCount=" << this->N; }
+
 private:
   int N;
 };
@@ -31,10 +37,10 @@ private:
 #define SetRefCountedPointer(NAME,TYPE)\
   virtual void Set##NAME(TYPE *v)\
     {\
-    if (v==this->NAME)return;\
-    if (this->NAME) this->NAME->Delete();\
+    if (v==this->NAME){ return; }\
+    if (this->NAME){ this->NAME->Delete(); }\
     this->NAME=v;\
-    if (this->NAME) this->NAME->Register();\
+    if (this->NAME){ this->NAME->Register(); }\
     }
 
 #endif
