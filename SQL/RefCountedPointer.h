@@ -35,12 +35,15 @@ private:
 };
 
 #define SetRefCountedPointer(NAME,TYPE)\
-  virtual void Set##NAME(TYPE *v)\
-    {\
-    if (v==this->NAME){ return; }\
-    if (this->NAME){ this->NAME->Delete(); }\
-    this->NAME=v;\
-    if (this->NAME){ this->NAME->Register(); }\
-    }
+  virtual void Set##NAME(TYPE *v);
+
+#define SetRefCountedPointerImpl(CLASS,NAME,TYPE)\
+void CLASS::Set##NAME(TYPE *v)\
+{\
+  if (v==this->NAME){ return; }\
+  if (this->NAME){ this->NAME->Delete(); }\
+  this->NAME=v;\
+  if (this->NAME){ this->NAME->Register(); }\
+}
 
 #endif

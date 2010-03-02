@@ -29,7 +29,7 @@ public:
   // virtual void Delete()=0;
   // virtual void Register()=0;
 
-  virtual ~Variant()=0;
+  virtual ~Variant(){};
 
   // Built-in vector aware iterator for arrays of values.
   // For non-pointer values IteratorOk always fails if you
@@ -85,13 +85,7 @@ public:
   VariantUnion Data;
 };
 
-Variant::~Variant(){}
-
-//-----------------------------------------------------------------------------
-ostream &operator<<(ostream &os,Variant &v)
-{
-  v.Print(os);
-  return os;
-}
+//*****************************************************************************
+ostream &operator<<(ostream &os,Variant &v);
 
 #endif
