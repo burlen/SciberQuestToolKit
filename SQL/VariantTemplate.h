@@ -39,8 +39,6 @@ public:
   static VariantTemplate<T> *New(T data);
   static VariantTemplate<T> *New(T data,int nTups);
   static VariantTemplate<T> *New(T data,int nComp,int nTups);
-  // virtual void Delete();
-  // virtual void Register(){ ++this->RefCount; }
 
   virtual ~VariantTemplate();
 
@@ -55,8 +53,8 @@ public:
 
   // Description:
   // Access to the object's value by reference ie Set/Get
-  virtual  VariantType &GetVariant() { return this->Traits.Access(this->Data); }
-  virtual  VariantType &GetVariant(int i) { return this->Traits.Access(this->Data,i); }
+  virtual  VariantType &GetValue() { return this->Traits.Access(this->Data); }
+  virtual  VariantType &GetValue(int i) { return this->Traits.Access(this->Data,i); }
 
   // Description:
   // Initialize the object's value and number of components.
@@ -187,13 +185,13 @@ VariantTemplate<double> *VariantTemplate<T>::L2Norm()
 template<typename T>
 void VariantTemplate<T>::Print(ostream &os)
 {
-  this->RefCountedPointer::Print(os); cerr << " ";
+  //this->RefCountedPointer::Print(os); cerr << " ";
 
-  os << this->GetVariant();
+  os << this->GetValue();
   int nComps=this->Traits.GetNComps();
   for (int i=1; i<nComps; ++i)
     {
-    os << ", " << this->GetVariant(i);
+    os << ", " << this->GetValue(i);
     }
 }
 
@@ -217,7 +215,7 @@ const char *VariantTemplate<T>::GetTypeString()
 template<typename T>\
 VariantTemplate<RET_TYPE> *VariantTemplate<T>::METHOD_NAME()\
 {\
-  return VariantTemplate<RET_TYPE>::New(CPP_OP(this->GetVariant()));\
+  return VariantTemplate<RET_TYPE>::New(CPP_OP(this->GetValue()));\
 }
 
 #define VariantTemplateBinaryOperatorDispatchImpl(RET_TYPE,METHOD_NAME,CPP_OP)\
@@ -276,7 +274,7 @@ template<typename T>\
 template<typename S>\
 VariantTemplate<RET_TYPE> *VariantTemplate<T>::METHOD_NAME(VariantTemplate<S> *rhs)\
 {\
-  return VariantTemplate<RET_TYPE>::New(this->GetVariant() CPP_OP rhs->GetVariant());\
+  return VariantTemplate<RET_TYPE>::New(this->GetValue() CPP_OP rhs->GetValue());\
 }\
 \
 VariantTemplateBinaryOperatorDispatchImpl(RET_TYPE,METHOD_NAME,CPP_OP)
@@ -287,7 +285,7 @@ template<typename T>\
 template<typename S>\
 VariantTemplate<T> *VariantTemplate<T>::METHOD_NAME(VariantTemplate<S> *rhs)\
 {\
-  this->GetVariant() CPP_OP rhs->GetVariant();\
+  this->GetValue() CPP_OP rhs->GetValue();\
   return this;\
 }\
 \

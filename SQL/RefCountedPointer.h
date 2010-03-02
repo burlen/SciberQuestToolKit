@@ -15,13 +15,18 @@ using std::ostream;
 using std::cerr;
 using std::endl;
 
+//=============================================================================
 class RefCountedPointer
 {
 public:
   RefCountedPointer() : N(1) {}
   virtual ~RefCountedPointer(){}
 
-  virtual void Delete(){ if ((--this->N)==0){ delete this;} }
+  #if defined RefCountedPointerDEBUG
+  virtual void Delete();
+  #else
+  virtual void Delete(){ if ((--this->N)==0){ delete this; } }
+  #endif
   virtual void Register(){ ++this->N; }
 
   virtual int GetRefCount(){ return this->N; }
@@ -34,8 +39,13 @@ private:
   int N;
 };
 
+//*****************************************************************************
+ostream &operator<<(ostream &os, RefCountedPointer &rcp);
+
 #define SetRefCountedPointer(NAME,TYPE)\
-  virtual void Set##NAME(TYPE *v);
+  virtual void Set##NAME(TYPE *v);\
+  \
+  virtual void SetNew##NAME(TYPE *v);\
 
 #define SetRefCountedPointerImpl(CLASS,NAME,TYPE)\
 void CLASS::Set##NAME(TYPE *v)\
@@ -44,6 +54,13 @@ void CLASS::Set##NAME(TYPE *v)\
   if (this->NAME){ this->NAME->Delete(); }\
   this->NAME=v;\
   if (this->NAME){ this->NAME->Register(); }\
+}\
+\
+void CLASS::SetNew##NAME(TYPE *v)\
+{\
+  if (v==this->NAME){ return; }\
+  if (this->NAME){ this->NAME->Delete(); }\
+  this->NAME=v;\
 }
 
 #endif

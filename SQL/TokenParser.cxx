@@ -9,63 +9,108 @@ Copyright 2008 SciberQuest Inc.
 */
 
 #include "TokenParser.h"
+
 #include "Token.h"
+#include "TokenList.h"
 #include "Variant.h"
-
-
-//-----------------------------------------------------------------------------
-void TokenParser::DeleteTokens()
-{
-  size_t n=this->Tokens.size();
-  for (size_t i=0; i<n; ++i)
-    {
-    this->Tokens[i]->Delete();
-    }
-  this->Tokens.clear();
-}
+#include "VariantStack.h"
 
 //-----------------------------------------------------------------------------
-void TokenParser::CollectGarbage()
+TokenParser::TokenParser()
+    :
+  Program(0),
+  ByteCode(0)
 {
-  size_t n=this->Garbage.size();
-  for (size_t i=0; i<n; ++i)
-    {
-    this->Garbage[i]->Delete();
-    }
-  this->Garbage.clear();
+  this->SetNewProgram(TokenList::New());
+  this->SetNewByteCode(TokenList::New());
 }
 
 //-----------------------------------------------------------------------------
 TokenParser::~TokenParser()
 {
-  cerr << " ~TokenParser" << endl;
-  this->CollectGarbage();
+  this->SetProgram(0);
+  this->SetByteCode(0);
 }
 
 //-----------------------------------------------------------------------------
-Variant *TokenParser::Parse(int rbp)
+void TokenParser::Clear()
 {
-  // cerr << " Parse(rbp=" << rbp << ") : ";
-  Variant *left;
-  Token *current=this->GetCurrentToken();
-  // cerr << *current;
-  this->IteratorIncrement();
-  left=current->Nud();
-  this->Garbage.push_back(left);
-  // if (left) cerr << " " << *left;
-
-  while (rbp<this->GetCurrentToken()->Lbp())
-    {
-    current=this->GetCurrentToken();
-    // cerr << " : " << *current << endl;
-    this->IteratorIncrement();
-    left=current->Led(left);
-    this->Garbage.push_back(left);
-    }
-  // cerr << " " << *current;
-  // if (left) cerr << " " << *left;
-  return left;
+  this->Program->Clear();
+  this->ByteCode->Clear();
 }
+
+//-----------------------------------------------------------------------------
+SetRefCountedPointerImpl(TokenParser,Program,TokenList);
+
+//-----------------------------------------------------------------------------
+SetRefCountedPointerImpl(TokenParser,ByteCode,TokenList);
+
+//-----------------------------------------------------------------------------
+void TokenParser::Parse()
+{
+  if (!this->Program)
+    {
+    cerr << __LINE__ << " Error no program." << endl;
+    return;
+    }
+
+  this->ByteCode->Clear();
+
+  this->Parse(0);
+}
+
+//-----------------------------------------------------------------------------
+void TokenParser::Parse(int rbp)
+{
+  TokenList *program=this->GetProgram();
+
+  Token *current;
+
+  current=program->GetCurrent();
+  program->IteratorIncrement();
+
+  current->Nud();
+
+  while (rbp<program->GetCurrent()->Lbp())
+    {
+    current=program->GetCurrent();
+    program->IteratorIncrement();
+
+    current->Led();
+    }
+}
+
+//-----------------------------------------------------------------------------
+Variant *TokenParser::Eval()
+{
+  VariantStack *Stack=VariantStack::New();
+
+  this->ByteCode->IteratorBegin();
+  while (this->ByteCode->IteratorOk())
+    {
+    Token *t=this->ByteCode->GetCurrent();
+    t->Operate(Stack);
+
+    this->ByteCode->IteratorIncrement();
+    }
+
+  Variant *res=Stack->Pop();
+  res->Register();
+
+  Stack->Clear();
+  Stack->Delete();
+
+  return res;
+}
+
+//-----------------------------------------------------------------------------
+void TokenParser::Print(ostream &os)
+{
+  os
+    << "TokenParser : ";
+}
+
+
 
 //     def expression(rbp=0):
 //         global token

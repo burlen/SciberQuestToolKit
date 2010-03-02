@@ -11,60 +11,73 @@ using std::endl;
 //-----------------------------------------------------------------------------
 void TestArithmetic()
 {
- TokenParser *parser=TokenParser::New();
-  parser->AppendToken(Paren::New(parser));              // (
-  parser->AppendToken(Minus::New(parser));              // -
-  parser->AppendToken(Operand::New(3,parser));          // 3
-  parser->AppendToken(Subtract::New(parser));           // -
-  parser->AppendToken(Operand::New(4,parser));          // 4
-  parser->AppendToken(ParenTerminator::New(parser));    // )
-  parser->AppendToken(Multiply::New(parser));           // *
-  parser->AppendToken(Paren::New(parser));              // (
-  parser->AppendToken(Operand::New(7,parser));          // 7
-  parser->AppendToken(Add::New(parser));                // +
-  parser->AppendToken(Operand::New(11,parser));         // 11
-  parser->AppendToken(ParenTerminator::New(parser));    // )
-  parser->AppendToken(Multiply::New(parser));           // *
-  parser->AppendToken(Operand::New(13,parser));         // 13
-  parser->AppendToken(Divide::New(parser));             // /
-  parser->AppendToken(Operand::New(6,parser));          // 6
-  parser->AppendToken(ProgramTerminator::New(parser));  // EOF
-
-  Variant *res=parser->Parse(0);
   cerr
     << endl
-    << "(-3-4)*(7+11)*13/6=" << *res << endl
-    << endl;
+    << "(-3-4)*(7+11)*13/6=";
 
-  parser->DeleteTokens();
+  TokenParser *parser=TokenParser::New();
+  TokenList *program=parser->GetProgram();
+  program->AppendNew(Paren::New(parser));              // (
+  program->AppendNew(Minus::New(parser));              // -
+  program->AppendNew(Operand::New(3,parser));          // 3
+  program->AppendNew(Subtract::New(parser));           // -
+  program->AppendNew(Operand::New(4,parser));          // 4
+  program->AppendNew(ParenTerminator::New(parser));    // )
+  program->AppendNew(Multiply::New(parser));           // *
+  program->AppendNew(Paren::New(parser));              // (
+  program->AppendNew(Operand::New(7,parser));          // 7
+  program->AppendNew(Add::New(parser));                // +
+  program->AppendNew(Operand::New(11,parser));         // 11
+  program->AppendNew(ParenTerminator::New(parser));    // )
+  program->AppendNew(Multiply::New(parser));           // *
+  program->AppendNew(Operand::New(13,parser));         // 13
+  program->AppendNew(Divide::New(parser));             // /
+  program->AppendNew(Operand::New(6,parser));          // 6
+  program->AppendNew(ProgramTerminator::New(parser));  // EOF
+
+  parser->Parse();
+
+  //cerr << *(parser->GetByteCode());
+  Variant *res=parser->Eval();
+  cerr << "=" << *res << endl;
+  res->Delete();
+
+  parser->Clear();
   parser->Delete();
+
+  cerr << endl;
 }
 
 //-----------------------------------------------------------------------------
 void TestLogic()
 {
-  TokenParser *parser=TokenParser::New();
-  parser->AppendToken(Operand::New(2,parser));
-  parser->AppendToken(Equal::New(parser));
-  parser->AppendToken(Operand::New(3,parser));
-  parser->AppendToken(Or::New(parser));
-  parser->AppendToken(Operand::New(3,parser));
-  parser->AppendToken(Equal::New(parser));
-  parser->AppendToken(Operand::New(4,parser));
-  parser->AppendToken(Or::New(parser));
-  parser->AppendToken(Operand::New(3,parser));
-  parser->AppendToken(Equal::New(parser));
-  parser->AppendToken(Operand::New(5,parser));
-  parser->AppendToken(ProgramTerminator::New(parser));
-
-  Variant *res=parser->Parse(0);
   cerr
     << endl
-    << "3!=4->" << *res << endl
-    << endl;
+    << "3!=4->";
 
-  parser->DeleteTokens();
+  TokenParser *parser=TokenParser::New();
+  TokenList *program=parser->GetProgram();
+  program->AppendNew(Operand::New(2,parser));
+  program->AppendNew(Equal::New(parser));
+  program->AppendNew(Operand::New(3,parser));
+  program->AppendNew(Or::New(parser));
+  program->AppendNew(Operand::New(3,parser));
+  program->AppendNew(Equal::New(parser));
+  program->AppendNew(Operand::New(4,parser));
+  program->AppendNew(Or::New(parser));
+  program->AppendNew(Operand::New(3,parser));
+  program->AppendNew(Equal::New(parser));
+  program->AppendNew(Operand::New(5,parser));
+  program->AppendNew(ProgramTerminator::New(parser));
+
+  parser->Parse();
+
+  cerr << *(parser->GetByteCode()) << endl;
+
+  parser->Clear();
   parser->Delete();
+
+  cerr << endl;
 }
 
 //-----------------------------------------------------------------------------

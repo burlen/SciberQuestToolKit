@@ -16,8 +16,11 @@ cmake_policy(SET CMP0003 NEW)
 project(SQLFilter)
 
 set(SOURCES
+  RefCountedPointer.cxx
   Variant.cxx
+  VariantStack.cxx
   Token.cxx
+  TokenList.cxx
   TokenParser.cxx
   TestParser.cpp)
 

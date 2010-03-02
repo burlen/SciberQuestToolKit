@@ -14,13 +14,6 @@ Copyright 2008 SciberQuest Inc.
 using std::cerr;
 using std::endl;
 
-//*****************************************************************************
-ostream &operator<<(ostream &os, Token &t)
-{
-  t.Print(os);
-  return os;
-}
-
 //-----------------------------------------------------------------------------
 SetRefCountedPointerImpl(Token,Value,Variant);
 
@@ -52,17 +45,21 @@ Token::~Token()
 }
 
 //-----------------------------------------------------------------------------
-Variant *Token::Nud()
+void Token::Nud()
 {
   cerr << "Warning: " << GetTypeString() << "::Nud was not implemented." << endl;
-  return 0;
 }
 
 //-----------------------------------------------------------------------------
-Variant *Token::Led(Variant *left)
+void Token::Led()
 {
   cerr << "Warning: " << GetTypeString() << "::Led was not implemented." << endl;
-  return 0;
+}
+
+//-----------------------------------------------------------------------------
+void Token::Operate(VariantStack *Stack)
+{
+  cerr << "Warning: " << GetTypeString() << "::Operate was not implemented." << endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -70,10 +67,20 @@ void Token::Print(ostream &os)
 {
   this->RefCountedPointer::Print(os); cerr << " ";
 
-  os << this->GetTypeString();
   Variant *v=this->Value;
   if (v)
     {
     os << " " << *v;
     }
+  else
+    {
+    os << this->GetTypeString();
+    }
+}
+
+//*****************************************************************************
+ostream &operator<<(ostream &os, Token &t)
+{
+  t.Print(os);
+  return os;
 }

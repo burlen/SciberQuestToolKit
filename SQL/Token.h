@@ -15,6 +15,7 @@ using std::ostream;
 
 #include "RefCountedPointer.h"
 class Variant;
+class VariantStack;
 class TokenParser;
 
 //=============================================================================
@@ -23,22 +24,33 @@ class Token : public RefCountedPointer
 public:
   virtual ~Token();
 
+  // Decsription:
+  // Token meta-data.
   virtual int GetTypeId()=0;
   virtual const char *GetTypeString()=0;
 
-  // NOTE if a new value is not returned then
-  // its reference count must be incremented.
-  virtual Variant *Nud();
-  virtual Variant *Led(Variant *left);
+  // Description:
+  // Recursive parser stubs, nud is called for prefix operators
+  // and operands. led is called for infix and postfix operators.
+  virtual void Nud();
+  virtual void Led();
 
+  // Description:
+  // Binding priorities, determinie operator precedence. See 
+  // TokenBindingPower enum below for the specifics.
   virtual int Nbp(){ return 0; }
   virtual int Lbp(){ return 0; }
+
+  // Description:
+  // Tokens representing operators pop their arguments operate 
+  // and push the reult back onto the stack.
+  virtual void Operate(VariantStack *Stack);
 
   // Description
   // Set/Get interanl data associated with the token. Mostly of
   // concern for literals.
   SetRefCountedPointer(Value,Variant);
-  virtual Variant *GetVariant(){ return this->Value; }
+  virtual Variant *GetValue(){ return this->Value; }
 
   // Set/Get the parser that operates on the tokens, tokens
   // representing operators modify the parse to get their 
@@ -80,6 +92,6 @@ typedef enum
   UNARY_BP=70,
   GROUPING_BP=80
   }
-TokenLeftBindingPower;
+TokenBindingPower;
 
 #endif
