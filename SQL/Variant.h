@@ -32,7 +32,7 @@ public:
   virtual ~Variant(){};
 
   // Built-in vector aware iterator for arrays of values.
-  // For non-pointer values IteratorOk always fails if you
+  // For non-pointer values IteratorOk always fails. if you
   // have to both pointer and non-pointer values then use
   // the following pattern:
   //
@@ -71,7 +71,7 @@ public:
   virtual Variant *Assign(Variant *rhs)=0;
 
   // Vector arirthmetic (return result in a new Variant)
-  virtual Variant *Component(int i)=0;
+  virtual Variant *Component(Variant *i)=0;
   virtual Variant *L2Norm()=0;
 
   // Type information

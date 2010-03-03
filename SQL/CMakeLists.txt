@@ -22,6 +22,7 @@ set(SOURCES
   Token.cxx
   TokenList.cxx
   TokenParser.cxx
+  Tokenizer.cxx
   TestParser.cpp)
 
 add_executable(TestParser ${SOURCES})

@@ -10,7 +10,10 @@ Copyright 2008 SciberQuest Inc.
 
 #include "TokenParser.h"
 
+#include <cstdlib>
+
 #include "Token.h"
+#include "Tokens.h"
 #include "TokenList.h"
 #include "Variant.h"
 #include "VariantStack.h"
@@ -19,10 +22,12 @@ Copyright 2008 SciberQuest Inc.
 TokenParser::TokenParser()
     :
   Program(0),
-  ByteCode(0)
+  ByteCode(0),
+  Stack(0)
 {
   this->SetNewProgram(TokenList::New());
   this->SetNewByteCode(TokenList::New());
+  this->SetNewStack(VariantStack::New());
 }
 
 //-----------------------------------------------------------------------------
@@ -30,6 +35,7 @@ TokenParser::~TokenParser()
 {
   this->SetProgram(0);
   this->SetByteCode(0);
+  this->SetStack(0);
 }
 
 //-----------------------------------------------------------------------------
@@ -46,6 +52,190 @@ SetRefCountedPointerImpl(TokenParser,Program,TokenList);
 SetRefCountedPointerImpl(TokenParser,ByteCode,TokenList);
 
 //-----------------------------------------------------------------------------
+SetRefCountedPointerImpl(TokenParser,Stack,VariantStack);
+
+//-----------------------------------------------------------------------------
+void TokenParser::Tokenize(const char *str, size_t n)
+{
+  char *end;
+  double value;
+
+  size_t i=0;
+  while (i<n)
+    {
+    /// White space
+    while ((str[i]==' ')||(str[i]=='\n')||(str[i]=='\t')){ ++i; }
+
+    /// Operators
+    switch (str[i])
+      {
+      case '\0':
+        this->Program->AppendNew(ProgramTerminator::New(this));
+        return;
+        break;
+
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+        value=strtod(&str[i],&end);
+        this->Program->AppendNew(Operand::New(value,this));
+        i+=end-&str[i];
+        continue;
+        break;
+
+      case '@':
+        // TODO arrays
+        continue;
+        break;
+
+      case '(':
+        this->Program->AppendNew(Paren::New(this));
+        ++i;
+        continue;
+        break;
+
+      case ')':
+        this->Program->AppendNew(ParenTerminator::New(this));
+        ++i;
+        continue;
+        break;
+
+      case '[':
+        this->Program->AppendNew(Bracket::New(this));
+        ++i;
+        continue;
+        break;
+
+      case ']':
+        this->Program->AppendNew(BracketTerminator::New(this));
+        ++i;
+        continue;
+        break;
+
+      case '+':
+        this->Program->AppendNew(Add::New(this));
+        ++i;
+        continue;
+        break;
+
+      case '-':
+        this->Program->AppendNew(Minus::New(this));
+        ++i;
+        continue;
+        break;
+
+      case '*':
+        this->Program->AppendNew(Multiply::New(this));
+        ++i;
+        continue;
+        break;
+
+      case '/':
+        this->Program->AppendNew(Divide::New(this));
+        ++i;
+        continue;
+        break;
+
+      case '&':
+        if ((i+1<n)&&(str[i+1]=='&'))
+          {
+          this->Program->AppendNew(And::New(this));
+          i+=2;
+          }
+        else
+          {
+          SyntaxError e(str,i);
+          throw e;
+          }
+        continue;
+        break;
+
+      case '|':
+        if ((i+1<n)&&(str[i+1]=='|'))
+          {
+          this->Program->AppendNew(Or::New(this));
+          i+=2;
+          }
+        else
+          {
+          SyntaxError e(str,i);
+          throw e;
+          }
+        continue;
+        break;
+
+      case '=':
+        if ((i+1<n)&&(str[i+1]=='='))
+          {
+          this->Program->AppendNew(Equal::New(this));
+          i+=2;
+          }
+        else
+          {
+          SyntaxError e(str,i);
+          throw e;
+          }
+        continue;
+        break;
+
+      case '!':
+        if ((i+1<n)&&(str[i+1]=='='))
+          {
+          this->Program->AppendNew(NotEqual::New(this));
+          i+=2;
+          }
+        else
+          {
+          this->Program->AppendNew(Not::New(this));
+          ++i;
+          }
+        continue;
+        break;
+
+      case '<':
+        if ((i+1<n)&&(str[i+1]=='='))
+          {
+          this->Program->AppendNew(LessEqual::New(this));
+          i+=2;
+          }
+        else
+          {
+          this->Program->AppendNew(Less::New(this));
+          ++i;
+          }
+        continue;
+        break;
+
+      case '>':
+        if ((i+1<n)&&(str[i+1]=='='))
+          {
+          this->Program->AppendNew(GreaterEqual::New(this));
+          i+=2;
+          }
+        else
+          {
+          this->Program->AppendNew(Greater::New(this) );
+          ++i;
+          }
+        continue;
+        break;
+      }
+    /// TODO key words
+
+    /// All other sequences are erronious
+    SyntaxError e(str,i);
+    throw e;
+    }
+}
+
+//-----------------------------------------------------------------------------
 void TokenParser::Parse()
 {
   if (!this->Program)
@@ -59,6 +249,8 @@ void TokenParser::Parse()
   this->Parse(0);
 }
 
+// This is the top-down recursive decent parser, deceptively
+// simple.
 //-----------------------------------------------------------------------------
 void TokenParser::Parse(int rbp)
 {
@@ -83,22 +275,19 @@ void TokenParser::Parse(int rbp)
 //-----------------------------------------------------------------------------
 Variant *TokenParser::Eval()
 {
-  VariantStack *Stack=VariantStack::New();
-
   this->ByteCode->IteratorBegin();
   while (this->ByteCode->IteratorOk())
     {
     Token *t=this->ByteCode->GetCurrent();
-    t->Operate(Stack);
+    t->Operate(this->Stack);
 
     this->ByteCode->IteratorIncrement();
     }
 
-  Variant *res=Stack->Pop();
+  Variant *res=this->Stack->Pop();
   res->Register();
 
-  Stack->Clear();
-  Stack->Delete();
+  this->Stack->Clear();
 
   return res;
 }

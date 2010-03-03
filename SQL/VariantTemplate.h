@@ -93,7 +93,8 @@ public:
   VariantTemplateBinaryOperatorDecl(T,Assign)
 
   // Vector arithmetic - return a new VariantTemplate<double>
-  virtual VariantTemplate<VariantType> *Component(int i);
+  VariantTemplateBinaryOperatorDecl(VariantType,Component);
+///   virtual VariantTemplate<VariantType> *Component(Variant *i);
   virtual VariantTemplate<double> *L2Norm();
 
 protected:
@@ -160,14 +161,6 @@ void VariantTemplate<T>::Initialize(T data, int nComps, int nTups)
 
 //-----------------------------------------------------------------------------
 template<typename T>
-VariantTemplate<typename VariantTraits<T>::VariantType> *VariantTemplate<T>::Component(int i)
-{
-  typedef typename VariantTraits<T>::VariantType VariantType;
-  return VariantTemplate<VariantType>::New(this->Traits.Access(this->Data,i));
-}
-
-//-----------------------------------------------------------------------------
-template<typename T>
 VariantTemplate<double> *VariantTemplate<T>::L2Norm()
 {
   double norm=0.0;
@@ -218,7 +211,7 @@ VariantTemplate<RET_TYPE> *VariantTemplate<T>::METHOD_NAME()\
   return VariantTemplate<RET_TYPE>::New(CPP_OP(this->GetValue()));\
 }
 
-#define VariantTemplateBinaryOperatorDispatchImpl(RET_TYPE,METHOD_NAME,CPP_OP)\
+#define VariantTemplateBinaryOperatorDispatchImpl(METHOD_NAME)\
 /*-----------------------------------------------------------------------------*/\
 template<typename T>\
 Variant *VariantTemplate<T>::METHOD_NAME(Variant *rhs)\
@@ -277,7 +270,7 @@ VariantTemplate<RET_TYPE> *VariantTemplate<T>::METHOD_NAME(VariantTemplate<S> *r
   return VariantTemplate<RET_TYPE>::New(this->GetValue() CPP_OP rhs->GetValue());\
 }\
 \
-VariantTemplateBinaryOperatorDispatchImpl(RET_TYPE,METHOD_NAME,CPP_OP)
+VariantTemplateBinaryOperatorDispatchImpl(METHOD_NAME)
 
 #define VariantTemplateInPlaceBinaryOperatorImpl(METHOD_NAME,CPP_OP)\
 /*-----------------------------------------------------------------------------*/\
@@ -289,7 +282,7 @@ VariantTemplate<T> *VariantTemplate<T>::METHOD_NAME(VariantTemplate<S> *rhs)\
   return this;\
 }\
 \
-VariantTemplateBinaryOperatorDispatchImpl(T,METHOD_NAME,CPP_OP)
+VariantTemplateBinaryOperatorDispatchImpl(METHOD_NAME)
 
 // Logical
 VariantTemplateBinaryOperatorImpl(bool,Equal,==)
@@ -315,5 +308,17 @@ VariantTemplateInPlaceBinaryOperatorImpl(SubtractAssign,-=)
 VariantTemplateInPlaceBinaryOperatorImpl(MultiplyAssign,*=)
 VariantTemplateInPlaceBinaryOperatorImpl(DivideAssign,/=)
 VariantTemplateInPlaceBinaryOperatorImpl(Assign,=)
+
+// Other
+
+//-----------------------------------------------------------------------------
+template<typename T>
+template<typename S>
+VariantTemplate<typename VariantTraits<T>::VariantType> *VariantTemplate<T>::Component(VariantTemplate<S> *rhs)
+{
+  typedef typename VariantTraits<T>::VariantType VariantType;
+  return VariantTemplate<VariantType>::New(this->Traits.Access(this->Data,rhs->GetValue()));
+}
+VariantTemplateBinaryOperatorDispatchImpl(Component)
 
 #endif

@@ -43,6 +43,8 @@ TerminationTokenImpl(Program) // EOF
 TerminationTokenImpl(Bracket) // ]
 TerminationTokenImpl(Paren)   // )
 
+typedef ParenTerminator CloseParen;
+typedef BracketTerminator CloseBracket;
 
 //=============================================================================
 class Operand : public Token
@@ -59,11 +61,6 @@ public:
   virtual void Nud()
     {
     this->Parser->GetByteCode()->Append(this);
-
-    /// Variant *v=this->GetValue();
-    /// v->Register();
-    /// cerr << " " << *v;
-    /// return v; 
     }
 
   virtual void Operate(VariantStack *Stack);
@@ -80,6 +77,7 @@ private:
 };
 
 //-----------------------------------------------------------------------------
+inline
 Operand *Operand::New(double d, TokenParser *p)
 {
   Variant *v=DoubleVariant::New(d);
@@ -89,14 +87,15 @@ Operand *Operand::New(double d, TokenParser *p)
 }
 
 //-----------------------------------------------------------------------------
+inline
 void Operand::Operate(VariantStack *Stack)
 {
   Variant *v=this->GetValue();
   Stack->Push(v);
-  cerr << "(" << *v << ")" << endl;
 }
 
 //-----------------------------------------------------------------------------
+inline
 Operand *Operand::New(Variant *v, TokenParser *p)
 {
   return new Operand(v,p);
@@ -131,22 +130,21 @@ private:\
 };\
 \
 /*-----------------------------------------------------------------------------*/\
+inline \
 void OPERATOR_NAME::Led()\
 {\
   this->GetTokenParser()->Parse(this->Lbp() BP_REDUCTION);\
   this->Parser->GetByteCode()->Append(this);\
-  /**Variant *right=this->GetTokenParser()->Parse(this->Lbp() BP_REDUCTION);*/\
-  /**cerr << " " #OPERATOR_NAME;*/\
-  /**return left->OPERATOR_NAME(right);*/\
 }\
 \
 /*-----------------------------------------------------------------------------*/\
+inline \
 void OPERATOR_NAME::Operate(VariantStack *Stack)\
 {\
   Variant *right=Stack->Pop();\
   Variant *left=Stack->Pop();\
   Stack->PushNew(left->OPERATOR_NAME(right));\
-  cerr << "(" << *left << " " << *right << " " #OPERATOR_NAME << ")" << endl;\
+  /*cerr << "(" << *left << " " << *right << " " #OPERATOR_NAME << ")" << endl;*/\
 }
 
 InfixOperatorImpl(Add,ADDITION_BP,)
@@ -189,16 +187,10 @@ private:
 };
 
 //-----------------------------------------------------------------------------
+inline
 void Bracket::Led()
 {
-  ///Variant *right=this->GetTokenParser()->Parse(OPERAND_BP);
-  /// for now assume constant only. if this is the result of a
-  /// complex expression then we do not want to increment the
-  /// ref count.
-  ///right->Register();
-
   this->GetTokenParser()->Parse(OPERAND_BP);
-
   // Validate that there is a ] token next in line and move
   // past it.
   Token *t=this->Parser->GetProgram()->GetCurrent();
@@ -209,10 +201,8 @@ void Bracket::Led()
     }
   this->Parser->GetProgram()->IteratorIncrement();
 
-  // TODO Push Component operator on tho the bytecode. I think the index is pushed...
-
-  ///return left->Component(right);
-  ///return 0;
+  // TODO Push Component operator on tho the bytecode. the index
+  // should be pushed by the preceding call to Parse
 }
 
 #define PrefixOperatorImpl(OPERATOR_NAME,OPERATOR_BP)\
@@ -243,21 +233,20 @@ private:\
 };\
 \
 /*-----------------------------------------------------------------------------*/\
+inline \
 void OPERATOR_NAME::Nud()\
 {\
   this->GetTokenParser()->Parse(this->Nbp());\
   this->Parser->GetByteCode()->Append(this);\
-  /**Variant *right=this->GetTokenParser()->Parse(this->Nbp());*/\
-  /**cerr << " " #OPERATOR_NAME ;*/\
-  /**return right->OPERATOR_NAME();*/\
 }\
 \
 /*-----------------------------------------------------------------------------*/\
+inline \
 void OPERATOR_NAME::Operate(VariantStack *Stack)\
 {\
   Variant *right=Stack->Pop();\
   Stack->PushNew(right->OPERATOR_NAME());\
-  cerr << "(" << *right <<  " " #OPERATOR_NAME << ")" << endl;\
+  /*cerr << "(" << *right <<  " " #OPERATOR_NAME << ")" << endl;*/\
 }
 
 PrefixOperatorImpl(Negate,UNARY_BP)
@@ -265,6 +254,7 @@ PrefixOperatorImpl(Not,UNARY_BP)
 
 
 // Minus is an infix token that ecompasses both subtract and negate.
+// It will insert the appropriate token into the byte code.
 //=============================================================================
 class Minus : public Token
 {
@@ -292,6 +282,7 @@ private:
 };
 
 //-----------------------------------------------------------------------------
+inline
 void Minus::Nud()
 {
   this->GetTokenParser()->Parse(this->Nbp());
@@ -299,13 +290,10 @@ void Minus::Nud()
   Negate *neg=Negate::New(this->Parser);
   this->Parser->GetByteCode()->Append(neg);
   neg->Delete();
-
-  /// Variant *right=this->GetTokenParser()->Parse(this->Nbp());
-  /// cerr << " Negate";
-  /// return right->Negate();
 }
 
 //-----------------------------------------------------------------------------
+inline
 void Minus::Led()
 {
   this->GetTokenParser()->Parse(this->Lbp());
@@ -313,10 +301,6 @@ void Minus::Led()
   Subtract *sub=Subtract::New(this->Parser);
   this->Parser->GetByteCode()->Append(sub);
   sub->Delete();
-
-  /// Variant *right=this->GetTokenParser()->Parse(this->Lbp());
-  /// cerr << " Subtract";
-  /// return left->Subtract(right);
 }
 
 
@@ -347,6 +331,7 @@ private:
 };
 
 //-----------------------------------------------------------------------------
+inline
 void Paren::Nud()
 {
   this->GetTokenParser()->Parse(OPERAND_BP);
@@ -359,24 +344,6 @@ void Paren::Nud()
     throw e;
     }
   this->Parser->GetProgram()->IteratorIncrement();
-
-  /// Variant *right=this->GetTokenParser()->Parse(OPERAND_BP);
-  /// for now assume the result is the result of a complex expression
-  /// if it were constant then we'd have to increment its refcount to
-  /// avoid double free.
-  /// right->Register();
-
-  /// Validate that there is a ) token next in line and move
-  /// past it.
-  /// Token *t=this->Parser->GetProgram()->GetCurrent();
-  /// if (!dynamic_cast<ParenTerminator*>(t))
-  ///   {
-  ///   SyntaxError e;
-  ///   throw e;
-  ///   }
-  /// this->Parser->GetProgram()->IteratorIncrement();
-
-  /// return right;
 }
 
 #endif
