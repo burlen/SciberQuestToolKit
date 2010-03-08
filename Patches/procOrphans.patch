@@ -1,0 +1,348 @@
+Index: Qt/Core/pqCommandServerStartup.h
+===================================================================
+RCS file: /cvsroot/ParaView3/ParaView3/Qt/Core/pqCommandServerStartup.h,v
+retrieving revision 1.11
+diff -u -r1.11 pqCommandServerStartup.h
+--- Qt/Core/pqCommandServerStartup.h	4 Apr 2008 13:31:57 -0000	1.11
++++ Qt/Core/pqCommandServerStartup.h	12 Feb 2010 21:47:46 -0000
+@@ -41,6 +41,8 @@
+ #include <QPointer>
+ #include <QTimer>
+ 
++class pqServer;
++
+ /////////////////////////////////////////////////////////////////////////////
+ // pqCommandServerStartup
+ 
+@@ -56,11 +58,13 @@
+     const pqServerResource& server,
+     bool shouldSave,
+     vtkPVXMLElement* configuration);
++  ~pqCommandServerStartup();
++  void cleanUpProcess();
+ 
+   const QString getName();
+-  const pqServerResource getServer();  
++  const pqServerResource getServer();
+   vtkPVXMLElement* getConfiguration();
+-  
++
+   void execute(const OptionsT& options);
+ 
+   const QString getExecutable();
+@@ -74,12 +78,16 @@
+   void onStarted();
+   void onError(QProcess::ProcessError error);
+   void onDelayComplete();
++  void onProcessFinished(){ this->cleanUpProcess(); }
++  void onServerConnect(pqServer *server);
++  void onServerDisconnect(pqServer *server);
+ 
+ private:
+   const QString Name;
+-  const pqServerResource Server;
++  const pqServerResource ServerResource;
+   vtkSmartPointer<vtkPVXMLElement> Configuration;
+-  QPointer<QProcess> Process;
++  QProcess *Process;
++  pqServer *Server;
+   QTimer Timer;
+ };
+ 
+Index: Qt/Core/pqCommandServerStartup.cxx
+===================================================================
+RCS file: /cvsroot/ParaView3/ParaView3/Qt/Core/pqCommandServerStartup.cxx,v
+retrieving revision 1.21
+diff -u -r1.21 pqCommandServerStartup.cxx
+--- Qt/Core/pqCommandServerStartup.cxx	30 Sep 2009 19:16:02 -0000	1.21
++++ Qt/Core/pqCommandServerStartup.cxx	12 Feb 2010 21:47:47 -0000
+@@ -44,6 +44,9 @@
+ #include "vtkPVXMLElement.h"
+ 
+ #include "pqServerResource.h"
++#include "pqServer.h"
++#include "pqApplicationCore.h"
++#include "pqServerManagerModel.h"
+ 
+ class pqCommandServerStartupWSAInit
+ {
+@@ -81,15 +84,70 @@
+     const QString& name,
+     const pqServerResource& server,
+     bool save,
+-    vtkPVXMLElement* configuration) :
++    vtkPVXMLElement* configuration)
++        :
+   pqServerStartup(save),
+   Name(name),
+-  Server(server.schemeHostsPorts()),
++  ServerResource(server.schemeHostsPorts()),
+   Configuration(configuration),
+-  Process(NULL)
++  Process(NULL),
++  Server(NULL)
+ {
+ }
+ 
++pqCommandServerStartup::~pqCommandServerStartup()
++{
++  this->cleanUpProcess();
++}
++
++void pqCommandServerStartup::cleanUpProcess()
++{
++  if (this->Process)
++    {
++    // We're about to close the process, we should stop resonding
++    // to its signals and on its behalf.
++    pqServerManagerModel *smm
++      = pqApplicationCore::instance()->getServerManagerModel();
++    QObject::disconnect(
++      smm,SIGNAL(serverAdded(pqServer *)),
++      this, SLOT(onServerConnect(pqServer *)));
++    QObject::disconnect(
++      smm,SIGNAL(serverRemoved(pqServer *)),
++      this, SLOT(onServerDisconnect(pqServer *)));
++
++    QObject::disconnect(
++      this->Process, SIGNAL(readyReadStandardError()),
++      this, SLOT(onReadyReadStandardError()));
++
++    QObject::disconnect(
++      this->Process, SIGNAL(readyReadStandardOutput()),
++      this, SLOT(onReadyReadStandardOutput()));
++
++    QObject::disconnect(
++      this->Process, SIGNAL(error(QProcess::ProcessError)),
++      this, SLOT(onError(QProcess::ProcessError)));
++
++    QObject::disconnect(
++      this->Process, SIGNAL(started()),
++      this, SLOT(onStarted()));
++    QObject::disconnect(
++      &this->Timer, SIGNAL(timeout()),
++      this, SLOT(onDelayComplete()));
++
++    // close running process
++    if (this->Process->state()==QProcess::Running)
++      {
++      this->Process->close();
++      }
++    // free the object
++    delete this->Process;
++    this->Process=NULL;
++    }
++
++  // mark the object as unassociated.
++  this->Server=NULL;
++}
++
+ const QString pqCommandServerStartup::getName()
+ {
+   return this->Name;
+@@ -97,7 +155,7 @@
+ 
+ const pqServerResource pqCommandServerStartup::getServer()
+ {
+-  return this->Server;
++  return this->ServerResource;
+ }
+ 
+ vtkPVXMLElement* pqCommandServerStartup::getConfiguration()
+@@ -110,32 +168,32 @@
+   // Generate predefined variables ...
+   OptionsT options;
+   options["PV_CONNECTION_URI"] =
+-    this->Server.toURI();
++    this->ServerResource.toURI();
+   options["PV_CONNECTION_SCHEME"] =
+-    this->Server.scheme();
++    this->ServerResource.scheme();
+   options["PV_CLIENT_HOST"] =
+     localHostName();
+   options["PV_SERVER_HOST"] =
+-    this->Server.host();
++    this->ServerResource.host();
+   options["PV_SERVER_PORT"] =
+-    QString::number(this->Server.port(11111));
++    QString::number(this->ServerResource.port(11111));
+   options["PV_DATA_SERVER_HOST"] =
+-    this->Server.dataServerHost();
++    this->ServerResource.dataServerHost();
+   options["PV_DATA_SERVER_PORT"] =
+-    QString::number(this->Server.dataServerPort(11111));
++    QString::number(this->ServerResource.dataServerPort(11111));
+   options["PV_RENDER_SERVER_HOST"] =
+-    this->Server.renderServerHost();
++    this->ServerResource.renderServerHost();
+   options["PV_RENDER_SERVER_PORT"] =
+-    QString::number(this->Server.renderServerPort(22221));
++    QString::number(this->ServerResource.renderServerPort(22221));
+   options["PV_CONNECT_ID"] = "";
+   options["PV_USERNAME"] = ""; // Unused at the moment
+-  
++
+   // Merge user variables, allowing user variables to "override" the predefined variables ...
+   for(OptionsT::const_iterator option = user_options.begin(); option != user_options.end(); ++option)
+     {
+     const QString key = option.key();
+     const QString value = option.value();
+-    
++
+     options.erase(options.find(key));
+     options.insert(key, value);
+     }
+@@ -149,7 +207,7 @@
+     {
+     environment.push_back(option.key() + "=" + option.value());
+     }
+-  
++
+   // Setup the process arguments ...
+   QString executable = this->getExecutable();
+   // const double timeout = this->getTimeout();
+@@ -176,7 +234,7 @@
+       const QString after = options[variable];
+       argument.replace(before, after);
+       }
+-      
++
+     if(argument.isEmpty())
+       {
+       i = arguments.erase(i);
+@@ -187,32 +245,45 @@
+       }
+     }
+ 
++  this->cleanUpProcess();
++
+   this->Process = new QProcess;
+-  QObject::connect(this->Process, SIGNAL(finished(int, QProcess::ExitStatus)),
+-                   this->Process, SLOT(deleteLater()));
++
++  // set up connections to learn about which server is 
++  // created/destroyed.
++  pqServerManagerModel *smm
++    = pqApplicationCore::instance()->getServerManagerModel();
++  QObject::connect(
++    smm,SIGNAL(serverAdded(pqServer *)),
++    this, SLOT(onServerConnect(pqServer *)));
++  QObject::connect(
++    smm,SIGNAL(serverRemoved(pqServer *)),
++    this, SLOT(onServerDisconnect(pqServer *)));
+ 
+   this->Process->setEnvironment(environment);
+ 
+   QObject::connect(
+     this->Process, SIGNAL(readyReadStandardError()),
+     this, SLOT(onReadyReadStandardError()));
+-    
++
+   QObject::connect(
+     this->Process, SIGNAL(readyReadStandardOutput()),
+     this, SLOT(onReadyReadStandardOutput()));
+-    
++
+   QObject::connect(
+     this->Process, SIGNAL(error(QProcess::ProcessError)),
+     this, SLOT(onError(QProcess::ProcessError)));
+ 
++  // After some ellapsed time examine the newly created process
++  // to determine if we have successfully connected or if something
++  // else has happened. Will write a report to the terminal.
+   QObject::connect(
+     this->Process, SIGNAL(started()),
+     this, SLOT(onStarted()));
+-  
+   QObject::connect(
+     &this->Timer, SIGNAL(timeout()),
+     this, SLOT(onDelayComplete()));
+-    
++
+   this->Process->start(executable, arguments);
+ }
+ 
+@@ -229,14 +300,14 @@
+       result = xml_command->GetAttribute("exec");
+       }
+     }
+-    
++
+   return result;
+ }
+ 
+ double pqCommandServerStartup::getTimeout()
+ {
+   double result = 0.0;
+-  
++
+   vtkPVXMLElement* xml = this->Configuration;
+   if(QString(xml->GetName()) == "CommandStartup")
+     {
+@@ -246,14 +317,14 @@
+       result = QString(xml_command->GetAttribute("timeout")).toDouble();
+       }
+     }
+-    
++
+   return result;
+ }
+ 
+ double pqCommandServerStartup::getDelay()
+ {
+   double result = 0.0;
+-  
++
+   vtkPVXMLElement* xml = this->Configuration;
+   if(QString(xml->GetName()) == "CommandStartup")
+     {
+@@ -263,7 +334,7 @@
+       result = QString(xml_command->GetAttribute("delay")).toDouble();
+       }
+     }
+-    
++
+   return result;
+ }
+ 
+@@ -296,7 +367,7 @@
+         }
+       }
+     }
+-    
++
+   return results;
+ }
+ 
+@@ -334,7 +405,7 @@
+       break;
+     }
+   this->Timer.stop();
+-  
++
+   emit this->failed();
+ }
+ 
+@@ -351,3 +422,22 @@
+   emit this->succeeded();
+ }
+ 
++void pqCommandServerStartup::onServerConnect(pqServer *server)
++{
++  // make this a one time occurance per process.
++  if (this->Process && this->Server==NULL)
++    {
++    // save the server id so we can identify our server during
++    // server remove events
++    this->Server=server;
++    }
++}
++
++void pqCommandServerStartup::onServerDisconnect(pqServer *server)
++{
++  // only react to our server's events
++  if (server==this->Server)
++    {
++    this->cleanUpProcess();
++    }
++}

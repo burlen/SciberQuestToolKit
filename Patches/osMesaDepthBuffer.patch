@@ -1,0 +1,17 @@
+Index: VTK/Rendering/vtkXOpenGLRenderWindow.cxx
+===================================================================
+RCS file: /cvsroot/ParaView3/ParaView3/VTK/Rendering/vtkXOpenGLRenderWindow.cxx,v
+retrieving revision 1.104
+diff -u -r1.104 vtkXOpenGLRenderWindow.cxx
+--- VTK/Rendering/vtkXOpenGLRenderWindow.cxx	20 Apr 2009 14:08:45 -0000	1.104
++++ VTK/Rendering/vtkXOpenGLRenderWindow.cxx	28 Jan 2010 17:17:07 -0000
+@@ -827,7 +827,8 @@
+       }    
+     if (!this->Internal->OffScreenContextId)
+       {
+-      this->Internal->OffScreenContextId = OSMesaCreateContext(GL_RGBA, NULL);
++      this->Internal->OffScreenContextId
++        = OSMesaCreateContextExt(GL_RGBA,32,8,16,NULL);
+       }
+     this->MakeCurrent();
+     }
