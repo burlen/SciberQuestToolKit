@@ -122,7 +122,8 @@ pqSQPlaneSource::pqSQPlaneSource(
 
   // set up save/restore buttons
   QObject::connect(this->Form->save,SIGNAL(clicked()),this,SLOT(savePlaneState()));
-  QObject::connect(this->Form->restore,SIGNAL(clicked()),this,SLOT(loadPlaneState()));
+  //QObject::connect(this->Form->restore,SIGNAL(clicked()),this,SLOT(loadPlaneState()));
+  QObject::connect(this->Form->restore,SIGNAL(clicked()),this,SLOT(Restore()));
   QObject::connect(this->Form->snap,SIGNAL(clicked()),this,SLOT(SnapViewToNormal()));
 
   // set up the dimension calculator

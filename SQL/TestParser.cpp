@@ -18,6 +18,7 @@ int main(int argc, char **argv)
     cin.getline(buf,1024);
     if (cin.eof())
       {
+      cerr << "EOF encountered." << endl;
       break;
       }
     size_t n=cin.gcount();
@@ -40,9 +41,6 @@ int main(int argc, char **argv)
     parser->Clear();
     parser->Delete();
     }
-
-  // TestArithmetic();
-  // TestLogic();
 
   return 0;
 }
