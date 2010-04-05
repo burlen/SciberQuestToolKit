@@ -8,7 +8,6 @@ Copyright 2008 SciberQuest Inc.
 -->
 <ParaViewReaders>
 
-  <!--<Proxy group="sources" name="PVImageReader" />-->
   <Proxy group="sources" name="BOVReader" />
   <Proxy group="sources" name="BOVMetaReader" />
 
