@@ -33,7 +33,7 @@
 
 #define VTK_MAX_SPHERE_RESOLUTION 1024
 
-class VTK_GRAPHICS_EXPORT vtkSQSphereSource : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkSQSphereSource : public vtkPolyDataAlgorithm
 {
 public:
   vtkTypeRevisionMacro(vtkSQSphereSource,vtkPolyDataAlgorithm);

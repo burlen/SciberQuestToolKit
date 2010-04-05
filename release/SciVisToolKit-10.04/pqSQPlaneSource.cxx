@@ -42,9 +42,6 @@ Copyright 2008 SciberQuest Inc.
 #include <QPalette>
 #include <QSettings>
 
-
-#include <unistd.h>
-
 #include "FsUtils.h"
 #if defined pqSQPlaneSourceDEBUG
 #include <PrintUtils.h>

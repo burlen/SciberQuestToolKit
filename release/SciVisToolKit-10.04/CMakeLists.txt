@@ -64,7 +64,7 @@ SET_SOURCE_FILES_PROPERTIES(
 
 if (WIN32)
   # Augment windows with some posix codes.
-  set(_SOURCES ${_SOURCES} windirent.cxx)
+  set(_SOURCES ${_SOURCES} win_windirent.cxx)
 endif (WIN32)
 
 if (UNIX)
@@ -153,6 +153,8 @@ add_paraview_plugin(
   SOURCES ${_SOURCES} )
 
 install(TARGETS SciVisToolKit DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+target_link_libraries(SciVisToolKit)
 
 # gentp -- command line utility
 if (UNIX)

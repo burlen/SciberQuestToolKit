@@ -31,6 +31,10 @@ Copyright 2008 SciberQuest Inc.
 #include "PrintUtils.h"
 #include "minmax.h"
 
+#ifdef WIN32
+#include <Winsock2.h>
+#endif
+
 #if defined vtkBOVReaderTIME
 #include <sys/time.h>
 #include <unistd.h>
