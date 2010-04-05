@@ -34,7 +34,11 @@ extern "C"
 
 
 typedef struct win_DIR win_DIR;
-typedef struct win_dirent win_dirent;
+
+struct win_dirent
+{
+    char *d_name;
+};
 
 win_DIR           *win_opendir(const char *);
 int			       win_closedir(win_DIR *);

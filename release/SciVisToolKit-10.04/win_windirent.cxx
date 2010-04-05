@@ -19,11 +19,6 @@ extern "C"
 {
 #endif
 
-struct win_dirent
-{
-    char *d_name;
-};
-
 struct win_DIR
 {
     long                 handle; /* -1 for failed rewind */
