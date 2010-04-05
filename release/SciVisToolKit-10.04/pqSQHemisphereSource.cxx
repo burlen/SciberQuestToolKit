@@ -93,8 +93,8 @@ pqSQHemisphereSource::pqSQHemisphereSource(
   this->setModified();
 
   // set up save/restore buttons
-  QObject::connect(this->Form->save,SIGNAL(clicked()),this,SLOT(Save()));
-  QObject::connect(this->Form->restore,SIGNAL(clicked()),this,SLOT(Restore()));
+  QObject::connect(this->Form->save,SIGNAL(clicked()),this,SLOT(saveConfiguration()));
+  QObject::connect(this->Form->restore,SIGNAL(clicked()),this,SLOT(loadConfiguration()));
 
   // These connection let PV know that we have changed, and makes the apply 
   // button activated.
@@ -254,6 +254,8 @@ void pqSQHemisphereSource::loadConfiguration()
     }
 
   reader->Delete();
+
+  this->PullServerConfig();
 }
 
 //-----------------------------------------------------------------------------

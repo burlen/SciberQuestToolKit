@@ -42,6 +42,14 @@ vtkSQHemisphereSourceConfigurationWriter::~vtkSQHemisphereSourceConfigurationWri
 {}
 
 //-----------------------------------------------------------------------------
+void vtkSQHemisphereSourceConfigurationWriter::SetProxy(
+      vtkSMProxy *proxy)
+{
+  this->vtkSMProxyConfigurationWriter::SetProxy(proxy);
+  this->GetPropertyIterator()->SetProxy(proxy);
+}
+
+//-----------------------------------------------------------------------------
 void vtkSQHemisphereSourceConfigurationWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);

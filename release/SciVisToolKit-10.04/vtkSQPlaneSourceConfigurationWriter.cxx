@@ -45,6 +45,14 @@ vtkSQPlaneSourceConfigurationWriter::~vtkSQPlaneSourceConfigurationWriter()
 {}
 
 //-----------------------------------------------------------------------------
+void vtkSQPlaneSourceConfigurationWriter::SetProxy(
+      vtkSMProxy *proxy)
+{
+  this->vtkSMProxyConfigurationWriter::SetProxy(proxy);
+  this->GetPropertyIterator()->SetProxy(proxy);
+}
+
+//-----------------------------------------------------------------------------
 void vtkSQPlaneSourceConfigurationWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);

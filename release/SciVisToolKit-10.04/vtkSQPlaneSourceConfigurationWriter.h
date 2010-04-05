@@ -32,6 +32,10 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQPlaneSourceConfigurationWriter *New();
 
+  // Description:
+  // Override sets iterator proxy.
+  virtual void SetProxy(vtkSMProxy *proxy);
+
 protected:
   vtkSQPlaneSourceConfigurationWriter();
   ~vtkSQPlaneSourceConfigurationWriter();

@@ -90,25 +90,13 @@ message(STATUS "-- Including custom panels.")
 set(_IFACES)
 set(_IFACE_SRCS)
 # Qt custom panels
-if (UNIX)
-  QT4_WRAP_CPP(MOC_SRCS pqProcessMonitor.h)
-  QT4_WRAP_UI(UI_SRCS pqProcessMonitorForm.ui)
-  ADD_PARAVIEW_OBJECT_PANEL(
-    IFACES IFACE_SRCS
-    CLASS_NAME pqProcessMonitor
-    XML_NAME vtkProcessMonitor
-    XML_GROUP sources)
-  set(_IFACES ${_IFACES} ${IFACES})
-  set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
-endif (UNIX)
-
 QT4_WRAP_CPP(MOC_SRCS pqSQHemisphereSource.h)
 QT4_WRAP_UI(UI_SRCS pqSQHemisphereSourceForm.ui)
 ADD_PARAVIEW_OBJECT_PANEL(
   IFACES IFACE_SRCS
   CLASS_NAME pqSQHemisphereSource
   XML_NAME vtkSQHemisphereSource
-  XML_GROUP sources filters)
+  XML_GROUP sources)
 set(_IFACES ${_IFACES} ${IFACES})
 set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
@@ -121,6 +109,18 @@ ADD_PARAVIEW_OBJECT_PANEL(
   XML_GROUP sources)
 set(_IFACES ${_IFACES} ${IFACES})
 set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+
+if (UNIX)
+  QT4_WRAP_CPP(MOC_SRCS pqProcessMonitor.h)
+  QT4_WRAP_UI(UI_SRCS pqProcessMonitorForm.ui)
+  ADD_PARAVIEW_OBJECT_PANEL(
+    IFACES IFACE_SRCS
+    CLASS_NAME pqProcessMonitor
+    XML_NAME vtkProcessMonitor
+    XML_GROUP sources)
+  set(_IFACES ${_IFACES} ${IFACES})
+  set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+endif (UNIX)
 
 set (_SOURCES
   ${_SOURCES}
