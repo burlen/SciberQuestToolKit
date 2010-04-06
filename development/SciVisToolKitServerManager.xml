@@ -12,135 +12,6 @@ Copyright 2008 SciberQuest Inc.
 <!--
 *******************************************************************************
 *                                                                             *
-*                                  3D-Widgets                                 *
-*                                                                             *
-*******************************************************************************
--->
-<ProxyGroup name="3d_widgets">
-  <Proxy name="SQHandleWidget" class="vtkSQHandleWidget">
-    <ProxyProperty name="Representation" command="SetRepresentation">
-      <ProxyGroupDomain name="groups">
-        <Group name="props" />
-      </ProxyGroupDomain>
-    </ProxyProperty>
-
-    <IntVectorProperty
-      name="Enabled"
-      command="SetEnabled"
-      number_of_elements="1"
-      default_values="0">
-      <BooleanDomain/>
-    </IntVectorProperty>
-  </Proxy>
-</ProxyGroup>
-
-<!--
-*******************************************************************************
-*                                                                             *
-*                               3D-Widget-Props                               *
-*                                                                             *
-*******************************************************************************
--->
-<ProxyGroup name="props">
-  <Proxy
-    name="SQHandleRepresentation"
-    class="vtkSQPointHandleRepresentation3D">
-
-    <IntVectorProperty
-        name="Visibility"
-        command="SetVisibility"
-        number_of_elements="1"
-        default_values="1"
-        animateable="1">
-        <BooleanDomain name="bool" />
-     </IntVectorProperty>
-
-     <DoubleVectorProperty 
-        name="WorldPosition"
-        command="SetWorldPosition"
-        number_of_elements="3"
-        argument_is_array="1"
-        information_property="WorldPositionInfo"
-        default_values="0 0 0">
-        <DoubleRangeDomain name="range"/>
-     </DoubleVectorProperty>
-
-     <DoubleVectorProperty 
-        name="WorldPositionInfo"
-        command="GetWorldPosition"
-        information_only="1">
-        <SimpleDoubleInformationHelper/>
-     </DoubleVectorProperty>
-
-     <ProxyProperty name="Renderer" command="SetRenderer">
-       <ProxyGroupDomain name="groups">
-         <Group name="renderers"/>
-       </ProxyGroupDomain>
-     </ProxyProperty>
-   </Proxy>
-</ProxyGroup>
-
-<!--
-*******************************************************************************
-*                                                                             *
-*                            3D-Widget-Representaitons                        *
-*                                                                             *
-*******************************************************************************
--->
-<ProxyGroup name="representations">
-  <NewWidgetRepresentationProxy name="SQHandleWidgetRepresentation">
-    <SubProxy>
-      <Proxy
-        name="Prop"
-        proxygroup="props"
-        proxyname="SQHandleRepresentation">
-      </Proxy>
-      <ExposedProperties>
-        <Property name="Visibility" />
-        <Property name="WorldPositionInfo" />
-        <Property name="WorldPosition" />
-      </ExposedProperties>
-    </SubProxy>
-
-    <SubProxy>
-      <Proxy name="Widget"
-        proxygroup="3d_widgets"
-        proxyname="SQHandleWidget">
-      </Proxy>
-      <ExposedProperties>
-        <Property name="Enabled" />
-      </ExposedProperties>
-    </SubProxy>
-  </NewWidgetRepresentationProxy>
-
-  <NewWidgetRepresentationProxy
-    name="SQPointSourceWidgetRepresentation"
-    base_proxygroup="representations"
-    base_proxyname="SQHandleWidgetRepresentation">
-    <!-- 
-      This is same as handle widget except that it provides
-      dummy properties for the radius/number of points in a point 
-      source. 
-    -->
-    <DoubleVectorProperty
-      name="Radius"
-      number_of_elements="1"
-      default_values="1.0">
-      <DoubleRangeDomain name="range" min="0" />
-    </DoubleVectorProperty>
-  
-    <IntVectorProperty
-      name="NumberOfPoints"
-      number_of_elements="1"
-      default_values="1">
-      <IntRangeDomain name="range" min="1" />
-    </IntVectorProperty>
-  </NewWidgetRepresentationProxy>
-</ProxyGroup>
-
-<!--
-*******************************************************************************
-*                                                                             *
 *                                   Readers                                   *
 *                                                                             *
 *******************************************************************************
@@ -329,159 +200,6 @@ Copyright 2008 SciberQuest Inc.
   </Hints>
 </SourceProxy>
 
-<!--===================================================================-->
-    <SourceProxy name="PVImageReader" 
-                 class="vtkPVImageReader"
-                 label="PV Image Reader">
-     <Documentation
-       short_help="Read raw regular rectilinear grid data from a file." 
-       long_help="Read raw regular rectilinear grid data from a file. The dimensions and type of the data must be specified.">
-       The Image reader reads raw regular rectilinear grid (image/volume) data from a file. Because no metadata is provided, the user must specify information about the size, spacing, dimensionality, etc. about the dataset.
-     </Documentation>
-     <!-- Unlike most readers, we need to show the "filename" so that users
-          can strip off the extension and replace it in the file pattern.
-          I'm creating this "Property" hint that has an attribute to force
-          whether the given property is shown in the GUI or not. -->
-     <Hints>
-       <Property name="FilePrefix" show="1"/>
-     </Hints>
-
-     <StringVectorProperty
-        name="FilePrefix"
-        command="SetFilePrefix"
-        number_of_elements="1">
-       <FileListDomain name="files"/>
-       <Documentation>
-         The text string contained in this property specifies the file prefix (directory plus common initial part of file name) for the raw binary uniform rectilinear grid dataset.
-       </Documentation>
-     </StringVectorProperty>
-
-     <StringVectorProperty
-        name="FilePattern"
-        command="SetFilePattern"
-        number_of_elements="1" 
-        default_values="%s">
-        <Documentation>
-          The text string contained in the property specifies the format string to determine the file names necessary for reading this dataset. In creating the filenames, %s will be replaced by the prefix and %d by a digit which represents the slice number in Z. The format string is the same as that used by printf.
-        </Documentation>
-     </StringVectorProperty>
-
-     <IntVectorProperty 
-        name="DataScalarType" 
-        command="SetDataScalarType" 
-        number_of_elements="1"
-        default_values="10" >
-       <EnumerationDomain name="enum">
-         <Entry value="2" text="char"/>
-         <Entry value="3" text="unsigned char"/>
-         <Entry value="4" text="short"/>
-         <Entry value="5" text="unsigned short"/>
-         <Entry value="6" text="int"/>
-         <Entry value="7" text="unsigned int"/>
-         <Entry value="8" text="long"/>
-         <Entry value="9" text="unsigned long"/>
-         <Entry value="10" text="float"/>
-         <Entry value="11" text="double"/>
-       </EnumerationDomain>
-       <Documentation>
-         The value of this property indicates the scalar type of the pixels/voxels in the file(s): short, int, float ...
-       </Documentation>
-     </IntVectorProperty>
-
-     <IntVectorProperty 
-        name="DataByteOrder" 
-        command="SetDataByteOrder" 
-        number_of_elements="1"
-        default_values="1" >
-       <EnumerationDomain name="enum">
-         <Entry value="0" text="BigEndian"/>
-         <Entry value="1" text="LittleEndian"/>
-       </EnumerationDomain>
-       <Documentation>
-         This property indicates the byte order of the binary file(s).
-       </Documentation>
-     </IntVectorProperty>
-
-     <IntVectorProperty 
-        name="FileDimensionality"
-        command="SetFileDimensionality"
-        number_of_elements="1" 
-        default_values="3">
-       <EnumerationDomain name="enum">
-         <Entry value="2" text="2"/>
-         <Entry value="3" text="3"/>
-       </EnumerationDomain>
-       <Documentation>
-         This property indicates whether the file(s) in this dataset contain slices (2D) or volumes (3D).
-       </Documentation>
-     </IntVectorProperty>
-
-      <DoubleVectorProperty
-         name="DataOrigin"
-         command="SetDataOrigin"
-         number_of_elements="3"
-         default_values="0.0 0.0 0.0" >
-        <DoubleRangeDomain name="range"/>
-        <Documentation>
-          The coordinate contained in this property specifies the position of the point with index (0,0,0).
-        </Documentation>
-      </DoubleVectorProperty>
-
-      <DoubleVectorProperty
-         name="DataSpacing"
-         command="SetDataSpacing"
-         number_of_elements="3"
-         default_values="1.0 1.0 1.0" >
-        <DoubleRangeDomain name="range"/>
-        <Documentation>
-          This property specifies the size of a voxel in each dimension.
-        </Documentation>
-      </DoubleVectorProperty>
-
-     <IntVectorProperty 
-        name="DataExtent"
-        command="SetDataExtent"
-        number_of_elements="6" 
-        default_values="0 0 0 0 0 0" >
-       <IntRangeDomain name="range"/>
-       <Documentation>
-         This property specifies the minimum and maximum index values of the data in each dimension (xmin, xmax, ymin, ymax, zmin, zmax).
-       </Documentation>
-     </IntVectorProperty>
-
-     <IntVectorProperty 
-        name="NumberOfScalarComponents"
-        command="SetNumberOfScalarComponents"
-        number_of_elements="1" 
-        default_values="1" >
-       <IntRangeDomain name="range"/>
-       <Documentation>
-         This property specifies the number of componenets the scalar value at each pixel or voxel has (e.g., RGB - 3 scalar components).
-       </Documentation>
-     </IntVectorProperty>
-
-     <StringVectorProperty
-        name="ScalarArrayName"
-        command="SetScalarArrayName"
-        number_of_elements="1" 
-        default_values="ImageFile">
-        <Documentation>
-          This property contains a text string listing a name to assign to the point-centered data array read.
-        </Documentation>
-     </StringVectorProperty>
-
-     <IntVectorProperty name="FileLowerLeft"
-                        command="SetFileLowerLeft"
-                        number_of_elements="1"
-                        default_values="1">
-       <BooleanDomain name="bool" />
-       <Documentation>
-         This property determines whether the data originates in the lower left corner (on) or the upper left corner (off).  Most scientific data is written with a right-handed axes that originates in the lower left corner.  However, several 2D image file formats write the image from the upper left corner.
-       </Documentation>
-     </IntVectorProperty>
-   <!-- End ImageReader -->
-   </SourceProxy>
-
 </ProxyGroup>
 
 
@@ -495,122 +213,11 @@ Copyright 2008 SciberQuest Inc.
 <ProxyGroup name="common-ui">
 <!-- ==================================================================== -->
   <Proxy name="SQHemisphereUI">
-    <!-- Out -->
-    <OutputPort name="Northern Hemisphere" index="0" />
-    <OutputPort name="Southern Hemisphere" index="1" />
-
-    <DoubleVectorProperty 
-      name="GetCenter"
-      command="GetCenter"
-      information_only="1">
-      <SimpleDoubleInformationHelper/>
-    </DoubleVectorProperty>
-    <DoubleVectorProperty
-      name="Center"
-      command="SetCenter"
-      number_of_elements="3"
-      animateable="1"
-      default_values="0.0 0.0 0.0"
-      information_property="GetCenter">
-    <DoubleRangeDomain name="range"/>
-    <Documentation>
-      This property specifies the 3D coordinates for the center of the sphere.
-    </Documentation>
-  </DoubleVectorProperty>
-
-  <DoubleVectorProperty 
-    name="GetRadius"
-    command="GetRadius"
-    information_only="1">
-    <SimpleDoubleInformationHelper/>
-  </DoubleVectorProperty>
-  <DoubleVectorProperty
-    name="Radius"
-    command="SetRadius"
-    number_of_elements="1"
-    animateable="1"
-    default_values="0.5"
-    information_property="GetRadius">
-    <DoubleRangeDomain name="range" min="1E-15"/>
-    <Documentation>
-      This property specifies the radius of the sphere.
-    </Documentation>
-  </DoubleVectorProperty>
-
-  <IntVectorProperty 
-    name="GetResolution"
-    command="GetResolution"
-    information_only="1">
-    <SimpleIntInformationHelper/>
-  </IntVectorProperty>
-  <IntVectorProperty
-      name="Resolution"
-      command="SetResolution"
-      number_of_elements="1"
-      default_values="8"
-      information_property="GetResolution">
-    <IntRangeDomain name="range" min="3" max="1024" />
-    <Documentation>
-      The value of this property controls the number of lat-lon linies in the output.
-    </Documentation>
-  </IntVectorProperty>
-
-   <!-- End Hemisphere UI -->
+    
    </Proxy>
 </ProxyGroup>
 
 <ProxyGroup name="sources">
-   <!-- ==================================================================== -->
-   <SourceProxy name="vtkSQPointSource" class="vtkSQPointSource" label="SQ Point Source">
-      <Documentation long_help="Create a point cloud of a certain size, radius, and center."
-                     short_help="Create a point cloud">
-        The point source creates a specified number of points within a given radius about a specified center point.
-      </Documentation>
-      <DoubleVectorProperty
-         name="Center"
-         command="SetCenter"
-         number_of_elements="3"
-         animateable="1"
-         default_values="0.0 0.0 0.0" >
-        <DoubleRangeDomain name="range"/>
-        <Documentation>
-          This property specifies the 3D coordinates of the center of the point cloud.
-        </Documentation>
-      </DoubleVectorProperty>
-
-      <IntVectorProperty
-         name="NumberOfPoints"
-         command="SetNumberOfPoints"
-         number_of_elements="1"
-         animateable="1"
-         default_values="1" >
-         <IntRangeDomain name="range" min="1"/>
-         <Documentation>
-           This property specifies the number of points in the point cloud.
-         </Documentation>
-      </IntVectorProperty>
-
-      <DoubleVectorProperty
-         name="Radius"
-         command="SetRadius"
-         number_of_elements="1"
-         animateable="1"
-         default_values="0.0" >
-        <DoubleRangeDomain name="range" min="0"/>
-        <Documentation>
-          This property specifies the radius of the point cloud, measured from the value of the Center property.
-        </Documentation>
-      </DoubleVectorProperty>
-
-      <Hints>
-        <PropertyGroup type="SQPointSource" >
-          <Property function="WorldPosition"  name="Center" />
-          <Property function="Radius"         name="Radius" />
-          <Property function="NumberOfPoints" name="NumberOfPoints" />
-        </PropertyGroup>
-      </Hints>
-   <!-- End PointSource -->
-   </SourceProxy>
 
   <!-- ==================================================================== -->
   <SourceProxy name="vtkSQPlaneSource" class="vtkSQPlaneSource" label="SQ Plane">
@@ -825,33 +432,76 @@ Copyright 2008 SciberQuest Inc.
   <SourceProxy
     name="vtkSQHemisphereSource"
     class="vtkSQHemisphereSource"
-    label="SQ Hemisphere"
-    base_proxyname="SQHemisphereUI"
-    base_proxygroup="common-ui">
+    label="SQ Hemisphere">
     <Documentation
       long_help="Create a 3D sphere given a center and radius."
       short_help="Create a 3D sphere">
       The Hemisphere source can be used to add a polygonal sphere to the 3D scene. The output of the Hemisphere source is polygonal data with point normals defined.
     </Documentation>
+
+    <!-- Out -->
+    <OutputPort name="Northern Hemisphere" index="0" />
+    <OutputPort name="Southern Hemisphere" index="1" />
+
+    <DoubleVectorProperty 
+      name="GetCenter"
+      command="GetCenter"
+      information_only="1">
+      <SimpleDoubleInformationHelper/>
+    </DoubleVectorProperty>
+    <DoubleVectorProperty
+      name="Center"
+      command="SetCenter"
+      number_of_elements="3"
+      animateable="1"
+      default_values="0.0 0.0 0.0"
+      information_property="GetCenter">
+    <DoubleRangeDomain name="range"/>
+    <Documentation>
+      This property specifies the 3D coordinates for the center of the sphere.
+    </Documentation>
+  </DoubleVectorProperty>
+
+  <DoubleVectorProperty 
+    name="GetRadius"
+    command="GetRadius"
+    information_only="1">
+    <SimpleDoubleInformationHelper/>
+  </DoubleVectorProperty>
+  <DoubleVectorProperty
+    name="Radius"
+    command="SetRadius"
+    number_of_elements="1"
+    animateable="1"
+    default_values="0.5"
+    information_property="GetRadius">
+    <DoubleRangeDomain name="range" min="1E-15"/>
+    <Documentation>
+      This property specifies the radius of the sphere.
+    </Documentation>
+  </DoubleVectorProperty>
+
+  <IntVectorProperty 
+    name="GetResolution"
+    command="GetResolution"
+    information_only="1">
+    <SimpleIntInformationHelper/>
+  </IntVectorProperty>
+  <IntVectorProperty
+      name="Resolution"
+      command="SetResolution"
+      number_of_elements="1"
+      default_values="8"
+      information_property="GetResolution">
+    <IntRangeDomain name="range" min="3" max="1024" />
+    <Documentation>
+      The value of this property controls the number of lat-lon linies in the output.
+    </Documentation>
+  </IntVectorProperty>
+
   <!-- End Hemisphere Source -->
   </SourceProxy>
 
-    <!-- ==================================================================== -->
-  <SourceProxy name="vtkProcessMonitor" class="vtkProcessMonitor" label="Process Monitor">
-      <Documentation
-        long_help="A custom Qt panel that manages and monitors the running processes."
-        short_help="A custom Qt panel that manages and monitors the running processes.">
-        A custom panel that manages and monitors the running processes.
-      </Documentation>
-
-     <StringVectorProperty name="ConfigStream"
-        command="GetConfigStream"
-        information_only="1" >
-        <SimpleStringInformationHelper />
-     </StringVectorProperty>
-
-   <!-- End Debug Panel -->
-   </SourceProxy>
 
 </ProxyGroup>
 
@@ -1065,394 +715,6 @@ Copyright 2008 SciberQuest Inc.
 </ProxyGroup>
 
 <ProxyGroup name="filters">
-<!--==================================================================== -->
-  <SourceProxy 
-    name="vtkFieldTopologyAnalyzer" 
-    class="vtkFieldTopologyAnalyzer"
-    label="Field Topology Analyzer">
-    <Documentation
-      long_help="Long Documentation"
-      short_help="Short Documentation">
-      Textual Documentation.
-    </Documentation>
-
-    <!-- Out -->
-    <OutputPort name="Seed Points" index="0" />
-    <OutputPort name="Field Lines (+)" index="1" />
-    <OutputPort name="Field Lines (-)" index="2" />
-    <OutputPort name="Surface Intersect" index="3" />
-    <!-- In -->
-    <!-- clean_command="ResetDatasetInputConnections" -->
-    <InputProperty
-      name="Input"
-      command="AddDatasetInputConnection"
-      clean_command="ClearDatasetInputConnections"
-      multiple_input="0">
-      <ProxyGroupDomain name="groups">
-        <Group name="sources"/>
-        <Group name="filters"/>
-      </ProxyGroupDomain>
-      <DataTypeDomain name="input_type">
-        <DataType value="vtkDataSet"/>
-      </DataTypeDomain>
-      <InputArrayDomain name="input_array"
-        attribute_type="point"
-        number_of_components="3"/>
-        <Documentation>
-          Used to set a dataset with vector field to analyze.
-        </Documentation>
-      </InputProperty>
-      <!--lean_command="ResetBoundaryInputConnections"-->
-      <InputProperty
-        name="Source"
-        command="AddBoundaryInputConnection"
-        clean_command="ClearBoundaryInputConnections"
-        multiple_input="1">
-        <ProxyGroupDomain name="groups">
-          <Group name="sources"/>
-          <Group name="filters"/>
-        </ProxyGroupDomain>
-        <DataTypeDomain name="input_type">
-          <DataType value="vtkDataSet"/>
-        </DataTypeDomain>
-        <Documentation>
-          This input should contian boundary surfaces.
-        </Documentation>
-     </InputProperty>
-      <!-- Vector Field -->
-     <StringVectorProperty 
-      name="SelectInputVectors" 
-      command="SetInputArrayToProcess"
-      number_of_elements="5"
-      element_types="0 0 0 0 2"
-      animateable="0"
-      label="Vectors">
-      <ArrayListDomain name="array_list" attribute_type="Vectors">
-        <RequiredProperties>
-          <Property name="Input" function="Input"/>
-        </RequiredProperties>
-      </ArrayListDomain>
-      <Documentation>
-        This property contains the name of the vector array from which to generate streamlines.
-     </Documentation>
-     </StringVectorProperty>
-     <!-- Integration length -->
-     <DoubleVectorProperty
-       name="StepSize"
-       label="Step Size"
-       command="SetStepSize" 
-       number_of_elements="1"
-       default_values="0.001" >
-       <DoubleRangeDomain name="range"/>
-       <Documentation>
-         This property specifies the step size takein during field line integration.
-       </Documentation>
-     </DoubleVectorProperty>
-     <!-- Bounds on stream line generation -->
-     <IntVectorProperty 
-       name="MaxNumberOfSteps" 
-       label="Max Steps"
-       command="SetMaxNumberOfSteps" 
-       number_of_elements="1"
-       default_values="10000" >
-       <IntRangeDomain name="range"/>
-       <Documentation>
-         This property specifies the maximum number of steps, beyond which streamline integration is terminated.
-       </Documentation>
-     </IntVectorProperty>
-     <!-- Bounds on stream line generation -->
-     <DoubleVectorProperty
-       name="MaxLineLength"
-       label="Max Line Length"
-       command="SetMaxLineLength"
-       number_of_elements="1"
-       default_values="1.0" >
-       <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="10.0">
-         <RequiredProperties>
-            <Property name="Input" function="Input"/>
-         </RequiredProperties>
-       </BoundsDomain>
-       <Documentation>
-         This property specifies the maximum streamline length (i.e., physical arc length), beyond which line integration is terminated.
-       </Documentation>
-     </DoubleVectorProperty>
-    <!-- Cut functuion -->
-    <ProxyProperty 
-      name="CutFunction"
-      command="SetCutFunction"
-      label="Slice Type">
-          <ProxyGroupDomain name="groups">
-            <Group name="implicit_functions"/>
-          </ProxyGroupDomain>
-          <ProxyListDomain name="proxy_list">
-            <Proxy group="implicit_functions" name="Plane" />
-            <!--
-            <Proxy group="implicit_functions" name="Box" />
-            <Proxy group="implicit_functions" name="Sphere" />
-            -->
-          </ProxyListDomain>
-          <Documentation>
-            This property sets the type of intersecting geometry, and associated parameters.
-          </Documentation>
-    </ProxyProperty>
-    <IntVectorProperty 
-      name="Resolution"
-      command="SetCutResolution"
-      number_of_elements="1" 
-      default_values="1"
-      animateable="0">
-      <Documentation>
-        This property controls the resolution of the seed object.
-      </Documentation>
-    </IntVectorProperty>
-    <!-- ParaView tweaks -->
-    <Hints>
-      <Visibility replace_input="0" />
-    </Hints>
-  <!-- End vtkFieldTopologyAnalyzer -->
-  </SourceProxy>
- 
- <!-- ==================================================================== -->
- <SourceProxy name="vtkDistributedFieldTracer" class="vtkDistributedFieldTracer"
-    label="Field Tracer">
-    <Documentation
-       long_help="Integrate field lines in a vector field."
-       short_help="Integrate field lines in a vector field.">
-The Stream Tracer filter generates streamlines in a vector field from a collection of seed points. Production of streamlines terminates if a streamline crosses the exterior boundary of the input dataset. Other reasons for termination are listed for the MaximumNumberOfSteps, TerminalSpeed, and MaximumPropagation properties. This filter operates on any type of dataset, provided it has point-centered vectors. The output is polygonal data containing polylines. 
-    </Documentation>
-    <InputProperty
-       name="Input"
-       command="AddInputConnection"
-       clean_command="RemoveAllInputs"
-       multiple_input="1">
-          <ProxyGroupDomain name="groups">
-            <Group name="sources"/>
-            <Group name="filters"/>
-          </ProxyGroupDomain>
-          <DataTypeDomain name="input_type" composite_data_supported="1">
-            <DataType value="vtkDataSet"/>
-          </DataTypeDomain>
-          <InputArrayDomain name="input_array" attribute_type="point"
-                            number_of_components="3"/>
-          <Documentation>
-            This property specifies the input to the Stream Tracer filter.
-          </Documentation>
-     </InputProperty>
-
-     <InputProperty
-        name="Source"
-        command="SetSourceConnection"
-        label="Seed Type">
-           <ProxyGroupDomain name="groups">
-             <Group name="sources"/>
-           </ProxyGroupDomain>
-           <Documentation>
-             The value of this property determines how the seeds for the 
-             streamlines will be generated.
-           </Documentation>
-      </InputProperty>
-
-     <StringVectorProperty 
-        name="SelectInputVectors" 
-        command="SetInputArrayToProcess"
-        number_of_elements="5"
-        element_types="0 0 0 0 2"
-        animateable="0"
-        label="Vectors">
-           <ArrayListDomain name="array_list" attribute_type="Vectors">
-             <RequiredProperties>
-                <Property name="Input" function="Input"/>
-             </RequiredProperties>
-           </ArrayListDomain>
-           <Documentation>
-             This property contains the name of the vector array from which to generate streamlines.
-           </Documentation>
-     </StringVectorProperty>
-
-     <!-- Never generate any seeds, user must supply -->
-     <IntVectorProperty
-        name="NumberOfPoints"
-        number_of_elements="1"
-        default_values="0"/>
-     <!-- Always integrate in both directions -->
-     <IntVectorProperty 
-       name="IntegrationDirection" 
-       command="SetIntegrationDirection" 
-       number_of_elements="1"
-       default_values="2"/>
-     <!-- Always use the best integrator -->
-     <IntVectorProperty 
-       name="IntegratorType" 
-       command="SetIntegratorType" 
-       number_of_elements="1"
-       default_values="2"/>
-     <!-- Always measure integrate as multiple of cell length -->
-     <IntVectorProperty 
-       name="IntegrationStepUnit"
-       label="Integration Step Unit"
-       command="SetIntegrationStepUnit" 
-       number_of_elements="1"
-       default_values="2"/>
-
-     <DoubleVectorProperty
-       name="InitialIntegrationStep"
-       label="Initial Step Length"
-       command="SetInitialIntegrationStep"
-       number_of_elements="1"
-       default_values="0.2" >
-       <DoubleRangeDomain name="range"/>
-       <Documentation>
-         This property specifies the initial integration step size as a multiple of cell lengths.
-       </Documentation>
-     </DoubleVectorProperty>
-
-     <DoubleVectorProperty
-       name="MinimumIntegrationStep"
-       label="Minimum Step Length"
-       command="SetMinimumIntegrationStep"
-       number_of_elements="1"
-       default_values="0.01" >
-       <DoubleRangeDomain name="range"/>
-       <Documentation>
-         This property specifies the minimum integration step size.
-       </Documentation>
-     </DoubleVectorProperty>
-
-     <DoubleVectorProperty
-       name="MaximumIntegrationStep"
-       label="Maximum Step Length"
-       command="SetMaximumIntegrationStep"
-       number_of_elements="1"
-       default_values="0.5" >
-       <DoubleRangeDomain name="range"/>
-       <Documentation>
-         This property specifies the maximum integration step size.
-       </Documentation>
-     </DoubleVectorProperty>  
-
-     <IntVectorProperty 
-       name="MaximumNumberOfSteps" 
-       label="Maximum Steps"
-       command="SetMaximumNumberOfSteps" 
-       number_of_elements="1"
-       default_values="2000" >
-       <IntRangeDomain name="range"/>
-       <Documentation>
-         This property specifies the maximum number of steps, beyond which streamline integration is terminated.
-       </Documentation>
-     </IntVectorProperty>
-
-     <DoubleVectorProperty
-       name="MaximumPropagation"
-       label="Maximum Streamline Length"
-       command="SetMaximumPropagation"
-       number_of_elements="1"
-       default_values="1.0" >
-       <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="10.0">
-         <RequiredProperties>
-            <Property name="Input" function="Input"/>
-         </RequiredProperties>
-       </BoundsDomain>
-       <Documentation>
-         This property specifies the maximum streamline length (i.e., physical arc length), beyond which line integration is terminated.
-       </Documentation>       
-     </DoubleVectorProperty>
-
-     <DoubleVectorProperty
-       name="TerminalSpeed"
-       label="Terminal Speed"
-       command="SetTerminalSpeed"
-       number_of_elements="1"
-       default_values="0.000000000001" >
-       <DoubleRangeDomain name="range"/>
-       <Documentation>
-         This property specifies the terminal speed, below which particle advection/integration is terminated.
-       </Documentation>
-     </DoubleVectorProperty>
-     
-     <!-- Always use this error -->
-     <DoubleVectorProperty
-       name="MaximumError"
-       command="SetMaximumError"
-       number_of_elements="1"
-       default_values="0.000001"
-       information_only="1"/>
-     <Hints>
-       <Visibility replace_input="2" />
-       <Property name="NumberOfPoints" show="0"/>
-       <Property name="IntegrationDirection" show="0"/>
-       <Property name="IntegratorType" show="0"/>
-       <Property name="IntegrationStepUnit" show="0"/>
-       <Property name="MaximumError" show="0"/>
-     </Hints>
-   <!-- End StreamTracer -->
-   </SourceProxy>
-
-
-
-
-
-   
-<!-- ==================================================================== -->
-<SourceProxy name="vtkOOCFieldTracer" 
-    class="vtkOOCFieldTracer"
-    label="OOC Field Tracer"
-    base_proxyname="vtkOOCFieldTracerUI"
-    base_proxygroup="common-ui">
-
-  <!-- Out -->
-  <OutputPort name="Field Lines" index="0" />
-  <!-- Meta Flag -->
-  <IntVectorProperty 
-    name="TopologyMode" 
-    command="SetTopologyMode" 
-    number_of_elements="1"
-    default_values="0">
-    <BooleanDomain name="bool"/>
-    <Documentation>
-    If checked topology mode is active and the filter produces a topology
-    map rather than field lines.
-    </Documentation>
-  </IntVectorProperty>
-  <Hints>
-    <Property name="TopologyMode" show="0"/>
-    <Property name="StepUnit" show="0"/>
-    <Property name="MaxError" show="0"/>
-  </Hints>
-   <!-- End OOCFieldTracer -->
-</SourceProxy>
-
-
-<!-- ==================================================================== -->
-<SourceProxy name="vtkOOCFieldTopologyMapper" 
-    class="vtkOOCFieldTracer"
-    label="OOC Field Topology Mapper"
-    base_proxyname="vtkOOCFieldTracerUI"
-    base_proxygroup="common-ui">
-
-  <!-- Out -->
-  <OutputPort name="Topology Map" index="0" />
-  <!-- Meta Flag -->
-  <IntVectorProperty 
-    name="TopologyMode" 
-    command="SetTopologyMode" 
-    number_of_elements="1"
-    default_values="1">
-    <BooleanDomain name="bool"/>
-    <Documentation>
-    If checked topology mode is active and the filter produces a topology
-    map rather than field lines.
-    </Documentation>
-  </IntVectorProperty>
-
-  <Hints>
-    <Property name="TopologyMode" show="0"/>
-    <Property name="StepUnit" show="0"/>
-    <Property name="MaxError" show="0"/>
-  </Hints>
-   <!-- End FieldTracer -->
-</SourceProxy>
-
 
 <!-- ==================================================================== -->
 <SourceProxy name="vtkOOCDFieldTracer" 
@@ -1595,65 +857,6 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
    <!-- End FieldTracer -->
 </SourceProxy>
 
-<!-- ==================================================================== -->
-  <SourceProxy 
-    name="vtkFieldAnalysis" 
-    class="vtkFieldAnalysis"
-    label="Field Analysis">
-    <Documentation
-      long_help="Long Documentation"
-      short_help="Short Documentation">
-      Textual Documentation.
-    </Documentation>
-
-     <InputProperty
-        name="Input"
-        command="SetInputConnection">
-           <ProxyGroupDomain name="groups">
-             <Group name="sources"/>
-             <Group name="filters"/>
-           </ProxyGroupDomain>
-           <DataTypeDomain name="input_type">
-             <DataType value="vtkDataSet"/>
-           </DataTypeDomain>
-           <InputArrayDomain name="input_array" attribute_type="point"
-                             number_of_components="3"/>
-           <Documentation>
-             This property specifies the input to the Warp (vector) filter.
-           </Documentation>
-      </InputProperty>
-
-      <StringVectorProperty 
-         name="SelectInputVectors" 
-         command="SetInputArrayToProcess"
-         number_of_elements="5"
-         element_types="0 0 0 0 2"
-         label="Vectors">
-            <ArrayListDomain name="array_list" attribute_type="Vectors">
-              <RequiredProperties>
-                 <Property name="Input" function="Input"/>
-              </RequiredProperties>
-            </ArrayListDomain>
-            <Documentation>
-              The value of this property contains the name of the vector array by which to warp the dataset's point coordinates.
-            </Documentation>
-      </StringVectorProperty> 
-
-      <IntVectorProperty
-        name="ComputeFaceDivergence"
-        label="Face-Centered Divergence"
-        command="SetComputeFaceDivergence"
-        number_of_elements="1"
-        default_values="0">
-        <BooleanDomain name="bool" />
-        <Documentation>
-          Compute divergence using a face centered stencil (Data on CT/Yee cells).
-        </Documentation>
-     </IntVectorProperty>
-
-  <!-- End vtkFieldAnalysis -->
-  </SourceProxy>
-
   <!-- ==================================================================== -->
   <SourceProxy 
     name="vtkSQVortexFilter" 
@@ -1761,31 +964,7 @@ The Stream Tracer filter generates streamlines in a vector field from a collecti
   <!-- End vtkSQVortexFilter -->
   </SourceProxy>
 
-  <!-- ==================================================================== -->
-  <SourceProxy
-    name="vtkSQHemisphereSource"
-    class="vtkSQHemisphereSource"
-    label="SQ Hemisphere"
-    base_proxyname="SQHemisphereUI"
-    base_proxygroup="common-ui">
-    <Documentation
-       long_help="Create a 3D sphere given a center and radius."
-       short_help="Create a 3D sphere">
-       The Hemisphere source can be used to add a polygonal sphere to the 3D scene. The output of the Hemisphere source is polygonal data with point normals defined.
-    </Documentation>
-    <InputProperty
-      name="Input"
-      command="SetInputConnection">
-          <ProxyGroupDomain name="groups">
-            <Group name="sources"/>
-            <Group name="filters"/>
-          </ProxyGroupDomain>
-          <DataTypeDomain name="input_type">
-            <DataType value="vtkDataSet"/>
-          </DataTypeDomain>
-    </InputProperty>
-  <!-- End Hemisphere Source -->
-  </SourceProxy>
+  
 </ProxyGroup>
 
 </ServerManagerConfiguration>

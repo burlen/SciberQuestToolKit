@@ -47,7 +47,7 @@
 
 #include "vtkPolyDataAlgorithm.h"
 
-class VTK_GRAPHICS_EXPORT vtkSQPlaneSource : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkSQPlaneSource : public vtkPolyDataAlgorithm
 {
 public:
   void PrintSelf(ostream& os, vtkIndent indent);

@@ -8,7 +8,7 @@
 
 */
 
-#include <windirent.h>
+#include <win_windirent.h>
 #include <errno.h>
 #include <io.h> /* _findfirst and _findnext set errno iff they return -1 */
 #include <stdlib.h>
@@ -19,17 +19,17 @@ extern "C"
 {
 #endif
 
-struct DIR
+struct win_DIR
 {
-    long                handle; /* -1 for failed rewind */
-    struct _finddata_t  info;
-    struct dirent       result; /* d_name null iff first time */
-    char                *name;  /* null-terminated char string */
+    long                 handle; /* -1 for failed rewind */
+    struct _finddata_t   info;
+    struct win_dirent    result; /* d_name null iff first time */
+    char                *name;   /* null-terminated char string */
 };
 
-DIR *opendir(const char *name)
+win_DIR *win_opendir(const char *name)
 {
-    DIR *dir = 0;
+    win_DIR *dir = 0;
 
     if(name && name[0])
     {
@@ -37,7 +37,7 @@ DIR *opendir(const char *name)
         const char *all = /* search pattern must end with suitable wildcard */
             strchr("/\\", name[base_length - 1]) ? "*" : "/*";
 
-        if((dir = (DIR *) malloc(sizeof *dir)) != 0 &&
+        if((dir = (win_DIR *) malloc(sizeof *dir)) != 0 &&
            (dir->name = (char *) malloc(base_length + strlen(all) + 1)) != 0)
         {
             strcat(strcpy(dir->name, name), all);
@@ -68,7 +68,7 @@ DIR *opendir(const char *name)
     return dir;
 }
 
-int closedir(DIR *dir)
+int win_closedir(win_DIR *dir)
 {
     int result = -1;
 
@@ -91,9 +91,9 @@ int closedir(DIR *dir)
     return result;
 }
 
-struct dirent *readdir(DIR *dir)
+struct win_dirent *win_readdir(win_DIR *dir)
 {
-    struct dirent *result = 0;
+    struct win_dirent *result = 0;
 
     if(dir && dir->handle != -1)
     {
@@ -111,7 +111,7 @@ struct dirent *readdir(DIR *dir)
     return result;
 }
 
-void rewinddir(DIR *dir)
+void win_rewinddir(win_DIR *dir)
 {
     if(dir && dir->handle != -1)
     {

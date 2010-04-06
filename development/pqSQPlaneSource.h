@@ -55,11 +55,11 @@ protected slots:
   // Description:
   // read state from disk.
   void Restore();
-  void loadPlaneState();
+  void loadConfiguration();
   // Description:
   // write state to disk.
   void Save();
-  void savePlaneState();
+  void saveConfiguration();
 
   // Description:
   // check if cooridnates produce a good plane.

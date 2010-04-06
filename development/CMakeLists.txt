@@ -18,60 +18,60 @@ project(SciVisToolKit)
 # Locate our PV build/development install.
 include(ParaViewConfig.cmake)
 include(EigenConfig.cmake)
+include(MPICHConfig.cmake)
 
-# Server manager sources.
+# Server manager wrapped sources.
 set(SM_SOURCES
-  #vtkSQPointSource.cxx
-  #vtkSQHandleWidget.cxx
-  #vtkSQPointHandleRepresentation3D.cxx
-  vtkPVImageReader.cxx
   vtkBOVReader.cxx
-  vtkFieldTracer.cxx
-  vtkPFieldTracer.cxx
-  vtkFieldTopologyAnalyzer.cxx
-  vtkDistributedFieldTracer.cxx
-  vtkFieldAnalysis.cxx
   vtkSQVortexFilter.cxx
   vtkOOCFieldTracer.cxx
   vtkOOCDFieldTracer.cxx
   vtkSQPlaneSource.cxx
   vtkSQSphereSource.cxx
   vtkSQHemisphereSource.cxx
-  vtkProcessMonitor.cxx)
+  )
 
-# Sources which aren't for use by the server manager.
+# Un-wrapped sources
 set(_SOURCES
-  FsUtils.cxx
-  vtkOOCReader.cxx
-  vtkOOCBOVReader.cxx
   BOVReader.cxx
-  GDAMetaData.cxx
-  GDAMetaDataKeys.cxx
-  PrintUtils.cxx
-  IntersectionSet.cxx
-  TerminationCondition.cxx
-  vtkMetaDataKeys.cxx
   BOVTimeStepImage.cxx
   BOVScalarImage.cxx
   BOVVectorImage.cxx
-  WorkQueue.cxx
   FieldTopologyMap.cxx
+  FsUtils.cxx
+  GDAMetaData.cxx
+  GDAMetaDataKeys.cxx
+  IntersectionSet.cxx
   PolyDataFieldTopologyMap.cxx
+  PrintUtils.cxx
+  TerminationCondition.cxx
+  TracerFieldTopologyMap.cxx
   UnstructuredFieldTopologyMap.cxx
-  TracerFieldTopologyMap.cxx)
+  vtkMetaDataKeys.cxx
+  vtkOOCReader.cxx
+  vtkOOCBOVReader.cxx
+  vtkSQHemisphereSourceConfigurationWriter.cxx
+  vtkSQHemisphereSourceConfigurationReader.cxx
+  vtkSQPlaneSourceConfigurationWriter.cxx
+  vtkSQPlaneSourceConfigurationReader.cxx
+  WorkQueue.cxx
+  )
 
 SET_SOURCE_FILES_PROPERTIES(
-vtkOOCReader.cxx
-ABSTRACT
-)
+  vtkOOCReader.cxx
+  ABSTRACT
+  )
 
-# Just incase we're using mpich...
-add_definitions("-DMPICH_IGNORE_CXX_SEEK")
-
-# Augment windows with some posix codes.
 if (WIN32)
-  set(_SOURCES ${_SOURCES} windirent.cxx)
+  # Augment windows with some posix codes.
+  set(_SOURCES ${_SOURCES} win_windirent.cxx)
 endif (WIN32)
+
+if (UNIX)
+  # process monitor currently has some unix only features
+  set(SM_SOURCES ${SM_SOURCES} vtkProcessMonitor.cxx)
+endif (UNIX)
+
 
 # Verison dependent sources.
 set(PV_VER ${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR})
@@ -90,23 +90,13 @@ message(STATUS "-- Including custom panels.")
 set(_IFACES)
 set(_IFACE_SRCS)
 # Qt custom panels
-QT4_WRAP_CPP(MOC_SRCS pqProcessMonitor.h)
-QT4_WRAP_UI(UI_SRCS pqProcessMonitorForm.ui)
-ADD_PARAVIEW_OBJECT_PANEL(
-  IFACES IFACE_SRCS
-  CLASS_NAME pqProcessMonitor
-  XML_NAME vtkProcessMonitor
-  XML_GROUP sources)
-set(_IFACES ${_IFACES} ${IFACES})
-set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
-
 QT4_WRAP_CPP(MOC_SRCS pqSQHemisphereSource.h)
 QT4_WRAP_UI(UI_SRCS pqSQHemisphereSourceForm.ui)
 ADD_PARAVIEW_OBJECT_PANEL(
   IFACES IFACE_SRCS
   CLASS_NAME pqSQHemisphereSource
   XML_NAME vtkSQHemisphereSource
-  XML_GROUP sources filters)
+  XML_GROUP sources)
 set(_IFACES ${_IFACES} ${IFACES})
 set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
@@ -120,35 +110,17 @@ ADD_PARAVIEW_OBJECT_PANEL(
 set(_IFACES ${_IFACES} ${IFACES})
 set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
-#QT4_WRAP_CPP(MOC_SRCS pqSQHandleWidget.h)
-#QT4_WRAP_UI(UI_SRCS pqSQHandleWidgetForm.ui)
-# ADD_PARAVIEW_OBJECT_PANEL(
-#   IFACES IFACE_SRCS
-#   CLASS_NAME pqSQHanldeWidget
-#   XML_NAME vtkpqSQPointSource
-#   XML_GROUP sources)
-# set(_IFACES ${_IFACES} ${IFACES})
-# set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
-
-#QT4_WRAP_CPP(MOC_SRCS pqSQPointSourceWidget.h)
-#QT4_WRAP_UI(UI_SRCS pqSQPointSourceWidgetForm.ui)
-# ADD_PARAVIEW_OBJECT_PANEL(
-#   IFACES IFACE_SRCS
-#   CLASS_NAME pqSQPointSourceWidget
-#   XML_NAME vtkSQPointSource
-#   XML_GROUP sources)
-# set(_IFACES ${_IFACES} ${IFACES})
-# set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
-
-#QT4_WRAP_CPP(MOC_SRCS pqSQPointSourcePanel.h)
-#QT4_WRAP_UI(UI_SRCS pqSQPointSourcePanelForm.ui)
-#ADD_PARAVIEW_OBJECT_PANEL(
-#  IFACES IFACE_SRCS
-#  CLASS_NAME pqSQPointSourcePanel
-#  XML_NAME vtkSQPointSource
-#  XML_GROUP sources)
-#set(_IFACES ${_IFACES} ${IFACES})
-#set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+if (UNIX)
+  QT4_WRAP_CPP(MOC_SRCS pqProcessMonitor.h)
+  QT4_WRAP_UI(UI_SRCS pqProcessMonitorForm.ui)
+  ADD_PARAVIEW_OBJECT_PANEL(
+    IFACES IFACE_SRCS
+    CLASS_NAME pqProcessMonitor
+    XML_NAME vtkProcessMonitor
+    XML_GROUP sources)
+  set(_IFACES ${_IFACES} ${IFACES})
+  set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+endif (UNIX)
 
 set (_SOURCES
   ${_SOURCES}
@@ -157,10 +129,12 @@ set (_SOURCES
   ${_IFACE_SRCS}
   pqSQHemisphereSource.cxx
   pqSQPlaneSource.cxx
-  pqProcessMonitor.cxx)
-  #pqSQPointSourcePanel.cxx
-  #pqSQHandleWidget.cxx
-  #pqSQPointSourceWidget.cxx)
+  )
+
+if (UNIX)
+  # process monitor currently has some unix only features
+  set (_SOURCES ${_SOURCES} pqProcessMonitor.cxx)
+endif (UNIX)
 
 endif (PARAVIEW_BUILD_QT_GUI)
 
@@ -179,6 +153,8 @@ add_paraview_plugin(
   SOURCES ${_SOURCES} )
 
 install(TARGETS SciVisToolKit DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+target_link_libraries(SciVisToolKit)
 
 # gentp -- command line utility
 if (UNIX)

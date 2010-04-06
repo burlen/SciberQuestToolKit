@@ -7,8 +7,13 @@
 Copyright 2008 SciberQuest Inc.
 */
 #include "pqSQHemisphereSource.h"
+#include "vtkSQHemisphereSourceConfigurationReader.h"
+#include "vtkSQHemisphereSourceConfigurationWriter.h"
+#include "SQMacros.h"
 
 #include "pqProxy.h"
+#include "pqFileDialog.h"
+
 #include "vtkSMProxy.h"
 #include "vtkSMProperty.h"
 #include "vtkSMStringVectorProperty.h"
@@ -28,9 +33,6 @@ Copyright 2008 SciberQuest Inc.
 #include <QLineEdit>
 #include <QPalette>
 #include <QSettings>
-
-
-#include <unistd.h>
 
 #include "FsUtils.h"
 #if defined pqSQHemisphereSourceDEBUG
@@ -89,8 +91,8 @@ pqSQHemisphereSource::pqSQHemisphereSource(
   this->setModified();
 
   // set up save/restore buttons
-  QObject::connect(this->Form->save,SIGNAL(clicked()),this,SLOT(Save()));
-  QObject::connect(this->Form->restore,SIGNAL(clicked()),this,SLOT(Restore()));
+  QObject::connect(this->Form->save,SIGNAL(clicked()),this,SLOT(saveConfiguration()));
+  QObject::connect(this->Form->restore,SIGNAL(clicked()),this,SLOT(loadConfiguration()));
 
   // These connection let PV know that we have changed, and makes the apply 
   // button activated.
@@ -222,6 +224,67 @@ void pqSQHemisphereSource::Save()
       QMessageBox::warning(this,"Save SQ Hemisphere Source","Error: Failed to create the file.");
       }
     }
+}
+
+//-----------------------------------------------------------------------------
+void pqSQHemisphereSource::loadConfiguration()
+{
+  vtkSQHemisphereSourceConfigurationReader *reader=vtkSQHemisphereSourceConfigurationReader::New();
+  reader->SetProxy(this->proxy());
+
+  QString filters
+    = QString("%1 (*%2);;All Files (*.*)")
+        .arg(reader->GetFileDescription()).arg(reader->GetFileExtension());
+
+  pqFileDialog dialog(0,this,"Load SQ Hemisphere Source Configuration","",filters);
+  dialog.setFileMode(pqFileDialog::ExistingFile);
+
+  if (dialog.exec()==QDialog::Accepted)
+    {
+    QString filename;
+    filename=dialog.getSelectedFiles()[0];
+
+    int ok=reader->ReadConfiguration(filename.toStdString().c_str());
+    if (!ok)
+      {
+      pqErrorMacro("Failed to load the hemisphere source configuration.");
+      }
+    }
+
+  reader->Delete();
+
+  this->PullServerConfig();
+}
+
+//-----------------------------------------------------------------------------
+void pqSQHemisphereSource::saveConfiguration()
+{
+  #if defined pqSQHemisphereSourceDEBUG
+  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::saveConfiguration" << endl;
+  #endif
+
+  vtkSQHemisphereSourceConfigurationWriter *writer=vtkSQHemisphereSourceConfigurationWriter::New();
+  writer->SetProxy(this->proxy());
+
+  QString filters
+    = QString("%1 (*%2);;All Files (*.*)")
+        .arg(writer->GetFileDescription()).arg(writer->GetFileExtension());
+
+  pqFileDialog dialog(0,this,"Save SQ Hemisphere Source Configuration","",filters);
+  dialog.setFileMode(pqFileDialog::AnyFile);
+
+  if (dialog.exec()==QDialog::Accepted)
+    {
+    QString filename(dialog.getSelectedFiles()[0]);
+
+    int ok=writer->WriteConfiguration(filename.toStdString().c_str());
+    if (!ok)
+      {
+      pqErrorMacro("Failed to save the hemisphere source configuration.");
+      }
+    }
+
+  writer->Delete();
 }
 
 //-----------------------------------------------------------------------------

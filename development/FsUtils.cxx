@@ -21,7 +21,12 @@ using namespace std;
   #include<dirent.h>
 #else
   #define PATH_SEP "\\"
-#include "windirent.h"
+  #include "win_windirent.h"
+  #define opendir win_opendir
+  #define readdir win_readdir
+  #define closedir win_closedir
+  #define DIR win_DIR
+  #define dirent win_dirent
 #endif
 
 
