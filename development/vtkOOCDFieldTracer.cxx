@@ -57,10 +57,10 @@ PURPOSE.  See the above copyright notice for more information.
 #include "FieldLine.h"
 #include "TerminationCondition.h"
 #include "WorkQueue.h"
-#include "FieldTopologyMap.h"
+#include "FieldTracerData.h"
 #include "PolyDataFieldTopologyMap.h"
 #include "UnstructuredFieldTopologyMap.h"
-#include "TracerFieldTopologyMap.h"
+#include "StreamlineData.h"
 #include "minmax.h"
 
 #include "mpi.h"
@@ -92,7 +92,7 @@ vtkOOCDFieldTracer::vtkOOCDFieldTracer()
   MaxLineLength(1E6),
   NullThreshold(1E-6),
   OOCNeighborhoodSize(15),
-  TopologyMode(0),
+  Mode(TOPOLOGY),
   SqueezeColorMap(0)
 {
   this->Integrator=vtkRungeKutta45::New();
@@ -148,19 +148,30 @@ int vtkOOCDFieldTracer::FillOutputPortInformation(int port, vtkInformation *info
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataSet");
   return 1;
 
-  // NOTE my recolection is that this doesn't work quite right.
   switch (port)
     {
+
     case 0:
-      if (this->TopologyMode)
+      switch (this->Mode)
         {
-        info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataSet");
-        }
-      else
-        {
-        info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData");
+
+        // set the output data type based on the mode the filter
+        // is run in. See SetMode in header documentation.
+        case (TOPOLOGY):
+          info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataSet");
+          break;
+
+        case (STREAM):
+        case (POINCARE):
+          info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData");
+          break;
+
+        default:
+          vtkErrorMacro("Invalid mode " << this->Mode << ".");
+          break;
         }
       break;
+
     default:
       vtkWarningMacro("Invalid output port requested.");
       break;
@@ -260,31 +271,38 @@ int vtkOOCDFieldTracer::RequestDataObject(
   // If the filter is being run in TopologyMode the output is either
   // polydata or unstructured grid depending on the second input.
   // Otherwise the output is polydata.
-  if (this->TopologyMode)
+  switch (this->Mode)
     {
-    // duplicate the input type for the map output.
-    vtkInformation* inInfo=inInfos[1]->GetInformationObject(0);
-    vtkDataObject *inData=inInfo->Get(vtkDataObject::DATA_OBJECT());
-    if (!outData || !outData->IsA(inData->GetClassName()))
-      {
-      outData=inData->NewInstance();
-      outData->SetPipelineInformation(outInfo);
-      outData->Delete();
-      vtkInformation *portInfo=this->GetOutputPortInformation(0);
-      portInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(),VTK_PIECES_EXTENT);
-      }
-    }
-  else
-    {
-    if (!outData)
-      {
-      // consrtruct a polydata for the field line output.
-      outData=vtkPolyData::New();
-      outData->SetPipelineInformation(outInfo);
-      outData->Delete();
-      vtkInformation *portInfo=this->GetOutputPortInformation(0);
-      portInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(),VTK_PIECES_EXTENT);
-      }
+    case TOPOLOGY:
+      // duplicate the input type for the map output.
+      vtkInformation* inInfo=inInfos[1]->GetInformationObject(0);
+      vtkDataObject *inData=inInfo->Get(vtkDataObject::DATA_OBJECT());
+      if (!outData || !outData->IsA(inData->GetClassName()))
+        {
+        outData=inData->NewInstance();
+        outData->SetPipelineInformation(outInfo);
+        outData->Delete();
+        vtkInformation *portInfo=this->GetOutputPortInformation(0);
+        portInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(),VTK_PIECES_EXTENT);
+        }
+      break;
+
+    case STREAM:
+    case POINCARE:
+      if (!outData)
+        {
+        // consrtruct a polydata for the field line output.
+        outData=vtkPolyData::New();
+        outData->SetPipelineInformation(outInfo);
+        outData->Delete();
+        vtkInformation *portInfo=this->GetOutputPortInformation(0);
+        portInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(),VTK_PIECES_EXTENT);
+        }
+      break;
+
+    default:
+      vtkErrorMacro("Invalid mode " << this->Mode << ".");
+      break;
     }
   return 1;
 }
@@ -446,44 +464,55 @@ int vtkOOCDFieldTracer::RequestData(
 
   /// Map
   // Configure the map.
-  FieldTopologyMap *topoMap;
+  FieldTracerData *traceData;
 
-  // There are two distinct modes the filter can be used in. The first is topology
-  // mode. Here a topology map is produced on a set of cells(source). Field lines
-  // are imediately freed and not passed to the output. In the second mode (trace mode)
-  // the topology map is projected onto the field lines them selves. This mode uses
-  // quite a bit more memory! 
-  if (this->TopologyMode)
+  // There are multiple modes the filter can be used in, see documentation
+  // for See SetMode.
+  switch (this->Mode)
     {
-    vtkPolyData *sourcePd, *outPd;
-    vtkUnstructuredGrid *sourceUg, *outUg;
+    case TOPOLOGY:
+      {
+      vtkPolyData *sourcePd, *outPd;
+      vtkUnstructuredGrid *sourceUg, *outUg;
 
-    if ((sourcePd=dynamic_cast<vtkPolyData*>(source))
-      && (outPd=dynamic_cast<vtkPolyData*>(out)))
-      {
-      topoMap=new PolyDataFieldTopologyMap;
-      topoMap->SetSource(sourcePd);
-      topoMap->SetOutput(outPd);
+      if ((sourcePd=dynamic_cast<vtkPolyData*>(source))
+        && (outPd=dynamic_cast<vtkPolyData*>(out)))
+        {
+        traceData=new PolyDataFieldTopologyMap;
+        traceData->SetSource(sourcePd);
+        traceData->SetOutput(outPd);
+        }
+      else
+      if ((sourceUg=dynamic_cast<vtkUnstructuredGrid*>(source))
+        && (outUg=dynamic_cast<vtkUnstructuredGrid*>(out)))
+        {
+        traceData=new UnstructuredFieldTopologyMap;
+        traceData->SetSource(sourceUg);
+        traceData->SetOutput(outUg);
+        }
       }
-    else
-    if ((sourceUg=dynamic_cast<vtkUnstructuredGrid*>(source))
-      && (outUg=dynamic_cast<vtkUnstructuredGrid*>(out)))
-      {
-      topoMap=new UnstructuredFieldTopologyMap;
-      topoMap->SetSource(sourceUg);
-      topoMap->SetOutput(outUg);
-      }
-    }
-  else
-    {
-    topoMap=new TracerFieldTopologyMap;
-    topoMap->SetSource(source);
-    topoMap->SetOutput(out);
+      break;
+
+    case STREAM:
+      traceData=new StreamlineData;
+      traceData->SetSource(source);
+      traceData->SetOutput(out);
+      break;
+
+    case POINCARE:
+      traceData=new PoincareData;
+      traceData->SetSource(source);
+      traceData->SetOutput(out);
+      break;
+
+    default:
+      vtkErrorMacro("Invalid mode " << this->Mode << ".");
+      break;
     }
 
   // Make sure the termination conditions include the problem
   // domain, any other termination conditions are optional.
-  TerminationCondition *tcon=topoMap->GetTerminationCondition();
+  TerminationCondition *tcon=traceData->GetTerminationCondition();
   tcon->SetProblemDomain(pDomain);
   // Include and additional termination surfaces from the third and
   // optional input.
@@ -520,7 +549,7 @@ int vtkOOCDFieldTracer::RequestData(
 
     // TODO implement a test to verify this is so. Eg.all should have the same first point
     // and number of cells.
-    this->IntegrateDynamic(procId,nProcs,source,out,fieldName,oocr.GetPointer(),oocrCache,topoMap);
+    this->IntegrateDynamic(procId,nProcs,source,out,fieldName,oocr.GetPointer(),oocrCache,traceData);
     }
   else
     {
@@ -531,7 +560,7 @@ int vtkOOCDFieldTracer::RequestData(
     // process has a unique portion of the work.
 
     // TODO implement a test to verify this is so.
-    this->IntegrateStatic(source,out,fieldName,oocr.GetPointer(),oocrCache,topoMap);
+    this->IntegrateStatic(source,out,fieldName,oocr.GetPointer(),oocrCache,traceData);
     }
 
   #if defined vtkOOCDFieldTracerTIME
@@ -546,13 +575,13 @@ int vtkOOCDFieldTracer::RequestData(
   /// Clean up
   // print a legend, and (optionally) reduce the number of colors to that which
   // are used. The reduction makes use of global communication.
-  topoMap->PrintLegend(this->SqueezeColorMap);
+  traceData->PrintLegend(this->SqueezeColorMap);
 
   // close the open file and release reader.
   oocr->Close();
   oocr->Delete();
 
-  delete topoMap;
+  delete traceData;
 
   return 1;
 }
@@ -565,7 +594,7 @@ int vtkOOCDFieldTracer::IntegrateStatic(
       const char *fieldName,
       vtkOOCReader *oocr,
       vtkDataSet *&oocrCache,
-      FieldTopologyMap *topoMap)
+      FieldTracerData *topoMap)
 {
   // do all local ids in a single pass.
   CellIdBlock sourceIds;
@@ -590,7 +619,7 @@ int vtkOOCDFieldTracer::IntegrateDynamic(
       const char *fieldName,
       vtkOOCReader *oocr,
       vtkDataSet *&oocrCache,
-      FieldTopologyMap *topoMap)
+      FieldTracerData *topoMap)
 {
   const int masterProcId=(nProcs>1?1:0); // NOTE: proc 0 is busy with PV overhead.
   const int BLOCK_REQ=2222;
@@ -691,7 +720,7 @@ int vtkOOCDFieldTracer::IntegrateDynamic(
 //-----------------------------------------------------------------------------
 int vtkOOCDFieldTracer::IntegrateBlock(
       CellIdBlock *sourceIds,
-      FieldTopologyMap *topoMap,
+      FieldTracerData *topoMap,
       const char *fieldName,
       vtkOOCReader *oocr,
       vtkDataSet *&oocrCache)
@@ -707,12 +736,6 @@ int vtkOOCDFieldTracer::IntegrateBlock(
     {
     FieldLine *line=topoMap->GetFieldLine(i);
     this->IntegrateOne(oocr,oocrCache,fieldName,line,tcon);
-    if (this->TopologyMode)
-      {
-      // free the trace geometry, we don't need it for topo map
-      // and it's very likely to be large.
-      line->DeleteTrace();
-      }
     }
 
   // sync results to output. (minimizes the calls to realloc)
@@ -764,7 +787,7 @@ void vtkOOCDFieldTracer::IntegrateOne(
     while (1)
       {
       // add the point to the line.
-      if (!this->TopologyMode) line->PushPoint(i,p0);
+      if (this->Mode==STREAM) line->PushPoint(i,p0);
 
       #ifdef vtkOOCDFieldTracerDEBUG5
       cerr << "   " << p0[0] << ", " << p0[1] << ", " << p0[2] << endl;
@@ -839,7 +862,7 @@ void vtkOOCDFieldTracer::IntegrateOne(
         cerr << "Terminated: Surface " << surfIsect-1 << " hit." << endl;
         #endif
         line->SetTerminator(i,surfIsect);
-        if (!this->TopologyMode) line->PushPoint(i,p1);
+        if (this->Mode==STREAM || this->Mode==POINCARE) line->PushPoint(i,p1);
         break;
         }
 
@@ -850,7 +873,7 @@ void vtkOOCDFieldTracer::IntegrateOne(
         cerr << "Terminated: Integration outside problem domain." << endl;
         #endif
         line->SetTerminator(i,tcon->GetProblemDomainSurfaceId());
-        if (!this->TopologyMode) line->PushPoint(i,p1);
+        if (this->Mode==STREAM) line->PushPoint(i,p1);
         break; // stop integrating
         }
 
@@ -861,7 +884,7 @@ void vtkOOCDFieldTracer::IntegrateOne(
         cerr << "Terminated: Integration limmit exceeded." << endl;
         #endif
         line->SetTerminator(i,tcon->GetShortIntegrationId());
-        if (!this->TopologyMode) line->PushPoint(i,p1);
+        if (this->Mode==STREAM) line->PushPoint(i,p1);
         break; // stop integrating
         }
 
@@ -880,7 +903,7 @@ void vtkOOCDFieldTracer::IntegrateOne(
         cerr << "Terminated: Field null encountered." << endl;
         #endif
         line->SetTerminator(i,tcon->GetFieldNullId());
-        if (!this->TopologyMode) line->PushPoint(i,p1);
+        if (this->Mode==STREAM) line->PushPoint(i,p1);
         break; // stop integrating
         }
 

@@ -6,8 +6,8 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef FieldTopologyMap_h
-#define FieldTopologyMap_h
+#ifndef FieldTracerData_h
+#define FieldTracerData_h
 
 #include "FieldLine.h"
 
@@ -27,11 +27,11 @@ Abstract collection of datastructures needed to build the topology map.
 The details of building the map change drastically depending on the input
 data type. Concrete classes deal with these specifics.
 */
-class FieldTopologyMap
+class FieldTracerData
 {
 public:
-  FieldTopologyMap();
-  virtual ~FieldTopologyMap();
+  FieldTracerData();
+  virtual ~FieldTracerData();
 
   // Description:
   // Set the datast to be used as the seed source.
@@ -81,7 +81,7 @@ public:
   // Print a legend, can be reduced to the minimal number of colors needed
   // or all posibilities may be included. The latter is better for temporal
   // animations.
-  void PrintLegend(int reduce);
+  virtual void PrintLegend(int reduce);
 
 protected:
   int *Append(vtkIntArray *ia, int nn);
@@ -89,8 +89,6 @@ protected:
 protected:
   vtkIntArray *IntersectColor;
   int *pIntersectColor;
-  // vtkIntArray *SourceId;
-  // int *pSourceId;
   vector<FieldLine *> Lines;
   TerminationCondition *Tcon;
 };

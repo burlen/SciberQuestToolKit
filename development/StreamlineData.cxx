@@ -6,7 +6,7 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#include "TracerFieldTopologyMap.h"
+#include "StreamlineData.h"
 
 #include "WorkQueue.h"
 #include "FieldLine.h"
@@ -21,14 +21,14 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkIdTypeArray.h"
 
 //-----------------------------------------------------------------------------
-TracerFieldTopologyMap::~TracerFieldTopologyMap()
+StreamlineData::~StreamlineData()
 {
   this->ClearSource();
   this->ClearOut();
 }
 
 //-----------------------------------------------------------------------------
-void TracerFieldTopologyMap::ClearSource()
+void StreamlineData::ClearSource()
 {
   if (this->SourcePts){ this->SourcePts->Delete(); }
   if (this->SourceCells){ this->SourceCells->Delete(); }
@@ -37,7 +37,7 @@ void TracerFieldTopologyMap::ClearSource()
 }
 
 //-----------------------------------------------------------------------------
-void TracerFieldTopologyMap::ClearOut()
+void StreamlineData::ClearOut()
 {
   if (this->OutPts){ this->OutPts->Delete(); }
   if (this->OutCells){ this->OutCells->Delete(); }
@@ -46,7 +46,7 @@ void TracerFieldTopologyMap::ClearOut()
 }
 
 //-----------------------------------------------------------------------------
-void TracerFieldTopologyMap::SetSource(vtkDataSet *s)
+void StreamlineData::SetSource(vtkDataSet *s)
 {
   this->ClearSource();
 
@@ -111,9 +111,9 @@ void TracerFieldTopologyMap::SetSource(vtkDataSet *s)
 }
 
 //-----------------------------------------------------------------------------
-void TracerFieldTopologyMap::SetOutput(vtkDataSet *o)
+void StreamlineData::SetOutput(vtkDataSet *o)
 {
-  this->FieldTopologyMap::SetOutput(o);
+  this->FieldTracerData::SetOutput(o);
 
   this->ClearOut();
 
@@ -135,7 +135,7 @@ void TracerFieldTopologyMap::SetOutput(vtkDataSet *o)
 }
 
 //-----------------------------------------------------------------------------
-int TracerFieldTopologyMap::InsertCells(CellIdBlock *SourceIds)
+int StreamlineData::InsertCells(CellIdBlock *SourceIds)
 {
   vtkIdType startId=SourceIds->first();
   vtkIdType endId=SourceIds->last();
@@ -184,6 +184,7 @@ int TracerFieldTopologyMap::InsertCells(CellIdBlock *SourceIds)
     seed[2]/=nPtIds;
 
     this->Lines[lId]=new FieldLine(seed,cId);
+    this->Lines[lId]->AllocateTrace();
     ++lId;
     }
   ptIds->Delete();
@@ -192,7 +193,7 @@ int TracerFieldTopologyMap::InsertCells(CellIdBlock *SourceIds)
 }
 
 //-----------------------------------------------------------------------------
-int TracerFieldTopologyMap::SyncGeometry()
+int StreamlineData::SyncGeometry()
 {
 
   size_t nLines=this->Lines.size();
@@ -217,7 +218,7 @@ int TracerFieldTopologyMap::SyncGeometry()
   for (size_t i=0; i<nLines; ++i)
     {
     // copy the points
-    vtkIdType nLinePts=this->Lines[i]->CopyPointsTo(pLinePts);
+    vtkIdType nLinePts=this->Lines[i]->CopyLinePoints(pLinePts);
     pLinePts+=3*nLinePts;
 
     // build the cell

@@ -6,10 +6,10 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef TracerFieldTopologyMap_h
-#define TracerFieldTopologyMap_h
+#ifndef StreamlineData_h
+#define StreamlineData_h
 
-#include "FieldTopologyMap.h"
+#include "FieldTracerData.h"
 
 #include<vector>
 using std::vector;
@@ -31,10 +31,10 @@ Abstract collection of datastructures needed to build the topology map.
 The details of building the map change drastically depending on the input
 data type. Concrete classes deal with these specifics.
 */
-class TracerFieldTopologyMap : public FieldTopologyMap
+class StreamlineData : public FieldTracerData
 {
 public:
-  TracerFieldTopologyMap()
+  StreamlineData()
         :
     SourcePts(0),
     SourceCells(0),
@@ -42,7 +42,7 @@ public:
     OutCells(0)
       {  }
 
-  virtual ~TracerFieldTopologyMap();
+  virtual ~StreamlineData();
 
   // Description:
   // Set the datast to be used as the seed source.

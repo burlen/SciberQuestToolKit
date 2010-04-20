@@ -6,16 +6,15 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#include "FieldTopologyMap.h"
+#include "FieldTracerData.h"
 
 #include "WorkQueue.h"
-//#include "FieldLine.h"
 #include "TerminationCondition.h"
 #include "vtkDataSet.h"
 #include "vtkCellData.h"
 
 //-----------------------------------------------------------------------------
-FieldTopologyMap::FieldTopologyMap()
+FieldTracerData::FieldTracerData()
       :
     IntersectColor(0)//,
     //SourceId(0)
@@ -30,7 +29,7 @@ FieldTopologyMap::FieldTopologyMap()
 }
 
 //-----------------------------------------------------------------------------
-FieldTopologyMap::~FieldTopologyMap()
+FieldTracerData::~FieldTracerData()
 {
   this->IntersectColor->Delete();
   // this->SourceId->Delete();
@@ -40,21 +39,21 @@ FieldTopologyMap::~FieldTopologyMap()
 }
 
 //-----------------------------------------------------------------------------
-void FieldTopologyMap::SetOutput(vtkDataSet *o)
+void FieldTracerData::SetOutput(vtkDataSet *o)
 {
   o->GetCellData()->AddArray(this->IntersectColor);
   // o->GetCellData()->AddArray(this->SourceId);
 }
 
 //-----------------------------------------------------------------------------
-int *FieldTopologyMap::Append(vtkIntArray *ia, int nn)
+int *FieldTracerData::Append(vtkIntArray *ia, int nn)
 {
   vtkIdType ne=ia->GetNumberOfTuples();
   return ia->WritePointer(ne,nn);
 }
 
 //-----------------------------------------------------------------------------
-void FieldTopologyMap::ClearFieldLines()
+void FieldTracerData::ClearFieldLines()
 {
   size_t nLines=this->Lines.size();
   for (size_t i=0; i<nLines; ++i)
@@ -65,7 +64,7 @@ void FieldTopologyMap::ClearFieldLines()
 }
 
 //-----------------------------------------------------------------------------
-int FieldTopologyMap::SyncScalars()
+int FieldTracerData::SyncScalars()
 {
   vtkIdType nLines=this->Lines.size();
 
@@ -88,7 +87,7 @@ int FieldTopologyMap::SyncScalars()
 }
 
 //-----------------------------------------------------------------------------
-void FieldTopologyMap::PrintLegend(int reduce)
+void FieldTracerData::PrintLegend(int reduce)
 {
   if (reduce)
     {

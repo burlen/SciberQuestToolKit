@@ -28,13 +28,6 @@ public:
     this->Seed[0]=0.0;
     this->Seed[1]=0.0;
     this->Seed[2]=0.0;
-
-    this->FwdTrace=vtkFloatArray::New();
-    this->FwdTrace->SetNumberOfComponents(3);
-    this->FwdTrace->Allocate(128);
-    this->BwdTrace=vtkFloatArray::New();
-    this->BwdTrace->SetNumberOfComponents(3);
-    this->BwdTrace->Allocate(128);
     }
   ///
   FieldLine(double p[3], int seedId=0)
@@ -48,13 +41,6 @@ public:
     this->Seed[0]=p[0];
     this->Seed[1]=p[1];
     this->Seed[2]=p[2];
-
-    this->FwdTrace=vtkFloatArray::New();
-    this->FwdTrace->SetNumberOfComponents(3);
-    this->FwdTrace->Allocate(128);
-    this->BwdTrace=vtkFloatArray::New();
-    this->BwdTrace->SetNumberOfComponents(3);
-    this->BwdTrace->Allocate(128);
     }
   ///
   FieldLine(const FieldLine &other)
@@ -65,6 +51,16 @@ public:
   ~FieldLine()
     {
     this->DeleteTrace();
+    }
+  ///
+  void AllocateTrace()
+    {
+    this->FwdTrace=vtkFloatArray::New();
+    this->FwdTrace->SetNumberOfComponents(3);
+    this->FwdTrace->Allocate(128);
+    this->BwdTrace=vtkFloatArray::New();
+    this->BwdTrace->SetNumberOfComponents(3);
+    this->BwdTrace->Allocate(128);
     }
   ///
   void DeleteTrace()
@@ -93,10 +89,10 @@ public:
     this->DeleteTrace();
 
     this->FwdTrace=other.FwdTrace;
-    this->FwdTrace->Register(0);
+    if (this->FwdTrace) this->FwdTrace->Register(0);
 
     this->BwdTrace=other.BwdTrace;
-    this->BwdTrace->Register(0);
+    if (this>BwdTrace) this->BwdTrace->Register(0);
 
     return *this;
     }
@@ -107,28 +103,28 @@ public:
     this->Seed[1]=p[1];
     this->Seed[2]=p[2];
     this->SeedId=seedId;
-    this->FwdTrace->SetNumberOfTuples(0);
-    this->BwdTrace->SetNumberOfTuples(0);
+    if (this->FwdTrace) this->FwdTrace->SetNumberOfTuples(0);
+    if (this->BwdTrace) this->BwdTrace->SetNumberOfTuples(0);
     this->BwdTerminator=this->FwdTerminator=0;
     }
   ///
   void PushPoint(int dir,float *p)
     {
-    // assert((dir>=0)&&(dir<=1));
+    // assumes dir is 0,1 and traces are not null
     vtkFloatArray *line=dir==0?BwdTrace:FwdTrace;
     line->InsertNextTuple(p);
     }
   ///
   void PushPoint(int dir,double *p)
     {
-    // assert((dir>=0)&&(dir<=1));
+    // assumes dir is 0,1 and traces are not null
     vtkFloatArray *line=dir==0?BwdTrace:FwdTrace;
     line->InsertNextTuple(p);
     }
   ///
   void SetTerminator(int dir, int code)
     {
-    // assert((dir>=0)&&(dir<=1));
+    // assumes dir is 0,1
     int *term=dir==0?&this->BwdTerminator:&this->FwdTerminator;
     *term=code;
     }
@@ -174,13 +170,17 @@ public:
   ///
   vtkIdType GetNumberOfPoints()
     {
+    if (this->FwdTrace==NULL || this->BwdTrace==NULL) return 0;
+
     return
-    this->FwdTrace->GetNumberOfTuples()+this->BwdTrace->GetNumberOfTuples()-1;
-    // less one because seed point is duplicated in both.
+      this->FwdTrace->GetNumberOfTuples()+this->BwdTrace->GetNumberOfTuples()-1;
+      // less one because seed point is duplicated in both.
     }
   ///
-  vtkIdType CopyPointsTo(float *pts)
+  vtkIdType CopyLinePoints(float *pts)
     {
+    // assumes fwd and bwd traces are not null.
+
     // Copy the bwd running field line, reversing its order
     // so it ends on the seed point.
     vtkIdType nPtsBwd=this->BwdTrace->GetNumberOfTuples();
@@ -204,6 +204,40 @@ public:
       pts[2]=pftr[2];
       }
     return nPtsBwd+nPtsFwd-1;
+    }
+  ///
+  vtkIdType CopyEndPoints(float *pts)
+    {
+    // assumes fwd and bwd traces are not null.
+
+    vtkIdType n=0;
+
+    // copy the termination point from the bwd running line.
+    vtkIdType nPtsBwd=this->BwdTrace->GetNumberOfTuples();
+    if (nPtsBwd)
+      {
+      float *pbtr=this->BwdTrace->GetPointer(0);
+      pbtr+=3*nPtsBwd-3;
+      pts[0]=pbtr[0];
+      pts[1]=pbtr[1];
+      pts[2]=pbtr[2];
+      pts+=3;
+      ++n;
+      }
+    // copy the termination point from the bwd running line.
+    vtkIdType nPtsFwd=this->FwdTrace->GetNumberOfTuples();
+    float *pftr=this->FwdTrace->GetPointer(0);
+    if (nPtsFwd)
+      {
+      float *pbtr=this->BwdTrace->GetPointer(0);
+      pbtr+=3*nPtsBwd-3;
+      pts[0]=pftr[0];
+      pts[1]=pftr[1];
+      pts[2]=pftr[2];
+      pts+=3;
+      ++n;
+      }
+    return n;
     }
 
 private:

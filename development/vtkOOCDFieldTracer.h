@@ -31,7 +31,7 @@ class vtkPointSet;
 //BTX
 class FieldLine;
 class CellIdBlock;
-class FieldTopologyMap;
+class FieldTracerData;
 class TerminationCondition;
 //ETX
 
@@ -105,15 +105,21 @@ public:
   vtkGetMacro(OOCNeighborhoodSize,int);
 
   // Description:
-  // Set the run mode of the filter. If this flag is set then a topology 
-  // map is produced in place of field lines. This allows this filter to
-  // serve as two ParaView filters, the OOCFieldTracer and the OOCTopologyMapper.
+  // Set the run mode of the filter.
+  // The enumeration is as follows:
+  //    0  TOPOLOGY filter produces field topology map
+  //    1  STREAM   filter produces stream lines
+  //    2  POINCARE filter produces a poincare map
+  // This allows this filter to serve as multiple ParaView filters, 
+  // the OOCFieldTracer, OOCDTopologyMapper, and OOCDPoincareMapper
+  // NOTE This only works if Mode is set before the filter runs.
+  // PV gets confused if you try to change Mode later.
   vtkSetMacro(TopologyMode,int);
   vtkGetMacro(TopologyMode,int);
 
   // Description:
-  // If on then color map produced will only contain used colors. NOTE: requires
-  // a global communication,
+  // If on then color map produced will only contain used colors. 
+  // NOTE: requires a global communication,
   vtkSetMacro(SqueezeColorMap,int);
   vtkGetMacro(SqueezeColorMap,int);
 
@@ -154,7 +160,7 @@ private:
       vtkDataSet *out,
       const char *fieldName,
       vtkOOCReader *oocr,
-      FieldTopologyMap *topoMap);
+      FieldTracerData *topoMap);
 
   // Description:
   // Integrate over all local cells. This assumes that each process has a unique
@@ -167,7 +173,7 @@ private:
       const char *fieldName,
       vtkOOCReader *oocr,
       vtkDataSet *&oocrCache,
-      FieldTopologyMap *topoMap);
+      FieldTracerData *topoMap);
 
   // Description:
   // Distribute the work load according to a master-slave self scheduling scheme. All
@@ -183,13 +189,13 @@ private:
       const char *fieldName,
       vtkOOCReader *oocr,
       vtkDataSet *&oocrCache,
-      FieldTopologyMap *topoMap);
+      FieldTracerData *topoMap);
 
   // Description:
   // Integrate field lines seeded from a block of consecutive cell ids.
   int IntegrateBlock(
         CellIdBlock *sourceIds,
-        FieldTopologyMap *topoMap,
+        FieldTracerData *topoMap,
         const char *fieldName,
         vtkOOCReader *oocr,
         vtkDataSet *&oocrCache);
@@ -252,7 +258,13 @@ private:
   TerminationCondition *TermCon;
 
   // Output controls
-  int TopologyMode;
+  enum
+    {
+    TOPOLOGY=0,
+    STREAM=1,
+    POINCARE=2
+    };
+  int Mode;
   int SqueezeColorMap;
 
   //BTX
