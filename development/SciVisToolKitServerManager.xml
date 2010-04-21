@@ -502,6 +502,23 @@ Copyright 2008 SciberQuest Inc.
   <!-- End Hemisphere Source -->
   </SourceProxy>
 
+  <!-- ==================================================================== -->
+  <SourceProxy name="vtkProcessMonitor" class="vtkProcessMonitor" label="Process Monitor">
+      <Documentation
+        long_help="A custom Qt panel that manages and monitors the running processes."
+        short_help="A custom Qt panel that manages and monitors the running processes.">
+        A custom panel that manages and monitors the running processes.
+      </Documentation>
+
+     <StringVectorProperty name="ConfigStream"
+        command="GetConfigStream"
+        information_only="1" >
+        <SimpleStringInformationHelper />
+     </StringVectorProperty>
+
+   <!-- End Debug Panel -->
+   </SourceProxy>
+
 
 </ProxyGroup>
 
@@ -728,20 +745,20 @@ Copyright 2008 SciberQuest Inc.
 
   <!-- Topo Flag -->
   <IntVectorProperty 
-    name="TopologyMode" 
-    command="SetTopologyMode" 
+    name="Mode"
+    command="SetMode"
     number_of_elements="1"
-    default_values="0">
+    default_values="1">
     <BooleanDomain name="bool"/>
     <Documentation>
     If checked topology mode is active and the filter produces a topology
     map rather than field lines.
     </Documentation>
   </IntVectorProperty>
-  
+
   <!-- Load balancing/work scheduling control -->
   <IntVectorProperty 
-    name="Use Dynamic Scheduler"
+    name="UseDynamicScheduler"
     command="SetUseDynamicScheduler"
     number_of_elements="1"
     default_values="0" > 
@@ -779,7 +796,7 @@ Copyright 2008 SciberQuest Inc.
   </IntVectorProperty>
 
   <Hints>
-    <Property name="TopologyMode" show="0"/>
+    <Property name="Mode" show="0"/>
     <Property name="StepUnit" show="0"/>
     <Property name="MaxError" show="0"/>
   </Hints>
@@ -799,10 +816,10 @@ Copyright 2008 SciberQuest Inc.
 
   <!-- Topo Flag -->
   <IntVectorProperty 
-    name="TopologyMode" 
-    command="SetTopologyMode" 
+    name="Mode" 
+    command="SetMode" 
     number_of_elements="1"
-    default_values="1">
+    default_values="0">
     <BooleanDomain name="bool"/>
     <Documentation>
     If checked topology mode is active and the filter produces a topology
@@ -850,12 +867,87 @@ Copyright 2008 SciberQuest Inc.
   </IntVectorProperty>
 
   <Hints>
-    <Property name="TopologyMode" show="0"/>
+    <Property name="Mode" show="0"/>
     <Property name="StepUnit" show="0"/>
     <Property name="MaxError" show="0"/>
   </Hints>
    <!-- End FieldTracer -->
 </SourceProxy>
+
+
+<!-- ==================================================================== -->
+<SourceProxy name="vtkOOCDPoincareMapper"
+    class="vtkOOCDFieldTracer"
+    label="OOCD Poincare Mapper"
+    base_proxyname="vtkOOCFieldTracerUI"
+    base_proxygroup="common-ui">
+
+  <!-- Out -->
+  <OutputPort name="Field Lines" index="0" />
+
+  <!-- Topo Flag -->
+  <IntVectorProperty
+    name="Mode"
+    command="SetMode"
+    number_of_elements="1"
+    default_values="2">
+    <BooleanDomain name="bool"/>
+    <Documentation>
+    If checked topology mode is active and the filter produces a topology
+    map rather than field lines.
+    </Documentation>
+  </IntVectorProperty>
+  
+  <!-- Load balancing/work scheduling control -->
+  <IntVectorProperty 
+    name="Use Dynamic Scheduler"
+    command="SetUseDynamicScheduler"
+    number_of_elements="1"
+    default_values="0" > 
+    <BooleanDomain name="bool"/>
+    <Documentation>
+    When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
+    on all processes. This must be off if this is not the case.
+    </Documentation>
+  </IntVectorProperty>
+
+  <!-- Load balancing controls -->
+  <IntVectorProperty 
+    name="MasterBlockSize"
+    command="SetMasterBlockSize"
+    number_of_elements="1"
+    default_values="16"
+    animateable="0">
+    <IntRangeDomain name="range" min="1" max="131072"/>
+    <Documentation>
+      Controls how much work the master does in between servicing work requests
+      from the workers. Should be much smaller the WorkerBlockSize.
+    </Documentation>
+  </IntVectorProperty>
+    <IntVectorProperty 
+    name="WorkerBlockSize"
+    command="SetWorkerBlockSize"
+    number_of_elements="1"
+    default_values="512"
+    animateable="0">
+    <IntRangeDomain name="range" min="1" max="131072"/>
+    <Documentation>
+      Controls how much work is given to the worker processes at each
+      request.
+    </Documentation>
+  </IntVectorProperty>
+
+  <Hints>
+    <Property name="Mode" show="0"/>
+    <Property name="UseDynamicScheduler" show="0"/>
+    <Property name="MasterBlockSize" show="0"/>
+    <Property name="WorkerBlockSize" show="0"/>
+    <Property name="StepUnit" show="0"/>
+    <Property name="MaxError" show="0"/>
+  </Hints>
+   <!-- End OOCFieldTracer -->
+</SourceProxy>
+
 
   <!-- ==================================================================== -->
   <SourceProxy 
@@ -963,6 +1055,41 @@ Copyright 2008 SciberQuest Inc.
 
   <!-- End vtkSQVortexFilter -->
   </SourceProxy>
+
+  <!-- ==================================================================== -->
+  <SourceProxy 
+    name="vtkRandomSeedPoints" 
+    class="vtkRandomSeedPoints"
+    label="Random Seed Points">
+    <Documentation
+      long_help="Long Documentation"
+      short_help="Short Documentation">
+      Textual Documentation.
+    </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+      </InputProperty>
+
+     <IntVectorProperty
+        name="NumberOfPoints"
+        label="Number Of Points"
+        command="SetNumberOfPoints"
+        number_of_elements="1"
+        default_values="10">
+     </IntVectorProperty>
+
+  <!-- End vtkSQVortexFilter -->
+  </SourceProxy>
+
 
   
 </ProxyGroup>

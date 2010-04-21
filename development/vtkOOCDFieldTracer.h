@@ -31,7 +31,7 @@ class vtkPointSet;
 //BTX
 class FieldLine;
 class CellIdBlock;
-class FieldTracerData;
+class FieldTraceData;
 class TerminationCondition;
 //ETX
 
@@ -114,8 +114,8 @@ public:
   // the OOCFieldTracer, OOCDTopologyMapper, and OOCDPoincareMapper
   // NOTE This only works if Mode is set before the filter runs.
   // PV gets confused if you try to change Mode later.
-  vtkSetMacro(TopologyMode,int);
-  vtkGetMacro(TopologyMode,int);
+  vtkSetMacro(Mode,int);
+  vtkGetMacro(Mode,int);
 
   // Description:
   // If on then color map produced will only contain used colors. 
@@ -160,7 +160,7 @@ private:
       vtkDataSet *out,
       const char *fieldName,
       vtkOOCReader *oocr,
-      FieldTracerData *topoMap);
+      FieldTraceData *topoMap);
 
   // Description:
   // Integrate over all local cells. This assumes that each process has a unique
@@ -173,7 +173,7 @@ private:
       const char *fieldName,
       vtkOOCReader *oocr,
       vtkDataSet *&oocrCache,
-      FieldTracerData *topoMap);
+      FieldTraceData *topoMap);
 
   // Description:
   // Distribute the work load according to a master-slave self scheduling scheme. All
@@ -189,13 +189,13 @@ private:
       const char *fieldName,
       vtkOOCReader *oocr,
       vtkDataSet *&oocrCache,
-      FieldTracerData *topoMap);
+      FieldTraceData *topoMap);
 
   // Description:
   // Integrate field lines seeded from a block of consecutive cell ids.
   int IntegrateBlock(
         CellIdBlock *sourceIds,
-        FieldTracerData *topoMap,
+        FieldTraceData *topoMap,
         const char *fieldName,
         vtkOOCReader *oocr,
         vtkDataSet *&oocrCache);
@@ -257,6 +257,7 @@ private:
   int OOCNeighborhoodSize;
   TerminationCondition *TermCon;
 
+  //BTX
   // Output controls
   enum
     {
@@ -264,6 +265,7 @@ private:
     STREAM=1,
     POINCARE=2
     };
+  //ETX
   int Mode;
   int SqueezeColorMap;
 

@@ -50,7 +50,7 @@ vtkSQVortexFilter::vtkSQVortexFilter()
   ComputeLambda2(1)
 {
   #ifdef vtkSQVortexFilterDEBUG
-    cerr << "=====================================================vtkSQVortexFilter::vtkSQVortexFilter" << endl;
+    cerr << "===============================vtkSQVortexFilter::vtkSQVortexFilter" << endl;
   #endif
 
 
@@ -63,7 +63,7 @@ vtkSQVortexFilter::vtkSQVortexFilter()
 vtkSQVortexFilter::~vtkSQVortexFilter()
 {
   #ifdef vtkSQVortexFilterDEBUG
-    cerr << "=====================================================vtkSQVortexFilter::~vtkSQVortexFilter" << endl;
+    cerr << "===============================vtkSQVortexFilter::~vtkSQVortexFilter" << endl;
   #endif
 
 }
@@ -74,7 +74,7 @@ vtkSQVortexFilter::~vtkSQVortexFilter()
 //     vtkInformation *info)
 // {
 //   #ifdef vtkSQVortexFilterDEBUG
-//     cerr << "=====================================================vtkSQVortexFilter::FillInputPortInformation" << endl;
+//     cerr << "===============================vtkSQVortexFilter::FillInputPortInformation" << endl;
 //   #endif
 //
 //   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
@@ -87,7 +87,7 @@ vtkSQVortexFilter::~vtkSQVortexFilter()
 //     vtkInformation *info)
 // {
 //   #ifdef vtkSQVortexFilterDEBUG
-//     cerr << "=====================================================vtkSQVortexFilter::FillOutputPortInformation" << endl;
+//     cerr << "===============================vtkSQVortexFilter::FillOutputPortInformation" << endl;
 //   #endif
 //
 //   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
@@ -101,7 +101,7 @@ int vtkSQVortexFilter::RequestDataObject(
     vtkInformationVector* outInfoVec)
 {
   #ifdef vtkSQVortexFilterDEBUG
-    cerr << "=====================================================vtkSQVortexFilter::RequestDataObject" << endl;
+    cerr << "===============================vtkSQVortexFilter::RequestDataObject" << endl;
   #endif
 
 
@@ -131,7 +131,7 @@ int vtkSQVortexFilter::RequestInformation(
       vtkInformationVector *outInfos)
 {
   #ifdef vtkSQVortexFilterDEBUG
-    cerr << "=====================================================vtkSQVortexFilter::RequestInformation" << endl;
+    cerr << "===============================vtkSQVortexFilter::RequestInformation" << endl;
   #endif
   //this->Superclass::RequestInformation(req,inInfos,outInfos);
 
@@ -172,7 +172,7 @@ int vtkSQVortexFilter::RequestUpdateExtent(
       vtkInformationVector *outInfos)
 {
   #ifdef vtkSQVortexFilterDEBUG
-    cerr << "=====================================================vtkSQVortexFilter::RequestUpdateExtent" << endl;
+    cerr << "===============================vtkSQVortexFilter::RequestUpdateExtent" << endl;
   #endif
 
   // We will modify the extents we request from our input so
@@ -203,7 +203,7 @@ int vtkSQVortexFilter::RequestData(
     vtkInformationVector *outInfoVec)
 {
   #ifdef vtkSQVortexFilterDEBUG
-    cerr << "=====================================================vtkSQVortexFilter::RequestData" << endl;
+    cerr << "===============================vtkSQVortexFilter::RequestData" << endl;
   #endif
 
 
@@ -443,7 +443,7 @@ int vtkSQVortexFilter::RequestData(
 void vtkSQVortexFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   #ifdef vtkSQVortexFilterDEBUG
-    cerr << "=====================================================vtkSQVortexFilter::PrintSelf" << endl;
+    cerr << "===============================vtkSQVortexFilter::PrintSelf" << endl;
   #endif
 
 }

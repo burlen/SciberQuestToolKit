@@ -7,16 +7,16 @@ Copyright 2008 SciberQuest Inc.
 */
 /*=========================================================================
 
-Program:   Visualization Toolkit
-Module:    $RCSfile: vtkOOCDFieldTracer.cxx,v $
+  Program:   Visualization Toolkit
+  Module:    $RCSfile: vtkRandomSeedPoints.h,v $
 
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
+  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+  All rights reserved.
+  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
 
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
+     This software is distributed WITHOUT ANY WARRANTY; without even
+     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+     PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
 #include "vtkOOCDFieldTracer.h"
@@ -57,10 +57,11 @@ PURPOSE.  See the above copyright notice for more information.
 #include "FieldLine.h"
 #include "TerminationCondition.h"
 #include "WorkQueue.h"
-#include "FieldTracerData.h"
+#include "FieldTraceData.h"
 #include "PolyDataFieldTopologyMap.h"
 #include "UnstructuredFieldTopologyMap.h"
 #include "StreamlineData.h"
+#include "PoincareData.h"
 #include "minmax.h"
 
 #include "mpi.h"
@@ -113,7 +114,7 @@ vtkOOCDFieldTracer::~vtkOOCDFieldTracer()
 int vtkOOCDFieldTracer::FillInputPortInformation(int port, vtkInformation *info)
 {
   #ifdef vtkOOCDFieldTracerDEBUG
-  cerr << "====================================================================FillInputPortInformation" << endl;
+  cerr << "===============================FillInputPortInformation" << endl;
   #endif
   switch (port)
     {
@@ -142,7 +143,7 @@ int vtkOOCDFieldTracer::FillInputPortInformation(int port, vtkInformation *info)
 int vtkOOCDFieldTracer::FillOutputPortInformation(int port, vtkInformation *info)
 {
   #ifdef vtkOOCDFieldTracerDEBUG
-  cerr << "====================================================================FillOutputPortInformation" << endl;
+  cerr << "===============================FillOutputPortInformation" << endl;
   #endif
 
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataSet");
@@ -184,7 +185,7 @@ void vtkOOCDFieldTracer::AddVectorInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
   #ifdef vtkOOCDFieldTracerDEBUG
-  cerr << "====================================================================AddDatasetInputConnectiont" << endl;
+  cerr << "===============================AddDatasetInputConnectiont" << endl;
   #endif
 
   this->AddInputConnection(0, algOutput);
@@ -194,7 +195,7 @@ void vtkOOCDFieldTracer::AddVectorInputConnection(
 void vtkOOCDFieldTracer::ClearVectorInputConnections()
 {
   #ifdef vtkOOCDFieldTracerDEBUG
-  cerr << "====================================================================ClearDatasetInputConnections" << endl;
+  cerr << "===============================ClearDatasetInputConnections" << endl;
   #endif
 
   this->SetInputConnection(0, 0);
@@ -205,7 +206,7 @@ void vtkOOCDFieldTracer::AddSeedPointInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
   #ifdef vtkOOCDFieldTracerDEBUG
-  cerr << "====================================================================AddSeedPointInputConnection" << endl;
+  cerr << "===============================AddSeedPointInputConnection" << endl;
   #endif
   this->AddInputConnection(1, algOutput);
 }
@@ -214,7 +215,7 @@ void vtkOOCDFieldTracer::AddSeedPointInputConnection(
 void vtkOOCDFieldTracer::ClearSeedPointInputConnections()
 {
   #ifdef vtkOOCDFieldTracerDEBUG
-  cerr << "====================================================================ClearSeedPointInputConnections" << endl;
+  cerr << "===============================ClearSeedPointInputConnections" << endl;
   #endif
   this->SetInputConnection(1, 0);
 }
@@ -224,7 +225,7 @@ void vtkOOCDFieldTracer::AddTerminatorInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
   #ifdef vtkOOCDFieldTracerDEBUG
-  cerr << "====================================================================AddBoundaryInputConnection" << endl;
+  cerr << "===============================AddBoundaryInputConnection" << endl;
   #endif
   this->AddInputConnection(2, algOutput);
 }
@@ -233,7 +234,7 @@ void vtkOOCDFieldTracer::AddTerminatorInputConnection(
 void vtkOOCDFieldTracer::ClearTerminatorInputConnections()
 {
   #ifdef vtkOOCDFieldTracerDEBUG
-  cerr << "====================================================================ClearBoundaryInputConnections" << endl;
+  cerr << "===============================ClearBoundaryInputConnections" << endl;
   #endif
   this->SetInputConnection(2, 0);
 }
@@ -262,7 +263,7 @@ int vtkOOCDFieldTracer::RequestDataObject(
                 vtkInformationVector* outInfos)
 {
   #ifdef vtkOOCDFieldTracerDEBUG
-    cerr << "====================================================================RequestDataObject" << endl;
+    cerr << "===============================RequestDataObject" << endl;
   #endif
   // get the filters output
   vtkInformation* outInfo = outInfos->GetInformationObject(0);
@@ -274,6 +275,7 @@ int vtkOOCDFieldTracer::RequestDataObject(
   switch (this->Mode)
     {
     case TOPOLOGY:
+      {
       // duplicate the input type for the map output.
       vtkInformation* inInfo=inInfos[1]->GetInformationObject(0);
       vtkDataObject *inData=inInfo->Get(vtkDataObject::DATA_OBJECT());
@@ -285,6 +287,7 @@ int vtkOOCDFieldTracer::RequestDataObject(
         vtkInformation *portInfo=this->GetOutputPortInformation(0);
         portInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(),VTK_PIECES_EXTENT);
         }
+      }
       break;
 
     case STREAM:
@@ -310,14 +313,14 @@ int vtkOOCDFieldTracer::RequestDataObject(
 //----------------------------------------------------------------------------
 int vtkOOCDFieldTracer::RequestUpdateExtent(
                 vtkInformation *vtkNotUsed(request),
-                vtkInformationVector **inputVector,
-                vtkInformationVector *outputVector)
+                vtkInformationVector **inInfos,
+                vtkInformationVector *outInfos)
 {
   #ifdef vtkOOCDFieldTracerDEBUG
-    cerr << "====================================================================RequestUpdateExtent" << endl;
+    cerr << "===============================RequestUpdateExtent" << endl;
   #endif
 
-  vtkInformation *outInfo = outputVector->GetInformationObject(0);
+  vtkInformation *outInfo = outInfos->GetInformationObject(0);
   int ghostLevel =
     outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
 
@@ -325,16 +328,19 @@ int vtkOOCDFieldTracer::RequestUpdateExtent(
   // only process 0 gets the source data.
   int piece=0;
   int numPieces=1;
+  // The dynamic scheduler requires all processes have all of the seeds,
+  // while the static scheduler sxpects each process has a unique sub set
+  // of the seeeds.
   if (!this->UseDynamicScheduler)
     {
     piece=outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
     numPieces=outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
     }
   // Seed point input.
-  int nSources=inputVector[1]->GetNumberOfInformationObjects();
+  int nSources=inInfos[1]->GetNumberOfInformationObjects();
   for (int i=0; i<nSources; ++i)
     {
-    vtkInformation *sourceInfo = inputVector[1]->GetInformationObject(i);
+    vtkInformation *sourceInfo = inInfos[1]->GetInformationObject(i);
     if (sourceInfo)
       {
       sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(),piece);
@@ -344,10 +350,10 @@ int vtkOOCDFieldTracer::RequestUpdateExtent(
     }
 
   // Terminator surface input. Always request all data onall procs.
-  nSources=inputVector[2]->GetNumberOfInformationObjects();
+  nSources=inInfos[2]->GetNumberOfInformationObjects();
   for (int i=0; i<nSources; ++i)
     {
-    vtkInformation *sourceInfo = inputVector[2]->GetInformationObject(i);
+    vtkInformation *sourceInfo = inInfos[2]->GetInformationObject(i);
     if (sourceInfo)
       {
       sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(),0);
@@ -366,7 +372,7 @@ int vtkOOCDFieldTracer::RequestInformation(
                 vtkInformationVector *outputVector)
 {
   #ifdef vtkOOCDFieldTracerDEBUG
-    cerr << "====================================================================RequestInformation" << endl;
+    cerr << "===============================RequestInformation" << endl;
   #endif
 
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
@@ -382,7 +388,7 @@ int vtkOOCDFieldTracer::RequestData(
                 vtkInformationVector *outputVector)
 {
   #ifdef vtkOOCDFieldTracerDEBUG
-  cerr << "====================================================================RequestData" << endl;
+  cerr << "===============================RequestData" << endl;
   #endif
   #if defined vtkOOCDFieldTracerTIME
   timeval wallt;
@@ -429,14 +435,14 @@ int vtkOOCDFieldTracer::RequestData(
 
   // also the bounds (problem domain) of the data should be provided by the
   // meta reader.
-  if (!info->Has(vtkOOCReader::BOUNDS()))
+  if (!info->Has(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX()))
     {
     vtkWarningMacro(
         "Bounds not found in pipeline information! Aborting request.");
     return 1;
     }
   double pDomain[6];
-  info->Get(vtkOOCReader::BOUNDS(),pDomain);
+  info->Get(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),pDomain);
 
 
   /// Seed source
@@ -464,7 +470,7 @@ int vtkOOCDFieldTracer::RequestData(
 
   /// Map
   // Configure the map.
-  FieldTracerData *traceData;
+  FieldTraceData *traceData;
 
   // There are multiple modes the filter can be used in, see documentation
   // for See SetMode.
@@ -594,7 +600,7 @@ int vtkOOCDFieldTracer::IntegrateStatic(
       const char *fieldName,
       vtkOOCReader *oocr,
       vtkDataSet *&oocrCache,
-      FieldTracerData *topoMap)
+      FieldTraceData *topoMap)
 {
   // do all local ids in a single pass.
   CellIdBlock sourceIds;
@@ -619,7 +625,7 @@ int vtkOOCDFieldTracer::IntegrateDynamic(
       const char *fieldName,
       vtkOOCReader *oocr,
       vtkDataSet *&oocrCache,
-      FieldTracerData *topoMap)
+      FieldTraceData *topoMap)
 {
   const int masterProcId=(nProcs>1?1:0); // NOTE: proc 0 is busy with PV overhead.
   const int BLOCK_REQ=2222;
@@ -720,7 +726,7 @@ int vtkOOCDFieldTracer::IntegrateDynamic(
 //-----------------------------------------------------------------------------
 int vtkOOCDFieldTracer::IntegrateBlock(
       CellIdBlock *sourceIds,
-      FieldTracerData *topoMap,
+      FieldTraceData *topoMap,
       const char *fieldName,
       vtkOOCReader *oocr,
       vtkDataSet *&oocrCache)

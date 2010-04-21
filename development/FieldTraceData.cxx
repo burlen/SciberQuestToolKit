@@ -6,7 +6,7 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#include "FieldTracerData.h"
+#include "FieldTraceData.h"
 
 #include "WorkQueue.h"
 #include "TerminationCondition.h"
@@ -14,7 +14,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkCellData.h"
 
 //-----------------------------------------------------------------------------
-FieldTracerData::FieldTracerData()
+FieldTraceData::FieldTraceData()
       :
     IntersectColor(0)//,
     //SourceId(0)
@@ -29,7 +29,7 @@ FieldTracerData::FieldTracerData()
 }
 
 //-----------------------------------------------------------------------------
-FieldTracerData::~FieldTracerData()
+FieldTraceData::~FieldTraceData()
 {
   this->IntersectColor->Delete();
   // this->SourceId->Delete();
@@ -39,21 +39,21 @@ FieldTracerData::~FieldTracerData()
 }
 
 //-----------------------------------------------------------------------------
-void FieldTracerData::SetOutput(vtkDataSet *o)
+void FieldTraceData::SetOutput(vtkDataSet *o)
 {
   o->GetCellData()->AddArray(this->IntersectColor);
   // o->GetCellData()->AddArray(this->SourceId);
 }
 
 //-----------------------------------------------------------------------------
-int *FieldTracerData::Append(vtkIntArray *ia, int nn)
+int *FieldTraceData::Append(vtkIntArray *ia, int nn)
 {
   vtkIdType ne=ia->GetNumberOfTuples();
   return ia->WritePointer(ne,nn);
 }
 
 //-----------------------------------------------------------------------------
-void FieldTracerData::ClearFieldLines()
+void FieldTraceData::ClearFieldLines()
 {
   size_t nLines=this->Lines.size();
   for (size_t i=0; i<nLines; ++i)
@@ -64,7 +64,7 @@ void FieldTracerData::ClearFieldLines()
 }
 
 //-----------------------------------------------------------------------------
-int FieldTracerData::SyncScalars()
+int FieldTraceData::SyncScalars()
 {
   vtkIdType nLines=this->Lines.size();
 
@@ -87,7 +87,7 @@ int FieldTracerData::SyncScalars()
 }
 
 //-----------------------------------------------------------------------------
-void FieldTracerData::PrintLegend(int reduce)
+void FieldTraceData::PrintLegend(int reduce)
 {
   if (reduce)
     {

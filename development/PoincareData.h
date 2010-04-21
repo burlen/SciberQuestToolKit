@@ -6,8 +6,8 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef UnstructuredFieldTopologyMap_h
-#define UnstructuredFieldTopologyMap_h
+#ifndef PoincareData_h
+#define PoincareData_h
 
 #include "FieldTraceData.h"
 
@@ -19,7 +19,6 @@ using std::map;
 using std::pair;
 
 class CellIdBlock;
-class FieldLine;
 class vtkDataSet;
 class vtkFloatArray;
 class vtkCellArray;
@@ -32,20 +31,18 @@ Abstract collection of datastructures needed to build the topology map.
 The details of building the map change drastically depending on the input
 data type. Concrete classes deal with these specifics.
 */
-class UnstructuredFieldTopologyMap : public FieldTraceData
+class PoincareData : public FieldTraceData
 {
 public:
-  UnstructuredFieldTopologyMap()
+  PoincareData()
         :
     SourcePts(0),
     SourceCells(0),
-    SourceTypes(0),
     OutPts(0),
-    OutCells(0),
-    OutLocs(0)
+    OutCells(0)
       {  }
 
-  virtual ~UnstructuredFieldTopologyMap();
+  virtual ~PoincareData();
 
   // Description:
   // Set the datast to be used as the seed source.
@@ -60,23 +57,32 @@ public:
   // structures and build the output (if any).
   virtual int InsertCells(CellIdBlock *SourceIds);
 
+  // Description:
+  // Move scalar data (IntersectColor, SourceId) from the internal 
+  // structure into the vtk output data.
+  // virtual int SyncScalars(){ return 0; }
+
+  // Description:
+  // Move poincare map geometry from the internal structure
+  // into the vtk output data.
+  virtual int SyncGeometry();
+
+
+  // Description:
+  // No legend is used for poincare map.
+  virtual void PrintLegend(int reduce){}
+
+
 private:
   void ClearSource();
   void ClearOut();
 
 private:
-  typedef pair<map<vtkIdType,vtkIdType>::iterator,bool> MapInsert;
-  typedef pair<vtkIdType,vtkIdType> MapElement;
-  map<vtkIdType,vtkIdType> IdMap;
-
   vtkFloatArray *SourcePts;
   vtkCellArray *SourceCells;
-  vtkUnsignedCharArray *SourceTypes;
 
   vtkFloatArray *OutPts;
   vtkCellArray *OutCells;
-  vtkUnsignedCharArray *OutTypes;
-  vtkIdTypeArray *OutLocs;
 };
 
 #endif

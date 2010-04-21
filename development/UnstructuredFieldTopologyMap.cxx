@@ -82,7 +82,7 @@ void UnstructuredFieldTopologyMap::SetSource(vtkDataSet *s)
 //-----------------------------------------------------------------------------
 void UnstructuredFieldTopologyMap::SetOutput(vtkDataSet *o)
 {
-  this->FieldTracerData::SetOutput(o);
+  this->FieldTraceData::SetOutput(o);
 
   this->ClearOut();
 

@@ -6,7 +6,7 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#include "StreamlineData.h"
+#include "PoincareData.h"
 
 #include "WorkQueue.h"
 #include "FieldLine.h"
@@ -21,14 +21,14 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkIdTypeArray.h"
 
 //-----------------------------------------------------------------------------
-StreamlineData::~StreamlineData()
+PoincareData::~PoincareData()
 {
   this->ClearSource();
   this->ClearOut();
 }
 
 //-----------------------------------------------------------------------------
-void StreamlineData::ClearSource()
+void PoincareData::ClearSource()
 {
   if (this->SourcePts){ this->SourcePts->Delete(); }
   if (this->SourceCells){ this->SourceCells->Delete(); }
@@ -37,7 +37,7 @@ void StreamlineData::ClearSource()
 }
 
 //-----------------------------------------------------------------------------
-void StreamlineData::ClearOut()
+void PoincareData::ClearOut()
 {
   if (this->OutPts){ this->OutPts->Delete(); }
   if (this->OutCells){ this->OutCells->Delete(); }
@@ -46,7 +46,7 @@ void StreamlineData::ClearOut()
 }
 
 //-----------------------------------------------------------------------------
-void StreamlineData::SetSource(vtkDataSet *s)
+void PoincareData::SetSource(vtkDataSet *s)
 {
   this->ClearSource();
 
@@ -111,7 +111,7 @@ void StreamlineData::SetSource(vtkDataSet *s)
 }
 
 //-----------------------------------------------------------------------------
-void StreamlineData::SetOutput(vtkDataSet *o)
+void PoincareData::SetOutput(vtkDataSet *o)
 {
   this->FieldTraceData::SetOutput(o);
 
@@ -131,11 +131,11 @@ void StreamlineData::SetOutput(vtkDataSet *o)
   this->OutPts->Register(0);
 
   this->OutCells=vtkCellArray::New();
-  out->SetLines(this->OutCells);
+  out->SetVerts(this->OutCells);
 }
 
 //-----------------------------------------------------------------------------
-int StreamlineData::InsertCells(CellIdBlock *SourceIds)
+int PoincareData::InsertCells(CellIdBlock *SourceIds)
 {
   vtkIdType startId=SourceIds->first();
   vtkIdType endId=SourceIds->last();
@@ -169,7 +169,7 @@ int StreamlineData::InsertCells(CellIdBlock *SourceIds)
 
     // the seed point we will use the center of the cell
     double seed[3]={0.0};
-    // transfer from input to output (only what we own)
+    // transfer cell center
     for (vtkIdType pId=0; pId<nPtIds; ++pId)
       {
       vtkIdType idx=3*ptIds[pId];
@@ -193,7 +193,7 @@ int StreamlineData::InsertCells(CellIdBlock *SourceIds)
 }
 
 //-----------------------------------------------------------------------------
-int StreamlineData::SyncGeometry()
+int PoincareData::SyncGeometry()
 {
 
   size_t nLines=this->Lines.size();
@@ -201,34 +201,33 @@ int StreamlineData::SyncGeometry()
   vtkIdType nPtsTotal=0;
   for (size_t i=0; i<nLines; ++i)
     {
-    nPtsTotal+=this->Lines[i]->GetNumberOfPoints()-1;
-    // less one because seed point is duplicated in fwd and bwd trace.
+    nPtsTotal+=this->Lines[i]->GetNumberOfPoints();
     }
 
-  vtkIdType nLinePts=this->OutPts->GetNumberOfTuples();
-  float *pLinePts=this->OutPts->WritePointer(3*nLinePts,3*nPtsTotal);
+  vtkIdType nMapPts=this->OutPts->GetNumberOfTuples();
+  float *pMapPts=this->OutPts->WritePointer(3*nMapPts,3*nPtsTotal);
 
-  vtkIdTypeArray *lineCells=this->OutCells->GetData();
-  vtkIdType *pLineCells=lineCells->WritePointer(lineCells->GetNumberOfTuples(),nPtsTotal+nLines);
+  vtkIdTypeArray *mapCells=this->OutCells->GetData();
+  vtkIdType *pMapCells=mapCells->WritePointer(mapCells->GetNumberOfTuples(),2*nPtsTotal);
 
   // before we forget
-  this->OutCells->SetNumberOfCells(this->OutCells->GetNumberOfCells()+nLines);
+  this->OutCells->SetNumberOfCells(this->OutCells->GetNumberOfCells()+nPtsTotal);
 
-  vtkIdType ptId=nLinePts;
+  vtkIdType ptId=nMapPts;
 
   for (size_t i=0; i<nLines; ++i)
     {
     // copy the points
-    vtkIdType nLinePts=this->Lines[i]->CopyLinePoints(pLinePts);
-    pLinePts+=3*nLinePts;
+    vtkIdType nMapPts=this->Lines[i]->CopyEndPoints(pMapPts);
+    pMapPts+=3*nMapPts;
 
-    // build the cell
-    *pLineCells=nLinePts;
-    ++pLineCells;
-    for (vtkIdType q=0; q<nLinePts; ++q)
+    // build the verts (either 1 or 2)
+    for (int q=0; q<nMapPts; ++q)
       {
-      *pLineCells=ptId;
-      ++pLineCells;
+      *pMapCells=1;
+      ++pMapCells;
+      *pMapCells=ptId;
+      ++pMapCells;
       ++ptId;
       }
 

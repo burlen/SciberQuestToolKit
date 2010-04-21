@@ -9,7 +9,7 @@ Copyright 2008 SciberQuest Inc.
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkSQHemisphereSource.cxx,v $
+  Module:    $RCSfile: vtkRandomSeedPoints.h,v $
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -49,7 +49,7 @@ vtkSQHemisphereSource::vtkSQHemisphereSource()
       SouthHemisphereName(0)
 {
   #ifdef vtkSQHemisphereSourceDEBUG
-  cerr << "====================================================================vtkSQHemisphereSource" << endl;
+  cerr << "===============================vtkSQHemisphereSource" << endl;
   #endif
   this->Radius=1.0;
 
@@ -70,7 +70,7 @@ vtkSQHemisphereSource::vtkSQHemisphereSource()
 vtkSQHemisphereSource::~vtkSQHemisphereSource()
 {
   #ifdef vtkSQHemisphereSourceDEBUG
-  cerr << "====================================================================~vtkSQHemisphereSource" << endl;
+  cerr << "===============================~vtkSQHemisphereSource" << endl;
   #endif
   this->SetNorthHemisphereName(0);
   this->SetSouthHemisphereName(0);
@@ -80,7 +80,7 @@ vtkSQHemisphereSource::~vtkSQHemisphereSource()
 int vtkSQHemisphereSource::FillInputPortInformation(int port,vtkInformation *info)
 {
   #ifdef vtkSQHemisphereSourceDEBUG
-  cerr << "====================================================================FillInputPortInformation" << endl;
+  cerr << "===============================FillInputPortInformation" << endl;
   #endif
   // The input is optional, if used we'll look for some keys that define
   // the sphere's attriibutes coming from upstram (e.g from a reader).
@@ -96,7 +96,7 @@ int vtkSQHemisphereSource::RequestInformation(
       vtkInformationVector* outInfos)
 {
   #ifdef vtkSQHemisphereSourceDEBUG
-  cerr << "====================================================================RequestInformation" << endl;
+  cerr << "===============================RequestInformation" << endl;
   #endif
   // The GDA meta data reader will insert information about
   // the center and radius of the dipole. If its there we'll
@@ -146,7 +146,7 @@ int vtkSQHemisphereSource::RequestData(
       vtkInformationVector *outInfos)
 {
   #ifdef vtkSQHemisphereSourceDEBUG
-  cerr << "====================================================================RequestData" << endl;
+  cerr << "===============================RequestData" << endl;
   this->Print(cerr);
   #endif
 
@@ -201,7 +201,7 @@ int vtkSQHemisphereSource::RequestData(
 void vtkSQHemisphereSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   #ifdef vtkSQHemisphereSourceDEBUG
-  cerr << "====================================================================PrintSelf" << endl;
+  cerr << "===============================PrintSelf" << endl;
   #endif
   // this->Superclass::PrintSelf(os,indent);
 

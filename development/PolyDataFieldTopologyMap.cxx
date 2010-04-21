@@ -90,7 +90,7 @@ void PolyDataFieldTopologyMap::SetSource(vtkDataSet *s)
 //-----------------------------------------------------------------------------
 void PolyDataFieldTopologyMap::SetOutput(vtkDataSet *o)
 {
-  this->FieldTopologyMap::SetOutput(o);
+  this->FieldTraceData::SetOutput(o);
 
   this->ClearOut();
 

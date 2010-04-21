@@ -9,6 +9,7 @@ Copyright 2008 SciberQuest Inc.
 <ParaViewSources>
 
   <Category name="SciberQuestSciVis" menu_label="Sciber&amp;Quest SciVis Toolkit">
+    <Proxy group="sources" name="vtkProcessMonitor"/>
     <Proxy group="sources" name="vtkSQPlaneSource"/>
     <Proxy group="sources" name="vtkSQSphereSource"/>
     <Proxy group="sources" name="vtkSQHemisphereSource"/>

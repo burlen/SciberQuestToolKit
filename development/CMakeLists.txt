@@ -26,6 +26,7 @@ set(SM_SOURCES
   vtkSQVortexFilter.cxx
   vtkOOCFieldTracer.cxx
   vtkOOCDFieldTracer.cxx
+  vtkRandomSeedPoints.cxx
   vtkSQPlaneSource.cxx
   vtkSQSphereSource.cxx
   vtkSQHemisphereSource.cxx
@@ -37,15 +38,16 @@ set(_SOURCES
   BOVTimeStepImage.cxx
   BOVScalarImage.cxx
   BOVVectorImage.cxx
-  FieldTopologyMap.cxx
+  FieldTraceData.cxx
   FsUtils.cxx
   GDAMetaData.cxx
   GDAMetaDataKeys.cxx
   IntersectionSet.cxx
   PolyDataFieldTopologyMap.cxx
+  PoincareData.cxx
   PrintUtils.cxx
+  StreamlineData.cxx
   TerminationCondition.cxx
-  TracerFieldTopologyMap.cxx
   UnstructuredFieldTopologyMap.cxx
   vtkMetaDataKeys.cxx
   vtkOOCReader.cxx
@@ -67,16 +69,17 @@ if (WIN32)
   set(_SOURCES ${_SOURCES} win_windirent.cxx)
 endif (WIN32)
 
-if (UNIX)
+if (NOT WIN32)
   # process monitor currently has some unix only features
+  message(STATUS "Building process monitor.")
   set(SM_SOURCES ${SM_SOURCES} vtkProcessMonitor.cxx)
-endif (UNIX)
+endif (NOT WIN32)
 
 
 # Verison dependent sources.
 set(PV_VER ${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR})
 if (PV_VER LESS 3.6)
-  message(STATUS "-- Using ParaView 3.7 classes in build for ParaView ${PV_VER}.")
+  message(STATUS "Using ParaView 3.7 classes in build for ParaView ${PV_VER}.")
   set(_SOURCES 
     ${_SOURCES} 
     vtkAMRBox_3.7.cxx
@@ -86,7 +89,7 @@ endif (PV_VER LESS 3.6)
 
 
 if(PARAVIEW_BUILD_QT_GUI)
-message(STATUS "-- Including custom panels.")
+message(STATUS "Including custom panels.")
 set(_IFACES)
 set(_IFACE_SRCS)
 # Qt custom panels
@@ -110,7 +113,8 @@ ADD_PARAVIEW_OBJECT_PANEL(
 set(_IFACES ${_IFACES} ${IFACES})
 set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
-if (UNIX)
+if (NOT WIN32)
+  message(STATUS "Building process monitor ui.")
   QT4_WRAP_CPP(MOC_SRCS pqProcessMonitor.h)
   QT4_WRAP_UI(UI_SRCS pqProcessMonitorForm.ui)
   ADD_PARAVIEW_OBJECT_PANEL(
@@ -120,7 +124,7 @@ if (UNIX)
     XML_GROUP sources)
   set(_IFACES ${_IFACES} ${IFACES})
   set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
-endif (UNIX)
+endif (NOT WIN32)
 
 set (_SOURCES
   ${_SOURCES}
@@ -131,10 +135,10 @@ set (_SOURCES
   pqSQPlaneSource.cxx
   )
 
-if (UNIX)
+if (NOT WIN32)
   # process monitor currently has some unix only features
   set (_SOURCES ${_SOURCES} pqProcessMonitor.cxx)
-endif (UNIX)
+endif (NOT WIN32)
 
 endif (PARAVIEW_BUILD_QT_GUI)
 

@@ -9,7 +9,7 @@ Copyright 2008 SciberQuest Inc.
 #ifndef PolyDataFieldTopologyMap_h
 #define PolyDataFieldTopologyMap_h
 
-#include "FieldTracerData.h"
+#include "FieldTraceData.h"
 
 #include<vector>
 using std::vector;
@@ -32,7 +32,7 @@ Abstract collection of datastructures needed to build the topology map.
 The details of building the map change drastically depending on the input
 data type. Concrete classes deal with these specifics.
 */
-class PolyDataFieldTopologyMap : public FieldTracerData
+class PolyDataFieldTopologyMap : public FieldTraceData
 {
 public:
   PolyDataFieldTopologyMap()

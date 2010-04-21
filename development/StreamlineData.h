@@ -9,7 +9,7 @@ Copyright 2008 SciberQuest Inc.
 #ifndef StreamlineData_h
 #define StreamlineData_h
 
-#include "FieldTracerData.h"
+#include "FieldTraceData.h"
 
 #include<vector>
 using std::vector;
@@ -31,7 +31,7 @@ Abstract collection of datastructures needed to build the topology map.
 The details of building the map change drastically depending on the input
 data type. Concrete classes deal with these specifics.
 */
-class StreamlineData : public FieldTracerData
+class StreamlineData : public FieldTraceData
 {
 public:
   StreamlineData()

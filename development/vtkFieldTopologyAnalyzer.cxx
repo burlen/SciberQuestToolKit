@@ -50,7 +50,7 @@ vtkStandardNewMacro(vtkFieldTopologyAnalyzer);
 vtkFieldTopologyAnalyzer::vtkFieldTopologyAnalyzer()
 {
   #if defined vtkFieldTopologyAnalyzerDEBUG
-  cerr << "====================================================================vtkFieldTopologyAnalyzer" << endl;
+  cerr << "===============================vtkFieldTopologyAnalyzer" << endl;
   #endif
 
   this->CutFunction=NULL;
@@ -81,7 +81,7 @@ vtkFieldTopologyAnalyzer::vtkFieldTopologyAnalyzer()
 vtkFieldTopologyAnalyzer::~vtkFieldTopologyAnalyzer()
 {
   #if defined vtkFieldTopologyAnalyzerDEBUG
-  cerr << "====================================================================~vtkFieldTopologyAnalyzer" << endl;
+  cerr << "===============================~vtkFieldTopologyAnalyzer" << endl;
   #endif
 }
 
@@ -94,7 +94,7 @@ int vtkFieldTopologyAnalyzer::FillInputPortInformation(int port,
                                                     vtkInformation *info)
 {
   #if defined vtkFieldTopologyAnalyzerDEBUG
-  cerr << "====================================================================FillInputPortInformation" << endl;
+  cerr << "===============================FillInputPortInformation" << endl;
   #endif
   switch (port)
     {
@@ -117,7 +117,7 @@ int vtkFieldTopologyAnalyzer::FillInputPortInformation(int port,
 int vtkFieldTopologyAnalyzer::FillOutputPortInformation(int port, vtkInformation *info)
 {
   #if defined vtkFieldTopologyAnalyzerDEBUG
-  cerr << "====================================================================FillOutputPortInformation" << endl;
+  cerr << "===============================FillOutputPortInformation" << endl;
   #endif
   // 2 Outputs:
   //   0 - Seed points
@@ -144,7 +144,7 @@ void vtkFieldTopologyAnalyzer::AddDatasetInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
   #if defined vtkFieldTopologyAnalyzerDEBUG
-  cerr << "====================================================================AddDatasetInputConnectiont" << endl;
+  cerr << "===============================AddDatasetInputConnectiont" << endl;
   #endif
 
   this->AddInputConnection(0, algOutput);
@@ -154,7 +154,7 @@ void vtkFieldTopologyAnalyzer::AddDatasetInputConnection(
 void vtkFieldTopologyAnalyzer::ClearDatasetInputConnections()
 {
   #if defined vtkFieldTopologyAnalyzerDEBUG
-  cerr << "====================================================================ClearDatasetInputConnections" << endl;
+  cerr << "===============================ClearDatasetInputConnections" << endl;
   #endif
 
   this->SetInputConnection(0, 0);
@@ -166,7 +166,7 @@ void vtkFieldTopologyAnalyzer::AddBoundaryInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
   #if defined vtkFieldTopologyAnalyzerDEBUG
-  cerr << "====================================================================AddBoundaryInputConnection" << endl;
+  cerr << "===============================AddBoundaryInputConnection" << endl;
   #endif
   this->AddInputConnection(1, algOutput);
 }
@@ -175,7 +175,7 @@ void vtkFieldTopologyAnalyzer::AddBoundaryInputConnection(
 void vtkFieldTopologyAnalyzer::ClearBoundaryInputConnections()
 {
   #if defined vtkFieldTopologyAnalyzerDEBUG
-  cerr << "====================================================================ClearBoundaryInputConnections" << endl;
+  cerr << "===============================ClearBoundaryInputConnections" << endl;
   #endif
   this->SetInputConnection(1, 0);
 }
@@ -187,7 +187,7 @@ int vtkFieldTopologyAnalyzer::RequestUpdateExtent(
                 vtkInformationVector *outputVector)
 {
   #if defined vtkFieldTopologyAnalyzerDEBUG
-    cerr << "====================================================================RequestUpdateExtent" << endl;
+    cerr << "===============================RequestUpdateExtent" << endl;
   #endif
 
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
@@ -222,7 +222,7 @@ int vtkFieldTopologyAnalyzer::RequestInformation(
                 vtkInformationVector *outputVector)
 {
   #if defined vtkFieldTopologyAnalyzerDEBUG
-    cerr << "====================================================================RequestInformation" << endl;
+    cerr << "===============================RequestInformation" << endl;
   #endif
 
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
@@ -238,7 +238,7 @@ int vtkFieldTopologyAnalyzer::RequestData(
                 vtkInformationVector *outputVector)
 {
   #if defined vtkFieldTopologyAnalyzerDEBUG
-  cerr << "====================================================================RequestData" << endl;
+  cerr << "===============================RequestData" << endl;
   #endif
 
   int procId=this->Controller->GetLocalProcessId();
@@ -613,7 +613,7 @@ int vtkFieldTopologyAnalyzer::RequestData(
 unsigned long vtkFieldTopologyAnalyzer::GetMTime()
 {
   #if defined vtkFieldTopologyAnalyzerDEBUG
-  cerr << "====================================================================GetMTime" << endl;
+  cerr << "===============================GetMTime" << endl;
   #endif
   unsigned long mTime=this->Superclass::GetMTime();
   unsigned long time;

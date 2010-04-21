@@ -34,7 +34,7 @@ vtkStandardNewMacro(vtkSQPlaneSource);
 vtkSQPlaneSource::vtkSQPlaneSource()
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "=========================================vtkSQPlaneSource" << endl;
+  cerr << "===============================vtkSQPlaneSource" << endl;
   #endif
   // Construct plane perpendicular to z-axis, resolution 1x1, width and height
   // 1.0, and centered at the origin.
@@ -61,7 +61,7 @@ vtkSQPlaneSource::vtkSQPlaneSource()
 vtkSQPlaneSource::~vtkSQPlaneSource()
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "=========================================~vtkSQPlaneSource" << endl;
+  cerr << "===============================~vtkSQPlaneSource" << endl;
   #endif
   this->SetDescriptiveName(0);
 }
@@ -70,7 +70,7 @@ vtkSQPlaneSource::~vtkSQPlaneSource()
 void vtkSQPlaneSource::SetResolution(const int xR, const int yR)
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "=========================================SetResolution" << endl;
+  cerr << "===============================SetResolution" << endl;
   #endif
   // Set the number of x-y subdivisions in the plane.
   if ( xR != this->XResolution || yR != this->YResolution )
@@ -92,7 +92,7 @@ int vtkSQPlaneSource::RequestData(
   vtkInformationVector *outputVector)
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "=========================================RequestData" << endl;
+  cerr << "===============================RequestData" << endl;
   #endif
   // get the info object
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
@@ -201,7 +201,7 @@ int vtkSQPlaneSource::RequestData(
 void vtkSQPlaneSource::SetNormal(double N[3])
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "=========================================SetNormal" << endl;
+  cerr << "===============================SetNormal" << endl;
   #endif
 
   // Set the normal to the plane. Will modify the Origin, Point1, and Point2
@@ -274,7 +274,7 @@ void vtkSQPlaneSource::SetNormal(double nx, double ny, double nz)
 void vtkSQPlaneSource::SetCenter(double center[3])
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "=========================================SetCenter" << endl;
+  cerr << "===============================SetCenter" << endl;
   #endif
 
   // Set the center of the plane. Will modify the Origin, Point1, and Point2
@@ -320,7 +320,7 @@ void vtkSQPlaneSource::SetCenter(double x, double y, double z)
 void vtkSQPlaneSource::SetOrigin(double ox, double oy, double oz)
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "=========================================SetOrigin" << endl;
+  cerr << "===============================SetOrigin" << endl;
   cerr << ox << " " << oy << " " << oz << endl;
   #endif
 
@@ -345,7 +345,7 @@ void vtkSQPlaneSource::SetPoint1(double p[3])
 void vtkSQPlaneSource::SetPoint1(double x, double y, double z)
 {
 #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "=========================================SetPoint1" << endl;
+  cerr << "===============================SetPoint1" << endl;
   cerr << x << " " << y << " " << z << endl;
   #endif
 
@@ -388,7 +388,7 @@ void vtkSQPlaneSource::SetPoint2(double p[3])
 void vtkSQPlaneSource::SetPoint2(double x, double y, double z)
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "=========================================SetPoint2" << endl;
+  cerr << "===============================SetPoint2" << endl;
   cerr << x << " " << y << " " << z << endl;
   #endif
 

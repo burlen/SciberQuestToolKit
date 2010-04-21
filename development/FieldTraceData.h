@@ -27,11 +27,11 @@ Abstract collection of datastructures needed to build the topology map.
 The details of building the map change drastically depending on the input
 data type. Concrete classes deal with these specifics.
 */
-class FieldTracerData
+class FieldTraceData
 {
 public:
-  FieldTracerData();
-  virtual ~FieldTracerData();
+  FieldTraceData();
+  virtual ~FieldTraceData();
 
   // Description:
   // Set the datast to be used as the seed source.

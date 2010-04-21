@@ -92,7 +92,7 @@ public:
     if (this->FwdTrace) this->FwdTrace->Register(0);
 
     this->BwdTrace=other.BwdTrace;
-    if (this>BwdTrace) this->BwdTrace->Register(0);
+    if (this->BwdTrace) this->BwdTrace->Register(0);
 
     return *this;
     }
@@ -173,8 +173,7 @@ public:
     if (this->FwdTrace==NULL || this->BwdTrace==NULL) return 0;
 
     return
-      this->FwdTrace->GetNumberOfTuples()+this->BwdTrace->GetNumberOfTuples()-1;
-      // less one because seed point is duplicated in both.
+      this->FwdTrace->GetNumberOfTuples()+this->BwdTrace->GetNumberOfTuples();
     }
   ///
   vtkIdType CopyLinePoints(float *pts)
@@ -224,19 +223,21 @@ public:
       pts+=3;
       ++n;
       }
-    // copy the termination point from the bwd running line.
+
+    // copy the termination point from the fwd running line.
     vtkIdType nPtsFwd=this->FwdTrace->GetNumberOfTuples();
     float *pftr=this->FwdTrace->GetPointer(0);
     if (nPtsFwd)
       {
-      float *pbtr=this->BwdTrace->GetPointer(0);
-      pbtr+=3*nPtsBwd-3;
+      float *pbtr=this->FwdTrace->GetPointer(0);
+      pftr+=3*nPtsFwd-3;
       pts[0]=pftr[0];
       pts[1]=pftr[1];
       pts[2]=pftr[2];
       pts+=3;
       ++n;
       }
+
     return n;
     }
 

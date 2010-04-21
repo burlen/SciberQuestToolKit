@@ -1,15 +1,15 @@
 /*=========================================================================
 
-Program:   Visualization Toolkit
-Module:    $RCSfile: vtkOOCFieldTracer.cxx,v $
+  Program:   Visualization Toolkit
+  Module:    $RCSfile: vtkRandomSeedPoints.h,v $
 
-Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-All rights reserved.
-See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
+  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
+  All rights reserved.
+  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
 
-This software is distributed WITHOUT ANY WARRANTY; without even
-the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the above copyright notice for more information.
+     This software is distributed WITHOUT ANY WARRANTY; without even
+     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+     PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
 #include "vtkOOCFieldTracer.h"
@@ -26,28 +26,14 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkIntArray.h"
 #include "vtkCellArray.h"
 #include "vtkIdList.h"
-//#include "vtkCompositeDataIterator.h"
-//#include "vtkCompositeDataPipeline.h"
-//#include "vtkCompositeDataSet.h"
-//#include "vtkDataSetAttributes.h"
-//#include "vtkExecutive.h"
-//#include "vtkGenericCell.h"
-
-//#include "vtkMultiBlockDataSet.h"
-
 #include "vtkPointSet.h"
 #include "vtkPolyData.h"
 #include "vtkUnstructuredGrid.h"
 #include "vtkPointData.h"
 #include "vtkCellData.h"
-
-//#include "vtkPolyLine.h"
-//#include "vtkRungeKutta2.h"
-//#include "vtkRungeKutta4.h"
 #include "vtkInitialValueProblemSolver.h"
 #include "vtkRungeKutta45.h"
 #include "vtkMultiProcessController.h"
-//#include "vtkSmartPointer.h"
 #include "vtkOOCReader.h"
 #include "vtkMetaDataKeys.h"
 #include "vtkMath.h"
@@ -105,7 +91,7 @@ vtkOOCFieldTracer::~vtkOOCFieldTracer()
 int vtkOOCFieldTracer::FillInputPortInformation(int port, vtkInformation *info)
 {
   #if defined vtkOOCFieldTracerDEBUG
-  cerr << "====================================================================FillInputPortInformation" << endl;
+  cerr << "===============================FillInputPortInformation" << endl;
   #endif
   switch (port)
     {
@@ -134,7 +120,7 @@ int vtkOOCFieldTracer::FillInputPortInformation(int port, vtkInformation *info)
 int vtkOOCFieldTracer::FillOutputPortInformation(int port, vtkInformation *info)
 {
   #if defined vtkOOCFieldTracerDEBUG
-  cerr << "====================================================================FillOutputPortInformation" << endl;
+  cerr << "===============================FillOutputPortInformation" << endl;
   #endif
 
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataSet");
@@ -164,7 +150,7 @@ void vtkOOCFieldTracer::AddVectorInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
   #if defined vtkOOCFieldTracerDEBUG
-  cerr << "====================================================================AddDatasetInputConnectiont" << endl;
+  cerr << "===============================AddDatasetInputConnectiont" << endl;
   #endif
 
   this->AddInputConnection(0, algOutput);
@@ -174,7 +160,7 @@ void vtkOOCFieldTracer::AddVectorInputConnection(
 void vtkOOCFieldTracer::ClearVectorInputConnections()
 {
   #if defined vtkOOCFieldTracerDEBUG
-  cerr << "====================================================================ClearDatasetInputConnections" << endl;
+  cerr << "===============================ClearDatasetInputConnections" << endl;
   #endif
 
   this->SetInputConnection(0, 0);
@@ -185,7 +171,7 @@ void vtkOOCFieldTracer::AddSeedPointInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
   #if defined vtkOOCFieldTracerDEBUG
-  cerr << "====================================================================AddSeedPointInputConnection" << endl;
+  cerr << "===============================AddSeedPointInputConnection" << endl;
   #endif
   this->AddInputConnection(1, algOutput);
 }
@@ -194,7 +180,7 @@ void vtkOOCFieldTracer::AddSeedPointInputConnection(
 void vtkOOCFieldTracer::ClearSeedPointInputConnections()
 {
   #if defined vtkOOCFieldTracerDEBUG
-  cerr << "====================================================================ClearSeedPointInputConnections" << endl;
+  cerr << "===============================ClearSeedPointInputConnections" << endl;
   #endif
   this->SetInputConnection(1, 0);
 }
@@ -204,7 +190,7 @@ void vtkOOCFieldTracer::AddTerminatorInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
   #if defined vtkOOCFieldTracerDEBUG
-  cerr << "====================================================================AddBoundaryInputConnection" << endl;
+  cerr << "===============================AddBoundaryInputConnection" << endl;
   #endif
   this->AddInputConnection(2, algOutput);
 }
@@ -213,7 +199,7 @@ void vtkOOCFieldTracer::AddTerminatorInputConnection(
 void vtkOOCFieldTracer::ClearTerminatorInputConnections()
 {
   #if defined vtkOOCFieldTracerDEBUG
-  cerr << "====================================================================ClearBoundaryInputConnections" << endl;
+  cerr << "===============================ClearBoundaryInputConnections" << endl;
   #endif
   this->SetInputConnection(2, 0);
 }
@@ -242,7 +228,7 @@ int vtkOOCFieldTracer::RequestDataObject(
                 vtkInformationVector* outInfos)
 {
   #if defined vtkOOCFieldTracerDEBUG
-    cerr << "====================================================================RequestDataObject" << endl;
+    cerr << "===============================RequestDataObject" << endl;
   #endif
   // get the filters output
   vtkInformation* outInfo = outInfos->GetInformationObject(0);
@@ -287,7 +273,7 @@ int vtkOOCFieldTracer::RequestUpdateExtent(
                 vtkInformationVector *outputVector)
 {
   #if defined vtkOOCFieldTracerDEBUG
-    cerr << "====================================================================RequestUpdateExtent" << endl;
+    cerr << "===============================RequestUpdateExtent" << endl;
   #endif
 
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
@@ -337,7 +323,7 @@ int vtkOOCFieldTracer::RequestInformation(
                 vtkInformationVector *outputVector)
 {
   #if defined vtkOOCFieldTracerDEBUG
-    cerr << "====================================================================RequestInformation" << endl;
+    cerr << "===============================RequestInformation" << endl;
   #endif
 
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
@@ -353,7 +339,7 @@ int vtkOOCFieldTracer::RequestData(
                 vtkInformationVector *outputVector)
 {
   #if defined vtkOOCFieldTracerDEBUG
-  cerr << "====================================================================RequestData" << endl;
+  cerr << "===============================RequestData" << endl;
   #endif
   #if defined vtkOOCFieldTracerTIME
   timeval wallt;
@@ -392,14 +378,14 @@ int vtkOOCFieldTracer::RequestData(
   oocr->Open();
 
   // also the bounds (problem domain) of the data should be available.
-  if (!info->Has(vtkOOCReader::BOUNDS()))
+  if (!info->Has(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX()))
     {
     vtkWarningMacro(
         "Bounds not found in pipeline information! Aborting request.");
     return 1;
     }
   double pDomain[6];
-  info->Get(vtkOOCReader::BOUNDS(),pDomain);
+  info->Get(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),pDomain);
 
   // Make sure the termionation conditions include the problem
   // domain, any other termination conditions are optional.
@@ -504,7 +490,8 @@ int vtkOOCFieldTracer::RequestData(
       FieldLine *line=lines[i];
       this->UpdateProgress(i*progInc+0.10);
       this->OOCIntegrateOne(oocr,fieldName,line,&tcon,cache);
-      nPtsTotal+=line->GetNumberOfPoints();
+      nPtsTotal+=line->GetNumberOfPoints()-1;
+      // less one because seed is duplicated in fwd and bwd traces
       pColor[i]=tcon.GetTerminationColor(line);
       }
     // copy into output (also deletes the lines).
@@ -772,7 +759,7 @@ int vtkOOCFieldTracer::CellsToSeeds(
         vector<FieldLine *> &lines)
 {
   #if defined vtkOOCFieldTracerDEBUG
-  cerr << "====================================================================CellsToSeeds,poly->poly" << endl;
+  cerr << "===============================CellsToSeeds,poly->poly" << endl;
   #endif
   // Get the cells.
   int SourceType;
@@ -917,7 +904,7 @@ int vtkOOCFieldTracer::CellsToSeeds(
         vector<FieldLine *> &lines)
 {
   #if defined vtkOOCFieldTracerDEBUG
-  cerr << "====================================================================CellsToSeeds,usg->usg" << endl;
+  cerr << "===============================CellsToSeeds,usg->usg" << endl;
   #endif
   // Get the cells.
   vtkCellArray *SourceCells=Source->GetCells();
@@ -1073,7 +1060,7 @@ int vtkOOCFieldTracer::CellsToSeeds(
         vector<FieldLine *> &lines)
 {
   #if defined vtkOOCFieldTracerDEBUG
-  cerr << "====================================================================CellsToSeeds,points" << endl;
+  cerr << "===============================CellsToSeeds,points" << endl;
   #endif
   // Here we break up the work load. This assumes that the seed source is duplicated
   // on all processes. RequestInformation is configured to make this happen.
@@ -1140,7 +1127,7 @@ int vtkOOCFieldTracer::FieldLinesToPolydata(
         vtkPolyData *fieldLines)
 {
   #if defined vtkOOCFieldTracerDEBUG
-  cerr << "====================================================================FieldLinesToPolydata" << endl;
+  cerr << "===============================FieldLinesToPolydata" << endl;
   #endif
   size_t nLines=lines.size();
   // construct lines from the integrations.
@@ -1162,7 +1149,7 @@ int vtkOOCFieldTracer::FieldLinesToPolydata(
   for (size_t i=0; i<nLines; ++i)
     {
     // copy the points
-    vtkIdType nLinePts=lines[i]->CopyPointsTo(pLinePts);
+    vtkIdType nLinePts=lines[i]->CopyLinePoints(pLinePts);
     pLinePts+=3*nLinePts;
 
     // build the cell

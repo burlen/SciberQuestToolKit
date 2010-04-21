@@ -67,7 +67,7 @@ int fequal(double a, double b, double tol)
 vtkBOVReader::vtkBOVReader()
 {
   #if defined vtkBOVReaderDEBUG
-  cerr << "====================================================================vtkBOVReader" << endl;
+  cerr << "===============================vtkBOVReader" << endl;
   #endif
   // Initialize variables
   this->MetaRead=0;
@@ -116,7 +116,7 @@ vtkBOVReader::vtkBOVReader()
 vtkBOVReader::~vtkBOVReader()
 {
   #if defined vtkBOVReaderDEBUG
-  cerr << "====================================================================~vtkBOVReader" << endl;
+  cerr << "===============================~vtkBOVReader" << endl;
   #endif
 
   this->Clear();
@@ -137,7 +137,7 @@ void vtkBOVReader::Clear()
 int vtkBOVReader::CanReadFile(const char *file)
 {
   #if defined vtkBOVReaderDEBUG
-  cerr << "====================================================================CanReadFile" << endl;
+  cerr << "===============================CanReadFile" << endl;
   cerr << "Check " << safeio(file) << "." << endl;
   #endif
 
@@ -151,7 +151,7 @@ int vtkBOVReader::CanReadFile(const char *file)
 void vtkBOVReader::SetFileName(const char* _arg)
 {
   #if defined vtkBOVReaderDEBUG
-  cerr << "====================================================================SetFileName" << endl;
+  cerr << "===============================SetFileName" << endl;
   cerr << "Set FileName from " << safeio(this->FileName) << " to " << safeio(_arg) << "." << endl;
   #endif
   #if defined vtkBOVReaderTIME
@@ -222,7 +222,7 @@ void vtkBOVReader::SetFileName(const char* _arg)
 void vtkBOVReader::SetSubset(const int *s)
 {
   #if defined vtkBOVReaderDEBUG
-  cerr << "====================================================================SetSubset*" << endl;
+  cerr << "===============================SetSubset*" << endl;
   #endif
   this->SetSubset(s[0],s[1],s[2],s[3],s[4],s[5]);
 }
@@ -231,7 +231,7 @@ void vtkBOVReader::SetSubset(const int *s)
 void vtkBOVReader::SetSubset(int ilo,int ihi, int jlo, int jhi, int klo, int khi)
 {
   #if defined vtkBOVReaderDEBUG
-  cerr << "====================================================================SetSubset" << endl;
+  cerr << "===============================SetSubset" << endl;
   #endif
   // Avoid unecessary pipeline execution.
   if (this->Subset[0]==ilo && this->Subset[1]==ihi
@@ -279,7 +279,7 @@ void vtkBOVReader::SetKSubset(int klo, int khi)
 void vtkBOVReader::SetPointArrayStatus(const char *name, int status)
 {
   #if defined vtkBOVReaderDEBUG
-  cerr << "====================================================================SetPointArrayStatus" << endl;
+  cerr << "===============================SetPointArrayStatus" << endl;
   cerr << safeio(name) << " " << status << endl;
   #endif
   if (status)
@@ -297,7 +297,7 @@ void vtkBOVReader::SetPointArrayStatus(const char *name, int status)
 int vtkBOVReader::GetPointArrayStatus(const char *name)
 {
   #if defined vtkBOVReaderDEBUG
-  cerr << "====================================================================GetPointArrayStatus" << endl;
+  cerr << "===============================GetPointArrayStatus" << endl;
   #endif
   return this->Reader->GetMetaData()->IsArrayActive(name);
 }
@@ -306,7 +306,7 @@ int vtkBOVReader::GetPointArrayStatus(const char *name)
 int vtkBOVReader::GetNumberOfPointArrays()
 {
   #if defined vtkBOVReaderDEBUG
-  cerr << "====================================================================GetNumberOfPointArrays" << endl;
+  cerr << "===============================GetNumberOfPointArrays" << endl;
   #endif
   return this->Reader->GetMetaData()->GetNumberOfArrays();
 }
@@ -315,7 +315,7 @@ int vtkBOVReader::GetNumberOfPointArrays()
 const char* vtkBOVReader::GetPointArrayName(int idx)
 {
   #if defined vtkBOVReaderDEBUG
-  cerr << "====================================================================GetArrayName" << endl;
+  cerr << "===============================GetArrayName" << endl;
   #endif
   return this->Reader->GetMetaData()->GetArrayName(idx);
 }
@@ -327,7 +327,7 @@ int vtkBOVReader::RequestInformation(
   vtkInformationVector* outInfos)
 {
   #if defined vtkBOVReaderDEBUG
-  cerr << "====================================================================RequestInformation" << endl;
+  cerr << "===============================RequestInformation" << endl;
   #endif
 
   if (!this->Reader->IsOpen())
@@ -434,7 +434,7 @@ int vtkBOVReader::RequestData(
         vtkInformationVector *outInfos)
 {
   #if defined vtkBOVReaderDEBUG
-  cerr << "====================================================================RequestData" << endl;
+  cerr << "===============================RequestData" << endl;
   #endif
   #if defined vtkBOVReaderTIME
   double walls=0.0;
@@ -562,10 +562,13 @@ int vtkBOVReader::RequestData(
     // processes. The subset describes what the user has
     // marked for reading.
     double subsetBounds[6];
-    subsetBounds[0]=X0[0]; subsetBounds[1]=X0[0]+dX[0]*((double)this->NProcs);
-    subsetBounds[2]=X0[1]; subsetBounds[3]=X0[1]+dX[1];
-    subsetBounds[4]=X0[2]; subsetBounds[5]=X0[2]+dX[2];
-    info->Set(vtkOOCReader::BOUNDS(),subsetBounds,6);
+    subsetBounds[0]=X0[0];
+    subsetBounds[1]=X0[0]+dX[0]*((double)this->NProcs);
+    subsetBounds[2]=X0[1];
+    subsetBounds[3]=X0[1]+dX[1];
+    subsetBounds[4]=X0[2];
+    subsetBounds[5]=X0[2]+dX[2];
+    info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
     }
   else
     {
@@ -574,6 +577,17 @@ int vtkBOVReader::RequestData(
     BOVTimeStepImage *stepImg=this->Reader->OpenTimeStep(stepId);
     ok=this->Reader->ReadTimeStep(stepImg,idds,this);
     this->Reader->CloseTimeStep(stepImg);
+    // pass the bounds
+    int subSetExt[6];
+    subset.GetDimensions(subSetExt);
+    double subsetBounds[6];
+    subsetBounds[0]=X0[0];
+    subsetBounds[1]=X0[0]+dX[0]*(subSetExt[1]-subSetExt[0]+1);
+    subsetBounds[2]=X0[1];
+    subsetBounds[3]=X0[1]+dX[1]*(subSetExt[3]-subSetExt[2]+1);
+    subsetBounds[4]=X0[2];
+    subsetBounds[5]=X0[2]+dX[2]*(subSetExt[5]-subSetExt[4]+1);
+    info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
     }
   if (!ok)
     {

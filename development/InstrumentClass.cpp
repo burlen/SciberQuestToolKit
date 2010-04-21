@@ -112,7 +112,7 @@ int main(int argc, char **argv)
     cout << classText.substr(lastPos,currentPos-lastPos)
          << endl
          << "  #ifdef " << className << "DEBUG" << endl
-         << "    cerr << \"=====================================================" << methodKey << methodName[i] << "\" << endl;" << endl
+         << "    cerr << \"===============================" << methodKey << methodName[i] << "\" << endl;" << endl
          << "  #endif" << endl
          << endl;
     lastPos=currentPos;
