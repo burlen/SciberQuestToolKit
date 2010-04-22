@@ -1,7 +1,15 @@
+/*
+   ____    _ __           ____               __    ____
+  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
+ _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+
+Copyright 2008 SciberQuest Inc.
+*/
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkSQRandomSeedPoints.h,v $
+  Module:    $RCSfile: vtkSQSeedPointLatice.cxx,v $
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,7 +20,7 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkSQRandomSeedPoints.h"
+#include "vtkSQSeedPointLatice.h"
 
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
@@ -26,15 +34,17 @@
 #include "vtkPolyData.h"
 #include "vtkType.h"
 
-#define vtkSQRandomSeedPointsDEBUG
+#define vtkSQSeedPointLaticeDEBUG
 
-vtkCxxRevisionMacro(vtkSQRandomSeedPoints, "$Revision: 0.0 $");
-vtkStandardNewMacro(vtkSQRandomSeedPoints);
+vtkCxxRevisionMacro(vtkSQSeedPointLatice, "$Revision: 0.0 $");
+vtkStandardNewMacro(vtkSQSeedPointLatice);
 
 //----------------------------------------------------------------------------
-vtkSQRandomSeedPoints::vtkSQRandomSeedPoints()
+vtkSQSeedPointLatice::vtkSQSeedPointLatice()
       :
-  NumberOfPoints(10)
+  XResolution(4),
+  YResolution(4),
+  ZResolution(4)
 {
   this->Bounds[0]=this->Bounds[2]=this->Bounds[4]=0.0;
   this->Bounds[1]=this->Bounds[3]=this->Bounds[5]=1.0;
@@ -44,11 +54,11 @@ vtkSQRandomSeedPoints::vtkSQRandomSeedPoints()
 }
 
 //----------------------------------------------------------------------------
-vtkSQRandomSeedPoints::~vtkSQRandomSeedPoints()
+vtkSQSeedPointLatice::~vtkSQSeedPointLatice()
 {}
 
 //----------------------------------------------------------------------------
-int vtkSQRandomSeedPoints::FillInputPortInformation(int port,vtkInformation *info)
+int vtkSQSeedPointLatice::FillInputPortInformation(int port,vtkInformation *info)
 {
   // The input is optional,if present it will be used 
   // for bounds.
@@ -58,7 +68,7 @@ int vtkSQRandomSeedPoints::FillInputPortInformation(int port,vtkInformation *inf
 }
 
 //----------------------------------------------------------------------------
-int vtkSQRandomSeedPoints::RequestInformation(
+int vtkSQSeedPointLatice::RequestInformation(
     vtkInformation */*req*/,
     vtkInformationVector **inInfos,
     vtkInformationVector *outInfos)
@@ -69,7 +79,7 @@ int vtkSQRandomSeedPoints::RequestInformation(
 }
 
 //----------------------------------------------------------------------------
-int vtkSQRandomSeedPoints::RequestData(
+int vtkSQSeedPointLatice::RequestData(
     vtkInformation */*req*/,
     vtkInformationVector **inInfos,
     vtkInformationVector *outInfos)
@@ -98,16 +108,22 @@ int vtkSQRandomSeedPoints::RequestData(
     return 1;
     }
 
-  // we don't care which points are ours, rather the number we need to generate
-  int nLarge=this->NumberOfPoints%nPieces;
-  int nLocal=this->NumberOfPoints/nPieces+(pieceNo<nLarge?1:0);
+  // domain decomposition
+  int nPoints=this->XResolution*this->YResolution*this->ZResolution;
+  int pieceSize=nPoints/nPieces;
+  int nLarge=nPoints%nPieces;
+  int nLocal=pieceSize+(pieceNo<nLarge?1:0);
+  int startId=pieceSize*pieceNo+(pieceNo<nLarge?pieceNo:nLarge);
+  int endId=startId+nLocal;
 
-  #ifdef vtkSQRandomSeedPointsDEBUG
+  #ifdef vtkSQSeedPointLaticeDEBUG
   cerr
     << "pieceNo = " << pieceNo << endl
     << "nPieces = " << nPieces << endl
     << "rank    = " << rank << endl
-    << "nLocal  = " << nLocal << endl;
+    << "nLocal  = " << nLocal << endl
+    << "startId = " << startId << endl
+    << "endId   = " << endId;
   #endif
 
   // If the input is present then use it for bounds
@@ -157,35 +173,33 @@ int vtkSQRandomSeedPoints::RequestData(
   output->SetVerts(verts);
   verts->Delete();
 
+
   float dX[3];
-  dX[0]=this->Bounds[1]-this->Bounds[0];
-  dX[1]=this->Bounds[3]-this->Bounds[2];
-  dX[2]=this->Bounds[5]-this->Bounds[4];
-
-  float eps[3];
-  eps[0]=dX[0]/100.0;
-  eps[1]=dX[1]/100.0;
-  eps[2]=dX[2]/100.0;
-
-  dX[0]-=2.0*eps[0];
-  dX[1]-=2.0*eps[1];
-  dX[2]-=2.0*eps[2];
+  dX[0]=(this->Bounds[1]-this->Bounds[0])/this->XResolution;
+  dX[1]=(this->Bounds[3]-this->Bounds[2])/this->YResolution;
+  dX[2]=(this->Bounds[5]-this->Bounds[4])/this->ZResolution;
 
   float X0[3];
-  X0[0]=this->Bounds[0]+eps[0];
-  X0[1]=this->Bounds[2]+eps[1];
-  X0[2]=this->Bounds[4]+eps[2];
+  X0[0]=this->Bounds[0]+dX[0]/2.0;
+  X0[1]=this->Bounds[2]+dX[1]/2.0;
+  X0[2]=this->Bounds[4]+dX[2]/2.0;
+
+  int nx=this->XResolution;
+  int nxy=this->XResolution*this->YResolution;
 
   // generate the point set
   srand(rank+time(0));
-  for (int q=0; q<nLocal; ++q)
+  for (int q=startId; q<endId; ++q)
     {
-    // new random point
-    const float rmax=RAND_MAX;
-    pX[0]=X0[0]+dX[0]*rand()/rmax;
-    pX[1]=X0[1]+dX[1]*rand()/rmax;
-    pX[2]=X0[2]+dX[2]*rand()/rmax;
+    // latice indices.
+    int k=q/nxy;
+    int j=q%nx;
+    int i=q-k*nxy-j*nx;
 
+    // new latice point
+    pX[0]=X0[0]+i*dX[0];
+    pX[1]=X0[1]+j*dX[1];
+    pX[2]=X0[2]+k*dX[2];
     pX+=3;
 
     // insert the cell
@@ -198,7 +212,7 @@ int vtkSQRandomSeedPoints::RequestData(
 }
 
 //----------------------------------------------------------------------------
-void vtkSQRandomSeedPoints::PrintSelf(ostream& os, vtkIndent indent)
+void vtkSQSeedPointLatice::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
 
