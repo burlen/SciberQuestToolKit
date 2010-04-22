@@ -9,7 +9,7 @@ Copyright 2008 SciberQuest Inc.
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkRandomSeedPoints.h,v $
+  Module:    $RCSfile: vtkSQHemisphereSource.cxx,v $
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.

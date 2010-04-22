@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkProcessMonitor.h,v $
+  Module:    $RCSfile: vtkSQProcessMonitor.h,v $
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,11 +12,11 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkProcessMonitor - create an array of quadrilaterals located in a plane
+// .NAME vtkSQProcessMonitor - create an array of quadrilaterals located in a plane
 // .SECTION Description
 
-#ifndef __vtkProcessMonitor_h
-#define __vtkProcessMonitor_h
+#ifndef __vtkSQProcessMonitor_h
+#define __vtkSQProcessMonitor_h
 
 #include "vtkPolyDataAlgorithm.h"
 
@@ -30,18 +30,18 @@ using std::cerr;
 using std::endl;
 
 // define the following ot enable debuging io
-// #define vtkProcessMonitorDEBUG
+// #define vtkSQProcessMonitorDEBUG
 
-class VTK_GRAPHICS_EXPORT vtkProcessMonitor : public vtkPolyDataAlgorithm
+class VTK_GRAPHICS_EXPORT vtkSQProcessMonitor : public vtkPolyDataAlgorithm
 {
 public:
   void PrintSelf(ostream& os, vtkIndent indent);
-  vtkTypeRevisionMacro(vtkProcessMonitor,vtkPolyDataAlgorithm);
+  vtkTypeRevisionMacro(vtkSQProcessMonitor,vtkPolyDataAlgorithm);
 
   // Description:
   // Construct plane perpendicular to z-axis, resolution 1x1, width
   // and height 1.0, and centered at the origin.
-  static vtkProcessMonitor *New();
+  static vtkSQProcessMonitor *New();
 
   // Description:
   // Get the configuration in a stream.
@@ -50,8 +50,8 @@ public:
   vtkSetStringMacro(ConfigStream);
 
 protected:
-  vtkProcessMonitor();
-  virtual ~vtkProcessMonitor();
+  vtkSQProcessMonitor();
+  virtual ~vtkSQProcessMonitor();
 
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
   int RequestInformation(vtkInformation *,vtkInformationVector **,vtkInformationVector *);
@@ -65,8 +65,8 @@ private:
   char *ConfigStream;
 
 private:
-  vtkProcessMonitor(const vtkProcessMonitor&);  // Not implemented.
-  void operator=(const vtkProcessMonitor&);  // Not implemented.
+  vtkSQProcessMonitor(const vtkSQProcessMonitor&);  // Not implemented.
+  void operator=(const vtkSQProcessMonitor&);  // Not implemented.
 };
 
 #endif

@@ -8,7 +8,7 @@ Copyright 2008 SciberQuest Inc.
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkRandomSeedPoints.h,v $
+  Module:    $RCSfile: vtkSQFieldTracer.cxx,v $
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -19,8 +19,8 @@ Copyright 2008 SciberQuest Inc.
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkOOCDFieldTracer.h"
-// #define vtkOOCDFieldTracerDEBUG
+#include "vtkSQFieldTracer.h"
+// #define vtkSQFieldTracerDEBUG
 
 
 #include "vtkSmartPointer.h"
@@ -40,6 +40,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkPointData.h"
 #include "vtkCellData.h"
 
+#include "vtkInterpolatedVelocityField.h"
 #include "vtkInitialValueProblemSolver.h"
 #include "vtkRungeKutta45.h"
 #include "vtkMultiProcessController.h"
@@ -47,12 +48,6 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkOOCReader.h"
 #include "vtkMetaDataKeys.h"
 #include "vtkMath.h"
-
-#ifdef PV_3_4_BUILD
-  #include "vtkInterpolatedVelocityField-3.7.h"
-#else
-  #include "vtkInterpolatedVelocityField.h"
-#endif
 
 #include "FieldLine.h"
 #include "TerminationCondition.h"
@@ -66,20 +61,20 @@ Copyright 2008 SciberQuest Inc.
 
 #include "mpi.h"
 
-#ifdef vtkOOCDFieldTracerTIME
+#ifdef vtkSQFieldTracerTIME
   #include <sys/time.h>
 #endif
 
 
 
 
-vtkCxxRevisionMacro(vtkOOCDFieldTracer, "$Revision: 0.0 $");
-vtkStandardNewMacro(vtkOOCDFieldTracer);
+vtkCxxRevisionMacro(vtkSQFieldTracer, "$Revision: 0.0 $");
+vtkStandardNewMacro(vtkSQFieldTracer);
 
-const double vtkOOCDFieldTracer::EPSILON = 1.0E-12;
+const double vtkSQFieldTracer::EPSILON = 1.0E-12;
 
 //-----------------------------------------------------------------------------
-vtkOOCDFieldTracer::vtkOOCDFieldTracer()
+vtkSQFieldTracer::vtkSQFieldTracer()
       :
   UseDynamicScheduler(1),
   WorkerBlockSize(16),
@@ -104,16 +99,16 @@ vtkOOCDFieldTracer::vtkOOCDFieldTracer()
 }
 
 //-----------------------------------------------------------------------------
-vtkOOCDFieldTracer::~vtkOOCDFieldTracer()
+vtkSQFieldTracer::~vtkSQFieldTracer()
 {
   this->Integrator->Delete();
   delete this->TermCon;
 }
 
 //-----------------------------------------------------------------------------
-int vtkOOCDFieldTracer::FillInputPortInformation(int port, vtkInformation *info)
+int vtkSQFieldTracer::FillInputPortInformation(int port, vtkInformation *info)
 {
-  #ifdef vtkOOCDFieldTracerDEBUG
+  #ifdef vtkSQFieldTracerDEBUG
   cerr << "===============================FillInputPortInformation" << endl;
   #endif
   switch (port)
@@ -140,9 +135,9 @@ int vtkOOCDFieldTracer::FillInputPortInformation(int port, vtkInformation *info)
 }
 
 //----------------------------------------------------------------------------
-int vtkOOCDFieldTracer::FillOutputPortInformation(int port, vtkInformation *info)
+int vtkSQFieldTracer::FillOutputPortInformation(int port, vtkInformation *info)
 {
-  #ifdef vtkOOCDFieldTracerDEBUG
+  #ifdef vtkSQFieldTracerDEBUG
   cerr << "===============================FillOutputPortInformation" << endl;
   #endif
 
@@ -181,10 +176,10 @@ int vtkOOCDFieldTracer::FillOutputPortInformation(int port, vtkInformation *info
 }
 
 //----------------------------------------------------------------------------
-void vtkOOCDFieldTracer::AddVectorInputConnection(
+void vtkSQFieldTracer::AddVectorInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
-  #ifdef vtkOOCDFieldTracerDEBUG
+  #ifdef vtkSQFieldTracerDEBUG
   cerr << "===============================AddDatasetInputConnectiont" << endl;
   #endif
 
@@ -192,9 +187,9 @@ void vtkOOCDFieldTracer::AddVectorInputConnection(
 }
 
 //----------------------------------------------------------------------------
-void vtkOOCDFieldTracer::ClearVectorInputConnections()
+void vtkSQFieldTracer::ClearVectorInputConnections()
 {
-  #ifdef vtkOOCDFieldTracerDEBUG
+  #ifdef vtkSQFieldTracerDEBUG
   cerr << "===============================ClearDatasetInputConnections" << endl;
   #endif
 
@@ -202,45 +197,45 @@ void vtkOOCDFieldTracer::ClearVectorInputConnections()
 }
 
 //----------------------------------------------------------------------------
-void vtkOOCDFieldTracer::AddSeedPointInputConnection(
+void vtkSQFieldTracer::AddSeedPointInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
-  #ifdef vtkOOCDFieldTracerDEBUG
+  #ifdef vtkSQFieldTracerDEBUG
   cerr << "===============================AddSeedPointInputConnection" << endl;
   #endif
   this->AddInputConnection(1, algOutput);
 }
 
 //----------------------------------------------------------------------------
-void vtkOOCDFieldTracer::ClearSeedPointInputConnections()
+void vtkSQFieldTracer::ClearSeedPointInputConnections()
 {
-  #ifdef vtkOOCDFieldTracerDEBUG
+  #ifdef vtkSQFieldTracerDEBUG
   cerr << "===============================ClearSeedPointInputConnections" << endl;
   #endif
   this->SetInputConnection(1, 0);
 }
 
 //----------------------------------------------------------------------------
-void vtkOOCDFieldTracer::AddTerminatorInputConnection(
+void vtkSQFieldTracer::AddTerminatorInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
-  #ifdef vtkOOCDFieldTracerDEBUG
+  #ifdef vtkSQFieldTracerDEBUG
   cerr << "===============================AddBoundaryInputConnection" << endl;
   #endif
   this->AddInputConnection(2, algOutput);
 }
 
 //----------------------------------------------------------------------------
-void vtkOOCDFieldTracer::ClearTerminatorInputConnections()
+void vtkSQFieldTracer::ClearTerminatorInputConnections()
 {
-  #ifdef vtkOOCDFieldTracerDEBUG
+  #ifdef vtkSQFieldTracerDEBUG
   cerr << "===============================ClearBoundaryInputConnections" << endl;
   #endif
   this->SetInputConnection(2, 0);
 }
 
 //-----------------------------------------------------------------------------
-void vtkOOCDFieldTracer::SetStepUnit(int unit)
+void vtkSQFieldTracer::SetStepUnit(int unit)
 { 
   if (unit!=ARC_LENGTH
    && unit!=CELL_FRACTION )
@@ -257,12 +252,12 @@ void vtkOOCDFieldTracer::SetStepUnit(int unit)
 }
 
 //----------------------------------------------------------------------------
-int vtkOOCDFieldTracer::RequestDataObject(
+int vtkSQFieldTracer::RequestDataObject(
                 vtkInformation *info,
                 vtkInformationVector** inInfos,
                 vtkInformationVector* outInfos)
 {
-  #ifdef vtkOOCDFieldTracerDEBUG
+  #ifdef vtkSQFieldTracerDEBUG
     cerr << "===============================RequestDataObject" << endl;
   #endif
   // get the filters output
@@ -311,12 +306,12 @@ int vtkOOCDFieldTracer::RequestDataObject(
 }
 
 //----------------------------------------------------------------------------
-int vtkOOCDFieldTracer::RequestUpdateExtent(
+int vtkSQFieldTracer::RequestUpdateExtent(
                 vtkInformation *vtkNotUsed(request),
                 vtkInformationVector **inInfos,
                 vtkInformationVector *outInfos)
 {
-  #ifdef vtkOOCDFieldTracerDEBUG
+  #ifdef vtkSQFieldTracerDEBUG
     cerr << "===============================RequestUpdateExtent" << endl;
   #endif
 
@@ -366,12 +361,12 @@ int vtkOOCDFieldTracer::RequestUpdateExtent(
 }
 
 //----------------------------------------------------------------------------
-int vtkOOCDFieldTracer::RequestInformation(
+int vtkSQFieldTracer::RequestInformation(
                 vtkInformation *vtkNotUsed(request),
                 vtkInformationVector **vtkNotUsed(inputVector),
                 vtkInformationVector *outputVector)
 {
-  #ifdef vtkOOCDFieldTracerDEBUG
+  #ifdef vtkSQFieldTracerDEBUG
     cerr << "===============================RequestInformation" << endl;
   #endif
 
@@ -382,15 +377,15 @@ int vtkOOCDFieldTracer::RequestInformation(
 }
 
 //----------------------------------------------------------------------------
-int vtkOOCDFieldTracer::RequestData(
+int vtkSQFieldTracer::RequestData(
                 vtkInformation *vtkNotUsed(request),
                 vtkInformationVector **inputVector,
                 vtkInformationVector *outputVector)
 {
-  #ifdef vtkOOCDFieldTracerDEBUG
+  #ifdef vtkSQFieldTracerDEBUG
   cerr << "===============================RequestData" << endl;
   #endif
-  #if defined vtkOOCDFieldTracerTIME
+  #if defined vtkSQFieldTracerTIME
   timeval wallt;
   gettimeofday(&wallt,0x0);
   double walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
@@ -547,7 +542,7 @@ int vtkOOCDFieldTracer::RequestData(
   /// Work loops
   if (this->UseDynamicScheduler)
     {
-    #ifdef vtkOOCDFieldTracerDEBUG
+    #ifdef vtkSQFieldTracerDEBUG
     cerr << "Starting dynamic scheduler." << endl;
     #endif
     // This requires all process to have all the seed source data
@@ -559,7 +554,7 @@ int vtkOOCDFieldTracer::RequestData(
     }
   else
     {
-    #ifdef vtkOOCDFieldTracerDEBUG
+    #ifdef vtkSQFieldTracerDEBUG
     cerr << "Static distribution assumed." << endl;
     #endif
     // This assumes that seed source is distrubuted such that each 
@@ -569,7 +564,7 @@ int vtkOOCDFieldTracer::RequestData(
     this->IntegrateStatic(source,out,fieldName,oocr.GetPointer(),oocrCache,traceData);
     }
 
-  #if defined vtkOOCDFieldTracerTIME
+  #if defined vtkSQFieldTracerTIME
   gettimeofday(&wallt,0x0);
   double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
   cerr << procId << " finished " << walle-walls << endl;
@@ -594,7 +589,7 @@ int vtkOOCDFieldTracer::RequestData(
 
 //-----------------------------------------------------------------------------
 inline
-int vtkOOCDFieldTracer::IntegrateStatic(
+int vtkSQFieldTracer::IntegrateStatic(
       vtkDataSet *source,
       vtkDataSet *out,
       const char *fieldName,
@@ -617,7 +612,7 @@ int vtkOOCDFieldTracer::IntegrateStatic(
 }
 
 //-----------------------------------------------------------------------------
-int vtkOOCDFieldTracer::IntegrateDynamic(
+int vtkSQFieldTracer::IntegrateDynamic(
       int procId,
       int nProcs,
       vtkDataSet *source,
@@ -664,7 +659,7 @@ int vtkOOCDFieldTracer::IntegrateDynamic(
             {
             --nActiveWorkers;
             }
-           #ifdef vtkOOCDFieldTracerDEBUG
+           #ifdef vtkSQFieldTracerDEBUG
            cerr << "Master filled request from " << otherProc << " " << sourceIds << endl;
            #endif
           }
@@ -677,7 +672,7 @@ int vtkOOCDFieldTracer::IntegrateDynamic(
       moreWork=Q.GetBlock(sourceIds,masterBlockSize);
       if (moreWork)
         {
-        #ifdef vtkOOCDFieldTracerDEBUG
+        #ifdef vtkSQFieldTracerDEBUG
         cerr << "Master integrating " << sourceIds << endl;
         #endif
         this->IntegrateBlock(
@@ -695,7 +690,7 @@ int vtkOOCDFieldTracer::IntegrateDynamic(
     {
     while (1)
       {
-      #ifdef vtkOOCDFieldTracerDEBUG
+      #ifdef vtkSQFieldTracerDEBUG
       cerr << "Slave " << procId << " requesting work" << endl;
       #endif
       // get a block of seed cell ids to process.
@@ -704,7 +699,7 @@ int vtkOOCDFieldTracer::IntegrateDynamic(
       CellIdBlock sourceIds;
       MPI_Recv(sourceIds.data(),sourceIds.dataSize(),MPI_INT,masterProcId,BLOCK_REQ,MPI_COMM_WORLD,&stat);
 
-      #ifdef vtkOOCDFieldTracerDEBUG
+      #ifdef vtkSQFieldTracerDEBUG
       cerr << "Slave " << procId << " received " << sourceIds << endl;
       #endif
 
@@ -724,7 +719,7 @@ int vtkOOCDFieldTracer::IntegrateDynamic(
 }
 
 //-----------------------------------------------------------------------------
-int vtkOOCDFieldTracer::IntegrateBlock(
+int vtkSQFieldTracer::IntegrateBlock(
       CellIdBlock *sourceIds,
       FieldTraceData *topoMap,
       const char *fieldName,
@@ -755,7 +750,7 @@ int vtkOOCDFieldTracer::IntegrateBlock(
 }
 
 //-----------------------------------------------------------------------------
-void vtkOOCDFieldTracer::IntegrateOne(
+void vtkSQFieldTracer::IntegrateOne(
       vtkOOCReader *oocR,
       vtkDataSet *&oocRCache,
       const char *fieldName,
@@ -795,7 +790,7 @@ void vtkOOCDFieldTracer::IntegrateOne(
       // add the point to the line.
       if (this->Mode==STREAM) line->PushPoint(i,p0);
 
-      #ifdef vtkOOCDFieldTracerDEBUG5
+      #ifdef vtkSQFieldTracerDEBUG5
       cerr << "   " << p0[0] << ", " << p0[1] << ", " << p0[2] << endl;
       #endif
 
@@ -829,7 +824,7 @@ void vtkOOCDFieldTracer::IntegrateOne(
       // check for field null
       if ((speed==0) || (speed<=this->NullThreshold))
         {
-        #ifdef vtkOOCDFieldTracerDEBUG4
+        #ifdef vtkSQFieldTracerDEBUG4
         cerr << "Terminated: Field null encountered." << endl;
         #endif
         line->SetTerminator(i,tcon->GetFieldNullId());
@@ -864,7 +859,7 @@ void vtkOOCDFieldTracer::IntegrateOne(
       int surfIsect=tcon->SegmentTerminates(p0,p1);
       if (surfIsect)
         {
-        #ifdef vtkOOCDFieldTracerDEBUG4
+        #ifdef vtkSQFieldTracerDEBUG4
         cerr << "Terminated: Surface " << surfIsect-1 << " hit." << endl;
         #endif
         line->SetTerminator(i,surfIsect);
@@ -875,7 +870,7 @@ void vtkOOCDFieldTracer::IntegrateOne(
       // We are now integrated through all available.
       if (tcon->OutsideProblemDomain(p1))
         {
-        #ifdef vtkOOCDFieldTracerDEBUG4
+        #ifdef vtkSQFieldTracerDEBUG4
         cerr << "Terminated: Integration outside problem domain." << endl;
         #endif
         line->SetTerminator(i,tcon->GetProblemDomainSurfaceId());
@@ -886,7 +881,7 @@ void vtkOOCDFieldTracer::IntegrateOne(
       // check integration limit
       if (lineLength>this->MaxLineLength || numSteps>this->MaxNumberOfSteps)
         {
-        #ifdef vtkOOCDFieldTracerDEBUG4
+        #ifdef vtkSQFieldTracerDEBUG4
         cerr << "Terminated: Integration limmit exceeded." << endl;
         #endif
         line->SetTerminator(i,tcon->GetShortIntegrationId());
@@ -905,7 +900,7 @@ void vtkOOCDFieldTracer::IntegrateOne(
       double v=dx/(dt+1E-12);
       if (v<=this->NullThreshold)
         {
-        #ifdef vtkOOCDFieldTracerDEBUG4
+        #ifdef vtkSQFieldTracerDEBUG4
         cerr << "Terminated: Field null encountered." << endl;
         #endif
         line->SetTerminator(i,tcon->GetFieldNullId());
@@ -924,7 +919,7 @@ void vtkOOCDFieldTracer::IntegrateOne(
 
 
 //-----------------------------------------------------------------------------
-double vtkOOCDFieldTracer::ConvertToLength(
+double vtkSQFieldTracer::ConvertToLength(
       double interval,
       int unit,
       double cellLength)
@@ -943,7 +938,7 @@ double vtkOOCDFieldTracer::ConvertToLength(
 }
 
 //-----------------------------------------------------------------------------
-void vtkOOCDFieldTracer::ClipStep(
+void vtkSQFieldTracer::ClipStep(
       double& step,
       int stepSign,
       double& minStep,
@@ -977,7 +972,7 @@ void vtkOOCDFieldTracer::ClipStep(
 }
 
 //-----------------------------------------------------------------------------
-void vtkOOCDFieldTracer::PrintSelf(ostream& os, vtkIndent indent)
+void vtkSQFieldTracer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
   // TODO

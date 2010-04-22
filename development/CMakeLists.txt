@@ -24,9 +24,8 @@ include(MPICHConfig.cmake)
 set(SM_SOURCES
   vtkBOVReader.cxx
   vtkSQVortexFilter.cxx
-  vtkOOCFieldTracer.cxx
-  vtkOOCDFieldTracer.cxx
-  vtkRandomSeedPoints.cxx
+  vtkSQFieldTracer.cxx
+  vtkSQRandomSeedPoints.cxx
   vtkSQPlaneSource.cxx
   vtkSQSphereSource.cxx
   vtkSQHemisphereSource.cxx
@@ -72,7 +71,7 @@ endif (WIN32)
 if (NOT WIN32)
   # process monitor currently has some unix only features
   message(STATUS "Building process monitor.")
-  set(SM_SOURCES ${SM_SOURCES} vtkProcessMonitor.cxx)
+  set(SM_SOURCES ${SM_SOURCES} vtkSQProcessMonitor.cxx)
 endif (NOT WIN32)
 
 
@@ -115,12 +114,12 @@ set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
 if (NOT WIN32)
   message(STATUS "Building process monitor ui.")
-  QT4_WRAP_CPP(MOC_SRCS pqProcessMonitor.h)
-  QT4_WRAP_UI(UI_SRCS pqProcessMonitorForm.ui)
+  QT4_WRAP_CPP(MOC_SRCS pqSQProcessMonitor.h)
+  QT4_WRAP_UI(UI_SRCS pqSQProcessMonitorForm.ui)
   ADD_PARAVIEW_OBJECT_PANEL(
     IFACES IFACE_SRCS
-    CLASS_NAME pqProcessMonitor
-    XML_NAME vtkProcessMonitor
+    CLASS_NAME pqSQProcessMonitor
+    XML_NAME vtkSQProcessMonitor
     XML_GROUP sources)
   set(_IFACES ${_IFACES} ${IFACES})
   set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
@@ -137,7 +136,7 @@ set (_SOURCES
 
 if (NOT WIN32)
   # process monitor currently has some unix only features
-  set (_SOURCES ${_SOURCES} pqProcessMonitor.cxx)
+  set (_SOURCES ${_SOURCES} pqSQProcessMonitor.cxx)
 endif (NOT WIN32)
 
 endif (PARAVIEW_BUILD_QT_GUI)

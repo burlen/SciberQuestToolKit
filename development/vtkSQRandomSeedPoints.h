@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkRandomSeedPoints.h,v $
+  Module:    $RCSfile: vtkSQRandomSeedPoints.h,v $
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,9 +12,9 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkRandomSeedPoints - create a random cloud of points
+// .NAME vtkSQRandomSeedPoints - create a random cloud of points
 // .SECTION Description
-// vtkRandomSeedPoints is a source object that creates a user-specified number 
+// vtkSQRandomSeedPoints is a source object that creates a user-specified number 
 // of points within a specified radius about a specified center point. 
 // By default location of the points is random within the sphere. It is
 // also possible to generate random points only on the surface of the
@@ -25,11 +25,11 @@
 
 #include "vtkPolyDataAlgorithm.h"
 
-class VTK_EXPORT vtkRandomSeedPoints : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkSQRandomSeedPoints : public vtkPolyDataAlgorithm
 {
 public:
-  static vtkRandomSeedPoints *New();
-  vtkTypeRevisionMacro(vtkRandomSeedPoints,vtkPolyDataAlgorithm);
+  static vtkSQRandomSeedPoints *New();
+  vtkTypeRevisionMacro(vtkSQRandomSeedPoints,vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
@@ -50,15 +50,15 @@ protected:
   int RequestData(vtkInformation *req, vtkInformationVector **input, vtkInformationVector *output);
   int RequestInformation(vtkInformation *req, vtkInformationVector **input, vtkInformationVector *output);
 
-  vtkRandomSeedPoints();
-  ~vtkRandomSeedPoints();
+  vtkSQRandomSeedPoints();
+  ~vtkSQRandomSeedPoints();
 
   int NumberOfPoints;
   double Bounds[6];
 
 private:
-  vtkRandomSeedPoints(const vtkRandomSeedPoints&);  // Not implemented.
-  void operator=(const vtkRandomSeedPoints&);  // Not implemented.
+  vtkSQRandomSeedPoints(const vtkSQRandomSeedPoints&);  // Not implemented.
+  void operator=(const vtkSQRandomSeedPoints&);  // Not implemented.
 };
 
 #endif

@@ -1,4 +1,4 @@
-#include "pqProcessMonitor.h"
+#include "pqSQProcessMonitor.h"
 
 
 #include "pqProxy.h"
@@ -20,7 +20,7 @@
 
 #include <unistd.h>
 
-#if defined pqProcessMonitorDEBUG
+#if defined pqSQProcessMonitorDEBUG
 #include "PrintUtils.h"
 #endif
 #include "FsUtils.h"
@@ -44,17 +44,17 @@ enum {
 };
 
 //-----------------------------------------------------------------------------
-pqProcessMonitor::pqProcessMonitor(
+pqSQProcessMonitor::pqSQProcessMonitor(
         pqProxy* proxy,
         QWidget* widget)
   : pqNamedObjectPanel(proxy, widget)
 {
-  #if defined pqProcessMonitorDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::pqProcessMonitor" << endl;
+  #if defined pqSQProcessMonitorDEBUG
+  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::pqSQProcessMonitor" << endl;
   #endif
 
   // Construct Qt form.
-  this->Form=new pqProcessMonitorForm;
+  this->Form=new pqSQProcessMonitorForm;
   this->Form->setupUi(this);
   // this->Form->addCommand->setIcon(QPixmap(":/pqWidgets/Icons/pqNewItem16.png"));
   // this->Form->execCommand->setIcon(QPixmap(":/pqWidgets/Icons/pqVcrPlay16.png"));
@@ -84,10 +84,10 @@ pqProcessMonitor::pqProcessMonitor(
 }
 
 //-----------------------------------------------------------------------------
-pqProcessMonitor::~pqProcessMonitor()
+pqSQProcessMonitor::~pqSQProcessMonitor()
 {
-  #if defined pqProcessMonitorDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::~pqProcessMonitor" << endl;
+  #if defined pqSQProcessMonitorDEBUG
+  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::~pqSQProcessMonitor" << endl;
   #endif
 
   this->Save();
@@ -98,7 +98,7 @@ pqProcessMonitor::~pqProcessMonitor()
 }
 
 //-----------------------------------------------------------------------------
-void pqProcessMonitor::Restore()
+void pqSQProcessMonitor::Restore()
 {
   QStringList defaultCmds;
   defaultCmds
@@ -120,7 +120,7 @@ void pqProcessMonitor::Restore()
 }
 
 //-----------------------------------------------------------------------------
-void pqProcessMonitor::Save()
+void pqSQProcessMonitor::Save()
 {
   QStringList cmds;
   int nCmds=this->Form->commandCombo->count();
@@ -136,9 +136,9 @@ void pqProcessMonitor::Save()
 
 
 //-----------------------------------------------------------------------------
-void pqProcessMonitor::UpdateInformationEvent()
+void pqSQProcessMonitor::UpdateInformationEvent()
 {
-  #if defined pqProcessMonitorDEBUG
+  #if defined pqSQProcessMonitorDEBUG
   cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::UpdateInformationEvent" << endl;
   #endif
   // vtkSMProxy* dpProxy=this->referenceProxy()->getProxy();
@@ -146,7 +146,7 @@ void pqProcessMonitor::UpdateInformationEvent()
 
 
 //-----------------------------------------------------------------------------
-void pqProcessMonitor::PullServerConfig()
+void pqSQProcessMonitor::PullServerConfig()
 {
   vtkSMProxy* dpProxy=this->referenceProxy()->getProxy();
 
@@ -211,7 +211,7 @@ void pqProcessMonitor::PullServerConfig()
 }
 
 //-----------------------------------------------------------------------------
-void pqProcessMonitor::AddCommand()
+void pqSQProcessMonitor::AddCommand()
 {
 //   int idx=this->Form->commandCombo->count();
 //   this->Form->commandCombo->addItem("NEW COMMAND");
@@ -223,22 +223,22 @@ void pqProcessMonitor::AddCommand()
 }
 
 //-----------------------------------------------------------------------------
-void pqProcessMonitor::DelCommand()
+void pqSQProcessMonitor::DelCommand()
 {
   int idx=this->Form->commandCombo->currentIndex();
   this->Form->commandCombo->removeItem(idx);
 }
 
 //-----------------------------------------------------------------------------
-void pqProcessMonitor::EditCommand(bool state)
+void pqSQProcessMonitor::EditCommand(bool state)
 {
   this->Form->commandCombo->setEditable(state);
 }
 
 //-----------------------------------------------------------------------------
-void pqProcessMonitor::ExecCommand()
+void pqSQProcessMonitor::ExecCommand()
 {
-  #if defined pqProcessMonitorDEBUG
+  #if defined pqSQProcessMonitorDEBUG
   cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::ForkExec" << endl;
   #endif
 
@@ -279,7 +279,7 @@ void pqProcessMonitor::ExecCommand()
             int argLen=argStrs[i].size();
             args[i]=(char *)malloc((argLen+1)*sizeof(char));
             strncpy(args[i],argStrs[i].c_str(),argLen+1);
-            #if defined pqProcessMonitorDEBUG
+            #if defined pqSQProcessMonitorDEBUG
             cerr << "[" << args[i] << "]" << endl;
             #endif
             }
@@ -320,9 +320,9 @@ void pqProcessMonitor::ExecCommand()
 }
 
 // //-----------------------------------------------------------------------------
-// void pqProcessMonitor::Signal()
+// void pqSQProcessMonitor::Signal()
 // {
-//   #if defined pqProcessMonitorDEBUG
+//   #if defined pqSQProcessMonitorDEBUG
 //   cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::Signal" << endl;
 //   #endif
 // 
@@ -381,9 +381,9 @@ void pqProcessMonitor::ExecCommand()
 // }
 
 //-----------------------------------------------------------------------------
-void pqProcessMonitor::accept()
+void pqSQProcessMonitor::accept()
 {
-  #if defined pqProcessMonitorDEBUG
+  #if defined pqSQProcessMonitorDEBUG
   cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::accept" << endl;
   #endif
 

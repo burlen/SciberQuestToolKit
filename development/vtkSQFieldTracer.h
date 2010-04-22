@@ -6,7 +6,7 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-// .NAME vtkOOCDFieldTracer - Streamline generator
+// .NAME vtkSQFieldTracer - Streamline generator
 // .SECTION Description
 //
 // Scalable field line tracer using RK45 Adds capability to
@@ -14,8 +14,8 @@ Copyright 2008 SciberQuest Inc.
 // surfaces.
 // TODO verify that VTK rk45 implementation increases step size!!
 
-#ifndef __vtkOOCDFieldTracer_h
-#define __vtkOOCDFieldTracer_h
+#ifndef __vtkSQFieldTracer_h
+#define __vtkSQFieldTracer_h
 
 #include "vtkDataSetAlgorithm.h"
 
@@ -36,12 +36,12 @@ class TerminationCondition;
 //ETX
 
 
-class VTK_EXPORT vtkOOCDFieldTracer : public vtkDataSetAlgorithm
+class VTK_EXPORT vtkSQFieldTracer : public vtkDataSetAlgorithm
 {
 public:
-  vtkTypeRevisionMacro(vtkOOCDFieldTracer,vtkDataSetAlgorithm);
+  vtkTypeRevisionMacro(vtkSQFieldTracer,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
-  static vtkOOCDFieldTracer *New();
+  static vtkSQFieldTracer *New();
 
   // Description:
   // Specify the dataset with the vector field to analyze.
@@ -140,8 +140,8 @@ public:
   vtkGetMacro(UseDynamicScheduler,int);
 
 protected:
-  vtkOOCDFieldTracer();
-  ~vtkOOCDFieldTracer();
+  vtkSQFieldTracer();
+  ~vtkSQFieldTracer();
 
   // VTK Pipeline
   int FillInputPortInformation(int port,vtkInformation *info);
@@ -229,8 +229,8 @@ private:
   // Convert from cell fractional unit into length.
   static double ConvertToLength(double interval,int unit,double cellLength);
 
-  vtkOOCDFieldTracer(const vtkOOCDFieldTracer&);  // Not implemented.
-  void operator=(const vtkOOCDFieldTracer&);  // Not implemented.
+  vtkSQFieldTracer(const vtkSQFieldTracer&);  // Not implemented.
+  void operator=(const vtkSQFieldTracer&);  // Not implemented.
 
 private:
   vtkInitialValueProblemSolver* Integrator;

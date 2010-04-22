@@ -503,7 +503,7 @@ Copyright 2008 SciberQuest Inc.
   </SourceProxy>
 
   <!-- ==================================================================== -->
-  <SourceProxy name="vtkProcessMonitor" class="vtkProcessMonitor" label="Process Monitor">
+  <SourceProxy name="vtkSQProcessMonitor" class="vtkSQProcessMonitor" label="Process Monitor">
       <Documentation
         long_help="A custom Qt panel that manages and monitors the running processes."
         short_help="A custom Qt panel that manages and monitors the running processes.">
@@ -532,7 +532,7 @@ Copyright 2008 SciberQuest Inc.
 -->
 <ProxyGroup name="common-ui">
   <!-- ==================================================================== -->
-  <Proxy name="vtkOOCFieldTracerUI">
+  <Proxy name="vtkSQFieldTracerUI">
     <Documentation
        long_help="Trace field lines in a vector field."
        short_help="Trace field lines in a vector field.">
@@ -734,10 +734,10 @@ Copyright 2008 SciberQuest Inc.
 <ProxyGroup name="filters">
 
 <!-- ==================================================================== -->
-<SourceProxy name="vtkOOCDFieldTracer" 
-    class="vtkOOCDFieldTracer"
-    label="OOCD Field Tracer"
-    base_proxyname="vtkOOCFieldTracerUI"
+<SourceProxy name="vtkSQFieldTracer" 
+    class="vtkSQFieldTracer"
+    label="SQ Field Tracer"
+    base_proxyname="vtkSQFieldTracerUI"
     base_proxygroup="common-ui">
 
   <!-- Out -->
@@ -806,9 +806,9 @@ Copyright 2008 SciberQuest Inc.
 
 <!-- ==================================================================== -->
 <SourceProxy name="vtkOOCDFieldTopologyMapper" 
-    class="vtkOOCDFieldTracer"
-    label="OOCD Field Topology Mapper"
-    base_proxyname="vtkOOCFieldTracerUI"
+    class="vtkSQFieldTracer"
+    label="SQ Field Topology Mapper"
+    base_proxyname="vtkSQFieldTracerUI"
     base_proxygroup="common-ui">
 
   <!-- Out -->
@@ -877,9 +877,9 @@ Copyright 2008 SciberQuest Inc.
 
 <!-- ==================================================================== -->
 <SourceProxy name="vtkOOCDPoincareMapper"
-    class="vtkOOCDFieldTracer"
-    label="OOCD Poincare Mapper"
-    base_proxyname="vtkOOCFieldTracerUI"
+    class="vtkSQFieldTracer"
+    label="SQ Poincare Mapper"
+    base_proxyname="vtkSQFieldTracerUI"
     base_proxygroup="common-ui">
 
   <!-- Out -->
@@ -1058,8 +1058,8 @@ Copyright 2008 SciberQuest Inc.
 
   <!-- ==================================================================== -->
   <SourceProxy 
-    name="vtkRandomSeedPoints" 
-    class="vtkRandomSeedPoints"
+    name="vtkSQRandomSeedPoints" 
+    class="vtkSQRandomSeedPoints"
     label="Random Seed Points">
     <Documentation
       long_help="Long Documentation"

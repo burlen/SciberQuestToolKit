@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkRandomSeedPoints.h,v $
+  Module:    $RCSfile: vtkSQRandomSeedPoints.h,v $
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,7 +12,7 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkRandomSeedPoints.h"
+#include "vtkSQRandomSeedPoints.h"
 
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
@@ -26,13 +26,13 @@
 #include "vtkPolyData.h"
 #include "vtkType.h"
 
-#define vtkRandomSeedPointsDEBUG
+#define vtkSQRandomSeedPointsDEBUG
 
-vtkCxxRevisionMacro(vtkRandomSeedPoints, "$Revision: 0.0 $");
-vtkStandardNewMacro(vtkRandomSeedPoints);
+vtkCxxRevisionMacro(vtkSQRandomSeedPoints, "$Revision: 0.0 $");
+vtkStandardNewMacro(vtkSQRandomSeedPoints);
 
 //----------------------------------------------------------------------------
-vtkRandomSeedPoints::vtkRandomSeedPoints()
+vtkSQRandomSeedPoints::vtkSQRandomSeedPoints()
       :
   NumberOfPoints(10)
 {
@@ -44,11 +44,11 @@ vtkRandomSeedPoints::vtkRandomSeedPoints()
 }
 
 //----------------------------------------------------------------------------
-vtkRandomSeedPoints::~vtkRandomSeedPoints()
+vtkSQRandomSeedPoints::~vtkSQRandomSeedPoints()
 {}
 
 //----------------------------------------------------------------------------
-int vtkRandomSeedPoints::FillInputPortInformation(int port,vtkInformation *info)
+int vtkSQRandomSeedPoints::FillInputPortInformation(int port,vtkInformation *info)
 {
   // The input is optional,if present it will be used 
   // for bounds.
@@ -58,7 +58,7 @@ int vtkRandomSeedPoints::FillInputPortInformation(int port,vtkInformation *info)
 }
 
 //----------------------------------------------------------------------------
-int vtkRandomSeedPoints::RequestInformation(
+int vtkSQRandomSeedPoints::RequestInformation(
     vtkInformation */*req*/,
     vtkInformationVector **inInfos,
     vtkInformationVector *outInfos)
@@ -69,7 +69,7 @@ int vtkRandomSeedPoints::RequestInformation(
 }
 
 //----------------------------------------------------------------------------
-int vtkRandomSeedPoints::RequestData(
+int vtkSQRandomSeedPoints::RequestData(
     vtkInformation */*req*/,
     vtkInformationVector **inInfos,
     vtkInformationVector *outInfos)
@@ -97,7 +97,7 @@ int vtkRandomSeedPoints::RequestData(
     return 1;
     }
 
-  #ifdef vtkRandomSeedPointsDEBUG
+  #ifdef vtkSQRandomSeedPointsDEBUG
   cerr
     << "pieceNo=" << pieceNo << endl
     << "nPieces=" << nPieces << endl
@@ -193,7 +193,7 @@ int vtkRandomSeedPoints::RequestData(
 }
 
 //----------------------------------------------------------------------------
-void vtkRandomSeedPoints::PrintSelf(ostream& os, vtkIndent indent)
+void vtkSQRandomSeedPoints::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
 

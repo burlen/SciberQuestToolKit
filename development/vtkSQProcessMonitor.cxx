@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkProcessMonitor.cxx,v $
+  Module:    $RCSfile: vtkSQProcessMonitor.cxx,v $
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,7 +12,7 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkProcessMonitor.h"
+#include "vtkSQProcessMonitor.h"
 
 
 
@@ -39,11 +39,11 @@ using std::ostringstream;
 
 #include "mpi.h"
 
-vtkCxxRevisionMacro(vtkProcessMonitor, "$Revision: 0.0 $");
-vtkStandardNewMacro(vtkProcessMonitor);
+vtkCxxRevisionMacro(vtkSQProcessMonitor, "$Revision: 0.0 $");
+vtkStandardNewMacro(vtkSQProcessMonitor);
 
 //----------------------------------------------------------------------------
-vtkProcessMonitor::vtkProcessMonitor()
+vtkSQProcessMonitor::vtkSQProcessMonitor()
     :
   Controller(0),
   ProcId(0),
@@ -52,29 +52,29 @@ vtkProcessMonitor::vtkProcessMonitor()
   Hostname("localhost"),
   ConfigStream(0)
 {
-  #if defined vtkProcessMonitorDEBUG
-    cerr << "====================================================================vtkProcessMonitor" << endl;
+  #if defined vtkSQProcessMonitorDEBUG
+    cerr << "====================================================================vtkSQProcessMonitor" << endl;
   #endif
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
 }
 
 //----------------------------------------------------------------------------
-vtkProcessMonitor::~vtkProcessMonitor()
+vtkSQProcessMonitor::~vtkSQProcessMonitor()
 {
-  #if defined vtkProcessMonitorDEBUG
-    cerr << "====================================================================~vtkProcessMonitor" << endl;
+  #if defined vtkSQProcessMonitorDEBUG
+    cerr << "====================================================================~vtkSQProcessMonitor" << endl;
   #endif
   this->SetConfigStream(0);
 }
 
 //----------------------------------------------------------------------------
-int vtkProcessMonitor::RequestInformation(
+int vtkSQProcessMonitor::RequestInformation(
   vtkInformation *request,
   vtkInformationVector **inInfos,
   vtkInformationVector *outInfos)
 {
-  #if defined vtkProcessMonitorDEBUG
+  #if defined vtkSQProcessMonitorDEBUG
     cerr << "====================================================================RequestInformation" << endl;
   #endif
 
@@ -171,12 +171,12 @@ int vtkProcessMonitor::RequestInformation(
 
 
 //----------------------------------------------------------------------------
-int vtkProcessMonitor::RequestData(
+int vtkSQProcessMonitor::RequestData(
   vtkInformation *vtkNotUsed(request),
   vtkInformationVector **vtkNotUsed(inputVector),
   vtkInformationVector *outInfos)
 {
-  #if defined vtkProcessMonitorDEBUG
+  #if defined vtkSQProcessMonitorDEBUG
     cerr << "====================================================================RequestData" << endl;
   #endif
 
@@ -193,7 +193,7 @@ int vtkProcessMonitor::RequestData(
 }
 
 //----------------------------------------------------------------------------
-void vtkProcessMonitor::PrintSelf(ostream& os, vtkIndent indent)
+void vtkSQProcessMonitor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
   // TODO

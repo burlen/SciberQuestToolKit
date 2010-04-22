@@ -7,29 +7,29 @@
 Copyright 2008 SciberQuest Inc.
 
 */
-#ifndef pqProcessMonitor_h
-#define pqProcessMonitor_h
+#ifndef pqSQProcessMonitor_h
+#define pqSQProcessMonitor_h
 
 #include "pqNamedObjectPanel.h"
 #include "pqComponentsExport.h"// no comment
 #include <vtkstd/vector>// no comment
 
-#include "ui_pqProcessMonitorForm.h"//  no comment
-using Ui::pqProcessMonitorForm;
+#include "ui_pqSQProcessMonitorForm.h"//  no comment
+using Ui::pqSQProcessMonitorForm;
 
 // Define the following to enable debug io
-// #define pqProcessMonitorDEBUG
+// #define pqSQProcessMonitorDEBUG
 
 class pqProxy;
 class vtkEventQtSlotConnect;
 class QWidget;
 
-class pqProcessMonitor : public pqNamedObjectPanel
+class pqSQProcessMonitor : public pqNamedObjectPanel
 {
   Q_OBJECT
 public:
-  pqProcessMonitor(pqProxy* proxy, QWidget* p = NULL);
-  ~pqProcessMonitor();
+  pqSQProcessMonitor(pqProxy* proxy, QWidget* p = NULL);
+  ~pqSQProcessMonitor();
   void Restore();
   void Save();
 
@@ -59,7 +59,7 @@ private:
 
 
 private:
-  pqProcessMonitorForm *Form;
+  pqSQProcessMonitorForm *Form;
   vtkEventQtSlotConnect *VTKConnect;
 };
 
