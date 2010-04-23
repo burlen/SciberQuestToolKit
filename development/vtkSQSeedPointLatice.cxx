@@ -115,16 +115,6 @@ int vtkSQSeedPointLatice::RequestData(
   int startId=pieceSize*pieceNo+(pieceNo<nLarge?pieceNo:nLarge);
   int endId=startId+nLocal;
 
-  #ifdef vtkSQSeedPointLaticeDEBUG
-  cerr
-    << "pieceNo = " << pieceNo << endl
-    << "nPieces = " << nPieces << endl
-    << "rank    = " << rank << endl
-    << "nLocal  = " << nLocal << endl
-    << "startId = " << startId << endl
-    << "endId   = " << endId << endl;
-  #endif
-
   // If the input is present then use it for bounds
   // otherwise we assume the user has previously set
   // desired bounds.
@@ -183,25 +173,30 @@ int vtkSQSeedPointLatice::RequestData(
   X0[1]=this->Bounds[2]+dX[1]/2.0;
   X0[2]=this->Bounds[4]+dX[2]/2.0;
 
+  #ifdef vtkSQSeedPointLaticeDEBUG
   cerr
+    << "pieceNo = " << pieceNo << endl
+    << "nPieces = " << nPieces << endl
+    << "rank    = " << rank << endl
+    << "nLocal  = " << nLocal << endl
+    << "startId = " << startId << endl
+    << "endId   = " << endId << endl
     << "NX=" << Tuple<int>(this->NX,3) << endl
     << "Bounds=" << Tuple<double>(this->Bounds,6) << endl
     << "dX=" << Tuple<float>(dX,3) << endl
     << "X0=" << Tuple<float>(X0,3) << endl;
-  
+  #endif
 
   int nx=this->NX[0];
   int nxy=this->NX[0]*this->NX[1];
 
   // generate the point set
-  for (int q=startId; q<endId; ++q)
+  for (int idx=startId,pid=0; idx<endId; ++idx, ++pid)
     {
     // latice indices.
-    int k=q/nxy;
-    int j=(q-k*nxy)/nx;
-    int i=q-k*nxy-j*nx;
-
-    cerr << "q(" << q << ")=" << i << ", " << j << ", " << k << endl;
+    int k=idx/nxy;
+    int j=(idx-k*nxy)/nx;
+    int i=idx-k*nxy-j*nx;
 
     // new latice point
     pX[0]=X0[0]+i*dX[0];
@@ -211,7 +206,7 @@ int vtkSQSeedPointLatice::RequestData(
 
     // insert the cell
     pIa[0]=1;
-    pIa[1]=q;
+    pIa[1]=pid;
     pIa+=2;
     }
 
