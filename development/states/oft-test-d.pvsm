@@ -4372,7 +4372,7 @@
       </SubProxy>
       <SubProxy name="Widget" servers="16"/>
     </Proxy>
-    <Proxy group="filters" type="vtkOOCDFieldTopologyMapper" id="2997" servers="1">
+    <Proxy group="filters" type="vtkSQFieldTopologyMapper" id="2997" servers="1">
       <Property name="DatasetInput" id="2997.DatasetInput" number_of_elements="1">
         <Proxy value="243" output_port="0"/>
         <Domain name="groups" id="2997.DatasetInput.groups">

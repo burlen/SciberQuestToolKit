@@ -33,6 +33,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
 #include "vtkType.h"
+#include "Tuple.hxx"
 
 #define vtkSQSeedPointLaticeDEBUG
 
@@ -41,11 +42,9 @@ vtkStandardNewMacro(vtkSQSeedPointLatice);
 
 //----------------------------------------------------------------------------
 vtkSQSeedPointLatice::vtkSQSeedPointLatice()
-      :
-  XResolution(4),
-  YResolution(4),
-  ZResolution(4)
 {
+  this->NX[0]=this->NX[1]=this->NX[2]=4;
+
   this->Bounds[0]=this->Bounds[2]=this->Bounds[4]=0.0;
   this->Bounds[1]=this->Bounds[3]=this->Bounds[5]=1.0;
 
@@ -109,7 +108,7 @@ int vtkSQSeedPointLatice::RequestData(
     }
 
   // domain decomposition
-  int nPoints=this->XResolution*this->YResolution*this->ZResolution;
+  int nPoints=this->NX[0]*this->NX[1]*this->NX[2];
   int pieceSize=nPoints/nPieces;
   int nLarge=nPoints%nPieces;
   int nLocal=pieceSize+(pieceNo<nLarge?1:0);
@@ -123,7 +122,7 @@ int vtkSQSeedPointLatice::RequestData(
     << "rank    = " << rank << endl
     << "nLocal  = " << nLocal << endl
     << "startId = " << startId << endl
-    << "endId   = " << endId;
+    << "endId   = " << endId << endl;
   #endif
 
   // If the input is present then use it for bounds
@@ -175,26 +174,34 @@ int vtkSQSeedPointLatice::RequestData(
 
 
   float dX[3];
-  dX[0]=(this->Bounds[1]-this->Bounds[0])/this->XResolution;
-  dX[1]=(this->Bounds[3]-this->Bounds[2])/this->YResolution;
-  dX[2]=(this->Bounds[5]-this->Bounds[4])/this->ZResolution;
+  dX[0]=(this->Bounds[1]-this->Bounds[0])/this->NX[0];
+  dX[1]=(this->Bounds[3]-this->Bounds[2])/this->NX[1];
+  dX[2]=(this->Bounds[5]-this->Bounds[4])/this->NX[2];
 
   float X0[3];
   X0[0]=this->Bounds[0]+dX[0]/2.0;
   X0[1]=this->Bounds[2]+dX[1]/2.0;
   X0[2]=this->Bounds[4]+dX[2]/2.0;
 
-  int nx=this->XResolution;
-  int nxy=this->XResolution*this->YResolution;
+  cerr
+    << "NX=" << Tuple<int>(this->NX,3) << endl
+    << "Bounds=" << Tuple<double>(this->Bounds,6) << endl
+    << "dX=" << Tuple<float>(dX,3) << endl
+    << "X0=" << Tuple<float>(X0,3) << endl;
+  
+
+  int nx=this->NX[0];
+  int nxy=this->NX[0]*this->NX[1];
 
   // generate the point set
-  srand(rank+time(0));
   for (int q=startId; q<endId; ++q)
     {
     // latice indices.
     int k=q/nxy;
-    int j=q%nx;
+    int j=(q-k*nxy)/nx;
     int i=q-k*nxy-j*nx;
+
+    cerr << "q(" << q << ")=" << i << ", " << j << ", " << k << endl;
 
     // new latice point
     pX[0]=X0[0]+i*dX[0];

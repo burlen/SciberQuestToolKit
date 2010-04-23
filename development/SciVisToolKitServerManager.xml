@@ -144,7 +144,7 @@ Copyright 2008 SciberQuest Inc.
 <SourceProxy
     name="BOVReader"
     class="vtkBOVReader"
-    label="BOV Reader"
+    label="SQ BOV Reader"
     base_proxyname="BOVReaderUI"
     base_proxygroup="common-ui">
   <Documentation
@@ -174,7 +174,7 @@ Copyright 2008 SciberQuest Inc.
 <SourceProxy
     name="BOVMetaReader"
     class="vtkBOVReader"
-    label="BOV Meta Reader"
+    label="SQ BOV Meta Reader"
     base_proxyname="BOVReaderUI"
     base_proxygroup="common-ui">
   <Documentation
@@ -220,7 +220,9 @@ Copyright 2008 SciberQuest Inc.
 <ProxyGroup name="sources">
 
   <!-- ==================================================================== -->
-  <SourceProxy name="vtkSQPlaneSource" class="vtkSQPlaneSource" label="SQ Plane">
+  <SourceProxy name="vtkSQPlaneSource" 
+        class="vtkSQPlaneSource"
+        label="SQ Plane Source">
       <Documentation
         long_help="Create a parallelogram given an origin and two points. The resolution indicates the number of division along each axis of the plane." 
         short_help="Create a parallelogram from an origin and two points">
@@ -314,7 +316,7 @@ Copyright 2008 SciberQuest Inc.
    <SourceProxy 
      name="vtkSQSphereSource"
      class="vtkSQSphereSource"
-     label="SQ Sphere">
+     label="SQ Sphere Source">
       <Documentation
         long_help="Create a 3D sphere given a center and radius."
         short_help="Create a 3D sphere">
@@ -432,7 +434,7 @@ Copyright 2008 SciberQuest Inc.
   <SourceProxy
     name="vtkSQHemisphereSource"
     class="vtkSQHemisphereSource"
-    label="SQ Hemisphere">
+    label="SQ Hemisphere Source">
     <Documentation
       long_help="Create a 3D sphere given a center and radius."
       short_help="Create a 3D sphere">
@@ -503,7 +505,9 @@ Copyright 2008 SciberQuest Inc.
   </SourceProxy>
 
   <!-- ==================================================================== -->
-  <SourceProxy name="vtkSQProcessMonitor" class="vtkSQProcessMonitor" label="Process Monitor">
+  <SourceProxy name="vtkSQProcessMonitor"
+      class="vtkSQProcessMonitor"
+      label="SQ Process Monitor">
       <Documentation
         long_help="A custom Qt panel that manages and monitors the running processes."
         short_help="A custom Qt panel that manages and monitors the running processes.">
@@ -805,7 +809,7 @@ Copyright 2008 SciberQuest Inc.
 
 
 <!-- ==================================================================== -->
-<SourceProxy name="vtkOOCDFieldTopologyMapper" 
+<SourceProxy name="vtkSQFieldTopologyMapper" 
     class="vtkSQFieldTracer"
     label="SQ Field Topology Mapper"
     base_proxyname="vtkSQFieldTracerUI"
@@ -876,7 +880,7 @@ Copyright 2008 SciberQuest Inc.
 
 
 <!-- ==================================================================== -->
-<SourceProxy name="vtkOOCDPoincareMapper"
+<SourceProxy name="vtkSQPoincareMapper"
     class="vtkSQFieldTracer"
     label="SQ Poincare Mapper"
     base_proxyname="vtkSQFieldTracerUI"
@@ -1060,7 +1064,7 @@ Copyright 2008 SciberQuest Inc.
   <SourceProxy 
     name="vtkSQRandomSeedPoints" 
     class="vtkSQRandomSeedPoints"
-    label="Random Seed Points">
+    label="SQ Random Seed Points">
     <Documentation
       long_help="Long Documentation"
       short_help="Short Documentation">
@@ -1085,6 +1089,40 @@ Copyright 2008 SciberQuest Inc.
         command="SetNumberOfPoints"
         number_of_elements="1"
         default_values="10">
+     </IntVectorProperty>
+
+  <!-- End vtkSQVortexFilter -->
+  </SourceProxy>
+
+  <!-- ==================================================================== -->
+  <SourceProxy 
+    name="vtkSQSeedPointLatice"
+    class="vtkSQSeedPointLatice"
+    label="SQ Seed Point Latice">
+    <Documentation
+      long_help="Long Documentation"
+      short_help="Short Documentation">
+      Textual Documentation.
+    </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+      </InputProperty>
+
+     <IntVectorProperty
+        name="Resolution"
+        label="Latice Resolution"
+        command="SetNX"
+        number_of_elements="3"
+        default_values="4 4 4">
      </IntVectorProperty>
 
   <!-- End vtkSQVortexFilter -->

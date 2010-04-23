@@ -23,12 +23,13 @@ include(MPICHConfig.cmake)
 # Server manager wrapped sources.
 set(SM_SOURCES
   vtkBOVReader.cxx
-  vtkSQVortexFilter.cxx
   vtkSQFieldTracer.cxx
-  vtkSQRandomSeedPoints.cxx
-  vtkSQPlaneSource.cxx
-  vtkSQSphereSource.cxx
   vtkSQHemisphereSource.cxx
+  vtkSQSeedPointLatice.cxx
+  vtkSQPlaneSource.cxx
+  vtkSQRandomSeedPoints.cxx
+  vtkSQSphereSource.cxx
+  vtkSQVortexFilter.cxx
   )
 
 # Un-wrapped sources

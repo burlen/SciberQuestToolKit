@@ -9,17 +9,13 @@ Copyright 2008 SciberQuest Inc.
 <ParaViewFilters>
 
   <Category name="SciberQuestSciVis" menu_label="Sciber&amp;Quest SciVis Toolkit">
-    <Proxy group="filters" name="vtkFieldTopologyAnalyzer"/>
-    <Proxy group="filters" name="vtkDistributedFieldTracer"/>
-    <Proxy group="filters" name="vtkOOCFieldTracer"/>
-    <Proxy group="filters" name="vtkOOCFieldTopologyMapper"/>
     <Proxy group="filters" name="vtkSQFieldTracer"/>
-    <Proxy group="filters" name="vtkOOCDFieldTopologyMapper"/>
-    <Proxy group="filters" name="vtkOOCDPoincareMapper"/>
-    <Proxy group="filters" name="vtkFieldAnalysis"/>
+    <Proxy group="filters" name="vtkSQFieldTopologyMapper"/>
+    <Proxy group="filters" name="vtkSQPoincareMapper"/>
     <Proxy group="filters" name="vtkSQVortexFilter"/>
     <Proxy group="filters" name="vtkSQHemisphereSource"/>
     <Proxy group="filters" name="vtkSQRandomSeedPoints"/>
+    <Proxy group="filters" name="vtkSQSeedPointLatice"/>
   </Category>
 
 </ParaViewFilters>

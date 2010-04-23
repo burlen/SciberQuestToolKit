@@ -582,11 +582,11 @@ int vtkBOVReader::RequestData(
     subset.GetDimensions(subSetExt);
     double subsetBounds[6];
     subsetBounds[0]=X0[0];
-    subsetBounds[1]=X0[0]+dX[0]*(subSetExt[1]-subSetExt[0]+1);
+    subsetBounds[1]=X0[0]+dX[0]*(subSetExt[1]-subSetExt[0]); // on dual grid
     subsetBounds[2]=X0[1];
-    subsetBounds[3]=X0[1]+dX[1]*(subSetExt[3]-subSetExt[2]+1);
+    subsetBounds[3]=X0[1]+dX[1]*(subSetExt[3]-subSetExt[2]);
     subsetBounds[4]=X0[2];
-    subsetBounds[5]=X0[2]+dX[2]*(subSetExt[5]-subSetExt[4]+1);
+    subsetBounds[5]=X0[2]+dX[2]*(subSetExt[5]-subSetExt[4]);
     info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
     }
   if (!ok)

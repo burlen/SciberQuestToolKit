@@ -10334,7 +10334,7 @@
         </Domain>
       </Property>
     </Proxy>
-    <Proxy group="filters" type="vtkOOCDFieldTopologyMapper" id="259" servers="1">
+    <Proxy group="filters" type="vtkSQFieldTopologyMapper" id="259" servers="1">
       <Property name="DatasetInput" id="259.DatasetInput" number_of_elements="1">
         <Proxy value="239" output_port="0"/>
         <Domain name="groups" id="259.DatasetInput.groups">
@@ -10437,7 +10437,7 @@
         </Domain>
       </Property>
     </Proxy>
-    <Proxy group="filters" type="vtkOOCDFieldTopologyMapper" id="311" servers="1">
+    <Proxy group="filters" type="vtkSQFieldTopologyMapper" id="311" servers="1">
       <Property name="DatasetInput" id="311.DatasetInput" number_of_elements="1">
         <Proxy value="306" output_port="0"/>
         <Domain name="groups" id="311.DatasetInput.groups">

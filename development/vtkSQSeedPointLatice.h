@@ -34,13 +34,8 @@ public:
 
   // Description:
   // Set the latice resolution in the given direction.
-  vtkSetClampMacro(XResolution,int,1,VTK_INT_MAX);
-  vtkSetClampMacro(YResolution,int,1,VTK_INT_MAX);
-  vtkSetClampMacro(ZResolution,int,1,VTK_INT_MAX);
-  vtkGetMacro(XResolution,int);
-  vtkGetMacro(YResolution,int);
-  vtkGetMacro(ZResolution,int);
-
+  vtkSetVector3Macro(NX,int);
+  vtkGetVector3Macro(NX,int);
 
 protected:
   /// Pipeline internals.
@@ -53,9 +48,7 @@ protected:
 
   int NumberOfPoints;
 
-  int XResolution;
-  int YResolution;
-  int ZResolution;
+  int NX[3];
 
   double Bounds[6];
 
