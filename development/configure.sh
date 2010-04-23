@@ -1,5 +1,7 @@
 #!/bin/bash
 
+BRANCH=development
+
 if [ -z "$1" ]
 then
   echo "Error \$1 must specify a configuration."
@@ -11,6 +13,7 @@ then
   exit
 fi
 
+# paraview intall
 PV3=$2
 if [ -z "$2" ]
 then
@@ -18,6 +21,7 @@ then
   exit
 fi
 
+# eign install
 EIGEN=$3
 if [ -z "$3" ]
 then
@@ -25,29 +29,28 @@ then
   exit
 fi
 
-if [ -z "$4" ]
-then
-  echo "\$4 not set selecting development branch."
-  BRANCH=development
-fi
+# last cmd tail entry passed to cmake
+CMAKE_CMD=$4
 
 case $1 in
 
-  "pleiades-intel" )
+  "svtk-pleiades-intel" )
     ccmake ../SciVisToolKit/$BRANCH \
     -DCMAKE_C_COMPILER=/nasa/intel/Compiler/11.0/083/bin/intel64/icc \
     -DCMAKE_CXX_COMPILER=/nasa/intel/Compiler/11.0/083/bin/intel64/icpc \
     -DCMAKE_LINKER=/nasa/intel/Compiler/11.0/083/bin/intel64/icpc \
-    -DBUILD_GENTP=ON \
     -DMPI_INCLUDE_PATH=/nasa/sgi/mpt/1.25/include \
     -DMPI_LIBRARY=/nasa/sgi/mpt/1.25/lib/libmpi.so \
     -DParaView_DIR=$PV3 \
-    -DEigen_DIR=$EIGEN
+    -DEigen_DIR=$EIGEN \
+    -DBUILD_GENTP=ON \
+    $CMAKE_CMD
     ;;
 
-  "kraken-gnu" )
+  "svtk-kraken-gnu" )
     # eigen => /lustre/scratch/bloring/apps/eigen-2.0.12-gnu
     # pv3 => /nics/c/home/bloring/ParaView/PV3-3.7-gnu
+    # install => /lustre/scratch/bloring/apps/PV-Plugins/SVTK/gnu/R
     cmake ../SciVisToolKit/$BRANCH \
     -DCMAKE_C_COMPILER=/opt/cray/xt-asyncpe/3.6/bin/cc \
     -DCMAKE_CXX_COMPILER=/opt/cray/xt-asyncpe/3.6/bin/CC \
@@ -55,23 +58,26 @@ case $1 in
     -DMPI_INCLUDE_PATH=/opt/cray/mpt/4.0.1/xt/seastar/mpich2-gnu/include \
     -DMPI_LIBRARY=/opt/cray/mpt/4.0.1/xt/seastar/mpich2-gnu/lib/libmpich.a \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/lustre/scratch/bloring/apps/PV-Plugins/SVTK/gnu/R \
+    -DParaView_DIR=$PV3 \
     -DEigen_DIR=$EIGEN \
-    -DParaView_DIR=$PV3
+    -DBUILD_GENTP=ON \
+    $CMAKE_CMD
     ;;
 
-  "linux-debug" )
+  "svtk-linux-debug" )
     cmake ../SciVisToolKit/$BRANCH \
     -DCMAKE_BUILD_TYPE=Debug \
     -DParaView_DIR=$PV3 \
-    -DEigen_DIR=$EIGEN
+    -DEigen_DIR=$EIGEN \
+    $CMAKE_CMD
     ;;
 
-  "linux-release" )
+  "svtk-linux-release" )
     cmake ../SciVisToolKit/$BRANCH \
     -DCMAKE_BUILD_TYPE=Release \
     -DParaView_DIR=$PV3 \
-    -DEigen_DIR=$EIGEN
+    -DEigen_DIR=$EIGEN \
+    $CMAKE_CMD
     ;;
 
   * )
