@@ -3,6 +3,11 @@
 if [ -z "$1" ]
 then
   echo "Error \$1 must specify a configuration."
+  echo "Avaialable configs:"
+  echo "  plieades-intel"
+  echo "  linux-debug"
+  echo "  linux-release"
+  echo "  kraken-gnu"
   exit
 fi
 
@@ -40,6 +45,19 @@ case $1 in
     -DEigen_DIR=$EIGEN
     ;;
 
+  "kraken-gnu" )
+    cmake ../SciVisToolKit/$BRANCH \
+    -DCMAKE_C_COMPILER=/opt/cray/xt-asyncpe/3.6/bin/cc \
+    -DCMAKE_CXX_COMPILER=/opt/cray/xt-asyncpe/3.6/bin/CC \
+    -DCMAKE_LINKER=/opt/cray/xt-asyncpe/3.6/bin/CC \
+    -DMPI_INCLUDE_PATH=/opt/cray/mpt/4.0.1/xt/seastar/mpich2-gnu/include \
+    -DMPI_LIBRARY=/opt/cray/mpt/4.0.1/xt/seastar/mpich2-gnu/lib/libmpich.a \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/lustre/scratch/bloring/apps/PV-Plugins/SVTK/gnu/R \
+    -DEigen_DIR=/lustre/scratch/bloring/apps/eigen-2.0.12-gnu \
+    -DParaView_DIR=/nics/c/home/bloring/ParaView/PV3-3.7-gnu
+    ;;
+
   "linux-debug" )
     cmake ../SciVisToolKit/$BRANCH \
     -DCMAKE_BUILD_TYPE=Debug \
@@ -55,10 +73,7 @@ case $1 in
     ;;
 
   * )
-    echo "Avaialable configs:"
-    echo "  plieades-intel"
-    echo "  linux-debug"
-    echo "  linux-release"
+    echo "Error: invalid config name $1."
     ;;
 esac
 
