@@ -46,6 +46,8 @@ case $1 in
     ;;
 
   "kraken-gnu" )
+    # eigen => /lustre/scratch/bloring/apps/eigen-2.0.12-gnu
+    # pv3 => /nics/c/home/bloring/ParaView/PV3-3.7-gnu
     cmake ../SciVisToolKit/$BRANCH \
     -DCMAKE_C_COMPILER=/opt/cray/xt-asyncpe/3.6/bin/cc \
     -DCMAKE_CXX_COMPILER=/opt/cray/xt-asyncpe/3.6/bin/CC \
@@ -54,8 +56,8 @@ case $1 in
     -DMPI_LIBRARY=/opt/cray/mpt/4.0.1/xt/seastar/mpich2-gnu/lib/libmpich.a \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/lustre/scratch/bloring/apps/PV-Plugins/SVTK/gnu/R \
-    -DEigen_DIR=/lustre/scratch/bloring/apps/eigen-2.0.12-gnu \
-    -DParaView_DIR=/nics/c/home/bloring/ParaView/PV3-3.7-gnu
+    -DEigen_DIR=$EIGEN \
+    -DParaView_DIR=$PV3
     ;;
 
   "linux-debug" )
