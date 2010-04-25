@@ -8,7 +8,7 @@ Copyright 2008 SciberQuest Inc.
 -->
 <ParaViewFilters>
 
-  <Category name="SciberQuestSciVis" menu_label="Sciber&amp;Quest SciVis Toolkit">
+  <Category name="SciberQuestSciVis" menu_label="Sciber&amp;Quest">
     <Proxy group="filters" name="vtkSQFieldTracer"/>
     <Proxy group="filters" name="vtkSQFieldTopologyMapper"/>
     <Proxy group="filters" name="vtkSQPoincareMapper"/>

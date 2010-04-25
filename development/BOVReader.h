@@ -77,9 +77,8 @@ public:
     }
   /// Open a dataset. Pass the dataset's metadata file in. If this call succeeeds
   /// then ...
-  int Open(const char *fileName){
-    return this->MetaData && fileName && this->MetaData->OpenDataset(fileName);
-    }
+  int Open(const char *fileName);
+
   /// Return's true if the dataset has been successfully opened.
   bool IsOpen(){
     if (this->MetaData)

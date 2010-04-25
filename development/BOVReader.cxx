@@ -47,7 +47,6 @@ void BOVReader::Clear()
 {
   // TODO what about MetaData??
   this->ClearDecomp();
-  // this->ClearArraysToRead();
   this->ProcId=0;
   this->NProcs=1;
   this->NGhost=1;
@@ -83,20 +82,12 @@ int BOVReader::SetController(vtkMultiProcessController *cont)
     = dynamic_cast<vtkMPICommunicator *>(cont->GetCommunicator());
   if (!vcom)
     {
-    #ifndef NDEBUG
-    cerr << __LINE__ 
+    cerr << __LINE__
          << " Error: No communicator available, MPI is required."
          << endl;
-    #endif
-    // User is running builtin, we are going to start MPI ourselves.
-    // This may or may not be a good idea depending on MPI implementation.
-    int argc=1;
-    char *app="vtkBOVReader";
-    char *argv[1]={app};
-    MPI_Init(&argc,(char ***)&argv);
-    this->Comm=MPI_COMM_WORLD;
     return 0;
     }
+
   // this->Comm=*vcom->GetMPIComm()->GetHandle();
   this->Comm=MPI_COMM_WORLD;
 
@@ -104,12 +95,66 @@ int BOVReader::SetController(vtkMultiProcessController *cont)
 }
 
 //-----------------------------------------------------------------------------
+int BOVReader::Open(const char *fileName)
+{
+  if (this->MetaData==0)
+    {
+    cerr << __LINE__ << " Error: No MetaData object." << endl;
+    return 0;
+    }
+
+  if (fileName==0)
+    {
+    cerr << __LINE__ << " Error: Null filename." << endl;
+    return 0;
+    }
+
+  // Only one process touches the disk to avoid
+  // swamping the metadata server.
+  int ok=0;
+  if (this->ProcId==0)
+    {
+    ok=this->MetaData->OpenDataset(fileName);
+    if (!ok)
+      {
+      int nBytes=0;
+      MPI_Bcast(&nBytes,1,MPI_INT,0,MPI_COMM_WORLD);
+      }
+    else
+      {
+      void *stream;
+      int nBytes=this->MetaData->Pack(stream);
+      MPI_Bcast(&nBytes,1,MPI_INT,0,MPI_COMM_WORLD);
+      MPI_Bcast(stream,nBytes,MPI_CHAR,0,MPI_COMM_WORLD);
+      free(stream);
+      }
+    }
+  // other processes are initialized from a stream
+  // broadcast by the root.
+  else
+    {
+    int nBytes;
+    MPI_Bcast(&nBytes,1,MPI_INT,0,MPI_COMM_WORLD);
+    if (nBytes>0)
+      {
+      ok=1;
+      void *stream=malloc(nBytes);
+      MPI_Bcast(stream,nBytes,MPI_CHAR,0,MPI_COMM_WORLD);
+      this->MetaData->UnPack(stream);
+      free(stream);
+      }
+    }
+
+  return ok;
+}
+
+//-----------------------------------------------------------------------------
 int BOVReader::ReadScalarArray(BOVScalarImageIterator *it, vtkImageData *grid)
 {
   const vtkAMRBox &block=this->MetaData->GetDecomp();
   const size_t nCells=block.GetNumberOfCells();
+
   // Create a VTK array and insert it into the point data.
-  // assume we have real*4, and that it's no already cached.  FIXME!!!
   vtkFloatArray *fa=vtkFloatArray::New();
   fa->SetNumberOfComponents(1);
   fa->SetNumberOfTuples(nCells); // dual grid
@@ -117,8 +162,10 @@ int BOVReader::ReadScalarArray(BOVScalarImageIterator *it, vtkImageData *grid)
   grid->GetPointData()->AddArray(fa);
   fa->Delete();
   float *pfa=fa->GetPointer(0);
+
   // read
-  return ReadDataArray(it->GetFile(),this->MetaData->GetDomain(),block,pfa);
+  return
+    ReadDataArray(it->GetFile(),this->MetaData->GetDomain(),block,pfa);
 }
 
 //-----------------------------------------------------------------------------
@@ -148,9 +195,7 @@ int BOVReader::ReadVectorArray(BOVVectorImageIterator *it, vtkImageData *grid)
   ok&=ReadDataArray(it->GetZFile(),this->MetaData->GetDomain(),block,zbuf);
   if (!ok)
     {
-    #ifndef NDEBUG
     cerr << __LINE__ << " Error: ReadDataArray failed." << endl;
-    #endif
     return 0;
     }
 
@@ -178,14 +223,10 @@ BOVTimeStepImage *BOVReader::OpenTimeStep(int stepNo)
 {
   if (!(this->MetaData && this->MetaData->IsDatasetOpen()))
     {
-    #ifndef NDEBUG
     cerr << __LINE__ << " Error: Cannot opena timestep because the dataset is not open." << endl;
-    #endif
     return 0;
     }
-  //BOVTimeStepImage *image=new BOVTimeStepImage(this->Comm,stepNo,this->GetMetaData());
-  //cerr << *image << endl;
-  //return image;
+
   return new BOVTimeStepImage(this->Comm,stepNo,this->GetMetaData());
 }
 
@@ -196,22 +237,17 @@ void BOVReader::CloseTimeStep(BOVTimeStepImage *handle)
   handle=0;
 }
 
-
 //-----------------------------------------------------------------------------
 int BOVReader::ReadTimeStep(BOVTimeStepImage *step, vtkImageData *grid, vtkAlgorithm *alg)
 {
   if (!step)
     {
-    #ifndef NDEBUG
     cerr << __LINE__ << " Error: Null step image received. Aborting." << endl;
-    #endif
     return 0;
     }
   if (!grid)
     {
-    #ifndef NDEBUG
     cerr << __LINE__ << " Error: Null output dataset received. Aborting." << endl; 
-    #endif
     return 0;
     }
 
@@ -226,14 +262,13 @@ int BOVReader::ReadTimeStep(BOVTimeStepImage *step, vtkImageData *grid, vtkAlgor
     int ok=this->ReadScalarArray(&sIt,grid);
     if (!ok)
       {
-      #ifndef NDEBUG
       cerr << __LINE__ << " Failed to read scalar array " << sIt.GetName() << "." << endl;
-      #endif
       return 0;
       }
     prog+=progInc;
     if(alg)alg->UpdateProgress(prog);
     }
+
   // vectors
   BOVVectorImageIterator vIt(step);
   for (;vIt.Ok(); vIt.Next())
@@ -241,9 +276,7 @@ int BOVReader::ReadTimeStep(BOVTimeStepImage *step, vtkImageData *grid, vtkAlgor
     int ok=this->ReadVectorArray(&vIt,grid);
     if (!ok)
       {
-      #ifndef NDEBUG
       cerr << __LINE__ << " Failed to read vector array " << vIt.GetName() << "." << endl;
-      #endif
       return 0;
       }
     prog+=progInc;
@@ -258,9 +291,7 @@ int BOVReader::ReadMetaTimeStep(int stepIdx, vtkImageData *grid, vtkAlgorithm *a
 {
   if (!(this->MetaData && this->MetaData->IsDatasetOpen()))
     {
-    #ifndef NDEBUG
     cerr << __LINE__ << " Error: Cannot read because the dataset is not open." << endl;
-    #endif
     return 0;
     }
 
@@ -306,9 +337,7 @@ int BOVReader::ReadMetaTimeStep(int stepIdx, vtkImageData *grid, vtkAlgorithm *a
       // other ?
       else
         {
-        #ifndef NDEBUG
         cerr << __LINE__ << " Error: bad array type for array " << arrayName << "." << endl; 
-        #endif
         }
       grid->GetPointData()->AddArray(array);
       array->Delete();
@@ -319,9 +348,7 @@ int BOVReader::ReadMetaTimeStep(int stepIdx, vtkImageData *grid, vtkAlgorithm *a
     }
   else
     {
-    #ifndef NDEBUG
     cerr << __LINE__ << " Error: Empty VTK dataset passed, aborting." << endl; 
-    #endif
     return 0;
     }
   return 1;
@@ -335,7 +362,7 @@ void BOVReader::Print(ostream &os)
   os << "\tComm: " << this->Comm << endl;
   os << "\tNGhost: " << this->NGhost << endl;
   os << "\tProcId: " << this->ProcId << endl;
-  os << "\tNProcs: " << this->ProcId << endl;
+  os << "\tNProcs: " << this->NProcs << endl;
 
   this->MetaData->Print(os);
 }
@@ -446,108 +473,4 @@ void BOVReader::Print(ostream &os)
 // 
 //   return status;
 // }
-// 
-
-// //-----------------------------------------------------------------------------
-// int BOVReader::ReadScalarArray(
-//         const char *fileName,
-//         const char *scalarName,
-//         vtkImageData *grid)
-// {
-//   if (!(this->MetaData && this->MetaData->IsDatasetOpen()))
-//     {
-//     #ifndef NDEBUG
-//     cerr << __LINE__ << " Error: Cannot read because the dataset is not open." << endl;
-//     #endif
-//     return 0;
-//     }
-//   const vtkAMRBox &block=this->MetaData->GetDecomp();
-//   const size_t nCells=block.GetNumberOfCells();
-//   // Create a VTK array and insert it into the point data.
-//   // assume we have real*4, and that it's no already cached.  FIXME!!!
-//   vtkFloatArray *fa=vtkFloatArray::New();
-//   fa->SetNumberOfComponents(1);
-//   fa->SetNumberOfTuples(nCells); // dual grid
-//   fa->SetName(scalarName);
-//   grid->GetPointData()->AddArray(fa);
-//   fa->Delete();
-//   float *pfa=fa->GetPointer(0);
-//   // Open the file (if not cached).
-//   MPI_File file=this->ArrayFileCache.Open(this->Comm,fileName);
-//   // Read the block.
-//   return
-//     ReadDataArray(file,this->MetaData->GetDomain(),block,pfa);
-//   // File is close by the cache.
-// }
-// 
-// //-----------------------------------------------------------------------------
-// int BOVReader::ReadVectorArray(
-//     const char *xFileName,
-//     const char *yFileName,
-//     const char *zFileName,
-//     const char *vectorName,
-//     vtkImageData *grid)
-// {
-//   if (!(this->MetaData && this->MetaData->IsDatasetOpen()))
-//     {
-//     #ifndef NDEBUG
-//     cerr << __LINE__ << " Error: Cannot read because the dataset is not open." << endl;
-//     #endif
-//     return 0;
-//     }
-// 
-//   const vtkAMRBox &block=this->MetaData->GetDecomp();
-//   const size_t nCells=block.GetNumberOfCells();
-//   // Create a VTK array and insert it into the cached data.
-//   // assume we have real*4, and that it's no already cached.  FIXME!!!
-//   vtkFloatArray *fa=vtkFloatArray::New();
-//   fa->SetNumberOfComponents(3);
-//   fa->SetNumberOfTuples(nCells); // remember dual grid
-//   fa->SetName(vectorName);
-//   grid->GetPointData()->AddArray(fa);
-//   fa->Delete();
-//   float *pfa=fa->GetPointer(0);
-//   // Allocate a buffer for reads
-//   float *xbuf=static_cast<float *>(malloc(nCells*sizeof(float)));
-//   float *ybuf=static_cast<float *>(malloc(nCells*sizeof(float)));
-//   float *zbuf=static_cast<float *>(malloc(nCells*sizeof(float)));
-// 
-//   int ok=-1;
-//   // Open the file (if not cached).
-//   // Read the block.
-//   // DON'T close the file! The cache handles it for us.
-//   MPI_File xFile=this->ArrayFileCache.Open(this->Comm,xFileName);
-//   ok&=ReadDataArray(xFile,this->MetaData->GetDomain(),block,xbuf);
-// 
-//   MPI_File yFile=this->ArrayFileCache.Open(this->Comm,yFileName);
-//   ok&=ReadDataArray(yFile,this->MetaData->GetDomain(),block,ybuf);
-// 
-//   MPI_File zFile=this->ArrayFileCache.Open(this->Comm,zFileName);
-//   ok&=ReadDataArray(zFile,this->MetaData->GetDomain(),block,zbuf);
-// 
-//   if (!ok)
-//     {
-//     #ifndef NDEBUG
-//     cerr << __LINE__ << " Error: ReadDataArray failed." << endl;
-//     #endif
-//     return 0;
-//     }
-// 
-//   // TODO make sure this is vectorized!!
-//   // Copy the vector components into the VTK array.
-//   float *pxbuf=xbuf;
-//   float *pybuf=ybuf;
-//   float *pzbuf=zbuf;
-//   for (size_t i=0; i<nCells; ++i)
-//     {
-//     *pfa=*pxbuf; ++pfa; ++pxbuf;
-//     *pfa=*pybuf; ++pfa; ++pybuf;
-//     *pfa=*pzbuf; ++pfa; ++pzbuf;
-//     }
-//   // Free up the buffers
-//   free(xbuf);
-//   free(ybuf);
-//   free(zbuf);
-// 
-//   return 1;
-// }
+//

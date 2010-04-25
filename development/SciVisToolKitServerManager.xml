@@ -143,7 +143,7 @@ Copyright 2008 SciberQuest Inc.
 <!--========================================================================-->
 <SourceProxy
     name="BOVReader"
-    class="vtkBOVReader"
+    class="vtkSQBOVReader"
     label="SQ BOV Reader"
     base_proxyname="BOVReaderUI"
     base_proxygroup="common-ui">
@@ -173,7 +173,7 @@ Copyright 2008 SciberQuest Inc.
 <!--========================================================================-->
 <SourceProxy
     name="BOVMetaReader"
-    class="vtkBOVReader"
+    class="vtkSQBOVReader"
     label="SQ BOV Meta Reader"
     base_proxyname="BOVReaderUI"
     base_proxygroup="common-ui">
@@ -1091,6 +1091,10 @@ Copyright 2008 SciberQuest Inc.
         default_values="10">
      </IntVectorProperty>
 
+    <Hints>
+      <Visibility replace_input="0" />
+    </Hints>
+
   <!-- End vtkSQVortexFilter -->
   </SourceProxy>
 
@@ -1124,6 +1128,10 @@ Copyright 2008 SciberQuest Inc.
         number_of_elements="3"
         default_values="4 4 4">
      </IntVectorProperty>
+
+    <Hints>
+      <Visibility replace_input="0" />
+    </Hints>
 
   <!-- End vtkSQVortexFilter -->
   </SourceProxy>

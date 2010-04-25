@@ -22,7 +22,7 @@ class VTK_EXPORT GDAMetaData : public BOVMetaData
 {
 public:
   /// Constructor.
-  GDAMetaData() : Ok(false) {};
+  GDAMetaData();
   GDAMetaData(const GDAMetaData &other)
     {
     *this=other;
@@ -45,16 +45,11 @@ public:
   /// Open the metadata file, and parse metadata.
   /// return 0 on error.
   virtual int OpenDataset(const char *fileName);
-  /// Return true if "Get" calls will succeed, i.e. there is an open metadata
-  /// file.
-  virtual bool IsDatasetOpen() const
-    {
-    return this->Ok;
-    }
+
   /// Free any resources and set the object into a default
   /// state.
   /// return 0 on error.
-  virtual int CloseDataset();
+  // virtual int CloseDataset();
 
   /// Return the file extension used by the format for brick files.
   /// The BOV reader will make use of this in its pattern matching logic.
@@ -70,8 +65,8 @@ public:
 
   /// Print internal state.
   virtual void Print(ostream &os) const;
+
 private:
-  bool Ok;
   bool HasDipoleCenter;
   double DipoleCenter[3];
 };

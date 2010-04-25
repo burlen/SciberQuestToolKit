@@ -57,11 +57,9 @@ MPI_Status WriteDataArray(
       &file);
   if (iErr!=MPI_SUCCESS)
     {
-    #ifndef NDEBUG
     MPI_Error_string(iErr,eStr,const_cast<int *>(&eStrLen));
     cerr << "Error opeing file: " << fileName << endl;
     cerr << eStr << endl;
-    #endif
     return 0;
     }
 
@@ -101,11 +99,9 @@ MPI_Status WriteDataArray(
   MPI_Type_free(&subarray);
   if (iErr!=MPI_SUCCESS)
     {
-    #ifndef NDEBUG
     MPI_Error_string(iErr,eStr,const_cast<int *>(&eStrLen));
     cerr << "Error reading file: " << fileName << endl;
     cerr << eStr << endl;
-    #endif
     return 0;
     }
 
@@ -134,11 +130,9 @@ int ReadDataArray(
       &file);
   if (iErr!=MPI_SUCCESS)
     {
-    #ifndef NDEBUG
     MPI_Error_string(iErr,eStr,const_cast<int *>(&eStrLen));
     cerr << "Error opeing file: " << fileName << endl;
     cerr << eStr << endl;
-    #endif
     return 0;
     }
 
@@ -195,11 +189,9 @@ int ReadDataArray(
   MPI_File_close(&file);
   if (iErr!=MPI_SUCCESS)
     {
-    #ifndef NDEBUG
     MPI_Error_string(iErr,eStr,const_cast<int *>(&eStrLen));
     cerr << "Error reading file: " << fileName << endl;
     cerr << eStr << endl;
-    #endif
     return 0;
     }
   return 1;
@@ -252,11 +244,9 @@ int ReadDataArray(
   MPI_Type_free(&subarray);
   if (iErr!=MPI_SUCCESS)
     {
-    #ifndef NDEBUG
     MPI_Error_string(iErr,eStr,const_cast<int *>(&eStrLen));
     cerr << "Error reading file." << endl;
     cerr << eStr << endl;
-    #endif
     return 0;
     }
   return 1;

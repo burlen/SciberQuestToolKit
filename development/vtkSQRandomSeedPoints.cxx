@@ -26,7 +26,7 @@
 #include "vtkPolyData.h"
 #include "vtkType.h"
 
-#define vtkSQRandomSeedPointsDEBUG
+// #define vtkSQRandomSeedPointsDEBUG
 
 vtkCxxRevisionMacro(vtkSQRandomSeedPoints, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQRandomSeedPoints);
@@ -176,10 +176,20 @@ int vtkSQRandomSeedPoints::RequestData(
   X0[1]=this->Bounds[2]+eps[1];
   X0[2]=this->Bounds[4]+eps[2];
 
+  int progIntv=nLocal/10;
+  double prog=0.0;
+
   // generate the point set
   srand(rank+time(0));
   for (int q=0; q<nLocal; ++q)
     {
+    // update PV progress
+    if (q%progIntv==0)
+      {
+      prog+=0.1;
+      this->UpdateProgress(prog);
+      }
+
     // new random point
     const float rmax=RAND_MAX;
     pX[0]=X0[0]+dX[0]*rand()/rmax;

@@ -43,21 +43,26 @@ size_t ParseValue(string &in,size_t at, string key, T &value)
   return p;
 }
 
+
+//-----------------------------------------------------------------------------
+GDAMetaData::GDAMetaData()
+{
+  this->HasDipoleCenter=false;
+  this->DipoleCenter[0]=-555.5;
+  this->DipoleCenter[1]=-555.5;
+  this->DipoleCenter[2]=-555.5;
+}
+
 //-----------------------------------------------------------------------------
 int GDAMetaData::OpenDataset(const char *fileName)
 {
-  if (this->IsDatasetOpen())
-    {
-    this->CloseDataset();
-    }
+  this->IsOpen=0;
 
   // Open
   ifstream metaFile(fileName);
   if (!metaFile.is_open())
     {
-    #ifndef NDEBUG
     cerr << __LINE__ << " Error: Could not open " << fileName << endl;
-    #endif
     return 0;
     }
   // Read
@@ -79,64 +84,63 @@ int GDAMetaData::OpenDataset(const char *fileName)
     || ParseValue(metaData,0,"ny=",ny)==string::npos
     || ParseValue(metaData,0,"nz=",nz)==string::npos)
     {
-    #ifndef NDEBUG
     cerr << __LINE__ << " Error: Parsing " << fileName 
          << " dimensions not found. Expected nx=N, ny=M, nz=P." << endl;
-    #endif
     return 0;
     }
   vtkAMRBox domain(0,0,0,nx-1,ny-1,nz-1);
   this->SetDomain(domain);
 
 
-  // Look for the dipole center
-  double di_i,di_j,di_k;
-  if ( ParseValue(metaData,0,"i_dipole=",di_i)==string::npos
-    || ParseValue(metaData,0,"j_dipole=",di_j)==string::npos
-    || ParseValue(metaData,0,"k_dipole=",di_k)==string::npos)
-    {
-    #ifndef NDEBUG
-    cerr << __LINE__ << " Warning: Parsing " << fileName
-         << " dipole center not found." << endl;
-    #endif
-    this->HasDipoleCenter=false;
-    }
-  else
-    {
-    this->HasDipoleCenter=true;
-    this->DipoleCenter[0]=di_i;
-    this->DipoleCenter[1]=di_j;
-    this->DipoleCenter[2]=di_k;
-    }
+  // TODO
+  // the following meta data enhancments are disabled until
+  // I add the virtual pack/unpack methods, so that the process
+  // that touches disk can actuially stream them to the other
+  // processes
 
-//   double r_mp;
-//   double r_obs_to_mp;
-//   if ( ParseValue(metaData,0,"R_MP=",r_mp)==string::npos
-//     || ParseValue(metaData,0,"R_obstacle_to_MP=",r_obs_to_mp)==string::npos)
-//     {
-//     #ifndef NDEBUG
-//     cerr << __LINE__ << " Warning: Parsing " << fileName 
-//          << " magnetopause dimension not found." << endl;
-//     #endif
-//     this->CellSizeRe=-1.0;
-//     }
-//   else
-//     {
-//     this->CellSizeRe=r_mp*r_obs_to_mp/100.0;
-//     }
-//   double 
-// 
-//       i_dipole=100,
-//       j_dipole=128,
-//       k_dipole=128,
-//       R_MP=16.,
-//       R_obstacle_to_MP=0.57732,
+  // // Look for the dipole center
+  // double di_i,di_j,di_k;
+  // if ( ParseValue(metaData,0,"i_dipole=",di_i)==string::npos
+  //   || ParseValue(metaData,0,"j_dipole=",di_j)==string::npos
+  //   || ParseValue(metaData,0,"k_dipole=",di_k)==string::npos)
+  //   {
+  //   // cerr << __LINE__ << " Warning: Parsing " << fileName
+  //   //       << " dipole center not found." << endl;
+  //   this->HasDipoleCenter=false;
+  //   }
+  // else
+  //   {
+  //   this->HasDipoleCenter=true;
+  //   this->DipoleCenter[0]=di_i;
+  //   this->DipoleCenter[1]=di_j;
+  //   this->DipoleCenter[2]=di_k;
+  //   }
+
+  // double r_mp;
+  // double r_obs_to_mp;
+  // if ( ParseValue(metaData,0,"R_MP=",r_mp)==string::npos
+  //   || ParseValue(metaData,0,"R_obstacle_to_MP=",r_obs_to_mp)==string::npos)
+  //   {
+  //   #ifndef NDEBUG
+  //   cerr << __LINE__ << " Warning: Parsing " << fileName 
+  //         << " magnetopause dimension not found." << endl;
+  //   #endif
+  //   this->CellSizeRe=-1.0;
+  //   }
+  // else
+  //   {
+  //   this->CellSizeRe=r_mp*r_obs_to_mp/100.0;
+  //   }
+  // double 
+  // 
+  //     i_dipole=100,
+  //     j_dipole=128,
+  //     k_dipole=128,
+  //     R_MP=16.,
+  //     R_obstacle_to_MP=0.57732,
 
 
-
-  // FIXME!
-  // assumptions, based on what we know of the SciberQuest code.
-  // origin and spacing default to: x0={0,0,0}, dx={1,1,1}
+  // H3D. origin and spacing default to: x0={0,0,0}, dx={1,1,1}
 
   // We expect the bricks to be in the same directory as the metadata file.
   this->SetPathToBricks(StripFileNameFromPath(fileName).c_str());
@@ -212,35 +216,38 @@ int GDAMetaData::OpenDataset(const char *fileName)
     GetSeriesIds(path,prefix.c_str(),this->TimeSteps);
     if (!this->TimeSteps.size())
       {
-      #ifndef NDEBUG
-      cerr << __LINE__ << " Error: Time series was not found in " << path << "."
-          << " Expected files named according to the following convention \"array_time.ext\"" 
-          << endl;
-      #endif
+      cerr
+        << __LINE__ 
+        << " Error: Time series was not found in " << path << "."
+        << " Expected files named according to the following convention \"array_time.ext\"" 
+        << endl;
       return 0;
       }
     }
   else
     {
-    #ifndef NDEBUG
-    cerr << __LINE__ << " Error: No bricks found in " << path << "."
-        << " Expected bricks in the same directory as the metdata file."
-        << endl;
-    #endif
+    cerr
+      << __LINE__
+      << " Error: No bricks found in " << path << "."
+      << " Expected bricks in the same directory as the metdata file."
+      << endl;
     return 0;
     }
 
-  this->Ok=true;
+  this->IsOpen=1;
+
   return 1;
 }
 
-//-----------------------------------------------------------------------------
-int GDAMetaData::CloseDataset()
-{
-  this->Ok=false;
-  BOVMetaData::CloseDataset();
-  return 1;
-}
+// this is removed because we don't currently need to free any reosurces
+// when the file closes. I left it in case ata future time we need it.
+// //-----------------------------------------------------------------------------
+// int GDAMetaData::CloseDataset()
+// {
+//   this->IsOpen=0;
+//   BOVMetaData::CloseDataset();
+//   return 1;
+// }
 
 
 //-----------------------------------------------------------------------------
@@ -260,19 +267,17 @@ GDAMetaData &GDAMetaData::operator=(const GDAMetaData &other)
     {
     return *this;
     }
-  this->Ok=other.Ok;
   this->BOVMetaData::operator=(other);
   return *this;
 }
 
 void GDAMetaData::Print(ostream &os) const
 {
-  os << "GDAMetaData: " << this << endl;
-  os << "\tOk:         " << this->Ok << endl;
+  os << "GDAMetaData:  " << this << endl;
   os << "\tDipole:     "
-     << this->DipoleCenter[0] << ", "
-     << this->DipoleCenter[1] << ", "
-     << this->DipoleCenter[2] << endl;
+      << this->DipoleCenter[0] << ", "
+      << this->DipoleCenter[1] << ", "
+      << this->DipoleCenter[2] << endl;
   //os << "\tCellSizeRe: " << this->CellSizeRe << endl;
 
   this->BOVMetaData::Print(os);

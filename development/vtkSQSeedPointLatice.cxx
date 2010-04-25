@@ -35,7 +35,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkType.h"
 #include "Tuple.hxx"
 
-#define vtkSQSeedPointLaticeDEBUG
+// #define vtkSQSeedPointLaticeDEBUG
 
 vtkCxxRevisionMacro(vtkSQSeedPointLatice, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQSeedPointLatice);
@@ -190,9 +190,19 @@ int vtkSQSeedPointLatice::RequestData(
   int nx=this->NX[0];
   int nxy=this->NX[0]*this->NX[1];
 
+  int progIntv=nLocal/10;
+  double prog=0.0;
+
   // generate the point set
-  for (int idx=startId,pid=0; idx<endId; ++idx, ++pid)
+  for (int idx=startId,pid=0; idx<endId; ++idx,++pid)
     {
+    // update PV progress
+    if (pid%progIntv==0)
+      {
+      prog+=0.1;
+      this->UpdateProgress(prog);
+      }
+
     // latice indices.
     int k=idx/nxy;
     int j=(idx-k*nxy)/nx;

@@ -5,18 +5,12 @@
 /___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
 
 Copyright 2008 SciberQuest Inc.
-
 */
 #ifndef BOVMetaData_h
 #define BOVMetaData_h
 
-#if defined PV_3_4_BUILD
-  #include "vtkAMRBox_3.7.h"
-#else
-  #include "vtkAMRBox.h"
-#endif
+#include "vtkAMRBox.h"
 #include "vtkInformation.h"
-
 #include "PrintUtils.h"
 #include <cstdlib>
 #include <map>
@@ -27,7 +21,6 @@ using namespace std;
 // These masks are used with array status methods.
 // ACTIVE_BIT is set to indicate an array is to be read
 // VECTOR_BIT is set to indicate an array is a vector, cleared for scalar.
-// DIV_BIT is set to compute divergence
 #define ACTIVE_BIT 0x01
 #define VECTOR_BIT 0x02
 
@@ -41,7 +34,10 @@ class VTK_EXPORT BOVMetaData
 {
 public:
   /// Construct
-  BOVMetaData(){}
+  BOVMetaData()
+       :
+    IsOpen(0)
+      { }
   /// Copy from other.
   BOVMetaData &operator=(const BOVMetaData &other)
     {
@@ -63,17 +59,21 @@ public:
   /// return the copy or 0 on error. Caller to delete.
   virtual BOVMetaData *Duplicate() const=0;
 
-
   /// Open the metadata file, and parse metadata. return 0 on error.
   virtual int OpenDataset(const char *fileName)=0;
+
   /// Return true if "Get" calls will succeed, i.e. there is an open metadata
   /// file.
-  virtual bool IsDatasetOpen() const =0;
+  virtual int IsDatasetOpen() const
+    {
+    return this->IsOpen;
+    }
   /// Close the currently open metatdata file, free any resources and set 
   /// the object into a default state. return 0 on error. Be sure to call
   /// BOVMetaData::CloseDataset().
   virtual int CloseDataset()
     {
+    this->IsOpen=0;
     this->PathToBricks="";
     this->Domain.Invalidate();
     this->Subset.Invalidate();
@@ -251,19 +251,20 @@ public:
   virtual void PushPipelineInformation(vtkInformation *pinfo){}
 
 
+  /// Serialize the object into a byte stream  Returns the
+  /// size in bytes of the stream. Or 0 in case of an error.
+  virtual int Pack(void *&stream);
+
+  /// Initiaslize the object froma byte stream (see also Serialize)
+  /// returns 0 in case of an error.
+  virtual int UnPack(void *stream);
+
+
   /// Print internal state.
-  virtual void Print(ostream &os) const
-    {
-    os << "BOVMetaData: " << this << endl;
-    os << "\tPathToBricks: " << this->PathToBricks << endl;
-    os << "\tDomain: "; this->Domain.Print(os) << endl;
-    os << "\tSubset: "; this->Subset.Print(os) << endl;
-    os << "\tDecomp: "; this->Decomp.Print(os) << endl;
-    os << "\tArrays: " << this->Arrays << endl;
-    os << "\tTimeSteps: " << this->TimeSteps << endl;
-    }
+  virtual void Print(ostream &os) const;
 
 protected:
+  int IsOpen;
   string PathToBricks;            // path to the brick files.
   vtkAMRBox Domain;               // Dataset domain on disk.
   vtkAMRBox Subset;               // Subset of interst to read.

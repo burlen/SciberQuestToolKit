@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkBOVReader.h,v $
+  Module:    $RCSfile: vtkSQBOVReader.h,v $
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,7 +12,7 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkBOVReader -- Connects the VTK pipeline to BOVReader class.
+// .NAME vtkSQBOVReader -- Connects the VTK pipeline to BOVReader class.
 // .SECTION Description
 //
 // Implements the VTK style pipeline and manipulates and instance of
@@ -22,14 +22,14 @@
 // .SECTION See Also
 // BOVReader
 
-#ifndef vtkBOVReader_h
-#define vtkBOVReader_h
+#ifndef vtkSQBOVReader_h
+#define vtkSQBOVReader_h
 
 //#include "vtkMultiBlockDataSetAlgorithm.h"
 #include "vtkImageAlgorithm.h"
 
 // define this for cerr status.
-// #define vtkBOVReaderDEBUG
+// #define vtkSQBOVReaderDEBUG
 
 //BTX
 class BOVReader;
@@ -41,11 +41,11 @@ class vtkInformationIntegerVectorKey;
 // class vtkCallbackCommand;
 //ETX
 
-class VTK_EXPORT vtkBOVReader : public vtkImageAlgorithm
+class VTK_EXPORT vtkSQBOVReader : public vtkImageAlgorithm
 {
 public:
-  static vtkBOVReader *New();
-  vtkTypeRevisionMacro(vtkBOVReader,vtkImageAlgorithm);
+  static vtkSQBOVReader *New();
+  vtkTypeRevisionMacro(vtkSQBOVReader,vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   // Description:
   // Get/Set the file to read.
@@ -107,12 +107,12 @@ protected:
       vtkInformationVector**,
       vtkInformationVector* info);
 
-  vtkBOVReader();
-  ~vtkBOVReader();
+  vtkSQBOVReader();
+  ~vtkSQBOVReader();
 
 private:
-  vtkBOVReader(const vtkBOVReader &); // Not implemented
-  void operator=(const vtkBOVReader &); // Not implemented
+  vtkSQBOVReader(const vtkSQBOVReader &); // Not implemented
+  void operator=(const vtkSQBOVReader &); // Not implemented
   //
   void Clear();
 

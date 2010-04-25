@@ -22,7 +22,7 @@ include(MPICHConfig.cmake)
 
 # Server manager wrapped sources.
 set(SM_SOURCES
-  vtkBOVReader.cxx
+  vtkSQBOVReader.cxx
   vtkSQFieldTracer.cxx
   vtkSQHemisphereSource.cxx
   vtkSQSeedPointLatice.cxx
@@ -34,6 +34,7 @@ set(SM_SOURCES
 
 # Un-wrapped sources
 set(_SOURCES
+  BOVMetaData.cxx
   BOVReader.cxx
   BOVTimeStepImage.cxx
   BOVScalarImage.cxx
