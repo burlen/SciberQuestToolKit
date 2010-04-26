@@ -223,7 +223,7 @@ BOVTimeStepImage *BOVReader::OpenTimeStep(int stepNo)
 {
   if (!(this->MetaData && this->MetaData->IsDatasetOpen()))
     {
-    cerr << __LINE__ << " Error: Cannot opena timestep because the dataset is not open." << endl;
+    cerr << __LINE__ << " Error: Cannot open a timestep because the dataset is not open." << endl;
     return 0;
     }
 

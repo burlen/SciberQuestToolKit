@@ -73,34 +73,41 @@ MPI_Status WriteDataArray(
 
   unsigned long long nCells=decomp.GetNumberOfCells();
 
-  // Create the subarray
+  // file view
   MPI_Datatype nativeType=DataTraits<T>::Type();
-  MPI_Datatype subarray;
+  MPI_Datatype fileView;
   MPI_Type_create_subarray(3,
       domainDims,
       decompDims,
       decompStart,
       MPI_ORDER_FORTRAN,
       nativeType,
-      &subarray);
-  MPI_Type_commit(&subarray);
-  // Set the file view
+      &fileView);
+  MPI_Type_commit(&fileView);
   MPI_File_set_view(
       file,
       0,
       nativeType,
-      subarray,
+      fileView,
       "native", // FIXME option to select, portable or native.
       MPI_INFO_NULL); // FIXME make use of hints.
+
+  // memory view
+  MPI_Datatype memView;
+  MPI_Type_contiguous(nCells,nativeType,&memView);
+  MPI_Type_commit(&memView);
+
+
   // Write
   MPI_Status ok;
-  iErr=MPI_File_write_all(file,data,nCells,nativeType,&ok);
+  iErr=MPI_File_write_all(file,data,1,memView,&ok);
   MPI_File_close(&file);
-  MPI_Type_free(&subarray);
+  MPI_Type_free(&fileView);
+  MPI_Type_free(&memView);
   if (iErr!=MPI_SUCCESS)
     {
     MPI_Error_string(iErr,eStr,const_cast<int *>(&eStrLen));
-    cerr << "Error reading file: " << fileName << endl;
+    cerr << "Error writing file: " << fileName << endl;
     cerr << eStr << endl;
     return 0;
     }
@@ -163,29 +170,35 @@ int ReadDataArray(
 
   unsigned long long nCells=decomp.GetNumberOfCells();
 
-  // Create the subarray
+  // file view
   MPI_Datatype nativeType=DataTraits<T>::Type();
-  MPI_Datatype subarray;
+  MPI_Datatype fileView;
   MPI_Type_create_subarray(3,
       domainDims,
       decompDims,
       decompStart,
       MPI_ORDER_FORTRAN,
       nativeType,
-      &subarray);
-  MPI_Type_commit(&subarray);
-  // Set the file view
+      &fileView);
+  MPI_Type_commit(&fileView);
   MPI_File_set_view(
       file,
       0,
       nativeType,
-      subarray,
+      fileView,
       "native", // FIXME option to select, portable or native.
       MPI_INFO_NULL); // FIXME make use of hints.
+
+  // memory view
+  MPI_Datatype memView;
+  MPI_Type_contiguous(nCells,nativeType,&memView);
+  MPI_Type_commit(&memView);
+
   // Read
   MPI_Status status;
-  iErr=MPI_File_read_all(file,data,nCells,nativeType,&status);
-  MPI_Type_free(&subarray);
+  iErr=MPI_File_read_all(file,data,1,memView,&status);
+  MPI_Type_free(&fileView);
+  MPI_Type_free(&memView);
   MPI_File_close(&file);
   if (iErr!=MPI_SUCCESS)
     {
@@ -194,6 +207,7 @@ int ReadDataArray(
     cerr << eStr << endl;
     return 0;
     }
+
   return 1;
 }
 
@@ -219,29 +233,35 @@ int ReadDataArray(
 
   unsigned long long nCells=decomp.GetNumberOfCells();
 
-  // Create the subarray
+  // file view
   MPI_Datatype nativeType=DataTraits<T>::Type();
-  MPI_Datatype subarray;
+  MPI_Datatype fileView;
   MPI_Type_create_subarray(3,
       domainDims,
       decompDims,
       decompStart,
       MPI_ORDER_FORTRAN,
       nativeType,
-      &subarray);
-  MPI_Type_commit(&subarray);
-  // Set the file view
+      &fileView);
+  MPI_Type_commit(&fileView);
   MPI_File_set_view(
       file,
       0,
       nativeType,
-      subarray,
-      "native", // FIXME option to select, portable or native.
-      MPI_INFO_NULL); // FIXME make use of hints.
+      fileView,
+      "native", // TODO option to select, portable or native.
+      MPI_INFO_NULL); // TODO could make better use of hints.
+
+  // memory view
+  MPI_Datatype memView;
+  MPI_Type_contiguous(nCells,nativeType,&memView);
+  MPI_Type_commit(&memView);
+
   // Read
   MPI_Status status;
-  iErr=MPI_File_read_all(file,data,nCells,nativeType,&status);
-  MPI_Type_free(&subarray);
+  iErr=MPI_File_read_all(file,data,1,memView,&status);
+  MPI_Type_free(&fileView);
+  MPI_Type_free(&memView);
   if (iErr!=MPI_SUCCESS)
     {
     MPI_Error_string(iErr,eStr,const_cast<int *>(&eStrLen));
@@ -249,6 +269,7 @@ int ReadDataArray(
     cerr << eStr << endl;
     return 0;
     }
+
   return 1;
 }
 

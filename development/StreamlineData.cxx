@@ -195,7 +195,6 @@ int StreamlineData::InsertCells(CellIdBlock *SourceIds)
 //-----------------------------------------------------------------------------
 int StreamlineData::SyncGeometry()
 {
-
   size_t nLines=this->Lines.size();
 
   vtkIdType nPtsTotal=0;
@@ -204,6 +203,11 @@ int StreamlineData::SyncGeometry()
     nPtsTotal+=this->Lines[i]->GetNumberOfPoints()-1;
     // less one because seed point is duplicated in fwd and bwd trace.
     }
+  if (nPtsTotal==0)
+    {
+    return 1;
+    }
+
 
   vtkIdType nLinePts=this->OutPts->GetNumberOfTuples();
   float *pLinePts=this->OutPts->WritePointer(3*nLinePts,3*nPtsTotal);
@@ -231,13 +235,7 @@ int StreamlineData::SyncGeometry()
       ++pLineCells;
       ++ptId;
       }
-
-    // NOTE assume we are done after syncing geom.
-    delete this->Lines[i];
-    this->Lines[i]=0;
     }
-
-  this->Lines.clear();
 
   return 1;
 }

@@ -42,6 +42,7 @@ public:
   BOVMetaData &operator=(const BOVMetaData &other)
     {
     if (this==&other) return *this;
+    this->IsOpen=other.IsOpen;
     this->PathToBricks=other.PathToBricks;
     this->Arrays=other.Arrays;
     this->TimeSteps=other.TimeSteps;

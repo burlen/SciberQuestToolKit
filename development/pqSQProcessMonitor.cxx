@@ -102,7 +102,7 @@ void pqSQProcessMonitor::Restore()
 {
   QStringList defaultCmds;
   defaultCmds
-       << "xterm -geometry 150x80 -fg white -bg black-e ssh -t @HOST@ gdb --pid=@PID@"
+       << "xterm -geometry 110x80 -fg white -bg black -e ssh -t @HOST@ gdb --pid=@PID@"
        << "xterm -e ssh @HOST@ kill -TERM @PID@"
        << "xterm -e ssh @HOST@ kill -KILL @PID@";
 

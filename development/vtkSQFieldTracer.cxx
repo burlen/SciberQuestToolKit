@@ -721,30 +721,30 @@ int vtkSQFieldTracer::IntegrateDynamic(
 //-----------------------------------------------------------------------------
 int vtkSQFieldTracer::IntegrateBlock(
       CellIdBlock *sourceIds,
-      FieldTraceData *topoMap,
+      FieldTraceData *genData,
       const char *fieldName,
       vtkOOCReader *oocr,
       vtkDataSet *&oocrCache)
 
 {
   // build the output.
-  vtkIdType nLines=topoMap->InsertCells(sourceIds);
+  vtkIdType nLines=genData->InsertCells(sourceIds);
 
-  TerminationCondition *tcon=topoMap->GetTerminationCondition();
+  TerminationCondition *tcon=genData->GetTerminationCondition();
 
   // integrate from each source cell.
   for (vtkIdType i=0; i<nLines; ++i)
     {
-    FieldLine *line=topoMap->GetFieldLine(i);
+    FieldLine *line=genData->GetFieldLine(i);
     this->IntegrateOne(oocr,oocrCache,fieldName,line,tcon);
     }
 
   // sync results to output. (minimizes the calls to realloc)
-  topoMap->SyncScalars();
-  topoMap->SyncGeometry();
+  genData->SyncScalars();
+  genData->SyncGeometry();
 
   // free resources in preparation for the next pass.
-  topoMap->ClearFieldLines();
+  genData->ClearFieldLines();
 
   return 1;
 }

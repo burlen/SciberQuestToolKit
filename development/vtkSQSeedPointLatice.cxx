@@ -190,17 +190,19 @@ int vtkSQSeedPointLatice::RequestData(
   int nx=this->NX[0];
   int nxy=this->NX[0]*this->NX[1];
 
-  int progIntv=nLocal/10;
   double prog=0.0;
+  double progUnit=1.0/nLocal;
+  double progRepUnit=0.1;
+  double progRepLevel=0.1;
 
   // generate the point set
-  for (int idx=startId,pid=0; idx<endId; ++idx,++pid)
+  for (int idx=startId,pid=0; idx<endId; ++idx,++pid,prog+=progUnit)
     {
     // update PV progress
-    if (pid%progIntv==0)
+    if (prog>=progRepLevel)
       {
-      prog+=0.1;
       this->UpdateProgress(prog);
+      progRepLevel+=progRepUnit;
       }
 
     // latice indices.

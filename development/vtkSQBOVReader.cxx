@@ -31,6 +31,8 @@ Copyright 2008 SciberQuest Inc.
 #include "PrintUtils.h"
 #include "minmax.h"
 
+#include "Tuple.hxx"
+
 #ifdef WIN32
 #include <Winsock2.h>
 #endif
@@ -578,15 +580,22 @@ int vtkSQBOVReader::RequestData(
     ok=this->Reader->ReadTimeStep(stepImg,idds,this);
     this->Reader->CloseTimeStep(stepImg);
     // pass the bounds
-    int subSetExt[6];
-    subset.GetDimensions(subSetExt);
+    int subsetExt[6];
+    subset.GetDimensions(subsetExt);
+
+    double subsetX0[3];
+    subsetX0[0]=X0[0]+dX[0]*subsetExt[0];
+    subsetX0[1]=X0[1]+dX[1]*subsetExt[2];
+    subsetX0[2]=X0[2]+dX[2]*subsetExt[4];
+
     double subsetBounds[6];
-    subsetBounds[0]=X0[0];
-    subsetBounds[1]=X0[0]+dX[0]*(subSetExt[1]-subSetExt[0]); // on dual grid
-    subsetBounds[2]=X0[1];
-    subsetBounds[3]=X0[1]+dX[1]*(subSetExt[3]-subSetExt[2]);
-    subsetBounds[4]=X0[2];
-    subsetBounds[5]=X0[2]+dX[2]*(subSetExt[5]-subSetExt[4]);
+    subsetBounds[0]=subsetX0[0];
+    subsetBounds[1]=subsetX0[0]+dX[0]*(subsetExt[1]-subsetExt[0]); // on dual grid
+    subsetBounds[2]=subsetX0[1];
+    subsetBounds[3]=subsetX0[1]+dX[1]*(subsetExt[3]-subsetExt[2]);
+    subsetBounds[4]=subsetX0[2];
+    subsetBounds[5]=subsetX0[2]+dX[2]*(subsetExt[5]-subsetExt[4]);
+
     info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
     }
   if (!ok)

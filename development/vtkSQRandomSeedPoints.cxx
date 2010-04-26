@@ -176,18 +176,20 @@ int vtkSQRandomSeedPoints::RequestData(
   X0[1]=this->Bounds[2]+eps[1];
   X0[2]=this->Bounds[4]+eps[2];
 
-  int progIntv=nLocal/10;
   double prog=0.0;
+  double progUnit=1.0/nLocal;
+  double progRepUnit=0.1;
+  double progRepLevel=0.1;
 
   // generate the point set
   srand(rank+time(0));
-  for (int q=0; q<nLocal; ++q)
+  for (int q=0; q<nLocal; ++q, prog+=progUnit)
     {
     // update PV progress
-    if (q%progIntv==0)
+    if (prog>=progRepLevel)
       {
-      prog+=0.1;
       this->UpdateProgress(prog);
+      progRepLevel+=progRepUnit;
       }
 
     // new random point

@@ -85,17 +85,20 @@ vtkDataSet *vtkOOCBOVReader::ReadNeighborhood(double p[3], int size)
   double X0[3];
   double dX[3];
 
-  const vtkAMRBox &domain=this->Reader->GetMetaData()->GetDomain();
-  domain.GetDataSetOrigin(X0);
-  domain.GetGridSpacing(dX);
+  const vtkAMRBox &subset=this->Reader->GetMetaData()->GetSubset();
+  subset.GetDataSetOrigin(X0);
+  subset.GetGridSpacing(dX);
 
-  vtkAMRBox decomp(domain);
+  vtkAMRBox decomp(subset);
   if (size>0)
     {
     // TODO this isn't right
     // for example size=514
     // (227.161, 12.9863, 80.4431) -> (0,0,0)(484,269,337)(0,0,0)(1,1,1)0x2aaab5939d88
     // (182.751, 269.052, 82.8395) -> (0,12,0)(439,511,339)(0,0,0)(1,1,1)0x2aaab5939d88
+    // This scheme will perform poorly, we need to
+    // create efficient partitionaing and datastructures
+    // and cache.
     int cellId[3];
     cellId[0]=static_cast<int>((p[0]-X0[0])/dX[0]);
     cellId[1]=static_cast<int>((p[1]-X0[1])/dX[1]);
@@ -104,7 +107,7 @@ vtkDataSet *vtkOOCBOVReader::ReadNeighborhood(double p[3], int size)
     // Make a box that contains it
     decomp.SetDimensions(cellId[0],cellId[1],cellId[2],cellId[0],cellId[1],cellId[2]);
     decomp.Grow(size/2);
-    decomp&=domain;
+    decomp&=subset;
     }
 
   // Set up a vtk dataset to hold the results.
