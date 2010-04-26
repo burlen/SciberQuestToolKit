@@ -208,7 +208,6 @@ int StreamlineData::SyncGeometry()
     return 1;
     }
 
-
   vtkIdType nLinePts=this->OutPts->GetNumberOfTuples();
   float *pLinePts=this->OutPts->WritePointer(3*nLinePts,3*nPtsTotal);
 

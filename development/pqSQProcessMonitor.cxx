@@ -100,38 +100,46 @@ pqSQProcessMonitor::~pqSQProcessMonitor()
 //-----------------------------------------------------------------------------
 void pqSQProcessMonitor::Restore()
 {
-  QStringList defaultCmds;
-  defaultCmds
-       << "xterm -geometry 110x80 -fg white -bg black -e ssh -t @HOST@ gdb --pid=@PID@"
+  QStringList defaults;
+  defaults
+       << ""
+       << "-geometry 200x40 -fg white -bg black"
+       << "xterm @XTOPTS@ -e ssh -t @HOST@ gdb --pid=@PID@"
+       << "xterm @XTOPTS@ -e ssh -t @FEURL@ ssh -t @HOST@ gdb --pid=@PID@"
        << "xterm -e ssh @HOST@ kill -TERM @PID@"
        << "xterm -e ssh @HOST@ kill -KILL @PID@";
 
   QSettings settings("SciberQuest", "SciVisToolKit");
 
-  QStringList cmds=settings.value("ProcessMonitor/commands",defaultCmds).toStringList();
+  QStringList defs=settings.value("ProcessMonitor/defaults",defaults).toStringList();
 
-  int nCmds=cmds.size();
-  for (int i=0; i<nCmds; ++i)
+  this->Form->feURL->setText(defs.at(0));
+  this->Form->xtOpts->setText(defs.at(1));
+  int n=defs.size();
+  for (int i=2; i<n; ++i)
     {
-    this->Form->commandCombo->addItem(cmds.at(i));
+    this->Form->commandCombo->addItem(defs.at(i));
     }
-
-
 }
 
 //-----------------------------------------------------------------------------
 void pqSQProcessMonitor::Save()
 {
-  QStringList cmds;
+  QStringList defs;
+
+  defs
+    << this->Form->feURL->text()
+    << this->Form->xtOpts->text();
+
   int nCmds=this->Form->commandCombo->count();
   for (int i=0; i<nCmds; ++i)
     {
-    cmds << this->Form->commandCombo->itemText(i);
+    defs << this->Form->commandCombo->itemText(i);
     }
 
   QSettings settings("SciberQuest", "SciVisToolKit");
 
-  settings.setValue("ProcessMonitor/commands",cmds);
+  settings.setValue("ProcessMonitor/defaults",defs);
 }
 
 
@@ -254,10 +262,18 @@ void pqSQProcessMonitor::ExecCommand()
       case PROCESS_TYPE_REMOTE:
         {
         string cmd=(const char*)this->Form->commandCombo->currentText().toAscii();
+
         string hostNameStr((const char *)item->text(1).toAscii());
-        string pidStr((const char *)item->text(2).toAscii());
         SearchAndReplace(string("@HOST@"),hostNameStr,cmd);
+
+        string pidStr((const char *)item->text(2).toAscii());
         SearchAndReplace(string("@PID@"),pidStr,cmd);
+
+        string feURLStr(this->Form->feURL->text().toAscii());
+        SearchAndReplace(string("@FEURL@"),feURLStr,cmd);
+
+        string xtOptsStr(this->Form->xtOpts->text().toAscii());
+        SearchAndReplace(string("@XTOPTS@"),xtOptsStr,cmd);
 
         vector<string> argStrs;
         istringstream is(cmd);

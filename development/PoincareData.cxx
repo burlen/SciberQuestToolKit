@@ -203,6 +203,10 @@ int PoincareData::SyncGeometry()
     {
     nPtsTotal+=this->Lines[i]->GetNumberOfPoints();
     }
+  if (nPtsTotal==0)
+    {
+    return 1;
+    }
 
   vtkIdType nMapPts=this->OutPts->GetNumberOfTuples();
   float *pMapPts=this->OutPts->WritePointer(3*nMapPts,3*nPtsTotal);
@@ -219,6 +223,10 @@ int PoincareData::SyncGeometry()
     {
     // copy the points
     vtkIdType nMapPts=this->Lines[i]->CopyEndPoints(pMapPts);
+    if (nMapPts==0)
+      {
+      continue;
+      }
     pMapPts+=3*nMapPts;
 
     // build the verts (either 1 or 2)
@@ -230,13 +238,7 @@ int PoincareData::SyncGeometry()
       ++pMapCells;
       ++ptId;
       }
-
-    // NOTE assume we are done after syncing geom.
-    delete this->Lines[i];
-    this->Lines[i]=0;
     }
-
-  this->Lines.clear();
 
   return 1;
 }
