@@ -226,10 +226,9 @@ public:
 
     // copy the termination point from the fwd running line.
     vtkIdType nPtsFwd=this->FwdTrace->GetNumberOfTuples();
-    float *pftr=this->FwdTrace->GetPointer(0);
     if (nPtsFwd)
       {
-      float *pbtr=this->FwdTrace->GetPointer(0);
+      float *pftr=this->FwdTrace->GetPointer(0);
       pftr+=3*nPtsFwd-3;
       pts[0]=pftr[0];
       pts[1]=pftr[1];

@@ -21,7 +21,7 @@ using std::map;
 using std::pair;
 
 class vtkUnstructuredGrid;
-class vtkOOCReader;
+class vtkSQOOCReader;
 class vtkMultiProcessController;
 class vtkInitialValueProblemSolver;
 class vtkPointSet;

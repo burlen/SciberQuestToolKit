@@ -24,11 +24,9 @@ MPI_File Open(MPI_Comm &comm, const char *fileName)
       &file);
   if (iErr!=MPI_SUCCESS)
     {
-    #ifndef NDEBUG
     MPI_Error_string(iErr,eStr,const_cast<int *>(&eStrLen));
     cerr << "Error opeing file: " << fileName << endl;
     cerr << eStr << endl;
-    #endif
     file=0;
     }
   return file;

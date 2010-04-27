@@ -8,6 +8,8 @@ Copyright 2008 SciberQuest Inc.
 */ 
 #include "vtkSQBOVReader.h"
 
+#include "mpi.h"
+
 #include "vtkObjectFactory.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkImageData.h"
@@ -23,16 +25,17 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkMultiProcessController.h"
 #include "vtkMPIController.h"
 
-#include "vtkOOCReader.h"
-#include "vtkOOCBOVReader.h"
+#include "vtkSQOOCReader.h"
+#include "vtkSQOOCBOVReader.h"
 #include "BOVReader.h"
 #include "GDAMetaData.h"
 #include "BOVTimeStepImage.h"
+#include "Tuple.hxx"
 #include "PrintUtils.h"
 #include "minmax.h"
 
-#include "Tuple.hxx"
 
+// NOTE why this?
 #ifdef WIN32
 #include <Winsock2.h>
 #endif
@@ -75,11 +78,18 @@ vtkSQBOVReader::vtkSQBOVReader()
   this->MetaRead=0;
   this->FileName=0;
   this->FileNameChanged=false;
-  this->Subset[0]=this->Subset[1]=this->Subset[2]
-    =this->Subset[3]=this->Subset[4]=this->Subset[5]=0;
-  this->ISubsetRange[0]=1; this->ISubsetRange[1]=0;
-  this->JSubsetRange[0]=1; this->JSubsetRange[1]=0;
-  this->KSubsetRange[0]=1; this->KSubsetRange[1]=0;
+  this->Subset[0]=
+  this->Subset[1]=
+  this->Subset[2]=
+  this->Subset[3]=
+  this->Subset[4]=
+  this->Subset[5]=0;
+  this->ISubsetRange[0]=1;
+  this->ISubsetRange[1]=0;
+  this->JSubsetRange[0]=1;
+  this->JSubsetRange[1]=0;
+  this->KSubsetRange[0]=1;
+  this->KSubsetRange[1]=0;
   // Get information from the environment about who we are.
   this->ProcId=0;
   this->NProcs=1;
@@ -101,14 +111,10 @@ vtkSQBOVReader::vtkSQBOVReader()
 
   // Configure the internal reader.
   this->Reader=new BOVReader;
-  int status
-    = this->Reader->SetController(vtkMultiProcessController::GetGlobalController());
-  if (!status)
-    {
-    vtkWarningMacro("The BOV reader requires MPI. Connect to a pvserver started using mpiexec.");
-    }
+
   GDAMetaData md;
   this->Reader->SetMetaData(&md);
+
   // Initialize pipeline.
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
@@ -130,8 +136,12 @@ void vtkSQBOVReader::Clear()
 {
   this->SetFileName(0);
   this->FileNameChanged=false;
-  this->Subset[0]=this->Subset[1]=this->Subset[2]
-    =this->Subset[3]=this->Subset[4]=this->Subset[5]=0;
+  this->Subset[0]=
+  this->Subset[1]=
+  this->Subset[2]=
+  this->Subset[3]=
+  this->Subset[4]=
+  this->Subset[5]=0;
   this->Reader->Close();
 }
 
@@ -143,6 +153,7 @@ int vtkSQBOVReader::CanReadFile(const char *file)
   cerr << "Check " << safeio(file) << "." << endl;
   #endif
 
+  this->Reader->SetCommunicator(MPI_COMM_SELF);
   int status=this->Reader->Open(file);
   this->Reader->Close();
 
@@ -191,16 +202,20 @@ void vtkSQBOVReader::SetFileName(const char* _arg)
   // Open the newly named dataset.
   if (this->FileName)
     {
+    this->Reader->SetCommunicator(MPI_COMM_WORLD);
     if(!this->Reader->Open(this->FileName))
       {
-      vtkWarningMacro("Failed to open the file \"" << safeio(this->FileName) << "\".");
+      vtkErrorMacro("Failed to open the file \"" << safeio(this->FileName) << "\".");
       return;
       }
     // Update index space ranges provided in the U.I.
     this->Reader->GetMetaData()->GetSubset().GetDimensions(this->Subset);
-    this->ISubsetRange[0]=this->Subset[0]; this->ISubsetRange[1]=this->Subset[1];
-    this->JSubsetRange[0]=this->Subset[2]; this->JSubsetRange[1]=this->Subset[3];
-    this->KSubsetRange[0]=this->Subset[4]; this->KSubsetRange[1]=this->Subset[5];
+    this->ISubsetRange[0]=this->Subset[0];
+    this->ISubsetRange[1]=this->Subset[1];
+    this->JSubsetRange[0]=this->Subset[2];
+    this->JSubsetRange[1]=this->Subset[3];
+    this->KSubsetRange[0]=this->Subset[4];
+    this->KSubsetRange[1]=this->Subset[5];
 
     #if defined vtkSQBOVReaderDEBUG
     cerr << "vtkSQBOVReader " << this->HostName << " " << this->ProcId << " Open succeeded." << endl;
@@ -365,12 +380,12 @@ int vtkSQBOVReader::RequestInformation(
     // and spacing as well.
     wholeExtent[1]=this->NProcs;
     // Save the real extent in our own key.
-    // info->Set(vtkOOCReader::WHOLE_EXTENT(),this->Subset,6);
+    // info->Set(vtkSQOOCReader::WHOLE_EXTENT(),this->Subset,6);
 
     // Set the origin and spacing
     // We save the actuals in our own keys.
-    // info->Set(vtkOOCReader::ORIGIN(),X0,3);
-    // info->Set(vtkOOCReader::SPACING(),dX,3);
+    // info->Set(vtkSQOOCReader::ORIGIN(),X0,3);
+    // info->Set(vtkSQOOCReader::SPACING(),dX,3);
     // Adjust PV's keys for the false subsetting extents.
     X0[0]=X0[0]+this->Subset[0]*dX[0];
     X0[1]=X0[1]+this->Subset[2]*dX[1];
@@ -388,7 +403,7 @@ int vtkSQBOVReader::RequestInformation(
 
     // Set the file name so that filter who process the data may read
     // as neccessary.
-    // info->Set(vtkOOCReader::FILE_NAME(),this->FileName);
+    // info->Set(vtkSQOOCReader::FILE_NAME(),this->FileName);
     }
   else
     {
@@ -555,10 +570,10 @@ int vtkSQBOVReader::RequestData(
     // Meta read.
     ok=this->Reader->ReadMetaTimeStep(stepId,idds,this);
     // Pass the actual reader into the pipeline.
-    vtkOOCBOVReader *OOCReader=vtkOOCBOVReader::New();
+    vtkSQOOCBOVReader *OOCReader=vtkSQOOCBOVReader::New();
     OOCReader->SetReader(this->Reader);
     OOCReader->SetTimeIndex(stepId);
-    info->Set(vtkOOCReader::READER(),OOCReader);
+    info->Set(vtkSQOOCReader::READER(),OOCReader);
     OOCReader->Delete();
     // Pass the bounds of what would have been read on all
     // processes. The subset describes what the user has
@@ -611,7 +626,7 @@ int vtkSQBOVReader::RequestData(
 
 
   #if defined vtkSQBOVReaderDEBUG
-  this->Reader->Print(cerr);
+  this->Reader->PrintSelf(cerr);
   idds->Print(cerr);
   #endif
 
@@ -636,7 +651,7 @@ void vtkSQBOVReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "FileName:        " << safeio(this->FileName) << endl;
   os << indent << "FileNameChanged: " << this->FileNameChanged << endl;
   os << indent << "Raeder: " << endl;
-  this->Reader->Print(os);
+  this->Reader->PrintSelf(os);
   os << endl;
 }
 

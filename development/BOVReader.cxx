@@ -11,7 +11,7 @@ using namespace std;
 #include "vtkMultiBlockDataSet.h"
 #include "vtkMultiProcessController.h"
 #include "vtkMPICommunicator.h"
-#include "vtkMPI.h"
+#include "mpi.h"
 
 #include "MPIRawArrayIO.hxx"
 
@@ -23,6 +23,43 @@ using namespace std;
 
 #include "PrintUtils.h"
 
+
+
+//-----------------------------------------------------------------------------
+BOVReader::BOVReader()
+      :
+  MetaData(NULL),
+  NGhost(1),
+  ProcId(-1),
+  NProcs(0),
+  Comm(MPI_COMM_NULL)
+{
+  int ok;
+  MPI_Initialized(&ok);
+  if (!ok)
+    {
+    cerr
+      << "Error:" << endl
+      << __FILE__ << endl
+      << __LINE__ << endl
+      << "The BOVReader requires MPI. Start ParaView in"
+      << " Client-Server mode using mpiexec." << endl;
+    }
+}
+
+//-----------------------------------------------------------------------------
+BOVReader::BOVReader(const BOVReader &other)
+{
+  *this=other;
+}
+
+//-----------------------------------------------------------------------------
+BOVReader::~BOVReader()
+{
+  this->SetMetaData(NULL);
+  this->SetCommunicator(MPI_COMM_NULL);
+}
+
 //-----------------------------------------------------------------------------
 const BOVReader &BOVReader::operator=(const BOVReader &other)
 {
@@ -31,26 +68,30 @@ const BOVReader &BOVReader::operator=(const BOVReader &other)
     return *this;
     }
 
-  this->Blocks=other.Blocks;
-  this->Comm=other.Comm;
-  this->NGhost=other.NGhost;
-  this->NProcs=other.NProcs;
-  this->ProcId=other.ProcId;
-
+  this->SetCommunicator(other.Comm);
   this->SetMetaData(other.GetMetaData());
+  this->NGhost=other.NGhost;
 
   return *this;
 }
 
 //-----------------------------------------------------------------------------
-void BOVReader::Clear()
+void BOVReader::SetCommunicator(MPI_Comm comm)
 {
-  // TODO what about MetaData??
-  this->ClearDecomp();
-  this->ProcId=0;
-  this->NProcs=1;
-  this->NGhost=1;
-  this->Comm=MPI_COMM_NULL;
+  if (this->Comm!=MPI_COMM_NULL
+    && comm!=MPI_COMM_WORLD
+    && comm!=MPI_COMM_SELF)
+    {
+    MPI_Comm_free(&this->Comm);
+    this->Comm=MPI_COMM_NULL;
+    }
+
+  if (comm!=MPI_COMM_NULL)
+    {
+    MPI_Comm_dup(comm,&this->Comm);
+    MPI_Comm_rank(this->Comm,&this->ProcId);
+    MPI_Comm_size(this->Comm,&this->NProcs);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -71,43 +112,27 @@ void BOVReader::SetMetaData(const BOVMetaData *metaData)
 }
 
 //-----------------------------------------------------------------------------
-int BOVReader::SetController(vtkMultiProcessController *cont)
+int BOVReader::Close()
 {
-  // Extract information re: our running environment
-  this->ProcId=cont->GetLocalProcessId();
-  this->NProcs=cont->GetNumberOfProcesses();
-  this->Comm=MPI_COMM_NULL;
-
-  vtkMPICommunicator *vcom
-    = dynamic_cast<vtkMPICommunicator *>(cont->GetCommunicator());
-  if (!vcom)
-    {
-    cerr << __LINE__
-         << " Error: No communicator available, MPI is required."
-         << endl;
-    return 0;
-    }
-
-  // this->Comm=*vcom->GetMPIComm()->GetHandle();
-  this->Comm=MPI_COMM_WORLD;
-
-  return 1;
+  return this->MetaData && this->MetaData->CloseDataset();
 }
+
 
 //-----------------------------------------------------------------------------
 int BOVReader::Open(const char *fileName)
 {
   if (this->MetaData==0)
     {
-    cerr << __LINE__ << " Error: No MetaData object." << endl;
+    cerr
+      << "Error:" << endl
+      << __FILE__ << endl
+      << __LINE__ << endl
+      << " Error: No MetaData object." << endl;
     return 0;
     }
 
-  if (fileName==0)
-    {
-    cerr << __LINE__ << " Error: Null filename." << endl;
-    return 0;
-    }
+//   int ok=this->MetaData->OpenDataset(fileName);
+//   return ok;
 
   // Only one process touches the disk to avoid
   // swamping the metadata server.
@@ -118,15 +143,15 @@ int BOVReader::Open(const char *fileName)
     if (!ok)
       {
       int nBytes=0;
-      MPI_Bcast(&nBytes,1,MPI_INT,0,MPI_COMM_WORLD);
+      MPI_Bcast(&nBytes,1,MPI_INT,0,this->Comm);
       }
     else
       {
-      void *stream;
-      int nBytes=this->MetaData->Pack(stream);
-      MPI_Bcast(&nBytes,1,MPI_INT,0,MPI_COMM_WORLD);
-      MPI_Bcast(stream,nBytes,MPI_CHAR,0,MPI_COMM_WORLD);
-      free(stream);
+      Stream str;
+      this->MetaData->Pack(str);
+      int nBytes=str.GetSize();
+      MPI_Bcast(&nBytes,1,MPI_INT,0,this->Comm);
+      MPI_Bcast(str.GetData(),nBytes,MPI_CHAR,0,this->Comm);
       }
     }
   // other processes are initialized from a stream
@@ -134,18 +159,28 @@ int BOVReader::Open(const char *fileName)
   else
     {
     int nBytes;
-    MPI_Bcast(&nBytes,1,MPI_INT,0,MPI_COMM_WORLD);
+    MPI_Bcast(&nBytes,1,MPI_INT,0,this->Comm);
     if (nBytes>0)
       {
       ok=1;
-      void *stream=malloc(nBytes);
-      MPI_Bcast(stream,nBytes,MPI_CHAR,0,MPI_COMM_WORLD);
-      this->MetaData->UnPack(stream);
-      free(stream);
+      Stream str;
+      str.Resize(nBytes);
+      MPI_Bcast(str.GetData(),nBytes,MPI_CHAR,0,this->Comm);
+      this->MetaData->UnPack(str);
       }
     }
 
   return ok;
+}
+
+//-----------------------------------------------------------------------------
+bool BOVReader::IsOpen()
+{
+  if (this->MetaData)
+    {
+    return this->MetaData->IsDatasetOpen();
+    }
+  return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -195,7 +230,11 @@ int BOVReader::ReadVectorArray(BOVVectorImageIterator *it, vtkImageData *grid)
   ok&=ReadDataArray(it->GetZFile(),this->MetaData->GetDomain(),block,zbuf);
   if (!ok)
     {
-    cerr << __LINE__ << " Error: ReadDataArray failed." << endl;
+    cerr
+      << "Error:" << endl
+      << __FILE__ << endl
+      << __LINE__ << endl
+      << "ReadDataArray " << it->GetName() << " failed." << endl;
     return 0;
     }
 
@@ -223,7 +262,12 @@ BOVTimeStepImage *BOVReader::OpenTimeStep(int stepNo)
 {
   if (!(this->MetaData && this->MetaData->IsDatasetOpen()))
     {
-    cerr << __LINE__ << " Error: Cannot open a timestep because the dataset is not open." << endl;
+    cerr
+      << "Error:" << endl
+      << __FILE__ << endl
+      << __LINE__ << endl
+      << "Cannot open a timestep because the"
+      << " dataset is not open." << endl;
     return 0;
     }
 
@@ -242,12 +286,20 @@ int BOVReader::ReadTimeStep(BOVTimeStepImage *step, vtkImageData *grid, vtkAlgor
 {
   if (!step)
     {
-    cerr << __LINE__ << " Error: Null step image received. Aborting." << endl;
+    cerr
+      << "Error:" << endl
+      << __FILE__ << endl
+      << __LINE__ << endl
+      << "Null step image received. Aborting." << endl;
     return 0;
     }
   if (!grid)
     {
-    cerr << __LINE__ << " Error: Null output dataset received. Aborting." << endl; 
+    cerr
+      << "Error:" << endl
+      << __FILE__ << endl
+      << __LINE__ << endl
+      << "Null output dataset received. Aborting." << endl;
     return 0;
     }
 
@@ -262,7 +314,6 @@ int BOVReader::ReadTimeStep(BOVTimeStepImage *step, vtkImageData *grid, vtkAlgor
     int ok=this->ReadScalarArray(&sIt,grid);
     if (!ok)
       {
-      cerr << __LINE__ << " Failed to read scalar array " << sIt.GetName() << "." << endl;
       return 0;
       }
     prog+=progInc;
@@ -276,7 +327,6 @@ int BOVReader::ReadTimeStep(BOVTimeStepImage *step, vtkImageData *grid, vtkAlgor
     int ok=this->ReadVectorArray(&vIt,grid);
     if (!ok)
       {
-      cerr << __LINE__ << " Failed to read vector array " << vIt.GetName() << "." << endl;
       return 0;
       }
     prog+=progInc;
@@ -291,74 +341,84 @@ int BOVReader::ReadMetaTimeStep(int stepIdx, vtkImageData *grid, vtkAlgorithm *a
 {
   if (!(this->MetaData && this->MetaData->IsDatasetOpen()))
     {
-    cerr << __LINE__ << " Error: Cannot read because the dataset is not open." << endl;
+    cerr
+      << "Error:" << endl
+      << __FILE__ << endl
+      << __LINE__ << endl
+      << "Cannot read because the dataset is not open." << endl;
     return 0;
     }
 
-  if (grid)
+  if (grid==NULL)
     {
-    ostringstream seriesExt;
-    seriesExt << "_" << stepIdx << "." << this->MetaData->GetBrickFileExtension();
-    // In a meta read we won't read the arrays, rather we'll put a place holder
-    // for each in the output. Downstream array can then be selected.
-    const size_t nPoints=grid->GetNumberOfPoints();
-    const size_t nArrays=this->MetaData->GetNumberOfArrays();
-    double progInc=0.75/nArrays;
-    double prog=0.25;
-    if(alg)alg->UpdateProgress(prog);
-    for (size_t i=0; i<nArrays; ++i)
-      {
-      const char *arrayName=this->MetaData->GetArrayName(i);
-      // skip inactive arrays
-      if (!this->MetaData->IsArrayActive(arrayName))
-        {
-        prog+=progInc;
-        if(alg)alg->UpdateProgress(prog);
-        continue;
-        }
-      vtkFloatArray *array=vtkFloatArray::New();
-      array->SetName(arrayName);
-      // scalar
-      if (this->MetaData->IsArrayScalar(arrayName))
-        {
-        array->SetNumberOfTuples(nPoints);
-        array->FillComponent(0,-5.5);
-        }
-      // vector
-      else
-      if (this->MetaData->IsArrayVector(arrayName))
-        {
-        array->SetNumberOfComponents(3);
-        array->SetNumberOfTuples(nPoints);
-        array->FillComponent(0,-5.5);
-        array->FillComponent(1,-5.5);
-        array->FillComponent(2,-5.5);
-        }
-      // other ?
-      else
-        {
-        cerr << __LINE__ << " Error: bad array type for array " << arrayName << "." << endl; 
-        }
-      grid->GetPointData()->AddArray(array);
-      array->Delete();
+    cerr
+      << "Error:" << endl
+      << __FILE__ << endl
+      << __LINE__ << endl
+      << "Empty output." << endl; 
+    return 0;
+    }
 
+  ostringstream seriesExt;
+  seriesExt << "_" << stepIdx << "." << this->MetaData->GetBrickFileExtension();
+  // In a meta read we won't read the arrays, rather we'll put a place holder
+  // for each in the output. Downstream array can then be selected.
+  const size_t nPoints=grid->GetNumberOfPoints();
+  const size_t nArrays=this->MetaData->GetNumberOfArrays();
+  double progInc=0.75/nArrays;
+  double prog=0.25;
+  if(alg)alg->UpdateProgress(prog);
+  for (size_t i=0; i<nArrays; ++i)
+    {
+    const char *arrayName=this->MetaData->GetArrayName(i);
+    // skip inactive arrays
+    if (!this->MetaData->IsArrayActive(arrayName))
+      {
       prog+=progInc;
       if(alg)alg->UpdateProgress(prog);
+      continue;
       }
+    vtkFloatArray *array=vtkFloatArray::New();
+    array->SetName(arrayName);
+    // scalar
+    if (this->MetaData->IsArrayScalar(arrayName))
+      {
+      array->SetNumberOfTuples(nPoints);
+      array->FillComponent(0,-5.5);
+      }
+    // vector
+    else
+    if (this->MetaData->IsArrayVector(arrayName))
+      {
+      array->SetNumberOfComponents(3);
+      array->SetNumberOfTuples(nPoints);
+      array->FillComponent(0,-5.5);
+      array->FillComponent(1,-5.5);
+      array->FillComponent(2,-5.5);
+      }
+    // other ?
+    else
+      {
+      cerr
+        << "Error:" << endl
+        << __FILE__ << endl
+        << __LINE__ << endl
+        << "bad array type for array " << arrayName << "." << endl; 
+      }
+    grid->GetPointData()->AddArray(array);
+    array->Delete();
+
+    prog+=progInc;
+    if(alg)alg->UpdateProgress(prog);
     }
-  else
-    {
-    cerr << __LINE__ << " Error: Empty VTK dataset passed, aborting." << endl; 
-    return 0;
-    }
+
   return 1;
 }
 
 //-----------------------------------------------------------------------------
-void BOVReader::Print(ostream &os)
+void BOVReader::PrintSelf(ostream &os)
 {
   os << "BOVReader: " << this << endl;
-  os << "\tBlocks: " << endl << this->Blocks << endl;
   os << "\tComm: " << this->Comm << endl;
   os << "\tNGhost: " << this->NGhost << endl;
   os << "\tProcId: " << this->ProcId << endl;

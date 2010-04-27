@@ -60,10 +60,8 @@ int Represented(const char *path, const char *prefix)
     }
   else
     {
-    #ifndef NDEBUG
     cerr << __LINE__ << " Error: Failed to open the given directory. " << endl
          << path << endl;
-    #endif
     }
   //We failed to find any files starting with the given prefix
   return 0;
@@ -106,10 +104,8 @@ int GetSeriesIds(const char *path, const char *prefix, vector<int> &ids)
     }
   else
     {
-    #ifndef NDEBUG
     cerr << __LINE__ << " Error: Failed to open the given directory. " << endl
          << path << endl;
-    #endif
     }
   //We failed to find any files starting with the given prefix
   return 0;

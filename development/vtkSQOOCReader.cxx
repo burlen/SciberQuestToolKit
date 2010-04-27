@@ -6,23 +6,23 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#include "vtkOOCReader.h"
+#include "vtkSQOOCReader.h"
 
 #include "vtkInformationKey.h"
 #include "vtkInformationObjectBaseKey.h"
 #include "vtkInformationDoubleVectorKey.h"
 
 //-----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkOOCReader, "$Revision: 0.0 $");
+vtkCxxRevisionMacro(vtkSQOOCReader, "$Revision: 0.0 $");
 
 //-----------------------------------------------------------------------------
-vtkInformationKeyMacro(vtkOOCReader,READER,ObjectBase);
+vtkInformationKeyMacro(vtkSQOOCReader,READER,ObjectBase);
 
 //-----------------------------------------------------------------------------
-vtkInformationKeyRestrictedMacro(vtkOOCReader,BOUNDS,DoubleVector,6);
+vtkInformationKeyRestrictedMacro(vtkSQOOCReader,BOUNDS,DoubleVector,6);
 
 //-----------------------------------------------------------------------------
-void vtkOOCReader::PrintSelf(ostream& os, vtkIndent indent)
+void vtkSQOOCReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->vtkObject::PrintSelf(os,indent.GetNextIndent());
   os << indent << "TimeIndex: " << this->TimeIndex << endl;

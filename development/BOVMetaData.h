@@ -11,12 +11,15 @@ Copyright 2008 SciberQuest Inc.
 
 #include "vtkAMRBox.h"
 #include "vtkInformation.h"
-#include "PrintUtils.h"
+#include "Stream.hxx"
+
 #include <cstdlib>
 #include <map>
+using std::map;
 #include <vector>
+using std::vector;
 #include <string>
-using namespace std;
+using std::string;
 
 // These masks are used with array status methods.
 // ACTIVE_BIT is set to indicate an array is to be read
@@ -254,11 +257,11 @@ public:
 
   /// Serialize the object into a byte stream  Returns the
   /// size in bytes of the stream. Or 0 in case of an error.
-  virtual int Pack(void *&stream);
+  virtual void Pack(Stream &str);
 
   /// Initiaslize the object froma byte stream (see also Serialize)
   /// returns 0 in case of an error.
-  virtual int UnPack(void *stream);
+  virtual void UnPack(Stream &str);
 
 
   /// Print internal state.

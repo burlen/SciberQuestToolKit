@@ -24,7 +24,7 @@ using std::map;
 using std::pair;
 
 class vtkUnstructuredGrid;
-class vtkOOCReader;
+class vtkSQOOCReader;
 class vtkMultiProcessController;
 class vtkInitialValueProblemSolver;
 class vtkPointSet;
@@ -159,7 +159,7 @@ private:
       vtkDataSet *source,
       vtkDataSet *out,
       const char *fieldName,
-      vtkOOCReader *oocr,
+      vtkSQOOCReader *oocr,
       FieldTraceData *topoMap);
 
   // Description:
@@ -171,7 +171,7 @@ private:
       vtkDataSet *source,
       vtkDataSet *out,
       const char *fieldName,
-      vtkOOCReader *oocr,
+      vtkSQOOCReader *oocr,
       vtkDataSet *&oocrCache,
       FieldTraceData *topoMap);
 
@@ -187,7 +187,7 @@ private:
       vtkDataSet *source,
       vtkDataSet *out,
       const char *fieldName,
-      vtkOOCReader *oocr,
+      vtkSQOOCReader *oocr,
       vtkDataSet *&oocrCache,
       FieldTraceData *topoMap);
 
@@ -197,7 +197,7 @@ private:
         CellIdBlock *sourceIds,
         FieldTraceData *topoMap,
         const char *fieldName,
-        vtkOOCReader *oocr,
+        vtkSQOOCReader *oocr,
         vtkDataSet *&oocrCache);
 
 
@@ -207,7 +207,7 @@ private:
   // condition and terminated imediately. The last neighborhood read is stored
   // in the nhood parameter. It is up to the caller to delete this.
   void IntegrateOne(
-        vtkOOCReader *oocR,
+        vtkSQOOCReader *oocR,
         vtkDataSet *&oocRCache,
         const char *fieldName,
         FieldLine *line,

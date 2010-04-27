@@ -10,6 +10,9 @@ Copyright 2008 SciberQuest Inc.
 #ifndef Tuple_h
 #define Tuple_h
 
+#include<vector>
+using std::vector;
+
 template <typename T> class Tuple;
 template<typename T>
 ostream &operator<<(ostream &os, const Tuple<T> &t);
@@ -23,6 +26,7 @@ public:
   Tuple(T t1, T t2, T t3);
   Tuple(T t1 ,T t2, T t3, T t4, T t5, T t6);
   Tuple(T *t, int n);
+  Tuple(vector<T> &v);
   ~Tuple();
 
   const Tuple &operator=(const Tuple &rhs);
@@ -38,13 +42,14 @@ private:
   T *Data;
 };
 
-
+//-----------------------------------------------------------------------------
 template<typename T>
 Tuple<T>::Tuple(const Tuple &other)
 {
   *this=other;
 }
 
+//-----------------------------------------------------------------------------
 template<typename T>
 Tuple<T>::Tuple(T *data, int size)
       :
@@ -54,6 +59,7 @@ Tuple<T>::Tuple(T *data, int size)
   this->Initialize(data,size);
 }
 
+//-----------------------------------------------------------------------------
 template<typename T>
 Tuple<T>::Tuple(T t1, T t2, T t3)
       :
@@ -64,6 +70,7 @@ Tuple<T>::Tuple(T t1, T t2, T t3)
   this->Initialize(data,3);
 }
 
+//-----------------------------------------------------------------------------
 template<typename T>
 Tuple<T>::Tuple(T t1 ,T t2, T t3, T t4, T t5, T t6)
       :
@@ -74,12 +81,25 @@ Tuple<T>::Tuple(T t1 ,T t2, T t3, T t4, T t5, T t6)
   this->Initialize(data,6);
 }
 
+//-----------------------------------------------------------------------------
+template<typename T>
+Tuple<T>::Tuple(vector<T> &v)
+      :
+  Size(0),
+  Data(0)
+{
+  T *p=&v[0];
+  this->Initialize(p,v.size());
+}
+
+//-----------------------------------------------------------------------------
 template<typename T>
 Tuple<T>::~Tuple()
 {
   this->Initialize(NULL,0);
 }
 
+//-----------------------------------------------------------------------------
 template<typename T>
 void Tuple<T>::Initialize(T *data, int size)
 {
@@ -100,6 +120,7 @@ void Tuple<T>::Initialize(T *data, int size)
     }
 }
 
+//-----------------------------------------------------------------------------
 template<typename T>
 const Tuple<T> & Tuple<T>::operator=(const Tuple<T> &rhs)
 {
@@ -110,6 +131,7 @@ const Tuple<T> & Tuple<T>::operator=(const Tuple<T> &rhs)
   return *this;
 }
 
+//-----------------------------------------------------------------------------
 template<typename T>
 ostream &operator<<(ostream &os, const Tuple<T> &t)
 {

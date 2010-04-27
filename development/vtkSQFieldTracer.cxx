@@ -45,7 +45,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkRungeKutta45.h"
 #include "vtkMultiProcessController.h"
 
-#include "vtkOOCReader.h"
+#include "vtkSQOOCReader.h"
 #include "vtkMetaDataKeys.h"
 #include "vtkMath.h"
 
@@ -56,7 +56,7 @@ Copyright 2008 SciberQuest Inc.
 #include "PolyDataFieldTopologyMap.h"
 #include "UnstructuredFieldTopologyMap.h"
 #include "StreamlineData.h"
-#include "PoincareData.h"
+#include "PoincareMapData.h"
 #include "minmax.h"
 
 #include "mpi.h"
@@ -402,14 +402,14 @@ int vtkSQFieldTracer::RequestData(
   // produced by a meta-reader. The information object should have the
   // OOC Reader.
   info = inputVector[0]->GetInformationObject(0);
-  if (!info->Has(vtkOOCReader::READER()))
+  if (!info->Has(vtkSQOOCReader::READER()))
     {
     vtkWarningMacro(
         "OOCReader object not present in input pipeline information! Aborting request.");
     return 1;
     }
-  vtkSmartPointer<vtkOOCReader> oocr;
-  oocr=dynamic_cast<vtkOOCReader*>(info->Get(vtkOOCReader::READER()));
+  vtkSmartPointer<vtkSQOOCReader> oocr;
+  oocr=dynamic_cast<vtkSQOOCReader*>(info->Get(vtkSQOOCReader::READER()));
   if (!oocr)
     {
     vtkWarningMacro(
@@ -422,6 +422,7 @@ int vtkSQFieldTracer::RequestData(
   oocr->Register(0);
   oocr->DeActivateAllArrays();
   oocr->ActivateArray(fieldName);
+  oocr->SetCommunicator(this->OOCNeighborhoodSize==-1?MPI_COMM_WORLD:MPI_COMM_SELF);
   oocr->Open();
   // We provide the integrator a pointer to a cache. The integrator
   // uses this as it sees fit to reduce the number of reads. If its
@@ -465,7 +466,7 @@ int vtkSQFieldTracer::RequestData(
 
   /// Map
   // Configure the map.
-  FieldTraceData *traceData;
+  FieldTraceData *traceData=0;
 
   // There are multiple modes the filter can be used in, see documentation
   // for See SetMode.
@@ -501,7 +502,7 @@ int vtkSQFieldTracer::RequestData(
       break;
 
     case POINCARE:
-      traceData=new PoincareData;
+      traceData=new PoincareMapData;
       traceData->SetSource(source);
       traceData->SetOutput(out);
       break;
@@ -593,9 +594,9 @@ int vtkSQFieldTracer::IntegrateStatic(
       vtkDataSet *source,
       vtkDataSet *out,
       const char *fieldName,
-      vtkOOCReader *oocr,
+      vtkSQOOCReader *oocr,
       vtkDataSet *&oocrCache,
-      FieldTraceData *topoMap)
+      FieldTraceData *traceData)
 {
   // do all local ids in a single pass.
   CellIdBlock sourceIds;
@@ -605,7 +606,7 @@ int vtkSQFieldTracer::IntegrateStatic(
   return
     this->IntegrateBlock(
             &sourceIds,
-            topoMap,
+            traceData,
             fieldName,
             oocr,
             oocrCache);
@@ -618,9 +619,9 @@ int vtkSQFieldTracer::IntegrateDynamic(
       vtkDataSet *source,
       vtkDataSet *out,
       const char *fieldName,
-      vtkOOCReader *oocr,
+      vtkSQOOCReader *oocr,
       vtkDataSet *&oocrCache,
-      FieldTraceData *topoMap)
+      FieldTraceData *traceData)
 {
   const int masterProcId=(nProcs>1?1:0); // NOTE: proc 0 is busy with PV overhead.
   const int BLOCK_REQ=2222;
@@ -677,7 +678,7 @@ int vtkSQFieldTracer::IntegrateDynamic(
         #endif
         this->IntegrateBlock(
                 &sourceIds,
-                topoMap,
+                traceData,
                 fieldName,
                 oocr,
                 oocrCache);
@@ -709,7 +710,7 @@ int vtkSQFieldTracer::IntegrateDynamic(
       // integrate this block
       this->IntegrateBlock(
                 &sourceIds,
-                topoMap,
+                traceData,
                 fieldName,
                 oocr,
                 oocrCache);
@@ -721,37 +722,37 @@ int vtkSQFieldTracer::IntegrateDynamic(
 //-----------------------------------------------------------------------------
 int vtkSQFieldTracer::IntegrateBlock(
       CellIdBlock *sourceIds,
-      FieldTraceData *genData,
+      FieldTraceData *traceData,
       const char *fieldName,
-      vtkOOCReader *oocr,
+      vtkSQOOCReader *oocr,
       vtkDataSet *&oocrCache)
 
 {
   // build the output.
-  vtkIdType nLines=genData->InsertCells(sourceIds);
+  vtkIdType nLines=traceData->InsertCells(sourceIds);
 
-  TerminationCondition *tcon=genData->GetTerminationCondition();
+  TerminationCondition *tcon=traceData->GetTerminationCondition();
 
   // integrate from each source cell.
   for (vtkIdType i=0; i<nLines; ++i)
     {
-    FieldLine *line=genData->GetFieldLine(i);
+    FieldLine *line=traceData->GetFieldLine(i);
     this->IntegrateOne(oocr,oocrCache,fieldName,line,tcon);
     }
 
   // sync results to output. (minimizes the calls to realloc)
-  genData->SyncScalars();
-  genData->SyncGeometry();
+  traceData->SyncScalars();
+  traceData->SyncGeometry();
 
   // free resources in preparation for the next pass.
-  genData->ClearFieldLines();
+  traceData->ClearFieldLines();
 
   return 1;
 }
 
 //-----------------------------------------------------------------------------
 void vtkSQFieldTracer::IntegrateOne(
-      vtkOOCReader *oocR,
+      vtkSQOOCReader *oocR,
       vtkDataSet *&oocRCache,
       const char *fieldName,
       FieldLine *line,

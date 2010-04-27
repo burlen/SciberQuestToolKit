@@ -66,9 +66,7 @@ BOVTimeStepImage::BOVTimeStepImage(MPI_Comm &comm, int stepIdx, BOVMetaData *met
     // other ?
     else
       {
-      #ifndef NDEBUG
       cerr << __LINE__ << " Error: bad array type for array " << arrayName << "." << endl; 
-      #endif
       }
     }
 }

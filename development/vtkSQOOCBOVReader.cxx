@@ -6,7 +6,7 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#include "vtkOOCBOVReader.h"
+#include "vtkSQOOCBOVReader.h"
 
 #include "vtkObjectFactory.h"
 #include "vtkAMRBox.h"
@@ -16,11 +16,11 @@ Copyright 2008 SciberQuest Inc.
 #include "BOVReader.h"
 #include "BOVTimeStepImage.h"
 
-vtkCxxRevisionMacro(vtkOOCBOVReader, "$Revision: 0.0 $");
-vtkStandardNewMacro(vtkOOCBOVReader);
+vtkCxxRevisionMacro(vtkSQOOCBOVReader, "$Revision: 0.0 $");
+vtkStandardNewMacro(vtkSQOOCBOVReader);
 
 //-----------------------------------------------------------------------------
-vtkOOCBOVReader::vtkOOCBOVReader()
+vtkSQOOCBOVReader::vtkSQOOCBOVReader()
     :
   Reader(0),
   Image(0)
@@ -29,7 +29,7 @@ vtkOOCBOVReader::vtkOOCBOVReader()
 }
 
 //-----------------------------------------------------------------------------
-vtkOOCBOVReader::~vtkOOCBOVReader()
+vtkSQOOCBOVReader::~vtkSQOOCBOVReader()
 {
   delete this->Reader;
   if (this->Image)
@@ -39,17 +39,26 @@ vtkOOCBOVReader::~vtkOOCBOVReader()
 }
 
 //-----------------------------------------------------------------------------
-void vtkOOCBOVReader::SetReader(BOVReader *reader)
+void vtkSQOOCBOVReader::SetReader(BOVReader *reader)
 {
   delete this->Reader;
   this->Reader=new BOVReader;
   *this->Reader=*reader;
+  // TODO It may be better to set on the fly, if
+  // neighborhood size is 0 then comm_world may be better.
   // Force solo reads!
-  this->Reader->SetCommunicator(MPI_COMM_SELF);
+  // this->Reader->SetCommunicator(MPI_COMM_SELF);
+}
+
+
+//-----------------------------------------------------------------------------
+void vtkSQOOCBOVReader::SetCommunicator(MPI_Comm comm)
+{
+  this->Reader->SetCommunicator(comm);
 }
 
 //-----------------------------------------------------------------------------
-int vtkOOCBOVReader::Open()
+int vtkSQOOCBOVReader::Open()
 {
   if (this->Image)
     {
@@ -65,21 +74,21 @@ int vtkOOCBOVReader::Open()
 }
 
 //-----------------------------------------------------------------------------
-void vtkOOCBOVReader::Close()
+void vtkSQOOCBOVReader::Close()
 {
   this->Reader->CloseTimeStep(this->Image);
   this->Image=0;
 }
 
 //-----------------------------------------------------------------------------
-vtkDataSet *vtkOOCBOVReader::Read(double b[6])
+vtkDataSet *vtkSQOOCBOVReader::Read(double b[6])
 {
   vtkWarningMacro("Not implemented!");
   return 0;
 }
 
 //-----------------------------------------------------------------------------
-vtkDataSet *vtkOOCBOVReader::ReadNeighborhood(double p[3], int size)
+vtkDataSet *vtkSQOOCBOVReader::ReadNeighborhood(double p[3], int size)
 {
   // Locate the cell where this point lies.
   double X0[3];
@@ -129,7 +138,7 @@ vtkDataSet *vtkOOCBOVReader::ReadNeighborhood(double p[3], int size)
     return 0;
     }
 
-  #if defined vtkOOCBOVReaderDEBUG
+  #if defined vtkSQOOCBOVReaderDEBUG
   static int ww=0;
   ++ww;
   cerr << this->Reader->GetProcId() << " " << ww
@@ -141,19 +150,19 @@ vtkDataSet *vtkOOCBOVReader::ReadNeighborhood(double p[3], int size)
 }
 
 //-----------------------------------------------------------------------------
-void vtkOOCBOVReader::ActivateArray(const char *name)
+void vtkSQOOCBOVReader::ActivateArray(const char *name)
 {
   this->Reader->GetMetaData()->ActivateArray(name);
 }
 
 //-----------------------------------------------------------------------------
-void vtkOOCBOVReader::DeActivateArray(const char *name)
+void vtkSQOOCBOVReader::DeActivateArray(const char *name)
 {
   this->Reader->GetMetaData()->DeactivateArray(name);
 }
 
 //-----------------------------------------------------------------------------
-void vtkOOCBOVReader::DeActivateAllArrays()
+void vtkSQOOCBOVReader::DeActivateAllArrays()
 {
   int nArray=this->Reader->GetMetaData()->GetNumberOfArrays();
   for (int i=0; i<nArray; ++i)
@@ -164,10 +173,10 @@ void vtkOOCBOVReader::DeActivateAllArrays()
 }
 
 //-----------------------------------------------------------------------------
-void vtkOOCBOVReader::PrintSelf(ostream& os, vtkIndent indent)
+void vtkSQOOCBOVReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->vtkObject::PrintSelf(os,indent.GetNextIndent());
   os << indent << "Reader: " << endl;
-  this->Reader->Print(os);
+  this->Reader->PrintSelf(os);
   os << endl;
 }

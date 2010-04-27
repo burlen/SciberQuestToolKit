@@ -71,6 +71,17 @@ case $1 in
     ../ParaView3
     ;;
 
+  "pv3-linux-debug" )
+    cmake \
+    -DBUILD_SHARED_LIBS=ON \
+    -DBUILD_TESTING=OFF \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DPARAVIEW_USE_MPI=ON \
+    -DVTK_DEBUG_LEAKS=ON \
+    -DCMAKE_CXX_FLAGS_DEBUG="-g -O2 -Wall" \
+    ../ParaView3
+    ;;
+
   "svtk-kraken-gnu" )
     # eigen => /lustre/scratch/bloring/apps/eigen-2.0.12-gnu
     # pv3 => /nics/c/home/bloring/ParaView/PV3-3.7-gnu

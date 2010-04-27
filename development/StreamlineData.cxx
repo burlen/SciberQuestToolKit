@@ -163,8 +163,8 @@ int StreamlineData::InsertCells(CellIdBlock *SourceIds)
   for (vtkIdType cId=startId; cId<endId; ++cId)
     {
     // get the cell that belong to us.
-    vtkIdType nPtIds;
-    vtkIdType *ptIds;
+    vtkIdType nPtIds=0;
+    vtkIdType *ptIds=0;
     SourceCells->GetNextCell(nPtIds,ptIds);
 
     // the seed point we will use the center of the cell

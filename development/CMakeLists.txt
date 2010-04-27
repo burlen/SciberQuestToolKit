@@ -45,14 +45,14 @@ set(_SOURCES
   GDAMetaDataKeys.cxx
   IntersectionSet.cxx
   PolyDataFieldTopologyMap.cxx
-  PoincareData.cxx
+  PoincareMapData.cxx
   PrintUtils.cxx
   StreamlineData.cxx
   TerminationCondition.cxx
   UnstructuredFieldTopologyMap.cxx
   vtkMetaDataKeys.cxx
-  vtkOOCReader.cxx
-  vtkOOCBOVReader.cxx
+  vtkSQOOCReader.cxx
+  vtkSQOOCBOVReader.cxx
   vtkSQHemisphereSourceConfigurationWriter.cxx
   vtkSQHemisphereSourceConfigurationReader.cxx
   vtkSQPlaneSourceConfigurationWriter.cxx
@@ -61,7 +61,7 @@ set(_SOURCES
   )
 
 SET_SOURCE_FILES_PROPERTIES(
-  vtkOOCReader.cxx
+  vtkSQOOCReader.cxx
   ABSTRACT
   )
 

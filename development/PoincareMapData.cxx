@@ -6,7 +6,7 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#include "PoincareData.h"
+#include "PoincareMapData.h"
 
 #include "WorkQueue.h"
 #include "FieldLine.h"
@@ -21,14 +21,14 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkIdTypeArray.h"
 
 //-----------------------------------------------------------------------------
-PoincareData::~PoincareData()
+PoincareMapData::~PoincareMapData()
 {
   this->ClearSource();
   this->ClearOut();
 }
 
 //-----------------------------------------------------------------------------
-void PoincareData::ClearSource()
+void PoincareMapData::ClearSource()
 {
   if (this->SourcePts){ this->SourcePts->Delete(); }
   if (this->SourceCells){ this->SourceCells->Delete(); }
@@ -37,7 +37,7 @@ void PoincareData::ClearSource()
 }
 
 //-----------------------------------------------------------------------------
-void PoincareData::ClearOut()
+void PoincareMapData::ClearOut()
 {
   if (this->OutPts){ this->OutPts->Delete(); }
   if (this->OutCells){ this->OutCells->Delete(); }
@@ -46,7 +46,7 @@ void PoincareData::ClearOut()
 }
 
 //-----------------------------------------------------------------------------
-void PoincareData::SetSource(vtkDataSet *s)
+void PoincareMapData::SetSource(vtkDataSet *s)
 {
   this->ClearSource();
 
@@ -111,7 +111,7 @@ void PoincareData::SetSource(vtkDataSet *s)
 }
 
 //-----------------------------------------------------------------------------
-void PoincareData::SetOutput(vtkDataSet *o)
+void PoincareMapData::SetOutput(vtkDataSet *o)
 {
   this->FieldTraceData::SetOutput(o);
 
@@ -135,7 +135,7 @@ void PoincareData::SetOutput(vtkDataSet *o)
 }
 
 //-----------------------------------------------------------------------------
-int PoincareData::InsertCells(CellIdBlock *SourceIds)
+int PoincareMapData::InsertCells(CellIdBlock *SourceIds)
 {
   vtkIdType startId=SourceIds->first();
   vtkIdType endId=SourceIds->last();
@@ -163,8 +163,8 @@ int PoincareData::InsertCells(CellIdBlock *SourceIds)
   for (vtkIdType cId=startId; cId<endId; ++cId)
     {
     // get the cell that belong to us.
-    vtkIdType nPtIds;
-    vtkIdType *ptIds;
+    vtkIdType nPtIds=0;
+    vtkIdType *ptIds=0;
     SourceCells->GetNextCell(nPtIds,ptIds);
 
     // the seed point we will use the center of the cell
@@ -193,7 +193,7 @@ int PoincareData::InsertCells(CellIdBlock *SourceIds)
 }
 
 //-----------------------------------------------------------------------------
-int PoincareData::SyncGeometry()
+int PoincareMapData::SyncGeometry()
 {
 
   size_t nLines=this->Lines.size();

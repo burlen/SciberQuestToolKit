@@ -76,7 +76,7 @@ pqSQHemisphereSource::pqSQHemisphereSource(
   this->Form->c_z->setValidator(new QDoubleValidator(this->Form->c_z));
   this->Form->r->setValidator(new QDoubleValidator(this->Form->r));
 
-  vtkSMProxy* pProxy=this->referenceProxy()->getProxy();
+//   vtkSMProxy* pProxy=this->referenceProxy()->getProxy();
 
 //   // Connect to server side pipeline's UpdateInformation events.
 //   // The server side will look for keys during request information.

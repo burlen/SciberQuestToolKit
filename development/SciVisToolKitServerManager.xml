@@ -616,7 +616,7 @@ Copyright 2008 SciberQuest Inc.
        label="OOC Read Size"
        command="SetOOCNeighborhoodSize"
        number_of_elements="1"
-       default_values="0" >
+       default_values="-1" >
        <IntRangeDomain name="range" min="-1"/>
        <Documentation>
          Control the size of the OOC reads (context dependent meaning).
@@ -943,9 +943,11 @@ Copyright 2008 SciberQuest Inc.
 
   <Hints>
     <Property name="Mode" show="0"/>
+    <!--
     <Property name="UseDynamicScheduler" show="0"/>
     <Property name="MasterBlockSize" show="0"/>
     <Property name="WorkerBlockSize" show="0"/>
+    -->
     <Property name="StepUnit" show="0"/>
     <Property name="MaxError" show="0"/>
   </Hints>

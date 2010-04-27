@@ -158,8 +158,8 @@ int PolyDataFieldTopologyMap::InsertCells(CellIdBlock *SourceIds)
   for (vtkIdType i=0; i<nCellsLocal; ++i)
     {
     // Get the cell that belong to us.
-    vtkIdType nPtIds;
-    vtkIdType *ptIds;
+    vtkIdType nPtIds=0;
+    vtkIdType *ptIds=0;
     this->SourceCells->GetNextCell(nPtIds,ptIds);
 
     // Get location to write new cell.

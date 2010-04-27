@@ -25,7 +25,6 @@
 #ifndef vtkSQBOVReader_h
 #define vtkSQBOVReader_h
 
-//#include "vtkMultiBlockDataSetAlgorithm.h"
 #include "vtkImageAlgorithm.h"
 
 // define this for cerr status.
@@ -38,7 +37,6 @@ class vtkInformationDoubleKey;
 class vtkInformationDoubleVectorKey;
 class vtkInformationIntegerKey;
 class vtkInformationIntegerVectorKey;
-// class vtkCallbackCommand;
 //ETX
 
 class VTK_EXPORT vtkSQBOVReader : public vtkImageAlgorithm

@@ -150,8 +150,8 @@ int UnstructuredFieldTopologyMap::InsertCells(CellIdBlock *SourceIds)
   for (vtkIdType i=0; i<nCellsLocal; ++i)
     {
     // get the cell that belong to us.
-    vtkIdType nPtIds;
-    vtkIdType *ptIds;
+    vtkIdType nPtIds=0;
+    vtkIdType *ptIds=0;
     this->SourceCells->GetNextCell(nPtIds,ptIds);
 
     // set the new cell's location

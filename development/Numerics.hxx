@@ -283,13 +283,11 @@ void Rotation(int *input, int *output, double *dX, T *V, T *W)
   // input array bounds.
   const int ni=input[1]-input[0]+1;
   const int nj=input[3]-input[2]+1;
-  const int nk=input[5]-input[4]+1;
   const int ninj=ni*nj;
 
   // output array bounds
   const int _ni=output[1]-output[0]+1;
   const int _nj=output[3]-output[2]+1;
-  const int _nk=output[5]-output[4]+1;
   const int _ninj=_ni*_nj;
 
   // stencil deltas
@@ -346,13 +344,11 @@ void Helicity(int *input, int *output, double *dX, T *V, T *H)
   // input array bounds.
   const int ni=input[1]-input[0]+1;
   const int nj=input[3]-input[2]+1;
-  const int nk=input[5]-input[4]+1;
   const int ninj=ni*nj;
 
   // output array bounds
   const int _ni=output[1]-output[0]+1;
   const int _nj=output[3]-output[2]+1;
-  const int _nk=output[5]-output[4]+1;
   const int _ninj=_ni*_nj;
 
   // stencil deltas
@@ -413,13 +409,11 @@ void NormalizedHelicity(int *input, int *output, double *dX, T *V, T *H)
   // input array bounds.
   const int ni=input[1]-input[0]+1;
   const int nj=input[3]-input[2]+1;
-  const int nk=input[5]-input[4]+1;
   const int ninj=ni*nj;
 
   // output array bounds
   const int _ni=output[1]-output[0]+1;
   const int _nj=output[3]-output[2]+1;
-  const int _nk=output[5]-output[4]+1;
   const int _ninj=_ni*_nj;
 
   // stencil deltas
@@ -498,13 +492,11 @@ void Lambda(int *input, int *output, double *dX,T *V, T *L)
   // input array bounds.
   const int ni=input[1]-input[0]+1;
   const int nj=input[3]-input[2]+1;
-  const int nk=input[5]-input[4]+1;
   const int ninj=ni*nj;
 
   // output array bounds
   const int _ni=output[1]-output[0]+1;
   const int _nj=output[3]-output[2]+1;
-  const int _nk=output[5]-output[4]+1;
   const int _ninj=_ni*_nj;
 
   // stencil deltas
@@ -629,13 +621,11 @@ void Lambda2(int *input, int *output, double *dX,T *V, T *L2)
   // input array bounds.
   const int ni=input[1]-input[0]+1;
   const int nj=input[3]-input[2]+1;
-  const int nk=input[5]-input[4]+1;
   const int ninj=ni*nj;
 
   // output array bounds
   const int _ni=output[1]-output[0]+1;
   const int _nj=output[3]-output[2]+1;
-  const int _nk=output[5]-output[4]+1;
   const int _ninj=_ni*_nj;
 
   // stencil deltas

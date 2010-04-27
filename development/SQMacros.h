@@ -19,5 +19,4 @@ using std::endl;
       << "Error in:" << endl\
       << __FILE__ << ", line " << __LINE__ << endl\
       << "" estr << endl;
-
 #endif

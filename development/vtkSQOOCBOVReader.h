@@ -6,10 +6,10 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef vtkOOCBOVReader_h
-#define vtkOOCBOVReader_h
+#ifndef vtkSQOOCBOVReader_h
+#define vtkSQOOCBOVReader_h
 
-#include "vtkOOCReader.h"
+#include "vtkSQOOCReader.h"
 
 class vtkDataSet;
 class BOVReader;
@@ -21,12 +21,17 @@ Allow one to read in chuncks of data as needed. A specific
 chunk of data is identified to be read by providing a point
 in which the chunk should reside.
 */
-class VTK_EXPORT vtkOOCBOVReader : public vtkOOCReader
+class VTK_EXPORT vtkSQOOCBOVReader : public vtkSQOOCReader
 {
 public:
-  static vtkOOCBOVReader *New();
-  vtkTypeRevisionMacro(vtkOOCBOVReader, vtkObject);
+  static vtkSQOOCBOVReader *New();
+  vtkTypeRevisionMacro(vtkSQOOCBOVReader, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
+
+  // Description:
+  // Set the communicator to open the file on. optional.
+  // If not explicitly set the default is MPI_COMM_SELF.
+  virtual void SetCommunicator(MPI_Comm comm);
 
   /// \section IO \@{
   /**
@@ -70,11 +75,11 @@ public:
   virtual void SetReader(BOVReader *reader);
 
 protected:
-  vtkOOCBOVReader();
-  virtual ~vtkOOCBOVReader();
+  vtkSQOOCBOVReader();
+  virtual ~vtkSQOOCBOVReader();
 private:
-  vtkOOCBOVReader(const vtkOOCBOVReader &o);
-  const vtkOOCBOVReader &operator=(const vtkOOCBOVReader &o);
+  vtkSQOOCBOVReader(const vtkSQOOCBOVReader &o);
+  const vtkSQOOCBOVReader &operator=(const vtkSQOOCBOVReader &o);
 
 private:
   BOVReader *Reader;

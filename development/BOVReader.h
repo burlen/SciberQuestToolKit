@@ -34,96 +34,78 @@ Calls that return an int generally return 0 to indicate an error.
 class VTK_EXPORT BOVReader
 {
 public:
-  BOVReader() : MetaData(NULL), Comm(MPI_COMM_NULL) {
-    this->Clear();
-    }
-  BOVReader(const BOVReader &other) {
-    *this=other;
-    }
-  ~BOVReader(){
-    this->SetMetaData(NULL);
-    this->Clear();
-    }
+  BOVReader();
+  BOVReader(const BOVReader &other);
+  ~BOVReader();
 
-  /// Safely copying the reader.
+  // Description:
+  // Safely copying the reader.
   const BOVReader &operator=(const BOVReader &other);
 
-  /// Identify this among a number of processes.
-  int SetController(vtkMultiProcessController *cont);
-  void SetCommunicator(MPI_Comm comm){
-    this->Comm=comm;
-    }
-  void SetProcId(int procId){
-    this->ProcId=procId;
-    }
-  int GetProcId(){
-    return this->ProcId;
-    }
-  void SetNProcs(int nProcs){
-    this->NProcs=nProcs;
-    }
-  int GetNProcsId(){
-    return this->NProcs;
-    }
+  // Description:
+  // Set the controller that will be used during IO and
+  // communication operations. Tyoically it's COMM_WORLD.
+  void SetCommunicator(MPI_Comm comm);
 
-  /// Set the metadata object that will interpret the metadata file,
-  /// a deep copy of the passed in object is made prior to returning.
-  /// See BOVMetaData for interface details.
+  // int SetController(vtkMultiProcessController *cont);
+  
+
+//   void SetProcId(int procId){ this->ProcId=procId; }
+//   int GetProcId(){ return this->ProcId; }
+//   void SetNProcs(int nProcs){ this->NProcs=nProcs; }
+//   int GetNProcsId(){ return this->NProcs; }
+
+  // Description:
+  // Set the metadata object that will interpret the metadata file,
+  // a deep copy of the passed in object is made prior to returning.
+  // See BOVMetaData for interface details.
   void SetMetaData(const BOVMetaData *metaData);
-  /// Get the active metadata object. Use this to querry the open dataset.
-  /// See BOVMetaData.
-  BOVMetaData *GetMetaData() const{
-    return this->MetaData;
-    }
-  /// Open a dataset. Pass the dataset's metadata file in. If this call succeeeds
-  /// then ...
+  // Description:
+  // Get the active metadata object. Use this to querry the open dataset.
+  // See BOVMetaData.
+  BOVMetaData *GetMetaData() const { return this->MetaData; }
+
+  // Description:
+  // Open a dataset. During open meta data is parsed but no
+  // heavy data is read.
   int Open(const char *fileName);
 
-  /// Return's true if the dataset has been successfully opened.
-  bool IsOpen(){
-    if (this->MetaData)
-      {
-      return this->MetaData->IsDatasetOpen();
-      }
-    return false;
-    }
-  /// Close the dataset.
-  int Close(){
-    this->ClearDecomp();
-    return this->MetaData && this->MetaData->CloseDataset();
-    }
+  // Description:
+  // Return's true if the dataset has been successfully opened.
+  bool IsOpen();
 
-  /// Set number of ghost cells to use with each sub-domain default 
-  /// is 1.
-  int GetNumberOfGhostCells() const {
-    return this->NGhost;
-    }
-  void SetNumberOfGhostCells(int nGhost){
-    this->NGhost=nGhost;
-    }
-  /// Decompose the domain into a slab for each processor.
-  int DecomposeDomain(vtkMultiBlockDataSet *mbds);
+  // Description:
+  // Close the dataset.
+  int Close();
 
-  /// Read the named set of arrays from disk, use "Add" methods to add arrays
-  /// to be read.
+  // Description:
+  // Set number of ghost cells to use with each sub-domain default 
+  // is 1.
+  int GetNumberOfGhostCells(){ return this->NGhost; }
+  void SetNumberOfGhostCells(int nGhost){ this->NGhost=nGhost; }
+
+
+  // Description:
+  // Open a specific time step. This is done indepedently of the
+  // read so that if running out of core only a single open is 
+  // requried.
   BOVTimeStepImage *OpenTimeStep(int stepNo);
   void CloseTimeStep(BOVTimeStepImage *handle);
 
+  // Description:
+  // Read the named set of arrays from disk, use "Add" methods to add arrays
+  // to be read.
   int ReadTimeStep(BOVTimeStepImage *handle, vtkImageData *idds, vtkAlgorithm *exec=0);
   int ReadMetaTimeStep(int stepNo, vtkImageData *idds, vtkAlgorithm *exec=0);
 
-  /// Print internal state.
-  void Print(ostream &os);
+  // Description:
+  // Print internal state.
+  void PrintSelf(ostream &os);
 
 private:
-  /// Place the object in a default state.
-  void Clear();
-  /// Free any vtk objects we have used.
-  void ClearDecomp(){
-    this->Blocks.clear();
-    }
-  /// Read the array in the specified file and insert it into
-  /// point data.
+  // Description:
+  // Read the array in the specified file and insert it into
+  // point data.
   int ReadScalarArray(BOVScalarImageIterator *it, vtkImageData *grid);
   int ReadVectorArray(BOVVectorImageIterator *it, vtkImageData *grid);
 
@@ -139,12 +121,11 @@ private:
         vtkImageData *grid);
 
 private:
-  BOVMetaData *MetaData;     /// Object that knows how to interpret dataset.
-  int NGhost;                /// Number of ghost nodes, default is 1.
-  int ProcId;                /// My process id.
-  int NProcs;                /// Number of processes.
-  vector<vtkAMRBox> Blocks;  /// Decomposed domain.
-  MPI_Comm Comm;             /// Communicator handle
+  BOVMetaData *MetaData;     // Object that knows how to interpret dataset.
+  int NGhost;                // Number of ghost nodes, default is 1.
+  int ProcId;                // My process id.
+  int NProcs;                // Number of processes.
+  MPI_Comm Comm;             // Communicator handle
 };
 
 #endif

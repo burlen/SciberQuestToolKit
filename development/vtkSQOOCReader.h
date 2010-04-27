@@ -6,10 +6,11 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef vtkOOCReader_h
-#define vtkOOCReader_h
+#ifndef vtkSQOOCReader_h
+#define vtkSQOOCReader_h
 
 #include "vtkObject.h"
+#include "mpi.h"
 
 class vtkInformation;
 class vtkInformationObjectBaseKey;
@@ -25,7 +26,7 @@ implement caching as desired but this is not strictly
 neccessary. This class also provides a number of keys
 that should be used by meta readers.
 */
-class VTK_EXPORT vtkOOCReader : public vtkObject
+class VTK_EXPORT vtkSQOOCReader : public vtkObject
 {
 public:
   /// \section Pipeline \@{
@@ -34,7 +35,7 @@ public:
   to downstream filters. The meta reader at the head of the pipeline
   initializes and sets the reader into the pipeline information
   then down strem filters may read data as needed. The object set 
-  must implement the vtkOOCReader interface and be reader to read
+  must implement the vtkSQOOCReader interface and be reader to read
   once set into the pipeline.
   */
   static vtkInformationObjectBaseKey *READER();
@@ -44,8 +45,13 @@ public:
   static vtkInformationDoubleVectorKey *BOUNDS();
 
 public:
-  vtkTypeRevisionMacro(vtkOOCReader, vtkObject);
+  vtkTypeRevisionMacro(vtkSQOOCReader, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
+
+
+  // Description:
+  // Set the communicator to open the file on. optional.
+  virtual void SetCommunicator(MPI_Comm comm) {}
 
   /// \section IO \@{
   /**
@@ -91,16 +97,16 @@ public:
   /// \@}
 
 protected:
-  vtkOOCReader()
+  vtkSQOOCReader()
       :
     TimeIndex(0),
     Time(0)
       {};
-  virtual ~vtkOOCReader(){};
+  virtual ~vtkSQOOCReader(){};
 
 private:
-  vtkOOCReader(const vtkOOCReader &o);
-  const vtkOOCReader &operator=(const vtkOOCReader &o);
+  vtkSQOOCReader(const vtkSQOOCReader &o);
+  const vtkSQOOCReader &operator=(const vtkSQOOCReader &o);
 
 protected:
   int TimeIndex;

@@ -6,8 +6,8 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef PoincareData_h
-#define PoincareData_h
+#ifndef PoincareMapData_h
+#define PoincareMapData_h
 
 #include "FieldTraceData.h"
 
@@ -31,10 +31,10 @@ Abstract collection of datastructures needed to build the topology map.
 The details of building the map change drastically depending on the input
 data type. Concrete classes deal with these specifics.
 */
-class PoincareData : public FieldTraceData
+class PoincareMapData : public FieldTraceData
 {
 public:
-  PoincareData()
+  PoincareMapData()
         :
     SourcePts(0),
     SourceCells(0),
@@ -42,7 +42,7 @@ public:
     OutCells(0)
       {  }
 
-  virtual ~PoincareData();
+  virtual ~PoincareMapData();
 
   // Description:
   // Set the datast to be used as the seed source.

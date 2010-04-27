@@ -103,7 +103,7 @@ void pqSQProcessMonitor::Restore()
   QStringList defaults;
   defaults
        << ""
-       << "-geometry 200x40 -fg white -bg black"
+       << "-geometry 200x40 -fg white -bg black -T @HOST@:@PID@"
        << "xterm @XTOPTS@ -e ssh -t @HOST@ gdb --pid=@PID@"
        << "xterm @XTOPTS@ -e ssh -t @FEURL@ ssh -t @HOST@ gdb --pid=@PID@"
        << "xterm -e ssh @HOST@ kill -TERM @PID@"
@@ -263,17 +263,17 @@ void pqSQProcessMonitor::ExecCommand()
         {
         string cmd=(const char*)this->Form->commandCombo->currentText().toAscii();
 
-        string hostNameStr((const char *)item->text(1).toAscii());
-        SearchAndReplace(string("@HOST@"),hostNameStr,cmd);
-
-        string pidStr((const char *)item->text(2).toAscii());
-        SearchAndReplace(string("@PID@"),pidStr,cmd);
-
         string feURLStr(this->Form->feURL->text().toAscii());
         SearchAndReplace(string("@FEURL@"),feURLStr,cmd);
 
         string xtOptsStr(this->Form->xtOpts->text().toAscii());
         SearchAndReplace(string("@XTOPTS@"),xtOptsStr,cmd);
+
+        string hostNameStr((const char *)item->text(1).toAscii());
+        SearchAndReplace(string("@HOST@"),hostNameStr,cmd);
+
+        string pidStr((const char *)item->text(2).toAscii());
+        SearchAndReplace(string("@PID@"),pidStr,cmd);
 
         vector<string> argStrs;
         istringstream is(cmd);
