@@ -42,7 +42,6 @@ case $1 in
     -DMPI_INCLUDE_PATH=/nasa/sgi/mpt/1.25/include \
     -DMPI_LIBRARY=/nasa/sgi/mpt/1.25/lib/libmpi.so \
     -DParaView_DIR=$PV3 \
-    -DEigen_DIR=$EIGEN \
     -DBUILD_GENTP=ON \
     $CMAKE_CMD
     ;;
@@ -59,16 +58,15 @@ case $1 in
     -DMPI_LIBRARY=/opt/cray/mpt/4.0.1/xt/seastar/mpich2-gnu/lib/libmpich.a \
     -DCMAKE_BUILD_TYPE=Release \
     -DParaView_DIR=$PV3 \
-    -DEigen_DIR=$EIGEN \
     -DBUILD_GENTP=ON \
     $CMAKE_CMD
     ;;
 
   "linux-debug" )
     cmake ../SciVisToolKit/$BRANCH \
+    -DCMAKE_CXX_FLAGS="-Wall" \
     -DCMAKE_BUILD_TYPE=Debug \
     -DParaView_DIR=$PV3 \
-    -DEigen_DIR=$EIGEN \
     $CMAKE_CMD
     ;;
 
@@ -76,7 +74,6 @@ case $1 in
     cmake ../SciVisToolKit/$BRANCH \
     -DCMAKE_BUILD_TYPE=Release \
     -DParaView_DIR=$PV3 \
-    -DEigen_DIR=$EIGEN \
     $CMAKE_CMD
     ;;
 

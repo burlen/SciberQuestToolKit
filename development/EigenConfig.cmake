@@ -5,9 +5,9 @@
 # +---------------------------------------------------------------------------+
 
 set(Eigen_DIR 
-  /path/to/eigen
+  ${CMAKE_CURRENT_SOURCE_DIR}/../eigen-2.0.12/
   CACHE FILEPATH
-  "Path to ParaView build.")
+  "Path to Eigen 2 install.")
 
 if (NOT EXISTS ${Eigen_DIR})
   MESSAGE(FATAL_ERROR
