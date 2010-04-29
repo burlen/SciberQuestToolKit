@@ -9,7 +9,7 @@ Copyright 2008 SciberQuest Inc.
 #include "BOVScalarImage.h"
 
 //-----------------------------------------------------------------------------
-MPI_File Open(MPI_Comm &comm, const char *fileName)
+MPI_File Open(MPI_Comm comm, const char *fileName)
 {
   MPI_File file=0;
   int iErr;
@@ -33,14 +33,17 @@ MPI_File Open(MPI_Comm &comm, const char *fileName)
 }
 
 //-----------------------------------------------------------------------------
-BOVScalarImage::BOVScalarImage(MPI_Comm &comm, const char *fileName)
+BOVScalarImage::BOVScalarImage(
+    MPI_Comm &comm,
+    MPI_Info hints,
+    const char *fileName)
 {
   this->File=Open(comm,fileName);
   this->FileName=fileName;
 }
 
 //-----------------------------------------------------------------------------
-BOVScalarImage::BOVScalarImage(MPI_Comm &comm, const char *fileName, const char *name)
+BOVScalarImage::BOVScalarImage(MPI_Comm comm, const char *fileName, const char *name)
 {
   this->File=Open(comm,fileName);
   this->FileName=fileName;

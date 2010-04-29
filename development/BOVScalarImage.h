@@ -20,8 +20,8 @@ using std::cerr;
 class BOVScalarImage
 {
 public:
-  BOVScalarImage(MPI_Comm &comm, const char *fileName);
-  BOVScalarImage(MPI_Comm &comm, const char *fileName, const char *name);
+  BOVScalarImage(MPI_Comm comm, MPI_Info hints, const char *fileName);
+  BOVScalarImage(MPI_Comm comm, MPI_Info hints, const char *fileName, const char *name);
   ~BOVScalarImage();
 
   MPI_File GetFile() const { return this->File; } 

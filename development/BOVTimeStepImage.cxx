@@ -21,7 +21,11 @@ using namespace std;
 #endif
 
 //-----------------------------------------------------------------------------
-BOVTimeStepImage::BOVTimeStepImage(MPI_Comm &comm, int stepIdx, BOVMetaData *metaData)
+BOVTimeStepImage::BOVTimeStepImage(
+      MPI_Comm comm,
+      MPI_Info hints,
+      int stepIdx,
+      BOVMetaData *metaData)
 {
   ostringstream seriesExt;
   seriesExt << "_" << stepIdx << "." << metaData->GetBrickFileExtension();
