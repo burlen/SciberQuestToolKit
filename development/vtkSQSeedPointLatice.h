@@ -14,10 +14,17 @@ Copyright 2008 SciberQuest Inc.
 // also possible to generate random points only on the surface of the
 // sphere.
 
+
 #ifndef __vtkSQSeedPointLatice_h
 #define __vtkSQSeedPointLatice_h
 
 #include "vtkPolyDataAlgorithm.h"
+
+
+//BTX
+#undef vtkGetVector2Macro
+#define vtkGetVector2Macro(a,b) /*noop*/
+//ETX
 
 class VTK_EXPORT vtkSQSeedPointLatice : public vtkPolyDataAlgorithm
 {
@@ -31,6 +38,29 @@ public:
   // inside.
   vtkSetVector6Macro(Bounds,double);
   vtkGetVector6Macro(Bounds,double);
+  void SetIBounds(double lo, double hi);
+  void SetJBounds(double lo, double hi);
+  void SetKBounds(double lo, double hi);
+  double *GetIBounds();
+  double *GetJBounds();
+  double *GetKBounds();
+  vtkGetVector2Macro(IBounds,double);
+  vtkGetVector2Macro(JBounds,double);
+  vtkGetVector2Macro(KBounds,double);
+
+
+  // Description:
+  // Set the power to use in the non-linear transform.
+  // Value of 0 means no transform is applied, and grid is
+  // regular cartesian. When a power is set, the grid is 
+  // a streatched cartesian grid with higher density at the
+  // center of the bounds.
+  void SetTransformPower(double *tp);
+  void SetTransformPower(double itp, double jtp, double ktp);
+  vtkGetVector3Macro(Power,double);
+
+  vtkSetVector3Macro(Transform,int);
+  vtkGetVector3Macro(Transform,int);
 
   // Description:
   // Set the latice resolution in the given direction.
@@ -46,11 +76,22 @@ protected:
   vtkSQSeedPointLatice();
   ~vtkSQSeedPointLatice();
 
+private:
   int NumberOfPoints;
 
   int NX[3];
-
   double Bounds[6];
+  double IBounds[2];
+
+  //BTX
+  enum
+    {
+    TRANSFORM_NONE=0,
+    TRANSFORM_LOG=1
+    };
+  //ETX
+  int Transform[3];
+  double Power[3];
 
 private:
   vtkSQSeedPointLatice(const vtkSQSeedPointLatice&);  // Not implemented.

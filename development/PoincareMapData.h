@@ -58,9 +58,8 @@ public:
   virtual int InsertCells(CellIdBlock *SourceIds);
 
   // Description:
-  // Move scalar data (IntersectColor, SourceId) from the internal 
-  // structure into the vtk output data.
-  // virtual int SyncScalars(){ return 0; }
+  // The Poincare map has no scalar data.
+  virtual int SyncScalars(){ return 1; }
 
   // Description:
   // Move poincare map geometry from the internal structure

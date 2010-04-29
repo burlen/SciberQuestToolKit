@@ -21,7 +21,7 @@ Copyright 2008 SciberQuest Inc.
 
 =========================================================================*/
 #include "vtkSQSeedPointLatice.h"
-
+ 
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkMultiProcessController.h"
@@ -40,9 +40,68 @@ Copyright 2008 SciberQuest Inc.
 vtkCxxRevisionMacro(vtkSQSeedPointLatice, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQSeedPointLatice);
 
+
+//*****************************************************************************
+inline
+void indexToIJK(int idx, int nx, int nxy, int &i, int &j, int &k)
+{
+  // convert a flat array index into a i,j,k three space tuple.
+  k=idx/nxy;
+  j=(idx-k*nxy)/nx;
+  i=idx-k*nxy-j*nx;
+}
+
+//*****************************************************************************
+template <typename T>
+void linspace(T lo, T hi, int n, T *data)
+{
+  if (n==1)
+    {
+    data[0]=(hi+lo)/2.0;
+    return;
+    }
+
+  T delta=(hi-lo)/(n-1);
+
+  for (int i=0; i<n; ++i)
+    {
+    data[i]=lo+i*delta;
+    }
+}
+
+//*****************************************************************************
+template <typename T>
+void logspace(T lo, T hi, int n, T p, T *data)
+{
+  int mid=n/2;
+  int nlo=mid;
+  int nhi=n-mid;
+  T s=hi-lo;
+
+  T rhi=pow(10.0,p);
+
+  linspace<T>(1.0,0.99*rhi,nlo,data);
+  linspace<T>(1.0,rhi,nhi,data+nlo);
+
+  int i=0;
+  for (; i<nlo; ++i)
+    {
+    data[i]=lo+s*(0.5*log10(data[i])/p);
+    }
+  for (; i<n; ++i)
+    {
+    data[i]=lo+s*(1.0-log10(data[i])/(2.0*p));
+    }
+}
+
 //----------------------------------------------------------------------------
 vtkSQSeedPointLatice::vtkSQSeedPointLatice()
 {
+  #ifdef vtkSQSeedPointLaticeDEBUG
+    cerr << "===============================vtkSQSeedPointLatice::vtkSQSeedPointLatice" << endl;
+  #endif
+
+
   this->NX[0]=this->NX[1]=this->NX[2]=4;
 
   this->Bounds[0]=this->Bounds[2]=this->Bounds[4]=0.0;
@@ -54,11 +113,131 @@ vtkSQSeedPointLatice::vtkSQSeedPointLatice()
 
 //----------------------------------------------------------------------------
 vtkSQSeedPointLatice::~vtkSQSeedPointLatice()
-{}
+{
+  #ifdef vtkSQSeedPointLaticeDEBUG
+    cerr << "===============================vtkSQSeedPointLatice::~vtkSQSeedPointLatice" << endl;
+  #endif
+
+}
+
+//----------------------------------------------------------------------------
+void vtkSQSeedPointLatice::SetTransformPower(double itp, double jtp, double ktp)
+{
+  #ifdef vtkSQSeedPointLaticeDEBUG
+    cerr << "===============================vtkSQSeedPointLatice::SetTransformPower" << endl;
+  #endif
+
+
+  double tp[3]={itp,jtp,ktp};
+  this->SetTransformPower(tp);
+}
+
+//----------------------------------------------------------------------------
+void vtkSQSeedPointLatice::SetTransformPower(double *tp)
+{
+  #ifdef vtkSQSeedPointLaticeDEBUG
+    cerr << "===============================vtkSQSeedPointLatice::SetTransformPower" << endl;
+  #endif
+
+
+  if (tp[0]<0.0) vtkErrorMacro("Negative transform power i unsupported.");
+  if (tp[1]<0.0) vtkErrorMacro("Negative transform power j unsupported.");
+  if (tp[2]<0.0) vtkErrorMacro("Negative transform power k unsupported.");
+
+  this->Power[0]=tp[0];
+  this->Power[1]=tp[1];
+  this->Power[2]=tp[2];
+
+  this->Transform[0]=(tp[0]<0.25?TRANSFORM_NONE:TRANSFORM_LOG);
+  this->Transform[1]=(tp[1]<0.25?TRANSFORM_NONE:TRANSFORM_LOG);
+  this->Transform[2]=(tp[2]<0.25?TRANSFORM_NONE:TRANSFORM_LOG);
+
+  this->Modified();
+}
+
+//----------------------------------------------------------------------------
+void vtkSQSeedPointLatice::SetIBounds(double lo, double hi)
+{
+  #ifdef vtkSQSeedPointLaticeDEBUG
+    cerr << "===============================vtkSQSeedPointLatice::SetIBounds" << endl;
+  #endif
+
+
+  this->Bounds[0]=lo;
+  this->Bounds[1]=hi;
+
+  this->Modified();
+}
+
+//----------------------------------------------------------------------------
+double *vtkSQSeedPointLatice::GetIBounds()
+{
+  #ifdef vtkSQSeedPointLaticeDEBUG
+    cerr << "===============================vtkSQSeedPointLatice::GetIBounds" << endl;
+  #endif
+
+  return this->Bounds;
+}
+
+
+
+//----------------------------------------------------------------------------
+void vtkSQSeedPointLatice::SetJBounds(double lo, double hi)
+{
+  #ifdef vtkSQSeedPointLaticeDEBUG
+    cerr << "===============================vtkSQSeedPointLatice::SetJBounds" << endl;
+  #endif
+
+
+  this->Bounds[2]=lo;
+  this->Bounds[3]=hi;
+
+  this->Modified();
+}
+
+//----------------------------------------------------------------------------
+double *vtkSQSeedPointLatice::GetJBounds()
+{
+  #ifdef vtkSQSeedPointLaticeDEBUG
+    cerr << "===============================vtkSQSeedPointLatice::GetJBounds" << endl;
+  #endif
+
+  return this->Bounds+2;
+}
+
+
+//----------------------------------------------------------------------------
+void vtkSQSeedPointLatice::SetKBounds(double lo, double hi)
+{
+  #ifdef vtkSQSeedPointLaticeDEBUG
+    cerr << "===============================vtkSQSeedPointLatice::SetKBounds" << endl;
+  #endif
+
+
+  this->Bounds[4]=lo;
+  this->Bounds[5]=hi;
+
+  this->Modified();
+}
+
+//----------------------------------------------------------------------------
+double *vtkSQSeedPointLatice::GetKBounds()
+{
+  #ifdef vtkSQSeedPointLaticeDEBUG
+    cerr << "===============================vtkSQSeedPointLatice::GetKBounds" << endl;
+  #endif
+
+  return this->Bounds+4;
+}
 
 //----------------------------------------------------------------------------
 int vtkSQSeedPointLatice::FillInputPortInformation(int port,vtkInformation *info)
 {
+  #ifdef vtkSQSeedPointLaticeDEBUG
+    cerr << "===============================vtkSQSeedPointLatice::FillInputPortInformation" << endl;
+  #endif
+
+
   // The input is optional,if present it will be used 
   // for bounds.
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(),"vtkDataSet");
@@ -72,9 +251,17 @@ int vtkSQSeedPointLatice::RequestInformation(
     vtkInformationVector **inInfos,
     vtkInformationVector *outInfos)
 {
+  #ifdef vtkSQSeedPointLaticeDEBUG
+    cerr << "===============================vtkSQSeedPointLatice::RequestInformation" << endl;
+  #endif
+
+
   // tell the excutive that we are handling our own paralelization.
   vtkInformation *outInfo=outInfos->GetInformationObject(0);
   outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),-1);
+
+  // TODO extract bounds and set if the input data set is present.
+
   return 1;
 }
 
@@ -84,6 +271,11 @@ int vtkSQSeedPointLatice::RequestData(
     vtkInformationVector **inInfos,
     vtkInformationVector *outInfos)
 {
+  #ifdef vtkSQSeedPointLaticeDEBUG
+    cerr << "===============================vtkSQSeedPointLatice::RequestData" << endl;
+  #endif
+
+
   vtkInformation *outInfo=outInfos->GetInformationObject(0);
 
   vtkPolyData *output
@@ -134,7 +326,43 @@ int vtkSQSeedPointLatice::RequestData(
         }
       double bounds[6];
       inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),bounds);
+
+      float dX[3];
+      dX[0]=(this->Bounds[1]-this->Bounds[0])/this->NX[0];
+      dX[1]=(this->Bounds[3]-this->Bounds[2])/this->NX[1];
+      dX[2]=(this->Bounds[5]-this->Bounds[4])/this->NX[2];
+
+      bounds[0]+=dX[0]/2.0;
+      bounds[1]-=dX[0]/2.0;
+      bounds[2]+=dX[1]/2.0;
+      bounds[3]-=dX[1]/2.0;
+      bounds[4]+=dX[2]/2.0;
+      bounds[5]-=dX[2]/2.0;
+
       this->SetBounds(bounds);
+      }
+    }
+
+  // generate the i,j,k coordinate axes
+  // note these are not decompoesed, TODO decomposition.
+  float *axes[3]={NULL};
+  for (int q=0; q<3; ++q)
+    {
+    axes[q]=new float [this->NX[q]];
+
+    switch (this->Transform[q])
+      {
+      case TRANSFORM_NONE:
+        linspace<float>(this->Bounds[q],this->Bounds[q+1],this->NX[q],axes[q]);
+        break;
+
+      case TRANSFORM_LOG:
+        logspace<float>(this->Bounds[q],this->Bounds[q+1],this->NX[q],this->Power[q],axes[q]);
+        break;
+
+      default:
+        vtkErrorMacro("Unsupported transform.");
+        return 1;
       }
     }
 
@@ -164,30 +392,6 @@ int vtkSQSeedPointLatice::RequestData(
   verts->Delete();
 
 
-  float dX[3];
-  dX[0]=(this->Bounds[1]-this->Bounds[0])/this->NX[0];
-  dX[1]=(this->Bounds[3]-this->Bounds[2])/this->NX[1];
-  dX[2]=(this->Bounds[5]-this->Bounds[4])/this->NX[2];
-
-  float X0[3];
-  X0[0]=this->Bounds[0]+dX[0]/2.0;
-  X0[1]=this->Bounds[2]+dX[1]/2.0;
-  X0[2]=this->Bounds[4]+dX[2]/2.0;
-
-  #ifdef vtkSQSeedPointLaticeDEBUG
-  cerr
-    << "pieceNo = " << pieceNo << endl
-    << "nPieces = " << nPieces << endl
-    << "rank    = " << rank << endl
-    << "nLocal  = " << nLocal << endl
-    << "startId = " << startId << endl
-    << "endId   = " << endId << endl
-    << "NX=" << Tuple<int>(this->NX,3) << endl
-    << "Bounds=" << Tuple<double>(this->Bounds,6) << endl
-    << "dX=" << Tuple<float>(dX,3) << endl
-    << "X0=" << Tuple<float>(X0,3) << endl;
-  #endif
-
   int nx=this->NX[0];
   int nxy=this->NX[0]*this->NX[1];
 
@@ -206,15 +410,13 @@ int vtkSQSeedPointLatice::RequestData(
       progRepLevel+=progRepUnit;
       }
 
-    // latice indices.
-    int k=idx/nxy;
-    int j=(idx-k*nxy)/nx;
-    int i=idx-k*nxy-j*nx;
+    int i,j,k;
+    indexToIJK(idx,nx,nxy,i,j,k);
 
     // new latice point
-    pX[0]=X0[0]+i*dX[0];
-    pX[1]=X0[1]+j*dX[1];
-    pX[2]=X0[2]+k*dX[2];
+    pX[0]=(axes[0])[i];
+    pX[1]=(axes[1])[j];
+    pX[2]=(axes[2])[k];
     pX+=3;
 
     // insert the cell
@@ -223,12 +425,34 @@ int vtkSQSeedPointLatice::RequestData(
     pIa+=2;
     }
 
+  delete [] axes[0];
+  delete [] axes[1];
+  delete [] axes[2];
+
+
+  #ifdef vtkSQSeedPointLaticeDEBUG
+  cerr
+    << "pieceNo = " << pieceNo << endl
+    << "nPieces = " << nPieces << endl
+    << "rank    = " << rank << endl
+    << "nLocal  = " << nLocal << endl
+    << "startId = " << startId << endl
+    << "endId   = " << endId << endl
+    << "NX=" << Tuple<int>(this->NX,3) << endl
+    << "Bounds=" << Tuple<double>(this->Bounds,6) << endl;
+  #endif
+
   return 1;
 }
 
 //----------------------------------------------------------------------------
 void vtkSQSeedPointLatice::PrintSelf(ostream& os, vtkIndent indent)
 {
+  #ifdef vtkSQSeedPointLaticeDEBUG
+    cerr << "===============================vtkSQSeedPointLatice::PrintSelf" << endl;
+  #endif
+
+
   this->Superclass::PrintSelf(os,indent);
 
   os << indent << "NumberOfPoints: " << this->NumberOfPoints << "\n";

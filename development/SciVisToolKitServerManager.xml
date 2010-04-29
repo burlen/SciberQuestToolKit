@@ -1064,6 +1064,111 @@ Copyright 2008 SciberQuest Inc.
 
   <!-- ==================================================================== -->
   <SourceProxy 
+    name="vtkSQSeedPointLatice"
+    class="vtkSQSeedPointLatice"
+    label="SQ Seed Point Latice">
+    <Documentation
+      long_help="Long Documentation"
+      short_help="Short Documentation">
+      Generates vertices on a latice. The latice can either be unifomrly space or 
+      non-linearly stretched independently in each direction.
+    </Documentation>
+
+    <InputProperty
+      name="Input"
+      command="SetInputConnection"
+      optional="1">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkDataSet"/>
+      </DataTypeDomain>
+    </InputProperty>
+
+     <!-- Bounds -->
+    <DoubleVectorProperty 
+      name="IBoundsInfo"
+      command="GetIBounds"
+      information_only="1">
+      <SimpleDoubleInformationHelper/>
+    </DoubleVectorProperty>
+    <DoubleVectorProperty 
+      name="IBounds"
+      label="X Range"
+      command="SetIBounds"
+      number_of_elements="2" 
+      information_property="IBoundsInfo">
+      <Documentation>
+        This property controls the bounds of the seed points.
+      </Documentation>
+    </DoubleVectorProperty>
+    <DoubleVectorProperty 
+      name="JBoundsInfo"
+      command="GetJBounds"
+      information_only="1">
+      <SimpleDoubleInformationHelper/>
+    </DoubleVectorProperty>
+    <DoubleVectorProperty 
+      name="JBounds"
+      label="Y Range"
+      command="SetJBounds"
+      number_of_elements="2"
+      default_values="-1.0 1.0"
+      information_property="JBoundsInfo">
+      <Documentation>
+        This property controls the bounds of the seed points.
+      </Documentation>
+    </DoubleVectorProperty>
+    <DoubleVectorProperty
+      name="KBoundsInfo"
+      command="GetKBounds"
+      information_only="1">
+      <SimpleDoubleInformationHelper/>
+    </DoubleVectorProperty>
+    <DoubleVectorProperty 
+      name="KBounds"
+      label="Z Range"
+      command="SetKBounds"
+      number_of_elements="2"
+      default_values="-1.0 1.0"
+      information_property="KBoundsInfo">
+      <Documentation>
+        This property controls the bounds of the seed points.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <!-- Resolution -->
+     <IntVectorProperty
+        name="Resolution"
+        label="Latice Resolution"
+        command="SetNX"
+        number_of_elements="3"
+        default_values="4 4 4">
+     </IntVectorProperty>
+
+     <!-- Transforms -->
+     <DoubleVectorProperty
+        name="TransformPower"
+        label="Transform Power"
+        command="SetTransformPower"
+        number_of_elements="3"
+        default_values="0.0 0.0 0.0">
+        <Documentation>
+          Controls how non-linear the generated points are. 0 is linear.
+        </Documentation>
+     </DoubleVectorProperty>
+
+    <Hints>
+      <Visibility replace_input="0" />
+    </Hints>
+
+  <!-- End vtkSQSeedPointLatice -->
+  </SourceProxy>
+
+  <!-- ==================================================================== -->
+  <SourceProxy 
     name="vtkSQRandomSeedPoints" 
     class="vtkSQRandomSeedPoints"
     label="SQ Random Seed Points">
@@ -1097,49 +1202,10 @@ Copyright 2008 SciberQuest Inc.
       <Visibility replace_input="0" />
     </Hints>
 
-  <!-- End vtkSQVortexFilter -->
-  </SourceProxy>
-
-  <!-- ==================================================================== -->
-  <SourceProxy 
-    name="vtkSQSeedPointLatice"
-    class="vtkSQSeedPointLatice"
-    label="SQ Seed Point Latice">
-    <Documentation
-      long_help="Long Documentation"
-      short_help="Short Documentation">
-      Textual Documentation.
-    </Documentation>
-
-     <InputProperty
-        name="Input"
-        command="SetInputConnection">
-           <ProxyGroupDomain name="groups">
-             <Group name="sources"/>
-             <Group name="filters"/>
-           </ProxyGroupDomain>
-           <DataTypeDomain name="input_type">
-             <DataType value="vtkDataSet"/>
-           </DataTypeDomain>
-      </InputProperty>
-
-     <IntVectorProperty
-        name="Resolution"
-        label="Latice Resolution"
-        command="SetNX"
-        number_of_elements="3"
-        default_values="4 4 4">
-     </IntVectorProperty>
-
-    <Hints>
-      <Visibility replace_input="0" />
-    </Hints>
-
-  <!-- End vtkSQVortexFilter -->
+  <!-- End vtkSQRandomSeedPoints -->
   </SourceProxy>
 
 
-  
 </ProxyGroup>
 
 </ServerManagerConfiguration>

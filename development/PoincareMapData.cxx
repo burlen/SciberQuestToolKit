@@ -113,8 +113,6 @@ void PoincareMapData::SetSource(vtkDataSet *s)
 //-----------------------------------------------------------------------------
 void PoincareMapData::SetOutput(vtkDataSet *o)
 {
-  this->FieldTraceData::SetOutput(o);
-
   this->ClearOut();
 
   vtkPolyData *out=dynamic_cast<vtkPolyData*>(o);
