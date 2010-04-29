@@ -21,16 +21,8 @@ then
   exit
 fi
 
-# eign install
-EIGEN=$3
-if [ -z "$3" ]
-then
-  echo "Error set \$3 to /path/to/eigen/install"
-  exit
-fi
-
 # last cmd tail entry passed to cmake
-CMAKE_CMD=$4
+CMAKE_CMD=$3
 
 case $1 in
 
