@@ -1098,7 +1098,8 @@ Copyright 2008 SciberQuest Inc.
       name="IBounds"
       label="X Range"
       command="SetIBounds"
-      number_of_elements="2" 
+      number_of_elements="2"
+      default_values="-1.0 1.0"
       information_property="IBoundsInfo">
       <Documentation>
         This property controls the bounds of the seed points.
@@ -1145,7 +1146,7 @@ Copyright 2008 SciberQuest Inc.
         label="Latice Resolution"
         command="SetNX"
         number_of_elements="3"
-        default_values="4 4 4">
+        default_values="1 10 1">
      </IntVectorProperty>
 
      <!-- Transforms -->

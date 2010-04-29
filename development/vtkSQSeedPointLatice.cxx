@@ -353,11 +353,11 @@ int vtkSQSeedPointLatice::RequestData(
     switch (this->Transform[q])
       {
       case TRANSFORM_NONE:
-        linspace<float>(this->Bounds[q],this->Bounds[q+1],this->NX[q],axes[q]);
+        linspace<float>(this->Bounds[2*q],this->Bounds[2*q+1],this->NX[q],axes[q]);
         break;
 
       case TRANSFORM_LOG:
-        logspace<float>(this->Bounds[q],this->Bounds[q+1],this->NX[q],this->Power[q],axes[q]);
+        logspace<float>(this->Bounds[2*q],this->Bounds[2*q+1],this->NX[q],this->Power[q],axes[q]);
         break;
 
       default:
