@@ -143,7 +143,6 @@ protected:
   double Center[3];
   char *DescriptiveName;
 
-private:
   int UpdatePlane(double v1[3], double v2[3]);
 private:
   vtkSQPlaneSource(const vtkSQPlaneSource&);  // Not implemented.
