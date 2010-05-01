@@ -34,10 +34,16 @@ Copyright 2008 SciberQuest Inc.
 #include "PrintUtils.h"
 #include "minmax.h"
 
+#include <sstream>
+using std::ostringstream;
 
-// NOTE why this?
+// for gethostname on windows.
 #ifdef WIN32
-#include <Winsock2.h>
+  #include <Winsock2.h>
+#endif
+
+#ifndef HOST_NAME_MAX
+  #define HOST_NAME_MAX 255
 #endif
 
 #if defined vtkSQBOVReaderTIME
@@ -45,9 +51,8 @@ Copyright 2008 SciberQuest Inc.
 #include <unistd.h>
 #endif
 
-#ifndef HOST_NAME_MAX
-  #define HOST_NAME_MAX 255
-#endif
+// disbale warning about passing string literals.
+#pragma GCC diagnostic ignored "-Wwrite-strings"
 
 vtkCxxRevisionMacro(vtkSQBOVReader, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQBOVReader);
@@ -90,24 +95,35 @@ vtkSQBOVReader::vtkSQBOVReader()
   this->JSubsetRange[1]=0;
   this->KSubsetRange[0]=1;
   this->KSubsetRange[1]=0;
-  // Get information from the environment about who we are.
-  this->ProcId=0;
-  this->NProcs=1;
-  this->HostName[0]='\0';
-  vtkMPIController *con
-    = dynamic_cast<vtkMPIController*>(vtkMultiProcessController::GetGlobalController());
-  if (con)
+  this->UseCollectiveIO=HINT_ENABLED;
+  this->NumberOfIONodes=0;
+  this->CollectBufferSize=0;
+  this->UseDataSieving=HINT_AUTOMATIC;
+  this->SieveBufferSize=0;
+  this->WorldRank=0;
+  this->WorldSize=1;
+
+  int mpiOk=0;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
     {
-    this->ProcId=con->GetLocalProcessId();
-    this->NProcs=con->GetNumberOfProcesses();
-    char hostname[HOST_NAME_MAX];
-    gethostname(hostname,HOST_NAME_MAX);
-    hostname[4]='\0';
-    for (int i=0; i<5; ++i)
-      {
-      this->HostName[i]=hostname[i];
-      }
+    vtkErrorMacro("MPI has not been initialized. Restart ParaView using mpiexec.");
     }
+
+  vtkMultiProcessController *con=vtkMultiProcessController::GetGlobalController();
+  this->WorldRank=con->GetLocalProcessId();
+  this->WorldSize=con->GetNumberOfProcesses();
+
+  this->HostName[0]='\0';
+  #if defined vtkSQBOVReaderDEBUG
+  char hostname[HOST_NAME_MAX];
+  gethostname(hostname,HOST_NAME_MAX);
+  hostname[4]='\0';
+  for (int i=0; i<5; ++i)
+    {
+    this->HostName[i]=hostname[i];
+    }
+  #endif
 
   // Configure the internal reader.
   this->Reader=new BOVReader;
@@ -142,6 +158,17 @@ void vtkSQBOVReader::Clear()
   this->Subset[3]=
   this->Subset[4]=
   this->Subset[5]=0;
+  this->ISubsetRange[0]=1;
+  this->ISubsetRange[1]=0;
+  this->JSubsetRange[0]=1;
+  this->JSubsetRange[1]=0;
+  this->KSubsetRange[0]=1;
+  this->KSubsetRange[1]=0;
+  this->UseCollectiveIO=HINT_ENABLED;
+  this->NumberOfIONodes=0;
+  this->CollectBufferSize=0;
+  this->UseDataSieving=HINT_AUTOMATIC;
+  this->SieveBufferSize=0;
   this->Reader->Close();
 }
 
@@ -170,7 +197,7 @@ void vtkSQBOVReader::SetFileName(const char* _arg)
   #if defined vtkSQBOVReaderTIME
   double walls=0.0;
   timeval wallt;
-  if (this->ProcId==0)
+  if (this->WorldRank==0)
     {
     gettimeofday(&wallt,0x0);
     walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
@@ -218,7 +245,7 @@ void vtkSQBOVReader::SetFileName(const char* _arg)
     this->KSubsetRange[1]=this->Subset[5];
 
     #if defined vtkSQBOVReaderDEBUG
-    cerr << "vtkSQBOVReader " << this->HostName << " " << this->ProcId << " Open succeeded." << endl;
+    cerr << "vtkSQBOVReader " << this->HostName << " " << this->WorldRank << " Open succeeded." << endl;
     #endif
     }
 
@@ -226,7 +253,7 @@ void vtkSQBOVReader::SetFileName(const char* _arg)
 
   #if defined vtkSQBOVReaderTIME
   MPI_Barrier(MPI_COMM_WORLD);
-  if (this->ProcId==0)
+  if (this->WorldRank==0)
     {
     gettimeofday(&wallt,0x0);
     double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
@@ -378,7 +405,7 @@ int vtkSQBOVReader::RequestInformation(
     // The point extent given PV by the meta reader will always start from
     // 0 and range to nProcs and 1. This will neccesitate a false origin
     // and spacing as well.
-    wholeExtent[1]=this->NProcs;
+    wholeExtent[1]=this->WorldSize;
     // Save the real extent in our own key.
     // info->Set(vtkSQOOCReader::WHOLE_EXTENT(),this->Subset,6);
 
@@ -397,7 +424,7 @@ int vtkSQBOVReader::RequestInformation(
       this->Subset[1]-this->Subset[0],
       this->Subset[3]-this->Subset[2],
       this->Subset[5]-this->Subset[4]};
-    dX[0]=dX[0]*((double)nCells[0])/((double)this->NProcs);
+    dX[0]=dX[0]*((double)nCells[0])/((double)this->WorldSize);
     dX[1]=dX[1]*((double)nCells[1]);
     dX[2]=dX[2]*((double)nCells[2]);
 
@@ -444,6 +471,71 @@ int vtkSQBOVReader::RequestInformation(
   return 1;
 }
 
+
+//-----------------------------------------------------------------------------
+void vtkSQBOVReader::SetMPIFileHints()
+{
+  MPI_Info hints;
+  MPI_Info_create(&hints);
+
+  switch (this->UseCollectiveIO)
+    {
+    case HINT_AUTOMATIC:
+      // do nothing, it's up to implementation.
+      break;
+    case HINT_DISABLED:
+      MPI_Info_set(hints,"romio_cb_read","disable");
+      break;
+    case HINT_ENABLED:
+      MPI_Info_set(hints,"romio_cb_read","enable");
+      MPI_Info_set(hints,"romio_no_indep_rw","true");
+      break;
+    default:
+      vtkErrorMacro("Invalid value for UseCollectiveIO.");
+      break;
+    }
+
+  if (this->NumberOfIONodes>0)
+    {
+    ostringstream os;
+    os << this->NumberOfIONodes;
+    MPI_Info_set(hints,"cb_nodes",const_cast<char *>(os.str().c_str()));
+    }
+
+  if (this->CollectBufferSize>0)
+    {
+    ostringstream os;
+    os << this->CollectBufferSize;
+    MPI_Info_set(hints,"cb_buffer_size",const_cast<char *>(os.str().c_str()));
+    }
+
+  switch (this->UseDataSieving)
+    {
+    case HINT_AUTOMATIC:
+      // do nothing, it's up to implementation.
+      break;
+    case HINT_DISABLED:
+      MPI_Info_set(hints,"romio_ds_read","disable");
+      break;
+    case HINT_ENABLED:
+      MPI_Info_set(hints,"romio_ds_read","enable");
+      break;
+    default:
+      vtkErrorMacro("Invalid value for UseDataSieving.");
+      break;
+    }
+
+  if (this->SieveBufferSize>0)
+    {
+    ostringstream os;
+    os << this->SieveBufferSize;
+    MPI_Info_set(hints,"ind_rd_buffer_size", const_cast<char *>(os.str().c_str()));
+    }
+
+  this->Reader->SetHints(hints);
+  MPI_Info_free(&hints);
+}
+
 //-----------------------------------------------------------------------------
 int vtkSQBOVReader::RequestData(
         vtkInformation * /*req*/,
@@ -456,7 +548,7 @@ int vtkSQBOVReader::RequestData(
   #if defined vtkSQBOVReaderTIME
   double walls=0.0;
   timeval wallt;
-  if (this->ProcId==0)
+  if (this->WorldRank==0)
     {
     gettimeofday(&wallt,0x0);
     walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
@@ -518,7 +610,7 @@ int vtkSQBOVReader::RequestData(
     // A meta reade makes a grid consisting of nProcs cells along
     // the x-axis minimizing the memory footprint while allowing domain
     // decomposition to take place.
-    nPoints[0]=this->NProcs+1;
+    nPoints[0]=this->WorldSize+1;
     nPoints[1]=2;
     nPoints[2]=2;
     }
@@ -551,17 +643,21 @@ int vtkSQBOVReader::RequestData(
   #if defined vtkSQBOVReaderDEBUG
   cerr << "RequestData "
        << this->HostName << " "
-       << this->ProcId << " "
+       << this->WorldRank << " "
        << subset.GetNumberOfCells() << " "
        << endl;
   cerr << "RequestData "
        << this->HostName << " "
-       << this->ProcId << " "
+       << this->WorldRank << " "
        << decomp[0] << " " << decomp[1] << " "
        << decomp[2] << " " << decomp[3] << " "
        << decomp[4] << " " << decomp[5] << " "
        << endl;
   #endif
+
+
+  // Construct MPI File hints for the reader.
+  this->SetMPIFileHints();
 
   // Read the step.
   int ok;
@@ -580,7 +676,7 @@ int vtkSQBOVReader::RequestData(
     // marked for reading.
     double subsetBounds[6];
     subsetBounds[0]=X0[0];
-    subsetBounds[1]=X0[0]+dX[0]*((double)this->NProcs);
+    subsetBounds[1]=X0[0]+dX[0]*((double)this->WorldSize);
     subsetBounds[2]=X0[1];
     subsetBounds[3]=X0[1]+dX[1];
     subsetBounds[4]=X0[2];
@@ -624,7 +720,6 @@ int vtkSQBOVReader::RequestData(
   // keys.
   this->Reader->GetMetaData()->PushPipelineInformation(info);
 
-
   #if defined vtkSQBOVReaderDEBUG
   this->Reader->PrintSelf(cerr);
   idds->Print(cerr);
@@ -632,7 +727,7 @@ int vtkSQBOVReader::RequestData(
 
   #if defined vtkSQBOVReaderTIME
   MPI_Barrier(MPI_COMM_WORLD);
-  if (this->ProcId==0)
+  if (this->WorldRank==0)
     {
     gettimeofday(&wallt,0x0);
     double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;

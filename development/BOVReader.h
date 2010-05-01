@@ -47,13 +47,10 @@ public:
   // communication operations. Tyoically it's COMM_WORLD.
   void SetCommunicator(MPI_Comm comm);
 
-  // int SetController(vtkMultiProcessController *cont);
-  
-
-//   void SetProcId(int procId){ this->ProcId=procId; }
-//   int GetProcId(){ return this->ProcId; }
-//   void SetNProcs(int nProcs){ this->NProcs=nProcs; }
-//   int GetNProcsId(){ return this->NProcs; }
+  // Description:
+  // Set the info object conatining the file hints.
+  // Optional. If not set INFO_NULL is used.
+  void SetHints(MPI_Info hints);
 
   // Description:
   // Set the metadata object that will interpret the metadata file,
@@ -126,6 +123,7 @@ private:
   int ProcId;                // My process id.
   int NProcs;                // Number of processes.
   MPI_Comm Comm;             // Communicator handle
+  MPI_Info Hints;            // MPI-IO file hints.
 };
 
 #endif

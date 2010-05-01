@@ -90,6 +90,8 @@ vtkDataSet *vtkSQOOCBOVReader::Read(double b[6])
 //-----------------------------------------------------------------------------
 vtkDataSet *vtkSQOOCBOVReader::ReadNeighborhood(double p[3], int size)
 {
+  cerr << *this->Image << endl;
+
   // Locate the cell where this point lies.
   double X0[3];
   double dX[3];

@@ -10,6 +10,9 @@ Copyright 2008 SciberQuest Inc.
 #ifndef ArrayReader_hxx
 #define ArrayReader_hxx
 
+// disbale warning about passing string literals.
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+
 #include "mpi.h"
 
 //=============================================================================
@@ -116,24 +119,29 @@ MPI_Status WriteDataArray(
 }
 
 //*****************************************************************************
+// File tyep is assumed to a scalar, but the mem-type can be a vector.
+// but warning it is slow!!
 template <typename T>
 int ReadDataArray(
         const char *fileName,    // File name to read.
-        MPI_Comm &comm,          // MPI communicator handle
+        MPI_Comm comm,           // MPI communicator handle
+        MPI_Info hints,          // MPI file hints
         const vtkAMRBox &domain, // entire region, dataset extents
         const vtkAMRBox &decomp, // region to be read, block extents
+        int nCompsMem,           // stride in memory array
+        int compNoMem,           // start offset in mem array
         T *data)                 // pointer to a buffer to read into.
 {
   int iErr;
-  const int eStrLen=2048;
-  char eStr[eStrLen]={'\0'};
+  int eStrLen=256;
+  char eStr[256]={'\0'};
   // Open the file
   MPI_File file;
   iErr=MPI_File_open(
       comm,
       const_cast<char *>(fileName),
       MPI_MODE_RDONLY,
-      MPI_INFO_NULL,
+      hints,
       &file);
   if (iErr!=MPI_SUCCESS)
     {
@@ -143,24 +151,7 @@ int ReadDataArray(
     return 0;
     }
 
-  // if (rank==0) 
-  //   {
-  //   MPI_Info info;
-  //   char key[MPI_MAX_INFO_KEY];
-  //   char val[MPI_MAX_INFO_VAL];
-  //   MPI_File_get_info(file,&info);
-  //   int nKeys;
-  //   MPI_Info_get_nkeys(info,&nKeys);
-  //   for (int i=0; i<nKeys; ++i)
-  //     {
-  //     int flag;
-  //     MPI_Info_get_nthkey(info,i,key);
-  //     MPI_Info_get(info,key,MPI_MAX_INFO_VAL,val,&flag);
-  //     cerr << key << "=" << val << endl;
-  //     }
-  //   }
-
-  // Locate our data.
+  // Locate our data. The file has a single component.
   int domainDims[3];
   domain.GetNumberOfCells(domainDims);
   int decompDims[3];
@@ -168,12 +159,13 @@ int ReadDataArray(
   int decompStart[3];
   decomp.GetLoCorner(decompStart);
 
-  unsigned long long nCells=decomp.GetNumberOfCells();
+  size_t nCells=decomp.GetNumberOfCells();
 
   // file view
   MPI_Datatype nativeType=DataTraits<T>::Type();
   MPI_Datatype fileView;
-  MPI_Type_create_subarray(3,
+  MPI_Type_create_subarray(
+      3,
       domainDims,
       decompDims,
       decompStart,
@@ -186,23 +178,31 @@ int ReadDataArray(
       0,
       nativeType,
       fileView,
-      "native", // FIXME option to select, portable or native.
-      MPI_INFO_NULL); // FIXME make use of hints.
+      "native",
+      hints);
 
-  // memory view
+  // memory view. The file is a scalar, but the memory can be vector
+  // where file elements are seperated by a constant stride.
   MPI_Datatype memView;
-  MPI_Type_contiguous(nCells,nativeType,&memView);
+  if (nCompsMem==1)
+    {
+    MPI_Type_contiguous(nCells,nativeType,&memView);
+    }
+  else
+    {
+    MPI_Type_vector(nCells,1,nCompsMem,nativeType,&memView);
+    }
   MPI_Type_commit(&memView);
 
   // Read
   MPI_Status status;
-  iErr=MPI_File_read_all(file,data,1,memView,&status);
+  iErr=MPI_File_read_all(file,data+compNoMem,1,memView,&status);
   MPI_Type_free(&fileView);
   MPI_Type_free(&memView);
   MPI_File_close(&file);
   if (iErr!=MPI_SUCCESS)
     {
-    MPI_Error_string(iErr,eStr,const_cast<int *>(&eStrLen));
+    MPI_Error_string(iErr,eStr,&eStrLen);
     cerr << "Error reading file: " << fileName << endl;
     cerr << eStr << endl;
     return 0;
@@ -212,16 +212,21 @@ int ReadDataArray(
 }
 
 //*****************************************************************************
+// File tyep is assumed to a scalar, but the mem-type can be a vector.
+// but warning it is slow!!
 template <typename T>
 int ReadDataArray(
         MPI_File file,
+        MPI_Info hints,
         const vtkAMRBox &domain, // entire region, dataset extents
         const vtkAMRBox &decomp, // region to be read, block extents
+        int nCompsMem,           // stride in memory array
+        int compNoMem,           // start offset in mem array
         T *data)                 // pointer to a buffer to read into.
 {
   int iErr;
-  const int eStrLen=2048;
-  char eStr[eStrLen]={'\0'};
+  int eStrLen=256;
+  char eStr[256]={'\0'};
 
   // Locate our data.
   int domainDims[3];
@@ -231,7 +236,7 @@ int ReadDataArray(
   int decompStart[3];
   decomp.GetLoCorner(decompStart);
 
-  unsigned long long nCells=decomp.GetNumberOfCells();
+  size_t nCells=decomp.GetNumberOfCells();
 
   // file view
   MPI_Datatype nativeType=DataTraits<T>::Type();
@@ -249,22 +254,30 @@ int ReadDataArray(
       0,
       nativeType,
       fileView,
-      "native", // TODO option to select, portable or native.
-      MPI_INFO_NULL); // TODO could make better use of hints.
+      "native",
+      hints);
 
-  // memory view
+  // memory view. The file is a scalar, but the memory can be vector
+  // where file elements are seperated by a constant stride.
   MPI_Datatype memView;
-  MPI_Type_contiguous(nCells,nativeType,&memView);
+  if (nCompsMem==1)
+    {
+    MPI_Type_contiguous(nCells,nativeType,&memView);
+    }
+  else
+    {
+    MPI_Type_vector(nCells,1,nCompsMem,nativeType,&memView);
+    }
   MPI_Type_commit(&memView);
 
   // Read
   MPI_Status status;
-  iErr=MPI_File_read_all(file,data,1,memView,&status);
+  iErr=MPI_File_read_all(file,data+compNoMem,1,memView,&status);
   MPI_Type_free(&fileView);
   MPI_Type_free(&memView);
   if (iErr!=MPI_SUCCESS)
     {
-    MPI_Error_string(iErr,eStr,const_cast<int *>(&eStrLen));
+    MPI_Error_string(iErr,eStr,&eStrLen);
     cerr << "Error reading file." << endl;
     cerr << eStr << endl;
     return 0;

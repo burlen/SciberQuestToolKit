@@ -21,7 +21,11 @@ using namespace std;
 #endif
 
 //-----------------------------------------------------------------------------
-BOVTimeStepImage::BOVTimeStepImage(MPI_Comm &comm, int stepIdx, BOVMetaData *metaData)
+BOVTimeStepImage::BOVTimeStepImage(
+      MPI_Comm comm,
+      MPI_Info hints,
+      int stepIdx,
+      BOVMetaData *metaData)
 {
   ostringstream seriesExt;
   seriesExt << "_" << stepIdx << "." << metaData->GetBrickFileExtension();
@@ -42,25 +46,34 @@ BOVTimeStepImage::BOVTimeStepImage(MPI_Comm &comm, int stepIdx, BOVMetaData *met
       // arrayname_step.ext
       ostringstream fileName;
       fileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << seriesExt.str();
+
       // open
-      BOVScalarImage *scalar=new BOVScalarImage(comm,fileName.str().c_str(),arrayName);
+      BOVScalarImage *scalar
+        = new BOVScalarImage(comm,hints,fileName.str().c_str(),arrayName);
+
       this->Scalars.push_back(scalar);
       }
     // vector
     else
     if (metaData->IsArrayVector(arrayName))
       {
+      // deduce the file name from the following convention: 
+      // arrayname{x,y,z}_step.ext
       ostringstream xFileName,yFileName,zFileName;
       xFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "x" << seriesExt.str();
       yFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "y" << seriesExt.str();
       zFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "z" << seriesExt.str();
+
+      // open
       BOVVectorImage *vector
         = new BOVVectorImage(
             comm,
+            hints,
             xFileName.str().c_str(),
             yFileName.str().c_str(),
             zFileName.str().c_str(),
             arrayName);
+
       this->Vectors.push_back(vector);
       }
     // other ?

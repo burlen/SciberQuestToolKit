@@ -23,8 +23,6 @@ using namespace std;
 
 #include "PrintUtils.h"
 
-
-
 //-----------------------------------------------------------------------------
 BOVReader::BOVReader()
       :
@@ -32,7 +30,8 @@ BOVReader::BOVReader()
   NGhost(1),
   ProcId(-1),
   NProcs(0),
-  Comm(MPI_COMM_NULL)
+  Comm(MPI_COMM_NULL),
+  Hints(MPI_INFO_NULL)
 {
   int ok;
   MPI_Initialized(&ok);
@@ -58,6 +57,7 @@ BOVReader::~BOVReader()
 {
   this->SetMetaData(NULL);
   this->SetCommunicator(MPI_COMM_NULL);
+  this->SetHints(MPI_INFO_NULL);
 }
 
 //-----------------------------------------------------------------------------
@@ -69,6 +69,7 @@ const BOVReader &BOVReader::operator=(const BOVReader &other)
     }
 
   this->SetCommunicator(other.Comm);
+  this->SetHints(other.Hints);
   this->SetMetaData(other.GetMetaData());
   this->NGhost=other.NGhost;
 
@@ -83,14 +84,37 @@ void BOVReader::SetCommunicator(MPI_Comm comm)
     && comm!=MPI_COMM_SELF)
     {
     MPI_Comm_free(&this->Comm);
-    this->Comm=MPI_COMM_NULL;
     }
 
-  if (comm!=MPI_COMM_NULL)
+  if (comm==MPI_COMM_NULL)
+    {
+    this->Comm=MPI_COMM_NULL;
+    }
+  else
     {
     MPI_Comm_dup(comm,&this->Comm);
     MPI_Comm_rank(this->Comm,&this->ProcId);
     MPI_Comm_size(this->Comm,&this->NProcs);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void BOVReader::SetHints(MPI_Info hints)
+{
+  if (this->Hints==hints) return;
+
+  if (this->Hints!=MPI_INFO_NULL)
+    {
+    MPI_Info_free(&this->Hints);
+    }
+
+  if (hints==MPI_INFO_NULL)
+    {
+    this->Hints=MPI_INFO_NULL;
+    }
+  else
+    {
+    MPI_Info_dup(hints,&this->Hints);
     }
 }
 
@@ -186,8 +210,8 @@ bool BOVReader::IsOpen()
 //-----------------------------------------------------------------------------
 int BOVReader::ReadScalarArray(BOVScalarImageIterator *it, vtkImageData *grid)
 {
-  const vtkAMRBox &block=this->MetaData->GetDecomp();
-  const size_t nCells=block.GetNumberOfCells();
+  const vtkAMRBox &decomp=this->MetaData->GetDecomp();
+  const size_t nCells=decomp.GetNumberOfCells();
 
   // Create a VTK array and insert it into the point data.
   vtkFloatArray *fa=vtkFloatArray::New();
@@ -200,14 +224,29 @@ int BOVReader::ReadScalarArray(BOVScalarImageIterator *it, vtkImageData *grid)
 
   // read
   return
-    ReadDataArray(it->GetFile(),this->MetaData->GetDomain(),block,pfa);
+    ReadDataArray(
+          it->GetFile(),
+          this->Hints,
+          this->MetaData->GetDomain(),
+          decomp,
+          1,
+          0,
+          pfa);
 }
 
 //-----------------------------------------------------------------------------
 int BOVReader::ReadVectorArray(BOVVectorImageIterator *it, vtkImageData *grid)
 {
-  const vtkAMRBox &block=this->MetaData->GetDecomp();
-  const size_t nCells=block.GetNumberOfCells();
+  // Memory requirements:
+  // The vtk data is 3*sizeof(component file).
+  // The intermediate buffer is sizeof(component file).
+  // One might use a strided mpi type for the memory view
+  // but it's very much slower.
+
+
+  const vtkAMRBox &domain=this->MetaData->GetDomain();
+  const vtkAMRBox &decomp=this->MetaData->GetDecomp();
+  const size_t nCells=decomp.GetNumberOfCells();
 
   // Create a VTK array.
   vtkFloatArray *fa=vtkFloatArray::New();
@@ -218,41 +257,36 @@ int BOVReader::ReadVectorArray(BOVVectorImageIterator *it, vtkImageData *grid)
   fa->Delete();
   float *pfa=fa->GetPointer(0);
 
-  // Allocate a buffer for reads
-  float *xbuf=static_cast<float *>(malloc(nCells*sizeof(float)));
-  float *ybuf=static_cast<float *>(malloc(nCells*sizeof(float)));
-  float *zbuf=static_cast<float *>(malloc(nCells*sizeof(float)));
+  float *buf=static_cast<float*>(malloc(nCells*sizeof(float)));
 
-  // Read the block.
-  int ok=-1;
-  ok&=ReadDataArray(it->GetXFile(),this->MetaData->GetDomain(),block,xbuf);
-  ok&=ReadDataArray(it->GetYFile(),this->MetaData->GetDomain(),block,ybuf);
-  ok&=ReadDataArray(it->GetZFile(),this->MetaData->GetDomain(),block,zbuf);
-  if (!ok)
+  for (int q=0; q<3; ++q)
     {
-    cerr
-      << "Error:" << endl
-      << __FILE__ << endl
-      << __LINE__ << endl
-      << "ReadDataArray " << it->GetName() << " failed." << endl;
-    return 0;
+    // Read qth component array
+    if (!ReadDataArray(
+            it->GetComponentFile(q),
+            this->Hints,
+            domain,
+            decomp,
+            1,0,
+            buf))
+      {
+      cerr
+        << "Error:" << endl
+        << __FILE__ << endl
+        << __LINE__ << endl
+        << "ReadDataArray "<< it->GetName() 
+        << " component " << q << " failed." << endl;
+      free(buf);
+      return 0;
+      }
+    // unpack from the read buffer into the vtk array
+    for (size_t i=0; i<nCells; ++i)
+      {
+      pfa[3*i+q]=buf[i];
+      }
     }
 
-  // TODO make sure this is vectorized!!
-  // Copy the vector components into the VTK array.
-  float *pxbuf=xbuf;
-  float *pybuf=ybuf;
-  float *pzbuf=zbuf;
-  for (size_t i=0; i<nCells; ++i)
-    {
-    *pfa=*pxbuf; ++pfa; ++pxbuf;
-    *pfa=*pybuf; ++pfa; ++pybuf;
-    *pfa=*pzbuf; ++pfa; ++pzbuf;
-    }
-  // Free up the buffers
-  free(xbuf);
-  free(ybuf);
-  free(zbuf);
+  free(buf);
 
   return 1;
 }
@@ -271,7 +305,8 @@ BOVTimeStepImage *BOVReader::OpenTimeStep(int stepNo)
     return 0;
     }
 
-  return new BOVTimeStepImage(this->Comm,stepNo,this->GetMetaData());
+  return
+    new BOVTimeStepImage(this->Comm,this->Hints,stepNo,this->GetMetaData());
 }
 
 //-----------------------------------------------------------------------------

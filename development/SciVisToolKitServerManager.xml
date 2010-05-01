@@ -134,6 +134,73 @@ Copyright 2008 SciberQuest Inc.
       This property controls what subset of data is read in. Subset for smaller memory footprint and better interactivity.
     </Documentation>
   </IntVectorProperty>
+
+  <!-- MPI File Hints -->
+  <IntVectorProperty
+    name="UseCollectiveIO"
+    lable="Collective IO"
+    command="SetUseCollectiveIO"
+    number_of_elements="1"
+    default_values="2" >
+    <EnumerationDomain name="enum">
+      <Entry value="0" text="automatic"/>
+      <Entry value="1" text="disabled"/>
+      <Entry value="2" text="enabled"/>
+    </EnumerationDomain>
+    <Documentation>
+      Turn on/off MPI-IO collective buffering.
+    </Documentation>
+  </IntVectorProperty>
+
+  <IntVectorProperty
+    name="NumberOfIONodes"
+    lable="N IO Nodes"
+    command="SetNumberOfIONodes"
+    number_of_elements="1"
+    default_values="0" >
+    <Documentation>
+      Set the number of IO nodes. Set to 0 to use the implementation default.
+    </Documentation>
+  </IntVectorProperty>
+
+  <IntVectorProperty
+    name="CollectBufferSize"
+    lable="CIO Buffer Size"
+    command="SetCollectBufferSize"
+    number_of_elements="1"
+    default_values="0" >
+    <Documentation>
+      Set the size of the buffer for aggregation. Set to 0 to use the implementation default.
+    </Documentation>
+  </IntVectorProperty>
+
+  <IntVectorProperty
+    name="UseDataSieving"
+    lable="Data Sieving"
+    command="SetUseDataSieving"
+    number_of_elements="1"
+    default_values="0" >
+    <EnumerationDomain name="enum">
+      <Entry value="0" text="automatic"/>
+      <Entry value="1" text="disabled"/>
+      <Entry value="2" text="enabled"/>
+    </EnumerationDomain>
+    <Documentation>
+      Turn on/off MPI-IO collective buffering.
+    </Documentation>
+  </IntVectorProperty>
+
+  <IntVectorProperty
+    name="SieveBufferSize"
+    lable="Sieve Buffer Size"
+    command="SetSieveBufferSize"
+    number_of_elements="1"
+    default_values="0" >
+    <Documentation>
+      Set the size of the buffer for sieving. Set to 0 to use the implementation default.
+    </Documentation>
+  </IntVectorProperty>
+
 </Proxy>
 
 </ProxyGroup>
@@ -701,7 +768,8 @@ Copyright 2008 SciberQuest Inc.
 
       <!-- Colormap/Legened control -->
      <IntVectorProperty 
-        name="Squeeze Color Map" 
+        name="SqueezeColorMap" 
+        label="Squeeze Color Map" 
         command="SetSqueezeColorMap" 
         number_of_elements="1"
         default_values="0" > 
@@ -943,6 +1011,7 @@ Copyright 2008 SciberQuest Inc.
 
   <Hints>
     <Property name="Mode" show="0"/>
+    <Property name="SqueezeColorMap"  show="0"/>
     <!--
     <Property name="UseDynamicScheduler" show="0"/>
     <Property name="MasterBlockSize" show="0"/>

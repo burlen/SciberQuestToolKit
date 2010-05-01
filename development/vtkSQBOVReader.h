@@ -90,20 +90,38 @@ public:
       unsigned long,
       void* clientdata,
       void* );
-protected:
-  // Description:
-  // Read the dataset.
-  int RequestData(
-      vtkInformation *req, 
-      vtkInformationVector **input,
-      vtkInformationVector *output);
 
+
+
+  //BTX
+  enum
+    {
+    HINT_AUTOMATIC=0,
+    HINT_DISABLED=1,
+    HINT_ENABLED=2
+    };
+  //ETX
   // Description:
-  // Extract meta-data from the file that is to be read.
-  int RequestInformation(
-      vtkInformation* req, 
-      vtkInformationVector**,
-      vtkInformationVector* info);
+  // Set/Get MPI file hints.
+  vtkSetMacro(UseCollectiveIO,int);
+  vtkGetMacro(UseCollectiveIO,int);
+
+  vtkSetMacro(NumberOfIONodes,int);
+  vtkGetMacro(NumberOfIONodes,int);
+
+  vtkSetMacro(CollectBufferSize,long);
+  vtkGetMacro(CollectBufferSize,long);
+
+  vtkSetMacro(UseDataSieving,int);
+  vtkGetMacro(UseDataSieving,int);
+
+  vtkSetMacro(SieveBufferSize,long);
+  vtkGetMacro(SieveBufferSize,long);
+
+protected:
+  /// Pipeline internals.
+  int RequestData(vtkInformation *req,vtkInformationVector **inInfos,vtkInformationVector *outInfos);
+  int RequestInformation(vtkInformation *req,vtkInformationVector**inInfos,vtkInformationVector* outInfos);
 
   vtkSQBOVReader();
   ~vtkSQBOVReader();
@@ -113,6 +131,8 @@ private:
   void operator=(const vtkSQBOVReader &); // Not implemented
   //
   void Clear();
+  //
+  void SetMPIFileHints();
 
 private:
   BOVReader *Reader;       // Implementation
@@ -123,9 +143,14 @@ private:
   int JSubsetRange[2];
   int KSubsetRange[2];
   int MetaRead;            // flag indicating type of read meta or actual
-  int ProcId;              // rank of this process
-  int NProcs;              // number of processes
+  int WorldRank;           // rank of this process
+  int WorldSize;           // number of processes
   char HostName[5];        // short host name where this process runs
+  int UseCollectiveIO;     // Turn on/off collective IO
+  int NumberOfIONodes;     // Number of aggregator for CIO
+  int CollectBufferSize;   // Gather buffer size (if small IO is staged).
+  int UseDataSieving;      // Turn on/off data sieving
+  int SieveBufferSize;     // Sieve size.
 };
 
 #endif

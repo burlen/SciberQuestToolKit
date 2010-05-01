@@ -134,6 +134,9 @@ protected:
 
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
 
+  int UpdatePlane(double v1[3], double v2[3]);
+
+private:
   int XResolution;
   int YResolution;
   double Origin[3];
@@ -143,7 +146,6 @@ protected:
   double Center[3];
   char *DescriptiveName;
 
-  int UpdatePlane(double v1[3], double v2[3]);
 private:
   vtkSQPlaneSource(const vtkSQPlaneSource&);  // Not implemented.
   void operator=(const vtkSQPlaneSource&);  // Not implemented.

@@ -16,14 +16,18 @@ using std::vector;
 
 class BOVMetaData;
 
-//*****************************************************************************
+//=============================================================================
 class BOVTimeStepImage
 {
 public:
-  BOVTimeStepImage(MPI_Comm &comm, int stepId, BOVMetaData *metaData);
+  BOVTimeStepImage(
+      MPI_Comm comm,
+      MPI_Info hints,
+      int stepId,
+      BOVMetaData *metaData);
   ~BOVTimeStepImage();
 
-  int GetNumberOfImages(){ return this->Scalars.size() + this->Vectors.size(); }
+  int GetNumberOfImages(){ return this->Scalars.size()+this->Vectors.size(); }
 
 private:
   vector<BOVScalarImage*> Scalars;
@@ -41,7 +45,7 @@ private:
 ostream &operator<<(ostream &os, const BOVTimeStepImage &si);
 
 
-//*****************************************************************************
+//=============================================================================
 class BOVScalarImageIterator
 {
 public:
@@ -71,6 +75,7 @@ public:
   MPI_File GetFile(){ return this->Step->Scalars[this->Idx]->GetFile(); }
   ///
   const char *GetName(){ return this->Step->Scalars[this->Idx]->GetName(); }
+  const char *GetFileName(){ return this->Step->Scalars[this->Idx]->GetFileName(); }
 private:
   BOVTimeStepImage *Step;
   int Idx;
@@ -79,7 +84,7 @@ private:
   BOVScalarImageIterator();
 };
 
-//*****************************************************************************
+//=============================================================================
 class BOVVectorImageIterator
 {
 public:
@@ -107,8 +112,27 @@ public:
   MPI_File GetXFile(){ return this->Step->Vectors[this->Idx]->GetXFile(); }
   MPI_File GetYFile(){ return this->Step->Vectors[this->Idx]->GetYFile(); }
   MPI_File GetZFile(){ return this->Step->Vectors[this->Idx]->GetZFile(); }
+  MPI_File GetComponentFile(int comp)
+    {
+    switch (comp)
+      {
+      case 0:
+        return this->GetXFile();
+        break;
+
+      case 1:
+        return this->GetYFile();
+        break;
+
+      case 2:
+        return this->GetZFile();
+        break;
+      }
+    return 0;
+    }
   ///
   const char *GetName(){ return this->Step->Vectors[this->Idx]->GetName(); }
+
 private:
   BOVTimeStepImage *Step;
   int Idx;

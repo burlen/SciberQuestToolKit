@@ -20,3 +20,6 @@ using std::endl;
       << __FILE__ << ", line " << __LINE__ << endl\
       << "" estr << endl;
 #endif
+
+#define DO_PRAGMA(x) _Pragma (#x)
+#define TODO(x) DO_PRAGMA(message ("TODO - " #x))

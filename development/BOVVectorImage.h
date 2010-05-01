@@ -19,17 +19,18 @@ class BOVVectorImage
 {
 public:
   BOVVectorImage(
-      MPI_Comm &comm,
+      MPI_Comm comm,
+      MPI_Info hints,
       const char *xFileName,
       const char *yFileName,
       const char *zFileName,
       const char *name);
   ~BOVVectorImage();
 
-  MPI_File GetXFile(){ return this->X->GetFile(); }
-  MPI_File GetYFile(){ return this->Y->GetFile(); }
-  MPI_File GetZFile(){ return this->Z->GetFile(); }
-  const char *GetName(){ return this->X->GetName(); }
+  MPI_File GetXFile() const { return this->X->GetFile(); }
+  MPI_File GetYFile() const { return this->Y->GetFile(); }
+  MPI_File GetZFile() const { return this->Z->GetFile(); }
+  const char *GetName() const { return this->X->GetName(); }
 
 private:
   BOVScalarImage *X;
