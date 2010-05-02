@@ -22,7 +22,7 @@
 #include "vtkPolyData.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
-#include "vtkMetaDataKeys.h"
+#include "vtkSQMetaDataKeys.h"
 #include "vtkMultiProcessController.h"
 
 #include<string>

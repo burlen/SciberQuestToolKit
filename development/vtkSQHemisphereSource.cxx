@@ -32,7 +32,7 @@ Copyright 2008 SciberQuest Inc.
 
 
 
-#include "vtkMetaDataKeys.h"
+#include "vtkSQMetaDataKeys.h"
 #include "GDAMetaDataKeys.h"
 
 #include <math.h>
@@ -162,7 +162,7 @@ int vtkSQHemisphereSource::RequestData(
   //
   if (this->NorthHemisphereName && strlen(this->NorthHemisphereName))
     {
-    northInfo->Set(vtkMetaDataKeys::DESCRIPTIVE_NAME(),this->NorthHemisphereName);
+    northInfo->Set(vtkSQMetaDataKeys::DESCRIPTIVE_NAME(),this->NorthHemisphereName);
     }
   //
   vtkPolyData *northPd
@@ -180,7 +180,7 @@ int vtkSQHemisphereSource::RequestData(
   //
   if (this->SouthHemisphereName && strlen(this->SouthHemisphereName))
     {
-    southInfo->Set(vtkMetaDataKeys::DESCRIPTIVE_NAME(),this->SouthHemisphereName);
+    southInfo->Set(vtkSQMetaDataKeys::DESCRIPTIVE_NAME(),this->SouthHemisphereName);
     }
   //
   vtkPolyData *southPd

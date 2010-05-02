@@ -50,7 +50,7 @@ set(_SOURCES
   StreamlineData.cxx
   TerminationCondition.cxx
   UnstructuredFieldTopologyMap.cxx
-  vtkMetaDataKeys.cxx
+  vtkSQMetaDataKeys.cxx
   vtkSQOOCReader.cxx
   vtkSQOOCBOVReader.cxx
   vtkSQHemisphereSourceConfigurationWriter.cxx

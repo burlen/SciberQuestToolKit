@@ -25,7 +25,7 @@
 #include "vtkPolyData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
-#include "vtkMetaDataKeys.h"
+#include "vtkSQMetaDataKeys.h"
 
 #include <math.h>
 
@@ -74,7 +74,7 @@ int vtkSQSphereSource::RequestData(
   // Set the descriptiove name (if used).
   if (this->DescriptiveName && strlen(this->DescriptiveName))
     {
-    outInfo->Set(vtkMetaDataKeys::DESCRIPTIVE_NAME(),this->DescriptiveName);
+    outInfo->Set(vtkSQMetaDataKeys::DESCRIPTIVE_NAME(),this->DescriptiveName);
     }
 
   // get the ouptut

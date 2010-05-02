@@ -25,7 +25,7 @@
 #include "vtkPolyData.h"
 #include "vtkTransform.h"
 
-#include "vtkMetaDataKeys.h"
+#include "vtkSQMetaDataKeys.h"
 
 vtkCxxRevisionMacro(vtkSQPlaneSource, "$Revision: 1.65 $");
 vtkStandardNewMacro(vtkSQPlaneSource);
@@ -100,7 +100,7 @@ int vtkSQPlaneSource::RequestData(
   // Set the descriptiove name (if used).
   if (this->DescriptiveName && strlen(this->DescriptiveName))
     {
-    outInfo->Set(vtkMetaDataKeys::DESCRIPTIVE_NAME(),this->DescriptiveName);
+    outInfo->Set(vtkSQMetaDataKeys::DESCRIPTIVE_NAME(),this->DescriptiveName);
     }
 
   // get the ouptut

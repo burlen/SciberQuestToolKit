@@ -100,7 +100,7 @@ public:
 
   // Description:
   // Set a name that will be placed into the output vtkInformation object
-  // in the vtkMetaDataKeys::DESCRIPTIVE_NAME() key.
+  // in the vtkSQMetaDataKeys::DESCRIPTIVE_NAME() key.
   vtkSetStringMacro(DescriptiveName);
   vtkGetStringMacro(DescriptiveName);
 

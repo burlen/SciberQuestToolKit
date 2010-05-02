@@ -5,11 +5,17 @@
 /___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
 
 Copyright 2008 SciberQuest Inc.
+
 */
-#include "vtkMetaDataKeys.h"
+#ifndef MetaDataKeys_h
+#define MetaDataKeys_h
 
-#include "vtkInformationKey.h"
-#include "vtkInformationStringKey.h"
+class vtkInformationStringKey;
 
-//-----------------------------------------------------------------------------
-vtkInformationKeyMacro(vtkMetaDataKeys,DESCRIPTIVE_NAME,String);
+class vtkSQMetaDataKeys
+{
+public:
+  static vtkInformationStringKey* DESCRIPTIVE_NAME();
+};
+
+#endif

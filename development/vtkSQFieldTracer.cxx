@@ -46,7 +46,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkMultiProcessController.h"
 
 #include "vtkSQOOCReader.h"
-#include "vtkMetaDataKeys.h"
+#include "vtkSQMetaDataKeys.h"
 #include "vtkMath.h"
 
 #include "FieldLine.h"
@@ -532,9 +532,9 @@ int vtkSQFieldTracer::RequestData(
     // SciberQuest filters provide a name that is use when creating
     // the legend. (optional).
     const char *surfName=0;
-    if (info->Has(vtkMetaDataKeys::DESCRIPTIVE_NAME()))
+    if (info->Has(vtkSQMetaDataKeys::DESCRIPTIVE_NAME()))
       {
-      surfName=info->Get(vtkMetaDataKeys::DESCRIPTIVE_NAME());
+      surfName=info->Get(vtkSQMetaDataKeys::DESCRIPTIVE_NAME());
       }
     tcon->PushSurface(pd,surfName);
     }
