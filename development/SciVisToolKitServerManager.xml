@@ -277,12 +277,6 @@ Copyright 2008 SciberQuest Inc.
 *                                                                             *
 *******************************************************************************
 -->
-<ProxyGroup name="common-ui">
-<!-- ==================================================================== -->
-  <Proxy name="SQHemisphereUI">
-    
-   </Proxy>
-</ProxyGroup>
 
 <ProxyGroup name="sources">
 
@@ -601,427 +595,921 @@ Copyright 2008 SciberQuest Inc.
 *                                                                             *
 *******************************************************************************
 -->
-<ProxyGroup name="common-ui">
+
+<ProxyGroup name="filters">
+
   <!-- ==================================================================== -->
-  <Proxy name="vtkSQFieldTracerUI">
-    <Documentation
-       long_help="Trace field lines in a vector field."
-       short_help="Trace field lines in a vector field.">
-      Trace field lines in a vector field.
-    </Documentation>
-    <!-- Dataset input -->
+  <SourceProxy
+      name="vtkSQFieldTracer"
+      label="SQ Field Tracer"
+      class="vtkSQFieldTracer">
+
+    <!-- Inputs -->
     <InputProperty
-       name="DatasetInput"
-       command="AddVectorInputConnection"
-       clean_command="ClearVectorInputConnections"
-       label="Vector Field">
-          <ProxyGroupDomain name="groups">
-            <Group name="sources"/>
-            <Group name="filters"/>
-          </ProxyGroupDomain>
-          <DataTypeDomain name="input_type" composite_data_supported="0">
-            <DataType value="vtkDataSet"/>
-          </DataTypeDomain>
-          <InputArrayDomain name="input_array" attribute_type="point" number_of_components="3"/>
-          <Documentation>
-            Dataset containing the vector field.
-          </Documentation>
-     </InputProperty>
-     <!-- Seed input -->
-     <InputProperty
+        name="DatasetInput"
+        command="AddVectorInputConnection"
+        clean_command="ClearVectorInputConnections"
+        label="Vector Field">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type" composite_data_supported="0">
+        <DataType value="vtkDataSet"/>
+      </DataTypeDomain>
+      <InputArrayDomain name="input_array" attribute_type="point" number_of_components="3"/>
+      <Documentation>
+        Dataset containing the vector field.
+      </Documentation>
+    </InputProperty>
+
+    <InputProperty
         name="SeedPointInput"
         command="AddSeedPointInputConnection"
         clean_command="ClearSeedPointInputConnections"
         label="Seed Cells"
         multiple_input="0">
-           <ProxyGroupDomain name="groups">
-             <Group name="sources"/>
-             <Group name="filters"/>
-           </ProxyGroupDomain>
-           <Documentation>
-             Cells to generate seed points from (at cell center).
-           </Documentation>
-      </InputProperty>
-     <!-- Terminator Surface input -->
-     <InputProperty
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <Documentation>
+        Cells to generate seed points from (at cell center).
+      </Documentation>
+    </InputProperty>
+
+    <InputProperty
         name="TerminatorInput"
         command="AddTerminatorInputConnection"
         clean_command="ClearTerminatorInputConnections"
         label="Terminator Surfaces"
         multiple_input="1"
         optional="1">
-           <ProxyGroupDomain name="groups">
-             <Group name="sources"/>
-             <Group name="filters"/>
-           </ProxyGroupDomain>
-           <Documentation>
-             Surfaces which if present stop field line integration when a field line crosses one.
-           </Documentation>
-      </InputProperty>
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <Documentation>
+        Surfaces which if present stop field line integration when a field line crosses one.
+      </Documentation>
+    </InputProperty>
 
-     <!-- Vector Field Selection -->
-     <StringVectorProperty 
-        name="SelectInputVectors" 
+    <!-- Outputs -->
+    <OutputPort name="Streamlines" index="0"/>
+
+    <!-- Vector Field Selection -->
+    <StringVectorProperty 
+        name="SelectInputVectors"
         command="SetInputArrayToProcess"
         number_of_elements="5"
         element_types="0 0 0 0 2"
         animateable="0"
         label="Vectors">
-           <ArrayListDomain name="array_list" attribute_type="Vectors">
-             <RequiredProperties>
-                <Property name="DatasetInput" function="Input"/>
-             </RequiredProperties>
-           </ArrayListDomain>
-           <Documentation>
-             This property contains the name of the vector array from which to generate streamlines.
-           </Documentation>
-     </StringVectorProperty>
+      <ArrayListDomain name="array_list" attribute_type="Vectors">
+        <RequiredProperties>
+          <Property name="DatasetInput" function="Input"/>
+        </RequiredProperties>
+      </ArrayListDomain>
+      <Documentation>
+        This property contains the name of the vector array from which to generate streamlines.
+      </Documentation>
+    </StringVectorProperty>
 
-     <!-- OOC Reader parameter -->
-     <IntVectorProperty 
-       name="OOCNeighborhoodSize" 
-       label="OOC Read Size"
-       command="SetOOCNeighborhoodSize"
-       number_of_elements="1"
-       default_values="-1" >
-       <IntRangeDomain name="range" min="-1"/>
-       <Documentation>
-         Control the size of the OOC reads (context dependent meaning).
-       </Documentation>
-     </IntVectorProperty>
+    <!-- OOC Reader parameter -->
+    <IntVectorProperty 
+        name="OOCNeighborhoodSize" 
+        label="OOC Read Size"
+        command="SetOOCNeighborhoodSize"
+        number_of_elements="1"
+        default_values="0" >
+        <IntRangeDomain name="range" min="-1"/>
+      <Documentation>
+        IO Block sizes. Set to 0 for in-core operation.
+      </Documentation>
+    </IntVectorProperty>
 
-     <DoubleVectorProperty
-       name="InitialStep"
-       label="Initial Step"
-       command="SetInitialStep"
-       number_of_elements="1"
-       default_values="0.1" >
-       <DoubleRangeDomain name="range"/>
-       <Documentation>
-         Initial integration step size as a multiple of cell lengths.
-       </Documentation>
-     </DoubleVectorProperty>
+    <!-- Integrator parameters -->
+    <DoubleVectorProperty
+        name="InitialStep"
+        label="Initial Step"
+        command="SetInitialStep"
+        number_of_elements="1"
+        default_values="0.01" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Initial integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty>
 
-     <DoubleVectorProperty
-       name="MinStep"
-       label="Minimum Step"
-       command="SetMinStep"
-       number_of_elements="1"
-       default_values="0.1" >
-       <DoubleRangeDomain name="range"/>
-       <Documentation>
-         Minimum integration step size as a multiple of cell lengths.
-       </Documentation>
-     </DoubleVectorProperty>
+    <DoubleVectorProperty
+        name="MinStep"
+        label="Minimum Step"
+        command="SetMinStep"
+        number_of_elements="1"
+        default_values="0.01" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Minimum integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty>
 
-     <DoubleVectorProperty
-       name="MaxStep"
-       label="Maximum Step"
-       command="SetMaxStep"
-       number_of_elements="1"
-       default_values="0.5" >
-       <DoubleRangeDomain name="range"/>
-       <Documentation>
-         Maximum integration step size as a multiple of cell lengths.
-       </Documentation>
-     </DoubleVectorProperty>  
+    <DoubleVectorProperty
+        name="MaxStep"
+        label="Maximum Step"
+        command="SetMaxStep"
+        number_of_elements="1"
+        default_values="0.25" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Maximum integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty>
 
-     <IntVectorProperty 
-       name="MaxNumberOfSteps"
-       label="Maximum Steps"
-       command="SetMaxNumberOfSteps" 
-       number_of_elements="1"
-       default_values="1000" >
-       <IntRangeDomain name="range"/>
-       <Documentation>
-         Maximum number of steps, beyond which integration is terminated.
-       </Documentation>
-     </IntVectorProperty>
+    <DoubleVectorProperty
+        name="MaxError"
+        command="SetMaxError"
+        number_of_elements="1"
+        default_values="0.0001">
+      <Documentation>
+        Error bound for adaptive step size integration.
+      </Documentation>
+    </DoubleVectorProperty>
 
-     <DoubleVectorProperty
-       name="MaxLineLength"
-       label="Maximum Length"
-       command="SetMaxLineLength"
-       number_of_elements="1"
-       default_values="1.0" >
-       <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="10.0">
-         <RequiredProperties>
-            <Property name="DatasetInput" function="Input"/>
-         </RequiredProperties>
-       </BoundsDomain>
-       <Documentation>
-         Maximum streamline arc length beyond which line integration is terminated.
-       </Documentation>
-     </DoubleVectorProperty>
+    <IdTypeVectorProperty
+        name="MaxNumberOfSteps"
+        label="Maximum Steps"
+        command="SetMaxNumberOfSteps"
+        number_of_elements="1"
+        default_values="100000000" >
+      <IntRangeDomain name="range"/>
+      <Documentation>
+        Maximum number of steps, beyond which integration is terminated.
+      </Documentation>
+    </IdTypeVectorProperty>
 
-     <DoubleVectorProperty
-       name="NullThreshold"
-       label="Null Threshold"
-       command="SetNullThreshold"
-       number_of_elements="1"
-       default_values="0.000001" >
-       <DoubleRangeDomain name="range"/>
-       <Documentation>
-         This property specifies the terminal speed, below which particle advection/integration is terminated.
-       </Documentation>
-     </DoubleVectorProperty>
+    <DoubleVectorProperty
+        name="MaxLineLength"
+        label="Maximum Length"
+        command="SetMaxLineLength"
+        number_of_elements="1"
+        default_values="1.0" >
+      <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="1000.0">
+        <RequiredProperties>
+          <Property name="DatasetInput" function="Input"/>
+        </RequiredProperties>
+      </BoundsDomain>
+      <Documentation>
+        Maximum streamline arc length beyond which line integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
 
-      <!-- Colormap/Legened control -->
-     <IntVectorProperty 
-        name="SqueezeColorMap" 
-        label="Squeeze Color Map" 
-        command="SetSqueezeColorMap" 
+    <DoubleVectorProperty
+        name="NullThreshold"
+        label="Null Threshold"
+        command="SetNullThreshold"
+        number_of_elements="1"
+        default_values="0.001" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Vector field magnitude below which particle advection/integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <!-- Periodic boundary conditions -->
+    <IntVectorProperty
+        name="XPeriodic"
+        label="Periodic in X"
+        command="SetXHasPeriodicBC"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Apply periodic boundary condition in the x direction during integration.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="YPeriodic"
+        label="Periodic in Y"
+        command="SetYHasPeriodicBC"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Apply periodic boundary condition in the y direction during integration.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="ZPeriodic"
+        label="Periodic in Z"
+        command="SetZHasPeriodicBC"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Apply periodic boundary condition in the z direction during integration.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="ForwardOnly"
+        label="Disable reverse integrate"
+        command="SetForwardOnly"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <!-- Colormap/Legened control -->
+    <IntVectorProperty 
+        name="SqueezeColorMap"
+        label="Squeeze Color Map"
+        command="SetSqueezeColorMap"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+      Use the minimum number of intersect colors required. Requires global reduction.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Integration parameter unit (2=cell length)
+    <IntVectorProperty 
+        name="StepUnit"
+        label="Step Unit"
+        command="SetStepUnit" 
+        number_of_elements="1"
+        default_values="2"/>
+    -->
+
+    <!-- Mode Flag -->
+    <IntVectorProperty 
+        name="Mode"
+        command="SetMode"
+        number_of_elements="1"
+        default_values="1">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Set the mode of operation to one of STREAM,TOPOLOGY,POINCARE.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Load balancing/work scheduling controls -->
+    <IntVectorProperty 
+        name="UseDynamicScheduler"
+        command="SetUseDynamicScheduler"
         number_of_elements="1"
         default_values="0" > 
-       <BooleanDomain name="bool"/>
-       <Documentation>
-        Set the color map to simple where termination due to out of bounds,stagnation, and short integration map to the same case.
-       </Documentation>
-     </IntVectorProperty>
+      <BooleanDomain name="bool"/>
+      <Documentation>
+      When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
+      on all processes. This must be off if this is not the case. Set once before the filter runs.
+      </Documentation>
+    </IntVectorProperty>
 
-     <!-- Always use this error -->
-     <DoubleVectorProperty
-       name="MaxError"
-       command="SetMaxError"
-       number_of_elements="1"
-       default_values="0.000001"/>
-     <!-- Always measure integrate as multiple of cell length -->
-     <IntVectorProperty 
-       name="StepUnit"
-       label="Step Unit"
-       command="SetStepUnit" 
-       number_of_elements="1"
-       default_values="2"/>
-     <!-- Hide some of these -->
-     <Hints>
-       <Visibility replace_input="2" />
-       <Property name="StepUnit" show="0"/>
-       <Property name="MaxError" show="0"/>
-     </Hints>
-   <!-- End FieldTracerUI -->
-   </Proxy>
-
-</ProxyGroup>
-
-<ProxyGroup name="filters">
-
-<!-- ==================================================================== -->
-<SourceProxy name="vtkSQFieldTracer" 
-    class="vtkSQFieldTracer"
-    label="SQ Field Tracer"
-    base_proxyname="vtkSQFieldTracerUI"
-    base_proxygroup="common-ui">
-
-  <!-- Out -->
-  <OutputPort name="Field Lines" index="0" />
-
-  <!-- Topo Flag -->
-  <IntVectorProperty 
-    name="Mode"
-    command="SetMode"
-    number_of_elements="1"
-    default_values="1">
-    <BooleanDomain name="bool"/>
-    <Documentation>
-    If checked topology mode is active and the filter produces a topology
-    map rather than field lines.
-    </Documentation>
-  </IntVectorProperty>
-
-  <!-- Load balancing/work scheduling control -->
-  <IntVectorProperty 
-    name="UseDynamicScheduler"
-    command="SetUseDynamicScheduler"
-    number_of_elements="1"
-    default_values="0" > 
-    <BooleanDomain name="bool"/>
-    <Documentation>
-    When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
-    on all processes. This must be off if this is not the case.
-    </Documentation>
-  </IntVectorProperty>
-
-  <!-- Load balancing controls -->
-  <IntVectorProperty 
-    name="MasterBlockSize"
-    command="SetMasterBlockSize"
-    number_of_elements="1"
-    default_values="16"
-    animateable="0">
-    <IntRangeDomain name="range" min="1" max="131072"/>
-    <Documentation>
-      Controls how much work the master does in between servicing work requests
-      from the workers. Should be much smaller the WorkerBlockSize.
-    </Documentation>
-  </IntVectorProperty>
     <IntVectorProperty 
-    name="WorkerBlockSize"
-    command="SetWorkerBlockSize"
-    number_of_elements="1"
-    default_values="512"
-    animateable="0">
-    <IntRangeDomain name="range" min="1" max="131072"/>
-    <Documentation>
-      Controls how much work is given to the worker processes at each
-      request.
-    </Documentation>
-  </IntVectorProperty>
+        name="MasterBlockSize"
+        command="SetMasterBlockSize"
+        number_of_elements="1"
+        default_values="16"
+        animateable="0">
+      <IntRangeDomain name="range" min="1" max="131072"/>
+      <Documentation>
+        Controls how much work the master does in between servicing work requests
+        from the workers. Should be much smaller the WorkerBlockSize.
+      </Documentation>
+    </IntVectorProperty>
 
-  <Hints>
-    <Property name="Mode" show="0"/>
-    <Property name="StepUnit" show="0"/>
-    <Property name="MaxError" show="0"/>
-  </Hints>
-   <!-- End OOCFieldTracer -->
-</SourceProxy>
-
-
-<!-- ==================================================================== -->
-<SourceProxy name="vtkSQFieldTopologyMapper" 
-    class="vtkSQFieldTracer"
-    label="SQ Field Topology Mapper"
-    base_proxyname="vtkSQFieldTracerUI"
-    base_proxygroup="common-ui">
-
-  <!-- Out -->
-  <OutputPort name="Topology Map" index="0" />
-
-  <!-- Topo Flag -->
-  <IntVectorProperty 
-    name="Mode" 
-    command="SetMode" 
-    number_of_elements="1"
-    default_values="0">
-    <BooleanDomain name="bool"/>
-    <Documentation>
-    If checked topology mode is active and the filter produces a topology
-    map rather than field lines.
-    </Documentation>
-  </IntVectorProperty>
-
-  <!-- Load balancing/work scheduling control -->
-  <IntVectorProperty 
-    name="Use Dynamic Scheduler"
-    command="SetUseDynamicScheduler"
-    number_of_elements="1"
-    default_values="1" > 
-    <BooleanDomain name="bool"/>
-    <Documentation>
-    When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
-    on all processes. This must be off if this is not the case.
-    </Documentation>
-  </IntVectorProperty>
-
-  <!-- Load balancing controls -->
-  <IntVectorProperty 
-    name="MasterBlockSize"
-    command="SetMasterBlockSize"
-    number_of_elements="1"
-    default_values="16"
-    animateable="0">
-    <IntRangeDomain name="range" min="1" max="131072"/>
-    <Documentation>
-      Controls how much work the master does in between servicing work requests
-      from the workers. Should be much smaller the WorkerBlockSize.
-    </Documentation>
-  </IntVectorProperty>
     <IntVectorProperty 
-    name="WorkerBlockSize"
-    command="SetWorkerBlockSize"
-    number_of_elements="1"
-    default_values="512"
-    animateable="0">
-    <IntRangeDomain name="range" min="1" max="131072"/>
-    <Documentation>
-      Controls how much work is given to the worker processes at each
-      request.
-    </Documentation>
-  </IntVectorProperty>
+        name="WorkerBlockSize"
+        command="SetWorkerBlockSize"
+        number_of_elements="1"
+        default_values="512"
+        animateable="0">
+      <IntRangeDomain name="range" min="1" max="131072"/>
+      <Documentation>
+        Controls how much work is given to the worker processes at each
+        request.
+      </Documentation>
+    </IntVectorProperty>
 
-  <Hints>
-    <Property name="Mode" show="0"/>
-    <Property name="StepUnit" show="0"/>
-    <Property name="MaxError" show="0"/>
-  </Hints>
-   <!-- End FieldTracer -->
-</SourceProxy>
+    <Hints>
+      <Property name="Mode" show="0"/>
+    </Hints>
+    <!-- End OOCFieldTracer -->
+  </SourceProxy>
 
+  <!-- ==================================================================== -->
+  <SourceProxy
+      name="vtkSQFieldTopologyMapper"
+      label="SQ Field Topology Mapper"
+      class="vtkSQFieldTracer">
 
-<!-- ==================================================================== -->
-<SourceProxy name="vtkSQPoincareMapper"
-    class="vtkSQFieldTracer"
-    label="SQ Poincare Mapper"
-    base_proxyname="vtkSQFieldTracerUI"
-    base_proxygroup="common-ui">
+    <!-- Inputs -->
+    <InputProperty
+        name="DatasetInput"
+        command="AddVectorInputConnection"
+        clean_command="ClearVectorInputConnections"
+        label="Vector Field">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type" composite_data_supported="0">
+        <DataType value="vtkDataSet"/>
+      </DataTypeDomain>
+      <InputArrayDomain name="input_array" attribute_type="point" number_of_components="3"/>
+      <Documentation>
+        Dataset containing the vector field.
+      </Documentation>
+    </InputProperty>
 
-  <!-- Out -->
-  <OutputPort name="Field Lines" index="0" />
+    <InputProperty
+        name="SeedPointInput"
+        command="AddSeedPointInputConnection"
+        clean_command="ClearSeedPointInputConnections"
+        label="Seed Cells"
+        multiple_input="0">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <Documentation>
+        Cells to generate seed points from (at cell center).
+      </Documentation>
+    </InputProperty>
 
-  <!-- Topo Flag -->
-  <IntVectorProperty
-    name="Mode"
-    command="SetMode"
-    number_of_elements="1"
-    default_values="2">
-    <BooleanDomain name="bool"/>
-    <Documentation>
-    If checked topology mode is active and the filter produces a topology
-    map rather than field lines.
-    </Documentation>
-  </IntVectorProperty>
-  
-  <!-- Load balancing/work scheduling control -->
-  <IntVectorProperty 
-    name="Use Dynamic Scheduler"
-    command="SetUseDynamicScheduler"
-    number_of_elements="1"
-    default_values="0" > 
-    <BooleanDomain name="bool"/>
-    <Documentation>
-    When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
-    on all processes. This must be off if this is not the case.
-    </Documentation>
-  </IntVectorProperty>
+    <InputProperty
+        name="TerminatorInput"
+        command="AddTerminatorInputConnection"
+        clean_command="ClearTerminatorInputConnections"
+        label="Terminator Surfaces"
+        multiple_input="1"
+        optional="1">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <Documentation>
+        Surfaces which if present stop field line integration when a field line crosses one.
+      </Documentation>
+    </InputProperty>
 
-  <!-- Load balancing controls -->
-  <IntVectorProperty 
-    name="MasterBlockSize"
-    command="SetMasterBlockSize"
-    number_of_elements="1"
-    default_values="16"
-    animateable="0">
-    <IntRangeDomain name="range" min="1" max="131072"/>
-    <Documentation>
-      Controls how much work the master does in between servicing work requests
-      from the workers. Should be much smaller the WorkerBlockSize.
-    </Documentation>
-  </IntVectorProperty>
+    <!-- Outputs -->
+    <OutputPort name="Field Topology Map" index="0" />
+
+    <!-- Vector Field Selection -->
+    <StringVectorProperty 
+        name="SelectInputVectors"
+        command="SetInputArrayToProcess"
+        number_of_elements="5"
+        element_types="0 0 0 0 2"
+        animateable="0"
+        label="Vectors">
+      <ArrayListDomain name="array_list" attribute_type="Vectors">
+        <RequiredProperties>
+          <Property name="DatasetInput" function="Input"/>
+        </RequiredProperties>
+      </ArrayListDomain>
+      <Documentation>
+        This property contains the name of the vector array from which to generate streamlines.
+      </Documentation>
+    </StringVectorProperty>
+
+    <!-- OOC Reader parameter -->
     <IntVectorProperty 
-    name="WorkerBlockSize"
-    command="SetWorkerBlockSize"
-    number_of_elements="1"
-    default_values="512"
-    animateable="0">
-    <IntRangeDomain name="range" min="1" max="131072"/>
-    <Documentation>
-      Controls how much work is given to the worker processes at each
-      request.
-    </Documentation>
-  </IntVectorProperty>
+        name="OOCNeighborhoodSize" 
+        label="OOC Read Size"
+        command="SetOOCNeighborhoodSize"
+        number_of_elements="1"
+        default_values="0" >
+        <IntRangeDomain name="range" min="-1"/>
+      <Documentation>
+        IO Block sizes. Set to 0 for in-core operation.
+      </Documentation>
+    </IntVectorProperty>
 
-  <Hints>
-    <Property name="Mode" show="0"/>
-    <Property name="SqueezeColorMap"  show="0"/>
-    <!--
-    <Property name="UseDynamicScheduler" show="0"/>
-    <Property name="MasterBlockSize" show="0"/>
-    <Property name="WorkerBlockSize" show="0"/>
+    <!-- Integrator parameters -->
+    <DoubleVectorProperty
+        name="InitialStep"
+        label="Initial Step"
+        command="SetInitialStep"
+        number_of_elements="1"
+        default_values="0.01" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Initial integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="MinStep"
+        label="Minimum Step"
+        command="SetMinStep"
+        number_of_elements="1"
+        default_values="0.01" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Minimum integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="MaxStep"
+        label="Maximum Step"
+        command="SetMaxStep"
+        number_of_elements="1"
+        default_values="0.25" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Maximum integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="MaxError"
+        command="SetMaxError"
+        number_of_elements="1"
+        default_values="0.0001">
+      <Documentation>
+        Error bound for adaptive step size integration.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <IdTypeVectorProperty
+        name="MaxNumberOfSteps"
+        label="Maximum Steps"
+        command="SetMaxNumberOfSteps"
+        number_of_elements="1"
+        default_values="100000000" >
+      <IntRangeDomain name="range"/>
+      <Documentation>
+        Maximum number of steps, beyond which integration is terminated.
+      </Documentation>
+    </IdTypeVectorProperty>
+
+    <DoubleVectorProperty
+        name="MaxLineLength"
+        label="Maximum Length"
+        command="SetMaxLineLength"
+        number_of_elements="1"
+        default_values="1.0" >
+      <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="1000.0">
+        <RequiredProperties>
+          <Property name="DatasetInput" function="Input"/>
+        </RequiredProperties>
+      </BoundsDomain>
+      <Documentation>
+        Maximum streamline arc length beyond which line integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="NullThreshold"
+        label="Null Threshold"
+        command="SetNullThreshold"
+        number_of_elements="1"
+        default_values="0.001" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Vector field magnitude below which particle advection/integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <!-- Periodic boundary conditions 
+    <IntVectorProperty
+        name="XPeriodic"
+        label="Periodic in X"
+        command="SetXHasPeriodicBC"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Apply periodic boundary condition in the x direction during integration.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="YPeriodic"
+        label="Periodic in Y"
+        command="SetYHasPeriodicBC"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Apply periodic boundary condition in the y direction during integration.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="ZPeriodic"
+        label="Periodic in Z"
+        command="SetZHasPeriodicBC"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Apply periodic boundary condition in the z direction during integration.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="ForwardOnly"
+        label="Disable reverse integrate"
+        command="SetForwardOnly"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
     -->
-    <Property name="StepUnit" show="0"/>
-    <Property name="MaxError" show="0"/>
-  </Hints>
-   <!-- End OOCFieldTracer -->
+
+    <!-- Colormap/Legened control -->
+    <IntVectorProperty 
+        name="SqueezeColorMap"
+        label="Squeeze Color Map"
+        command="SetSqueezeColorMap"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+      Use the minimum number of intersect colors required. Requires global reduction.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Integration parameter unit (2=cell length)
+    <IntVectorProperty 
+        name="StepUnit"
+        label="Step Unit"
+        command="SetStepUnit" 
+        number_of_elements="1"
+        default_values="2"/>
+    -->
+
+    <!-- Mode Flag -->
+    <IntVectorProperty 
+        name="Mode"
+        command="SetMode"
+        number_of_elements="1"
+        default_values="2">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Set the mode of operation to one of STREAM,TOPOLOGY,POINCARE.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Load balancing/work scheduling control -->
+    <IntVectorProperty
+        name="UseDynamicScheduler"
+        command="SetUseDynamicScheduler"
+        number_of_elements="1"
+        default_values="0" > 
+      <BooleanDomain name="bool"/>
+      <Documentation>
+      When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
+      on all processes. This must be off if this is not the case. Set once before the filter runs.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Load balancing controls -->
+    <IntVectorProperty 
+        name="MasterBlockSize"
+        command="SetMasterBlockSize"
+        number_of_elements="1"
+        default_values="16"
+        animateable="0">
+      <IntRangeDomain name="range" min="1" max="131072"/>
+      <Documentation>
+        Controls how much work the master does in between servicing work requests
+        from the workers. Should be much smaller the WorkerBlockSize.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty 
+        name="WorkerBlockSize"
+        command="SetWorkerBlockSize"
+        number_of_elements="1"
+        default_values="512"
+        animateable="0">
+      <IntRangeDomain name="range" min="1" max="131072"/>
+      <Documentation>
+        Controls how much work is given to the worker processes at each
+        request.
+      </Documentation>
+    </IntVectorProperty>
+
+    <Hints>
+      <Property name="Mode" show="0"/>
+    </Hints>
+
+   <!-- End Topology Mapper -->
 </SourceProxy>
+
+
+<!-- ==================================================================== -->
+<SourceProxy
+    name="vtkSQPoincareMapper"
+    label="SQ Poincare Mapper"
+    class="vtkSQFieldTracer">
+
+   <!-- Inputs -->
+    <InputProperty
+        name="DatasetInput"
+        command="AddVectorInputConnection"
+        clean_command="ClearVectorInputConnections"
+        label="Vector Field">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type" composite_data_supported="0">
+        <DataType value="vtkDataSet"/>
+      </DataTypeDomain>
+      <InputArrayDomain name="input_array" attribute_type="point" number_of_components="3"/>
+      <Documentation>
+        Dataset containing the vector field.
+      </Documentation>
+    </InputProperty>
+
+    <InputProperty
+        name="SeedPointInput"
+        command="AddSeedPointInputConnection"
+        clean_command="ClearSeedPointInputConnections"
+        label="Seed Cells"
+        multiple_input="0">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <Documentation>
+        Cells to generate seed points from (at cell center).
+      </Documentation>
+    </InputProperty>
+
+    <InputProperty
+        name="TerminatorInput"
+        command="AddTerminatorInputConnection"
+        clean_command="ClearTerminatorInputConnections"
+        label="Map Surfaces"
+        multiple_input="1"
+        optional="1">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <Documentation>
+        Surfaces which if present stop field line integration when a field line crosses one.
+      </Documentation>
+    </InputProperty>
+
+    <!-- Outputs -->
+    <OutputPort name="Poincare Map" index="0" />
+
+    <!-- Vector Field Selection -->
+    <StringVectorProperty 
+        name="SelectInputVectors"
+        command="SetInputArrayToProcess"
+        number_of_elements="5"
+        element_types="0 0 0 0 2"
+        animateable="0"
+        label="Vectors">
+      <ArrayListDomain name="array_list" attribute_type="Vectors">
+        <RequiredProperties>
+          <Property name="DatasetInput" function="Input"/>
+        </RequiredProperties>
+      </ArrayListDomain>
+      <Documentation>
+        This property contains the name of the vector array from which to generate streamlines.
+      </Documentation>
+    </StringVectorProperty>
+
+    <!-- OOC Reader parameter -->
+    <IntVectorProperty 
+        name="OOCNeighborhoodSize" 
+        label="OOC Read Size"
+        command="SetOOCNeighborhoodSize"
+        number_of_elements="1"
+        default_values="0" >
+        <IntRangeDomain name="range" min="-1"/>
+      <Documentation>
+        IO Block sizes. Set to 0 for in-core operation.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Integrator parameters -->
+    <DoubleVectorProperty
+        name="InitialStep"
+        label="Initial Step"
+        command="SetInitialStep"
+        number_of_elements="1"
+        default_values="0.01" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Initial integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="MinStep"
+        label="Minimum Step"
+        command="SetMinStep"
+        number_of_elements="1"
+        default_values="0.01" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Minimum integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="MaxStep"
+        label="Maximum Step"
+        command="SetMaxStep"
+        number_of_elements="1"
+        default_values="0.25" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Maximum integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="MaxError"
+        command="SetMaxError"
+        number_of_elements="1"
+        default_values="0.0001">
+      <Documentation>
+        Error bound for adaptive step size integration.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <IdTypeVectorProperty
+        name="MaxNumberOfSteps"
+        label="Maximum Steps"
+        command="SetMaxNumberOfSteps"
+        number_of_elements="1"
+        default_values="100000000" >
+      <IntRangeDomain name="range"/>
+      <Documentation>
+        Maximum number of steps, beyond which integration is terminated.
+      </Documentation>
+    </IdTypeVectorProperty>
+
+    <DoubleVectorProperty
+        name="MaxLineLength"
+        label="Maximum Length"
+        command="SetMaxLineLength"
+        number_of_elements="1"
+        default_values="1.0" >
+      <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="1000.0">
+        <RequiredProperties>
+          <Property name="DatasetInput" function="Input"/>
+        </RequiredProperties>
+      </BoundsDomain>
+      <Documentation>
+        Maximum streamline arc length beyond which line integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="NullThreshold"
+        label="Null Threshold"
+        command="SetNullThreshold"
+        number_of_elements="1"
+        default_values="0.001" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Vector field magnitude below which particle advection/integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <!-- Periodic boundary conditions -->
+    <IntVectorProperty
+        name="XPeriodic"
+        label="Periodic in X"
+        command="SetXHasPeriodicBC"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Apply periodic boundary condition in the x direction during integration.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="YPeriodic"
+        label="Periodic in Y"
+        command="SetYHasPeriodicBC"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Apply periodic boundary condition in the y direction during integration.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="ZPeriodic"
+        label="Periodic in Z"
+        command="SetZHasPeriodicBC"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Apply periodic boundary condition in the z direction during integration.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="ForwardOnly"
+        label="Disable reverse integrate"
+        command="SetForwardOnly"
+        number_of_elements="1"
+        default_values="1">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <!-- Colormap/Legened control
+    <IntVectorProperty 
+        name="SqueezeColorMap"
+        label="Squeeze Color Map"
+        command="SetSqueezeColorMap"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Use the minimum number of intersect colors required. Requires global reduction.
+      </Documentation>
+    </IntVectorProperty>
+    -->
+
+    <!-- Integration parameter unit (2=cell length)
+    <IntVectorProperty 
+        name="StepUnit"
+        label="Step Unit"
+        command="SetStepUnit" 
+        number_of_elements="1"
+        default_values="2"/>
+    -->
+
+    <!-- Mode Flag -->
+    <IntVectorProperty 
+        name="Mode"
+        command="SetMode"
+        number_of_elements="1"
+        default_values="3">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Set the mode of operation to one of STREAM,TOPOLOGY,POINCARE.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Load balancing/work scheduling controls
+    <IntVectorProperty 
+        name="UseDynamicScheduler"
+        command="SetUseDynamicScheduler"
+        number_of_elements="1"
+        default_values="0" > 
+      <BooleanDomain name="bool"/>
+      <Documentation>
+      When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
+      on all processes. This must be off if this is not the case. Set once before the filter runs.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty 
+        name="MasterBlockSize"
+        command="SetMasterBlockSize"
+        number_of_elements="1"
+        default_values="16"
+        animateable="0">
+      <IntRangeDomain name="range" min="1" max="131072"/>
+      <Documentation>
+        Controls how much work the master does in between servicing work requests
+        from the workers. Should be much smaller the WorkerBlockSize.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty 
+        name="WorkerBlockSize"
+        command="SetWorkerBlockSize"
+        number_of_elements="1"
+        default_values="512"
+        animateable="0">
+      <IntRangeDomain name="range" min="1" max="131072"/>
+      <Documentation>
+        Controls how much work is given to the worker processes at each
+        request.
+      </Documentation>
+    </IntVectorProperty>
+    -->
+
+    <Hints>
+      <Property name="Mode" show="0"/>
+    </Hints>
+
+   <!-- End SQ Poincare Mapper -->
+  </SourceProxy>
 
 
   <!-- ==================================================================== -->

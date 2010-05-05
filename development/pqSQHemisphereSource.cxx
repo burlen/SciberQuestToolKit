@@ -33,6 +33,7 @@ Copyright 2008 SciberQuest Inc.
 #include <QLineEdit>
 #include <QPalette>
 #include <QSettings>
+#include <QDebug>
 
 #include "FsUtils.h"
 #if defined pqSQHemisphereSourceDEBUG
@@ -247,7 +248,7 @@ void pqSQHemisphereSource::loadConfiguration()
     int ok=reader->ReadConfiguration(filename.toStdString().c_str());
     if (!ok)
       {
-      pqErrorMacro("Failed to load the hemisphere source configuration.");
+      sqErrorMacro(qDebug(),"Failed to load the hemisphere source configuration.");
       }
     }
 
@@ -280,7 +281,7 @@ void pqSQHemisphereSource::saveConfiguration()
     int ok=writer->WriteConfiguration(filename.toStdString().c_str());
     if (!ok)
       {
-      pqErrorMacro("Failed to save the hemisphere source configuration.");
+      sqErrorMacro(qDebug(),"Failed to save the hemisphere source configuration.");
       }
     }
 

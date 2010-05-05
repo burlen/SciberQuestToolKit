@@ -56,6 +56,26 @@ public:
   void AddTerminatorInputConnection(vtkAlgorithmOutput* algOutput);
   void ClearTerminatorInputConnections();
 
+
+  // Description:
+  // Set the run mode of the filter.
+  // The enumeration is as follows:
+  //    0  TOPOLOGY filter produces field topology map
+  //    1  STREAM   filter produces stream lines
+  //    2  POINCARE filter produces a poincare map
+  // This allows this filter to serve as multiple ParaView filters, 
+  // the OOCFieldTracer, OOCDTopologyMapper, and OOCDPoincareMapper
+  // NOTE This only works if Mode is set before the filter runs.
+  // PV gets confused if you try to change Mode later.
+  vtkSetMacro(Mode,int);
+  vtkGetMacro(Mode,int);
+
+
+  // Description:
+  // If set then only forward traces is carried out.
+  vtkSetMacro(ForwardOnly,int);
+  vtkGetMacro(ForwardOnly,int);
+
   // Description:
   // Specify a uniform integration step unit for MinimumIntegrationStep, 
   // InitialIntegrationStep, and MaximumIntegrationStep. NOTE: The valid
@@ -104,18 +124,20 @@ public:
   vtkSetMacro(OOCNeighborhoodSize,int);
   vtkGetMacro(OOCNeighborhoodSize,int);
 
+
   // Description:
-  // Set the run mode of the filter.
-  // The enumeration is as follows:
-  //    0  TOPOLOGY filter produces field topology map
-  //    1  STREAM   filter produces stream lines
-  //    2  POINCARE filter produces a poincare map
-  // This allows this filter to serve as multiple ParaView filters, 
-  // the OOCFieldTracer, OOCDTopologyMapper, and OOCDPoincareMapper
-  // NOTE This only works if Mode is set before the filter runs.
-  // PV gets confused if you try to change Mode later.
-  vtkSetMacro(Mode,int);
-  vtkGetMacro(Mode,int);
+  // Mark a coordinate direction as periodic. Streamlines that intersect
+  // a periodic BC, pass through it.
+  void SetPeriodicBC(int *flags)
+    { 
+    this->PeriodicBC[0]=flags[0];
+    this->PeriodicBC[1]=flags[1];
+    this->PeriodicBC[2]=flags[2];
+    }
+  void SetXHasPeriodicBC(int flag) { this->PeriodicBC[0]=flag; }
+  void SetYHasPeriodicBC(int flag) { this->PeriodicBC[1]=flag; }
+  void SetZHasPeriodicBC(int flag) { this->PeriodicBC[2]=flag; }
+
 
   // Description:
   // If on then color map produced will only contain used colors. 
@@ -236,12 +258,16 @@ private:
   vtkInitialValueProblemSolver* Integrator;
   vtkMultiProcessController *Controller;
 
+  // Periodic BC
+  int PeriodicBC[3];
+
   // Parameter controlling load balance
   int UseDynamicScheduler;
   int WorkerBlockSize;
   int MasterBlockSize;
 
-  // Parameters controlling integration,
+  // Parameters controlling integration
+  int ForwardOnly;
   int StepUnit;
   double InitialStep;
   double MinStep;
@@ -261,9 +287,9 @@ private:
   // Output controls
   enum
     {
-    TOPOLOGY=0,
-    STREAM=1,
-    POINCARE=2
+    MODE_STREAM=1,
+    MODE_TOPOLOGY=2,
+    MODE_POINCARE=3
     };
   //ETX
   int Mode;

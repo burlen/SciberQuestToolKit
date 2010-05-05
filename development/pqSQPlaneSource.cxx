@@ -41,6 +41,7 @@ Copyright 2008 SciberQuest Inc.
 #include <QLineEdit>
 #include <QPalette>
 #include <QSettings>
+#include <QDebug>
 
 #include "FsUtils.h"
 #if defined pqSQPlaneSourceDEBUG
@@ -418,7 +419,7 @@ void pqSQPlaneSource::loadConfiguration()
     int ok=reader->ReadConfiguration(filename.toStdString().c_str());
     if (!ok)
       {
-      pqErrorMacro("Failed to load the plane source configuration.");
+      sqErrorMacro(qDebug(),"Failed to load the plane source configuration.");
       }
     }
 
@@ -451,7 +452,7 @@ void pqSQPlaneSource::saveConfiguration()
     int ok=writer->WriteConfiguration(filename.toStdString().c_str());
     if (!ok)
       {
-      pqErrorMacro("Failed to save the plane source configuration.");
+      sqErrorMacro(qDebug(),"Failed to save the plane source configuration.");
       }
     }
 
@@ -603,7 +604,7 @@ int pqSQPlaneSource::CalculateNormal(double *n)
   int ok=vtkMath::Normalize(n);
   if (!ok)
     {
-    pqErrorMacro("Invalid coordinate system.");
+    sqErrorMacro(qDebug(),"Invalid coordinate system.");
     return 0;
     }
 
@@ -785,7 +786,7 @@ void pqSQPlaneSource::SnapViewToNormal()
   pqRenderView *view=dynamic_cast<pqRenderView*>(this->view());
   if (!view)
     {
-    pqErrorMacro("Failed to get the current view.");
+    sqErrorMacro(qDebug(),"Failed to get the current view.");
     return;
     }
 

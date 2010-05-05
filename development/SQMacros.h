@@ -7,19 +7,26 @@
 Copyright 2008 SciberQuest Inc.
 
 */
-#ifndef SQMacros_h
-#define SQMacros_h
+#ifndef __SQMacros_h
+#define __SQMacros_h
 
-#include<QDebug>
+#include <iomanip>
+using std::setprecision;
+using std::setw;
+using std::scientific;
 #include<iostream>
 using std::endl;
+using std::cerr;
 
-#define pqErrorMacro(estr)\
-  qDebug()\
-      << "Error in:" << endl\
-      << __FILE__ << ", line " << __LINE__ << endl\
+#define sqErrorMacro(os,estr)                       \
+    os                                              \
+      << "Error in:" << endl                        \
+      << __FILE__ << ", line " << __LINE__ << endl  \
       << "" estr << endl;
-#endif
 
-#define DO_PRAGMA(x) _Pragma (#x)
-#define TODO(x) DO_PRAGMA(message ("TODO - " #x))
+//#define DO_PRAGMA(x) _Pragma(#x)
+
+#define sqTODOMacro(x)\
+  _Pragma(message ("TODO - " #x))
+
+#endif

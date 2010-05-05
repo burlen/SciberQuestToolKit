@@ -15,10 +15,16 @@ cmake_policy(SET CMP0003 NEW)
 #
 project(SciVisToolKit)
 
+# Prevent in-source build
+if("${PROJECT_SOURCE_DIR}"  STREQUAL "${PROJECT_BINARY_DIR}")
+  message(FATAL_ERROR "SciVisToolKit requires an out of source Build.")
+endif("${PROJECT_SOURCE_DIR}"  STREQUAL "${PROJECT_BINARY_DIR}")
+
 # Locate our PV build/development install.
 include(ParaViewConfig.cmake)
 include(EigenConfig.cmake)
 include(MPICHConfig.cmake)
+include(StateFileConfig.cmake)
 
 # Server manager wrapped sources.
 set(SM_SOURCES
@@ -39,6 +45,7 @@ set(_SOURCES
   BOVTimeStepImage.cxx
   BOVScalarImage.cxx
   BOVVectorImage.cxx
+  FieldLine.cxx
   FieldTraceData.cxx
   FsUtils.cxx
   GDAMetaData.cxx

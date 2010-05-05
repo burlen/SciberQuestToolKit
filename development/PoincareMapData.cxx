@@ -193,7 +193,6 @@ int PoincareMapData::InsertCells(CellIdBlock *SourceIds)
 //-----------------------------------------------------------------------------
 int PoincareMapData::SyncGeometry()
 {
-
   size_t nLines=this->Lines.size();
 
   vtkIdType nPtsTotal=0;
@@ -220,7 +219,7 @@ int PoincareMapData::SyncGeometry()
   for (size_t i=0; i<nLines; ++i)
     {
     // copy the points
-    vtkIdType nMapPts=this->Lines[i]->CopyEndPoints(pMapPts);
+    vtkIdType nMapPts=this->Lines[i]->CopyPoints(pMapPts);
     if (nMapPts==0)
       {
       continue;

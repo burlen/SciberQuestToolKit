@@ -12,128 +12,15 @@ using std::ostringstream;
 #include<fcntl.h>
 #include<limits>
 
-template <typename T> class Tuple;
-template<typename T>
-ostream &operator<<(ostream &os, const Tuple<T> &t);
+#include "Tuple.hxx"
 
-/// Class to handle printing of Tuples commmonly used in VTK.
-template<typename T>
-class Tuple
-{
-public:
-  Tuple(const Tuple &other);
-  Tuple(T t1, T t2, T t3);
-  Tuple(T t1 ,T t2, T t3, T t4, T t5, T t6);
-  Tuple(T *t, int n);
-  ~Tuple();
-
-  const Tuple &operator=(const Tuple &rhs);
-
-private:
-  Tuple(); // not implemented
-  void Initialize(T *t, int n);
-
-  friend ostream &operator<< <> (ostream &os, const Tuple<T> &t);
-
-private:
-  int Size;
-  T *Data;
-};
-
-
-template<typename T>
-Tuple<T>::Tuple(const Tuple &other)
-{
-  *this=other;
-}
-
-template<typename T>
-Tuple<T>::Tuple(T *data, int size)
-      :
-  Size(0),
-  Data(0)
-{
-  this->Initialize(data,size);
-}
-
-template<typename T>
-Tuple<T>::Tuple(T t1, T t2, T t3)
-      :
-  Size(0),
-  Data(0)
-{
-  T data[3]={t1,t2,t3};
-  this->Initialize(data,3);
-}
-
-template<typename T>
-Tuple<T>::Tuple(T t1 ,T t2, T t3, T t4, T t5, T t6)
-      :
-  Size(0),
-  Data(0)
-{
-  T data[6]={t1,t2,t3,t4,t5,t6};
-  this->Initialize(data,6);
-}
-
-template<typename T>
-Tuple<T>::~Tuple()
-{
-  this->Initialize(NULL,0);
-}
-
-template<typename T>
-void Tuple<T>::Initialize(T *data, int size)
-{
-  if (this->Data)
-    {
-    delete [] this->Data;
-    this->Data=NULL;
-    this->Size=0;
-    }
-  if (size && data)
-    {
-    this->Data=new T [size];
-    this->Size=size;
-    for (int i=0; i<size; ++i)
-      {
-      this->Data[i]=data[i];
-      }
-    }
-}
-
-template<typename T>
-const Tuple<T> & Tuple<T>::operator=(const Tuple<T> &rhs)
-{
-  if (this!=&rhs)
-    {
-    this->Initialize(rhs.Data,rhs.Size);
-    }
-  return *this;
-}
-
-template<typename T>
-ostream &operator<<(ostream &os, const Tuple<T> &t)
-{
-  os << "(";
-  if (t.Size)
-    {
-    os << t.Data[0];
-    for (int i=1; i<t.Size; ++i)
-      {
-      os << ", " << t.Data[i];
-      }
-    }
-    os << ")";
-  return os;
-}
-
-
+//*****************************************************************************
 bool IsNan(float v_x, float v_y, float v_z)
 {
   return isnan(v_x) || isnan(v_y) || isnan(v_z);
 }
 
+//*****************************************************************************
 void Init(float v_0, float *v_x, float *v_y, float *v_z, int n)
 {
   for (int i=0; i<n; ++i)
@@ -144,6 +31,7 @@ void Init(float v_0, float *v_x, float *v_y, float *v_z, int n)
     }
 }
 
+//*****************************************************************************
 float theta(float x, float y)
 {
   float theta=atan(fabs(y)/fabs(x));
@@ -167,6 +55,7 @@ float theta(float x, float y)
   return theta;
 }
 
+//*****************************************************************************
 void InitSink(int *domain, int *patch, float *v_x, float *v_y, float *v_z)
 {
   int ni=domain[1]-domain[0]+1;
@@ -186,10 +75,9 @@ void InitSink(int *domain, int *patch, float *v_x, float *v_y, float *v_z)
         float x=i-itr;
         float y=j-jtr;
         float z=k-ktr;
-      
         float r=sqrt(x*x+y*y+z*z);
         r=r<1E-3?1.0:r;
-       
+
         int q=k*ni*nj+j*ni+i;
 
         // unit rays into the origin.
@@ -201,7 +89,7 @@ void InitSink(int *domain, int *patch, float *v_x, float *v_y, float *v_z)
     }
 }
 
-
+//*****************************************************************************
 void InitPseudoVortex(int *domain, int *patch, float *v_x, float *v_y, float *v_z)
 {
   int ni=domain[1]-domain[0]+1;
@@ -214,7 +102,7 @@ void InitPseudoVortex(int *domain, int *patch, float *v_x, float *v_y, float *v_
   float rmax=(patch[1]-patch[0]+1)/2.0;
   // make small dz.
   float dz=nk/100.0;
-    
+
   for (int k=patch[4]; k<=patch[5]; ++k)
     {
     for (int j=patch[2]; j<=patch[3]; ++j)
@@ -251,6 +139,7 @@ void InitPseudoVortex(int *domain, int *patch, float *v_x, float *v_y, float *v_
     }
 }
 
+//*****************************************************************************
 void InitRankineVortex(
       int *domain, 
       int *patch,
@@ -305,8 +194,14 @@ void InitRankineVortex(
     }
 }
 
-
-bool Find(int *domain, int *patch, float *v_x, float *v_y, float *v_z, float val)
+//*****************************************************************************
+bool Find(
+      int *domain,
+      int *patch,
+      float *v_x,
+      float *v_y,
+      float *v_z,
+      float val)
 {
   bool has=false;
 
@@ -334,7 +229,7 @@ bool Find(int *domain, int *patch, float *v_x, float *v_y, float *v_z, float val
   return has;
 }
 
-
+//*****************************************************************************
 bool HasNans(int *domain, int *patch, float *v_x, float *v_y, float *v_z)
 {
   bool has=false;
@@ -371,6 +266,7 @@ bool HasNans(int *domain, int *patch, float *v_x, float *v_y, float *v_z)
   return has;
 }
 
+//-----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
   // validate command tail
@@ -420,7 +316,7 @@ int main(int argc, char **argv)
   if (strcmp(argv[4],"rankine")==0)
     {
     float R=sqrt(nx*nx+ny*ny)/8.0;
-    float v_z0=0.0;
+    float v_z0=-1.0;
     float v_th0=10.0;
     comment 
       << "# R    =" << R << endl
@@ -438,14 +334,13 @@ int main(int argc, char **argv)
   HasNans(domain,domain,v_x,v_y,v_z);
   Find(domain,domain,v_x,v_y,v_z,sentinel);
 
-
   // write out the dataset
   n*=sizeof(float);
   int mode=S_IRUSR|S_IWUSR|S_IRGRP;
   int flags=O_WRONLY|O_CREAT|O_TRUNC;
 
   umask(S_IROTH|S_IWOTH); 
- 
+
   ostringstream fn;
   fn << argv[4] << "/";
   mkdir(fn.str().c_str(),S_IRWXU|S_IXGRP|S_IXOTH);

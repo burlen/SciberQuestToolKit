@@ -197,22 +197,22 @@ int StreamlineData::SyncGeometry()
 {
   size_t nLines=this->Lines.size();
 
-  vtkIdType nPtsTotal=0;
+  vtkIdType nNewPtsTotal=0;
   for (size_t i=0; i<nLines; ++i)
     {
-    nPtsTotal+=this->Lines[i]->GetNumberOfPoints()-1;
-    // less one because seed point is duplicated in fwd and bwd trace.
+    nNewPtsTotal+=this->Lines[i]->GetNumberOfPoints();
     }
-  if (nPtsTotal==0)
+  if (nNewPtsTotal==0)
     {
     return 1;
     }
 
   vtkIdType nLinePts=this->OutPts->GetNumberOfTuples();
-  float *pLinePts=this->OutPts->WritePointer(3*nLinePts,3*nPtsTotal);
+  float *pLinePts=this->OutPts->WritePointer(3*nLinePts,3*nNewPtsTotal);
 
   vtkIdTypeArray *lineCells=this->OutCells->GetData();
-  vtkIdType *pLineCells=lineCells->WritePointer(lineCells->GetNumberOfTuples(),nPtsTotal+nLines);
+  vtkIdType *pLineCells
+    = lineCells->WritePointer(lineCells->GetNumberOfTuples(),nNewPtsTotal+nLines);
 
   // before we forget
   this->OutCells->SetNumberOfCells(this->OutCells->GetNumberOfCells()+nLines);
@@ -222,13 +222,13 @@ int StreamlineData::SyncGeometry()
   for (size_t i=0; i<nLines; ++i)
     {
     // copy the points
-    vtkIdType nLinePts=this->Lines[i]->CopyLinePoints(pLinePts);
-    pLinePts+=3*nLinePts;
+    vtkIdType nNewPts=this->Lines[i]->CopyPoints(pLinePts);
+    pLinePts+=3*nNewPts;
 
     // build the cell
-    *pLineCells=nLinePts;
+    *pLineCells=nNewPts;
     ++pLineCells;
-    for (vtkIdType q=0; q<nLinePts; ++q)
+    for (vtkIdType q=0; q<nNewPts; ++q)
       {
       *pLineCells=ptId;
       ++pLineCells;

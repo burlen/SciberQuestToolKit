@@ -58,7 +58,7 @@ public:
   virtual int InsertCells(CellIdBlock *SourceIds);
 
   // Description:
-  // Move field line geometry (trace) from the internal structure
+  // Move streamline geometry from the internal structure
   // into the vtk output data.
   virtual int SyncGeometry();
 
