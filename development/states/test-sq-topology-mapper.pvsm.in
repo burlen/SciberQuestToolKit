@@ -6516,7 +6516,7 @@
         <Element index="0" value="0"/>
       </Property>
       <Property name="FileName" id="232.FileName" number_of_elements="1">
-        <Element index="0" value="/opt/Data/SciVis/SmallVector/vi.bovm"/>
+        <Element index="0" value="@SVTK_DATA_DIR@/SmallVector/vi.bovm"/>
         <Domain name="files" id="232.FileName.files"/>
       </Property>
       <Property name="ISubset" id="232.ISubset" number_of_elements="2">
