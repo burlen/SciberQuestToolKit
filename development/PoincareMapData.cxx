@@ -15,6 +15,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
 #include "vtkUnstructuredGrid.h"
+#include "vtkCellData.h"
 #include "vtkFloatArray.h"
 #include "vtkCellArray.h"
 #include "vtkUnsignedCharArray.h"
@@ -41,8 +42,10 @@ void PoincareMapData::ClearOut()
 {
   if (this->OutPts){ this->OutPts->Delete(); }
   if (this->OutCells){ this->OutCells->Delete(); }
+  if (this->SourceId){ this->SourceId->Delete(); }
   this->OutPts=0;
   this->OutCells=0;
+  this->SourceId=0;
 }
 
 //-----------------------------------------------------------------------------
@@ -130,6 +133,10 @@ void PoincareMapData::SetOutput(vtkDataSet *o)
 
   this->OutCells=vtkCellArray::New();
   out->SetVerts(this->OutCells);
+
+  this->SourceId=vtkIntArray::New();
+  this->SourceId->SetName("SourceId");
+  out->GetCellData()->AddArray(this->SourceId);
 }
 
 //-----------------------------------------------------------------------------
@@ -181,7 +188,7 @@ int PoincareMapData::InsertCells(CellIdBlock *SourceIds)
     seed[1]/=nPtIds;
     seed[2]/=nPtIds;
 
-    this->Lines[lId]=new FieldLine(seed,cId);
+    this->Lines[lId]=new FieldLine(seed,this->SourceCellGid+cId);
     this->Lines[lId]->AllocateTrace();
     ++lId;
     }
@@ -195,42 +202,62 @@ int PoincareMapData::SyncGeometry()
 {
   size_t nLines=this->Lines.size();
 
-  vtkIdType nPtsTotal=0;
+  // get the number of new points and cells to append
+  vtkIdType nNewCells=0;
+  vtkIdType nNewPts=0;
+
   for (size_t i=0; i<nLines; ++i)
     {
-    nPtsTotal+=this->Lines[i]->GetNumberOfPoints();
+    vtkIdType nPts=this->Lines[i]->GetNumberOfPoints();
+    nNewPts+=nPts;
+    nNewCells+=(nPts>0?1:0);
     }
-  if (nPtsTotal==0)
+  if (nNewPts==0)
     {
     return 1;
     }
 
-  vtkIdType nMapPts=this->OutPts->GetNumberOfTuples();
-  float *pMapPts=this->OutPts->WritePointer(3*nMapPts,3*nPtsTotal);
+  // resize points
+  vtkIdType nExPts=this->OutPts->GetNumberOfTuples();
+  float *pMapPts=this->OutPts->WritePointer(3*nExPts,3*nNewPts);
 
+  // resize cells
   vtkIdTypeArray *mapCells=this->OutCells->GetData();
-  vtkIdType *pMapCells=mapCells->WritePointer(mapCells->GetNumberOfTuples(),2*nPtsTotal);
+  vtkIdType *pMapCells
+    = mapCells->WritePointer(
+          mapCells->GetNumberOfTuples(),
+          nNewCells+nNewPts);
 
-  // before we forget
-  this->OutCells->SetNumberOfCells(this->OutCells->GetNumberOfCells()+nPtsTotal);
+  this->OutCells->SetNumberOfCells(
+          this->OutCells->GetNumberOfCells()+nNewCells);
 
-  vtkIdType ptId=nMapPts;
+  // resize scalars
+  vtkIdType nExIds=this->SourceId->GetNumberOfTuples();
+  int *pId=this->SourceId->WritePointer(nExIds,nNewCells);
+
+  vtkIdType ptId=nExPts;
 
   for (size_t i=0; i<nLines; ++i)
     {
     // copy the points
-    vtkIdType nMapPts=this->Lines[i]->CopyPoints(pMapPts);
-    if (nMapPts==0)
+    vtkIdType nPts=this->Lines[i]->CopyPoints(pMapPts);
+    if (nPts==0)
       {
       continue;
       }
-    pMapPts+=3*nMapPts;
+    pMapPts+=3*nPts;
 
-    // build the verts (either 1 or 2)
-    for (int q=0; q<nMapPts; ++q)
+    // update the scalars
+    *pId=this->Lines[i]->GetSeedId();
+    ++pId;
+
+    // build the poly verts
+    *pMapCells=nPts;
+    ++pMapCells;
+
+    for (int q=0; q<nPts; ++q)
       {
-      *pMapCells=1;
-      ++pMapCells;
+      // vert id
       *pMapCells=ptId;
       ++pMapCells;
       ++ptId;

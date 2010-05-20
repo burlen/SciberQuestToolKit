@@ -5,17 +5,11 @@
 /___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
 
 Copyright 2008 SciberQuest Inc.
-
 */
-#ifndef MetaDataKeys_h
-#define MetaDataKeys_h
+#include "CartesianDataBlockIODescriptorIterator.h"
 
-class vtkInformationStringKey;
-
-class vtkSQMetaDataKeys
+ostream &operator<<(ostream &os, const CartesianDataBlockIODescriptorIterator &it)
 {
-public:
-  static vtkInformationStringKey *DESCRIPTIVE_NAME();
-};
-
-#endif
+  os << it.GetFileView() << " -> " << it.GetMemView();
+  return os;
+}

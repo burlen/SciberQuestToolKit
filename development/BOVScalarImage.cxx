@@ -8,6 +8,8 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "BOVScalarImage.h"
 
+#include "SQMacros.h"
+
 //-----------------------------------------------------------------------------
 MPI_File Open(MPI_Comm comm, MPI_Info hints, const char *fileName)
 {
@@ -25,8 +27,9 @@ MPI_File Open(MPI_Comm comm, MPI_Info hints, const char *fileName)
   if (iErr!=MPI_SUCCESS)
     {
     MPI_Error_string(iErr,eStr,const_cast<int *>(&eStrLen));
-    cerr << "Error opeing file: " << fileName << endl;
-    cerr << eStr << endl;
+    sqErrorMacro(cerr,
+        << "Error opeing file: " << fileName << endl
+        << eStr);
     file=0;
     }
   return file;
@@ -72,7 +75,7 @@ ostream &operator<<(ostream &os, const BOVScalarImage &si)
   MPI_File file=si.GetFile();
   if (file)
     {
-    cerr << "  Hints:" << endl;
+    os << "  Hints:" << endl;
 
     int WorldRank;
     MPI_Comm_rank(MPI_COMM_WORLD,&WorldRank);
@@ -90,7 +93,7 @@ ostream &operator<<(ostream &os, const BOVScalarImage &si)
         MPI_Info_get_nthkey(info,i,key);
         MPI_Info_get(info,key,MPI_MAX_INFO_KEY,val,&flag);
 
-        cerr << "    " << key << "=" << val << endl;
+        os << "    " << key << "=" << val << endl;
         }
       }
     }

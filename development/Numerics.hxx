@@ -644,9 +644,9 @@ void Lambda2(int *input, int *output, double *dX,T *V, T *L2)
         const int _k=r-output[4];
         // index into output array;
         const int pi=_k*_ninj+_j*_ni+_i;
-        const int vi=3*pi;
-        const int vj=vi+1;
-        const int vk=vi+2;
+        ///const int vi=3*pi; TODO VALIDATE!!!
+        ///const int vj=vi+1;
+        ///const int vk=vi+2;
 
         // input array indices
         const int i=p-input[0];

@@ -33,54 +33,63 @@ public:
   FieldTraceData();
   virtual ~FieldTraceData();
 
-  // Description:
-  // Set the datast to be used as the seed source.
+  /**
+  Set the datast to be used as the seed source.
+  */
   virtual void SetSource(vtkDataSet *s)=0;
 
-  // Description:
-  // Copy the IntersectColor and SourceId array into the output.
+  /**
+  Copy the IntersectColor and SourceId array into the output.
+  */
   virtual void SetOutput(vtkDataSet *o);
 
-  // Description:
-  // compute seed points (centred on cells of input). Copy the cells
-  // on which we operate into the output.
+  /**
+  compute seed points (centred on cells of input). Copy the cells
+  on which we operate into the output.
+  */
   virtual int InsertCells(CellIdBlock *SourceIds)=0;
 
-
-  // Description:
-  // Get a specific field line.
+  /**
+  Get a specific field line.
+  */
   FieldLine *GetFieldLine(int i){ return this->Lines[i]; }
 
-  // Description:
-  // Free resources holding the trace geometry. This can be quite large.
-  // Other data is retained.
+  /**
+  Free resources holding the trace geometry. This can be quite large.
+  Other data is retained.
+  */
   void ClearTrace(int i)
     {
     this->Lines[i]->DeleteTrace();
     }
 
-  // Description:
-  // Free internal resources.
+  /**
+  Free internal resources.
+  */
   void ClearFieldLines();
 
-  // Description:
-  // Move scalar data (IntersectColor, SourceId) from the internal 
-  // structure into the vtk output data.
+  /**
+  Move scalar data (IntersectColor, SourceId) from the internal 
+  structure into the vtk output data.
+  */
   virtual int SyncScalars();
 
-  // Description:
-  // Move field line geometry (trace) from the internal structure
-  // into the vtk output data.
+  /**
+  Move field line geometry (trace) from the internal structure
+  into the vtk output data.
+  */
   virtual int SyncGeometry(){ return 0; }
 
-  // Description:
-  // Access to the termination object.
+  /**
+  Access to the termination object.
+  */
   TerminationCondition *GetTerminationCondition(){ return this->Tcon; }
 
-  // Description:
-  // Print a legend, can be reduced to the minimal number of colors needed
-  // or all posibilities may be included. The latter is better for temporal
-  // animations.
+  /**
+  Print a legend, can be reduced to the minimal number of colors needed
+  or all posibilities may be included. The latter is better for temporal
+  animations.
+  */
   virtual void PrintLegend(int reduce);
 
 protected:

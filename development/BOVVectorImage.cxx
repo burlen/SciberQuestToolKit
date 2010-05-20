@@ -42,7 +42,7 @@ ostream &operator<<(ostream &os, const BOVVectorImage &vi)
   MPI_File file=vi.GetXFile();
   if (file)
     {
-    cerr << "  Hints:" << endl;
+    os << "  Hints:" << endl;
     int WorldRank;
     MPI_Comm_rank(MPI_COMM_WORLD,&WorldRank);
     if (WorldRank==0)
@@ -58,7 +58,7 @@ ostream &operator<<(ostream &os, const BOVVectorImage &vi)
         int flag;
         MPI_Info_get_nthkey(info,i,key);
         MPI_Info_get(info,key,MPI_MAX_INFO_KEY,val,&flag);
-        cerr << "    " << key << "=" << val << endl;
+        os << "    " << key << "=" << val << endl;
         }
       }
     }

@@ -39,36 +39,49 @@ public:
     SourcePts(0),
     SourceCells(0),
     OutPts(0),
-    OutCells(0)
-      {  }
+    OutCells(0),
+    SourceId(0),
+    SourceCellGid(0)
+       {}
 
   virtual ~PoincareMapData();
 
-  // Description:
-  // Set the datast to be used as the seed source.
+  /**
+  Set the datast to be used as the seed source.
+  */
   virtual void SetSource(vtkDataSet *s);
 
-  // Description:
-  // Copy the IntersectColor and SourceId array into the output.
+  /**
+  Copy the IntersectColor and SourceId array into the output.
+  */
   virtual void SetOutput(vtkDataSet *o);
 
-  // Description:
-  // Convert a list of seed cells (sourceIds) to FieldLine
-  // structures and build the output (if any).
+  /**
+  Convert a list of seed cells (sourceIds) to FieldLine
+  structures and build the output (if any).
+  */
   virtual int InsertCells(CellIdBlock *SourceIds);
 
-  // Description:
-  // The Poincare map has no scalar data.
+  /**
+  Set the global id of cell 0 in this processes source cells.
+  */
+  void SetSourceCellGid(unsigned long gid){ this->SourceCellGid=gid; }
+  unsigned long GetSourceCellGid(){ return this->SourceCellGid; }
+
+  /**
+  Scalars are updated during sync geometry.
+  */
   virtual int SyncScalars(){ return 1; }
 
-  // Description:
-  // Move poincare map geometry from the internal structure
-  // into the vtk output data.
+  /**
+  Move poincare map geometry from the internal structure
+  into the vtk output data.
+  */
   virtual int SyncGeometry();
 
-
-  // Description:
-  // No legend is used for poincare map.
+  /**
+  No legend is used for poincare map.
+  */
   virtual void PrintLegend(int reduce){}
 
 
@@ -82,6 +95,9 @@ private:
 
   vtkFloatArray *OutPts;
   vtkCellArray *OutCells;
+
+  vtkIntArray *SourceId;
+  unsigned long SourceCellGid;
 };
 
 #endif

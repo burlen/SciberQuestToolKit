@@ -6,8 +6,8 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef vtkSQOOCReader_h
-#define vtkSQOOCReader_h
+#ifndef __vtkSQOOCReader_h
+#define __vtkSQOOCReader_h
 
 #include "vtkObject.h"
 #include "mpi.h"
@@ -15,16 +15,18 @@ Copyright 2008 SciberQuest Inc.
 class vtkInformation;
 class vtkInformationObjectBaseKey;
 class vtkInformationDoubleVectorKey;
+class vtkInformationIntegerVectorKey;
 class vtkDataSet;
+class CartesianBounds;
 
 /// Interface class for Out-Of-Core (OOC) file access.
 /**
 Allow one to read in chuncks of data as needed. A specific
 chunk of data is identified to be read by providing a point
 in which the chunk should reside. The implementation may
-implement caching as desired but this is not strictly 
-neccessary. This class also provides a number of keys
-that should be used by meta readers.
+implement caching as desired but this is not required.
+This class also provides a number of keys that should be used
+by meta readers.
 */
 class VTK_EXPORT vtkSQOOCReader : public vtkObject
 {
@@ -39,10 +41,13 @@ public:
   once set into the pipeline.
   */
   static vtkInformationObjectBaseKey *READER();
+
   /**
   This key is used to pass the dataset bounds downstream.
   */
+  // TODO use vtk WHOLE_BOUNDING_BOX key instead.
   static vtkInformationDoubleVectorKey *BOUNDS();
+  static vtkInformationIntegerVectorKey *PERIODIC_BC();
 
 public:
   vtkTypeRevisionMacro(vtkSQOOCReader, vtkObject);
@@ -66,16 +71,15 @@ public:
   virtual void Close()=0;
 
   /**
-  Read the data in a neighborhood bounded by the box.
+  Return the block of data containing point, p. The block
+  bounds are to be returned in the the WrokingDomain. These
+  may differ from the bounds of the dataset returned. For
+  example when providing ghost cells, that the filter should
+  ignore.
   */
-  virtual vtkDataSet *Read(double b[6])=0;
-
-  /**
-  Read the data in a neighborhood centered about a point, p.
-  The number of cells read is implementation specific but is
-  controlled by the dimension parameter.
-  */
-  virtual vtkDataSet *ReadNeighborhood(double p[3], int size)=0;
+  virtual vtkDataSet *ReadNeighborhood(
+      const double p[3],
+      CartesianBounds &WorkingDomain)=0;
 
   /**
   Turn on an array to be read.
@@ -94,21 +98,30 @@ public:
   vtkGetMacro(Time,double);
   vtkSetMacro(TimeIndex,int);
   vtkGetMacro(TimeIndex,int);
-  /// \@}
 
-protected:
-  vtkSQOOCReader()
-      :
-    TimeIndex(0),
-    Time(0)
-      {};
-  virtual ~vtkSQOOCReader(){};
+  /**
+  Set the number of ghost cells to use during a read. Default is
+  0.
+  */
+  void SetNumberOfGhostCells(int nghost){ this->NGhostCells=nghost; }
+  int GetNumberOfGhostCells(){ return this->NGhostCells; }
+  /// \@}
 
 private:
   vtkSQOOCReader(const vtkSQOOCReader &o);
   const vtkSQOOCReader &operator=(const vtkSQOOCReader &o);
 
 protected:
+  vtkSQOOCReader()
+      :
+    NGhostCells(0),
+    TimeIndex(0),
+    Time(0)
+      {};
+  virtual ~vtkSQOOCReader(){};
+
+protected:
+  int NGhostCells;
   int TimeIndex;
   double Time;
 };

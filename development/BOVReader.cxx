@@ -1,27 +1,41 @@
-#include "BOVReader.h"
-#include "BOVTimeStepImage.h"
+/*
+   ____    _ __           ____               __    ____
+  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
+ _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
 
-#include <sstream>
-using namespace std;
+Copyright 2008 SciberQuest Inc.
+*/
+#include "BOVReader.h"
 
 #include "vtkAlgorithm.h"
 #include "vtkFloatArray.h"
 #include "vtkImageData.h"
 #include "vtkPointData.h"
-#include "vtkMultiBlockDataSet.h"
-#include "vtkMultiProcessController.h"
-#include "vtkMPICommunicator.h"
-#include "mpi.h"
+// #include "vtkMultiBlockDataSet.h"
+// #include "vtkMultiProcessController.h"
+// #include "vtkMPICommunicator.h"
 
+#include "BinaryStream.hxx"
+#include "BOVTimeStepImage.h"
+#include "BOVScalarImageIterator.h"
+#include "BOVVectorImageIterator.h"
+#include "CartesianDataBlockIODescriptor.h"
+#include "CartesianDataBlockIODescriptorIterator.h"
 #include "MPIRawArrayIO.hxx"
+#include "SQMacros.h"
+#include "PrintUtils.h"
+
+#include <mpi.h>
+
+#include <sstream>
+using std::ostringstream;
 
 #ifdef WIN32
   #define PATH_SEP "\\"
 #else
   #define PATH_SEP "/"
 #endif
-
-#include "PrintUtils.h"
 
 //-----------------------------------------------------------------------------
 BOVReader::BOVReader()
@@ -37,12 +51,9 @@ BOVReader::BOVReader()
   MPI_Initialized(&ok);
   if (!ok)
     {
-    cerr
-      << "Error:" << endl
-      << __FILE__ << endl
-      << __LINE__ << endl
+    sqErrorMacro(cerr,
       << "The BOVReader requires MPI. Start ParaView in"
-      << " Client-Server mode using mpiexec." << endl;
+      << " Client-Server mode using mpiexec.");
     }
 }
 
@@ -79,9 +90,11 @@ const BOVReader &BOVReader::operator=(const BOVReader &other)
 //-----------------------------------------------------------------------------
 void BOVReader::SetCommunicator(MPI_Comm comm)
 {
-  if (this->Comm!=MPI_COMM_NULL
-    && comm!=MPI_COMM_WORLD
-    && comm!=MPI_COMM_SELF)
+  if (this->Comm==comm) return;
+
+  if ( this->Comm!=MPI_COMM_NULL
+    && this->Comm!=MPI_COMM_WORLD
+    && this->Comm!=MPI_COMM_SELF)
     {
     MPI_Comm_free(&this->Comm);
     }
@@ -121,6 +134,8 @@ void BOVReader::SetHints(MPI_Info hints)
 //-----------------------------------------------------------------------------
 void BOVReader::SetMetaData(const BOVMetaData *metaData)
 {
+  if (this->MetaData==metaData) return;
+
   if (this->MetaData!=metaData)
     {
     if (this->MetaData)
@@ -141,22 +156,14 @@ int BOVReader::Close()
   return this->MetaData && this->MetaData->CloseDataset();
 }
 
-
 //-----------------------------------------------------------------------------
 int BOVReader::Open(const char *fileName)
 {
   if (this->MetaData==0)
     {
-    cerr
-      << "Error:" << endl
-      << __FILE__ << endl
-      << __LINE__ << endl
-      << " Error: No MetaData object." << endl;
+    sqErrorMacro(cerr,"No MetaData object.");
     return 0;
     }
-
-//   int ok=this->MetaData->OpenDataset(fileName);
-//   return ok;
 
   // Only one process touches the disk to avoid
   // swamping the metadata server.
@@ -171,7 +178,7 @@ int BOVReader::Open(const char *fileName)
       }
     else
       {
-      Stream str;
+      BinaryStream str;
       this->MetaData->Pack(str);
       int nBytes=str.GetSize();
       MPI_Bcast(&nBytes,1,MPI_INT,0,this->Comm);
@@ -187,7 +194,7 @@ int BOVReader::Open(const char *fileName)
     if (nBytes>0)
       {
       ok=1;
-      Stream str;
+      BinaryStream str;
       str.Resize(nBytes);
       MPI_Bcast(str.GetData(),nBytes,MPI_CHAR,0,this->Comm);
       this->MetaData->UnPack(str);
@@ -208,16 +215,18 @@ bool BOVReader::IsOpen()
 }
 
 //-----------------------------------------------------------------------------
-int BOVReader::ReadScalarArray(BOVScalarImageIterator *it, vtkImageData *grid)
+int BOVReader::ReadScalarArray(
+      const BOVScalarImageIterator &it,
+      vtkImageData *grid)
 {
-  const vtkAMRBox &decomp=this->MetaData->GetDecomp();
-  const size_t nCells=decomp.GetNumberOfCells();
+  const CartesianExtent &decomp=this->MetaData->GetDecomp();
+  const size_t nCells=decomp.Size();
 
   // Create a VTK array and insert it into the point data.
   vtkFloatArray *fa=vtkFloatArray::New();
   fa->SetNumberOfComponents(1);
   fa->SetNumberOfTuples(nCells); // dual grid
-  fa->SetName(it->GetName());
+  fa->SetName(it.GetName());
   grid->GetPointData()->AddArray(fa);
   fa->Delete();
   float *pfa=fa->GetPointer(0);
@@ -225,7 +234,7 @@ int BOVReader::ReadScalarArray(BOVScalarImageIterator *it, vtkImageData *grid)
   // read
   return
     ReadDataArray(
-          it->GetFile(),
+          it.GetFile(),
           this->Hints,
           this->MetaData->GetDomain(),
           decomp,
@@ -235,24 +244,64 @@ int BOVReader::ReadScalarArray(BOVScalarImageIterator *it, vtkImageData *grid)
 }
 
 //-----------------------------------------------------------------------------
-int BOVReader::ReadVectorArray(BOVVectorImageIterator *it, vtkImageData *grid)
+int BOVReader::ReadScalarArray(
+      const BOVScalarImageIterator &fhit,
+      const CartesianDataBlockIODescriptor *descr,
+      vtkImageData *grid)
+{
+  const CartesianExtent &memExt=descr->GetMemExtent();
+  size_t nPts=memExt.Size();
+
+  vtkFloatArray *scal=vtkFloatArray::New();
+  scal->SetNumberOfComponents(1);
+  scal->SetNumberOfTuples(nPts);
+  scal->SetName(fhit.GetName());
+  grid->GetPointData()->AddArray(scal);
+  scal->Delete();
+  float *pScal=scal->GetPointer(0);
+
+  CartesianDataBlockIODescriptorIterator ioit(descr);
+  for (; ioit.Ok(); ioit.Next())
+    {
+    if (!ReadDataArray(
+            fhit.GetFile(),
+            this->Hints,
+            ioit.GetMemView(),
+            ioit.GetFileView(),
+            pScal))
+      {
+      sqErrorMacro(cerr,
+        << "ReadDataArray "<< fhit.GetName()
+        << " views " << ioit
+        << " failed.");
+      return 0;
+      }
+    }
+
+  return 1;
+}
+
+//-----------------------------------------------------------------------------
+int BOVReader::ReadVectorArray(
+      const BOVVectorImageIterator &it,
+      vtkImageData *grid)
 {
   // Memory requirements:
   // The vtk data is 3*sizeof(component file).
   // The intermediate buffer is sizeof(component file).
   // One might use a strided mpi type for the memory view
-  // but it's very much slower.
+  // but it's much slower if the seive buffer is either
+  // disabled or too small to hold the read.
 
-
-  const vtkAMRBox &domain=this->MetaData->GetDomain();
-  const vtkAMRBox &decomp=this->MetaData->GetDecomp();
-  const size_t nCells=decomp.GetNumberOfCells();
+  const CartesianExtent &domain=this->MetaData->GetDomain();
+  const CartesianExtent &decomp=this->MetaData->GetDecomp();
+  const size_t nCells=decomp.Size();
 
   // Create a VTK array.
   vtkFloatArray *fa=vtkFloatArray::New();
   fa->SetNumberOfComponents(3);
-  fa->SetNumberOfTuples(nCells); // remember dual grid
-  fa->SetName(it->GetName());
+  fa->SetNumberOfTuples(nCells); // dual grid
+  fa->SetName(it.GetName());
   grid->GetPointData()->AddArray(fa);
   fa->Delete();
   float *pfa=fa->GetPointer(0);
@@ -263,19 +312,15 @@ int BOVReader::ReadVectorArray(BOVVectorImageIterator *it, vtkImageData *grid)
     {
     // Read qth component array
     if (!ReadDataArray(
-            it->GetComponentFile(q),
+            it.GetComponentFile(q),
             this->Hints,
             domain,
             decomp,
             1,0,
             buf))
       {
-      cerr
-        << "Error:" << endl
-        << __FILE__ << endl
-        << __LINE__ << endl
-        << "ReadDataArray "<< it->GetName() 
-        << " component " << q << " failed." << endl;
+      sqErrorMacro(cerr,
+        "ReadDataArray "<< it.GetName() << " component " << q << " failed.");
       free(buf);
       return 0;
       }
@@ -292,16 +337,67 @@ int BOVReader::ReadVectorArray(BOVVectorImageIterator *it, vtkImageData *grid)
 }
 
 //-----------------------------------------------------------------------------
+int BOVReader::ReadVectorArray(
+      const BOVVectorImageIterator &fhit,
+      const CartesianDataBlockIODescriptor *descr,
+      vtkImageData *grid)
+{
+  const CartesianExtent &memExt=descr->GetMemExtent();
+  size_t nPts=memExt.Size();
+
+  float *buf=(float*)malloc(nPts*sizeof(float));
+
+  vtkFloatArray *vec=vtkFloatArray::New();
+  vec->SetNumberOfComponents(3);
+  vec->SetNumberOfTuples(nPts);
+  vec->SetName(fhit.GetName());
+  grid->GetPointData()->AddArray(vec);
+  vec->Delete();
+  float *pVec=vec->GetPointer(0);
+
+  CartesianDataBlockIODescriptorIterator ioit(descr);
+
+  for (int q=0; q<3; ++q)
+    {
+    for (ioit.Initialize(); ioit.Ok(); ioit.Next())
+      {
+      if (!ReadDataArray(
+              fhit.GetComponentFile(q),
+              this->Hints,
+              ioit.GetMemView(),
+              ioit.GetFileView(),
+              buf))
+        {
+        sqErrorMacro(cerr,
+          << "ReadDataArray "<< fhit.GetName()
+          << " component " << q
+          << " views " << ioit
+          << " failed.");
+        free(buf);
+        return 0;
+        }
+      }
+
+    for (size_t i=0; i<nPts; ++i)
+      {
+      pVec[3*i+q]=buf[i];
+      }
+    }
+
+  free(buf);
+
+  return 1;
+}
+
+
+//-----------------------------------------------------------------------------
 BOVTimeStepImage *BOVReader::OpenTimeStep(int stepNo)
 {
   if (!(this->MetaData && this->MetaData->IsDatasetOpen()))
     {
-    cerr
-      << "Error:" << endl
-      << __FILE__ << endl
-      << __LINE__ << endl
-      << "Cannot open a timestep because the"
-      << " dataset is not open." << endl;
+    sqErrorMacro(cerr,
+      << "Cannot open a timestep because the "
+      << "dataset is not open.");
     return 0;
     }
 
@@ -317,27 +413,12 @@ void BOVReader::CloseTimeStep(BOVTimeStepImage *handle)
 }
 
 //-----------------------------------------------------------------------------
-int BOVReader::ReadTimeStep(BOVTimeStepImage *step, vtkImageData *grid, vtkAlgorithm *alg)
+int BOVReader::ReadTimeStep(
+      const BOVTimeStepImage *step,
+      const CartesianDataBlockIODescriptor *descr,
+      vtkImageData *grid,
+      vtkAlgorithm *alg)
 {
-  if (!step)
-    {
-    cerr
-      << "Error:" << endl
-      << __FILE__ << endl
-      << __LINE__ << endl
-      << "Null step image received. Aborting." << endl;
-    return 0;
-    }
-  if (!grid)
-    {
-    cerr
-      << "Error:" << endl
-      << __FILE__ << endl
-      << __LINE__ << endl
-      << "Null output dataset received. Aborting." << endl;
-    return 0;
-    }
-
   double progInc=0.70/step->GetNumberOfImages();
   double prog=0.25;
   if(alg)alg->UpdateProgress(prog);
@@ -346,7 +427,7 @@ int BOVReader::ReadTimeStep(BOVTimeStepImage *step, vtkImageData *grid, vtkAlgor
   BOVScalarImageIterator sIt(step);
   for (;sIt.Ok(); sIt.Next())
     {
-    int ok=this->ReadScalarArray(&sIt,grid);
+    int ok=this->ReadScalarArray(sIt,descr,grid);
     if (!ok)
       {
       return 0;
@@ -359,7 +440,47 @@ int BOVReader::ReadTimeStep(BOVTimeStepImage *step, vtkImageData *grid, vtkAlgor
   BOVVectorImageIterator vIt(step);
   for (;vIt.Ok(); vIt.Next())
     {
-    int ok=this->ReadVectorArray(&vIt,grid);
+    int ok=this->ReadVectorArray(vIt,descr,grid);
+    if (!ok)
+      {
+      return 0;
+      }
+    prog+=progInc;
+    if(alg)alg->UpdateProgress(prog);
+    }
+
+  return 1;
+
+}
+
+//-----------------------------------------------------------------------------
+int BOVReader::ReadTimeStep(
+      const BOVTimeStepImage *step,
+      vtkImageData *grid,
+      vtkAlgorithm *alg)
+{
+  double progInc=0.70/step->GetNumberOfImages();
+  double prog=0.25;
+  if(alg)alg->UpdateProgress(prog);
+
+  // scalars
+  BOVScalarImageIterator sIt(step);
+  for (;sIt.Ok(); sIt.Next())
+    {
+    int ok=this->ReadScalarArray(sIt,grid);
+    if (!ok)
+      {
+      return 0;
+      }
+    prog+=progInc;
+    if(alg)alg->UpdateProgress(prog);
+    }
+
+  // vectors
+  BOVVectorImageIterator vIt(step);
+  for (;vIt.Ok(); vIt.Next())
+    {
+    int ok=this->ReadVectorArray(vIt,grid);
     if (!ok)
       {
       return 0;
@@ -376,21 +497,13 @@ int BOVReader::ReadMetaTimeStep(int stepIdx, vtkImageData *grid, vtkAlgorithm *a
 {
   if (!(this->MetaData && this->MetaData->IsDatasetOpen()))
     {
-    cerr
-      << "Error:" << endl
-      << __FILE__ << endl
-      << __LINE__ << endl
-      << "Cannot read because the dataset is not open." << endl;
+    sqErrorMacro(cerr,"Cannot read because the dataset is not open.");
     return 0;
     }
 
   if (grid==NULL)
     {
-    cerr
-      << "Error:" << endl
-      << __FILE__ << endl
-      << __LINE__ << endl
-      << "Empty output." << endl; 
+    sqErrorMacro(cerr,"Empty output.");
     return 0;
     }
 
@@ -434,11 +547,7 @@ int BOVReader::ReadMetaTimeStep(int stepIdx, vtkImageData *grid, vtkAlgorithm *a
     // other ?
     else
       {
-      cerr
-        << "Error:" << endl
-        << __FILE__ << endl
-        << __LINE__ << endl
-        << "bad array type for array " << arrayName << "." << endl; 
+      sqErrorMacro(cerr,"Bad array type for array " << arrayName << ".");
       }
     grid->GetPointData()->AddArray(array);
     array->Delete();
@@ -461,112 +570,3 @@ void BOVReader::PrintSelf(ostream &os)
 
   this->MetaData->Print(os);
 }
-
-// // Simple domian decomposition, returns nProc slabs in laregst dimension.
-// // If nProcs is larger than the number of cells in the largest dimension
-// // of the domian then a number of boxes in the decomposition will be empty.
-// //*****************************************************************************
-// int SlabDecomp(
-//       const int nProcs,
-//       const vtkAMRBox &domain,
-//       const int nGhost,
-//       vector<vtkAMRBox> &decomp)
-// {
-//   int nCells[3]={0};
-//   domain.GetNumberOfCells(nCells);
-// 
-//   // Assume this is in k direction, correct if it is not.
-//   int splitIdx=2;
-//   if (nCells[0]>=nCells[1] && nCells[0]>=nCells[2]) // i
-//     {
-//     splitIdx=0;
-//     }
-//   else
-//   if (nCells[1]>=nCells[0] && nCells[1]>=nCells[2]) // j
-//     {
-//     splitIdx=1;
-//     }
-// 
-//   int OK=1;
-//   if (nProcs>nCells[splitIdx])
-//     {
-//     #ifndef NDEBUG
-//     cerr << __LINE__ << " Warning: empty domains in decompositon." << endl;
-//     #endif
-//     OK=0;
-//     }
-// 
-//   int side=nCells[splitIdx]/nProcs;
-//   int nLarge=nCells[splitIdx]%nProcs; // These have width side+1
-//   int nRegular=nProcs-nLarge;         // These have width side
-// 
-//   // Compute first slab, to get the process started
-//   int slabLo[3];
-//   int slabHi[3]; 
-//   domain.GetDimensions(slabLo,slabHi);
-//   slabLo[splitIdx]=slabLo[splitIdx];
-//   slabHi[splitIdx]=slabLo[splitIdx]+side-1;
-//   for (int i=0; i<nProcs; ++i)
-//     {
-//     // If this is a larger slab, then add one cell to width.
-//     if (i>=nRegular)
-//       {
-//       slabHi[splitIdx]+=1;
-//       }
-//     // Make the slab.
-//     vtkAMRBox slab(slabLo,slabHi);
-//     slab.SetDataSetOrigin(domain.GetDataSetOrigin());
-//     slab.SetGridSpacing(domain.GetGridSpacing());
-//     slab.Grow(nGhost);
-//     // Trim the ghosts, if they are outsde the domain.
-//     slab&=domain;
-//     // Save it.
-//     decomp.push_back(slab);
-//     // Compute next slab.
-//     slabLo[splitIdx]=slabHi[splitIdx]+1;
-//     slabHi[splitIdx]=slabLo[splitIdx]+side-1;
-//     }
-//   return OK;
-// }
-
-// //-----------------------------------------------------------------------------
-// int BOVReader::DecomposeDomain(vtkMultiBlockDataSet *mbds)
-// {
-//   if (!this->MetaData)
-//     {
-//     #ifndef NDEBUG
-//     cerr << __LINE__ << " Error: No meta data." << endl;
-//     #endif
-//     return 0;
-//     }
-// 
-//   this->ClearDecomp();
-// 
-//   // Subset the domain.
-//   vtkAMRBox subset=this->MetaData->GetSubset();
-//   subset&=this->MetaData->GetDomain();
-//   // Decompose the subset.
-//   int status=SlabDecomp(this->NProcs, subset, this->NGhost, this->Blocks);
-//   // Configure the vtk object.
-//   mbds->SetNumberOfBlocks(this->NProcs);
-//   if (!this->Blocks[this->ProcId].Empty())
-//     {
-//     const vtkAMRBox &block=this->Blocks[this->ProcId];
-//     vtkImageData *id=vtkImageData::New();
-//     double X0[3]; 
-//     block.GetBoxOrigin(X0);
-//     id->SetOrigin(X0);
-//     double DX[3];
-//     block.GetGridSpacing(DX);
-//     id->SetSpacing(DX);
-//     int nCells[3];
-//     block.GetNumberOfCells(nCells);
-//     id->SetDimensions(nCells); // We are using the dual grid.
-//     mbds->SetBlock(this->ProcId,id);
-//     id->Delete();
-//     }
-// 
-//   return status;
-// }
-//
-

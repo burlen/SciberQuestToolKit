@@ -6,8 +6,8 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef FieldLine_h
-#define FieldLine_h
+#ifndef __FieldLine_h
+#define __FieldLine_h
 
 #include "vtkFloatArray.h"
 

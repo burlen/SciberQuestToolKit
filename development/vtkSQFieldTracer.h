@@ -76,17 +76,18 @@ public:
   vtkSetMacro(ForwardOnly,int);
   vtkGetMacro(ForwardOnly,int);
 
+
+  // Description:
+  // Set integrator type. RK2=1, RK4=2, RK45=3
+  void SetIntegratorType(int type);
+  int GetIntegratorType(){ return this->IntegratorType; }
+
   // Description:
   // Specify a uniform integration step unit for MinimumIntegrationStep, 
   // InitialIntegrationStep, and MaximumIntegrationStep. NOTE: The valid
   // units are LENGTH_UNIT (1) and CELL_LENGTH_UNIT (2).
   void SetStepUnit(int unit);
   vtkGetMacro(StepUnit,int);
-
-  // Description:
-  // Specify the Initial step size used for line integration.
-  vtkSetMacro(InitialStep,double);
-  vtkGetMacro(InitialStep,double);
 
   // Description:
   // Specify the Minimum step size used for line integration.
@@ -119,25 +120,12 @@ public:
   vtkGetMacro(NullThreshold,double);
 
   // Description:
-  // Control of the OOC read size. This parameter may have different
-  // meaning in the context of different readers.
-  vtkSetMacro(OOCNeighborhoodSize,int);
-  vtkGetMacro(OOCNeighborhoodSize,int);
-
-
-  // Description:
-  // Mark a coordinate direction as periodic. Streamlines that intersect
-  // a periodic BC, pass through it.
-  void SetPeriodicBC(int *flags)
-    { 
-    this->PeriodicBC[0]=flags[0];
-    this->PeriodicBC[1]=flags[1];
-    this->PeriodicBC[2]=flags[2];
-    }
-  void SetXHasPeriodicBC(int flag) { this->PeriodicBC[0]=flag; }
-  void SetYHasPeriodicBC(int flag) { this->PeriodicBC[1]=flag; }
-  void SetZHasPeriodicBC(int flag) { this->PeriodicBC[2]=flag; }
-
+  // If set then comm world is used during reads. This will result in better
+  // in-core preformance when there is enough memory for each process to
+  // have it's own copy of the data. Note: use of comm world precludes
+  // out-of-core operation.
+  vtkSetMacro(UseCommWorld,int);
+  vtkGetMacro(UseCommWorld,int);
 
   // Description:
   // If on then color map produced will only contain used colors. 
@@ -237,6 +225,12 @@ private:
   //ETX
 
   // Description:
+  // Determine the start id of the cells in data relative
+  // to the cells on all other processes in COMM_WORLD.
+  // Requires a global communcation.
+  unsigned long GetGlobalCellId(vtkDataSet *data);
+
+  // Description:
   // Convert from cell fractional unit into length.
   void ClipStep(
       double& step,
@@ -246,7 +240,6 @@ private:
       double cellLength,
       double lineLength);
 
-  // TODO use only arc-length
   // Description:
   // Convert from cell fractional unit into length.
   static double ConvertToLength(double interval,int unit,double cellLength);
@@ -255,11 +248,8 @@ private:
   void operator=(const vtkSQFieldTracer&);  // Not implemented.
 
 private:
-  vtkInitialValueProblemSolver* Integrator;
-  vtkMultiProcessController *Controller;
-
-  // Periodic BC
-  int PeriodicBC[3];
+  int WorldSize;
+  int WorldRank;
 
   // Parameter controlling load balance
   int UseDynamicScheduler;
@@ -269,18 +259,28 @@ private:
   // Parameters controlling integration
   int ForwardOnly;
   int StepUnit;
-  double InitialStep;
   double MinStep;
   double MaxStep;
   double MaxError;
   vtkIdType MaxNumberOfSteps;
   double MaxLineLength;
   double NullThreshold;
+  //BTX
+  enum
+    {
+    INTEGRATOR_NONE=0,
+    INTEGRATOR_RK2=1,
+    INTEGRATOR_RK4=2,
+    INTEGRATOR_RK45=3
+    };
+  //ETX
+  int IntegratorType;
+  vtkInitialValueProblemSolver* Integrator;
 
   static const double EPSILON;
 
   // Reader related
-  int OOCNeighborhoodSize;
+  int UseCommWorld;
   TerminationCondition *TermCon;
 
   //BTX

@@ -7,11 +7,15 @@
 Copyright 2008 SciberQuest Inc.
 
 */
-#ifndef Tuple_h
-#define Tuple_h
+#ifndef __Tuple_h
+#define __Tuple_h
 
-#include<vector>
+#include <vector>
 using std::vector;
+
+#include <iostream>
+using std::ostream;
+using std::endl;
 
 template <typename T> class Tuple;
 template<typename T>
@@ -25,7 +29,7 @@ public:
   Tuple(const Tuple &other);
   Tuple(T t1, T t2, T t3);
   Tuple(T t1 ,T t2, T t3, T t4, T t5, T t6);
-  Tuple(T *t, int n);
+  Tuple(const T *t, int n);
   Tuple(vector<T> &v);
   ~Tuple();
 
@@ -33,7 +37,7 @@ public:
 
 private:
   Tuple(); // not implemented
-  void Initialize(T *t, int n);
+  void Initialize(const T *t, int n);
 
   friend ostream &operator<< <> (ostream &os, const Tuple<T> &t);
 
@@ -51,7 +55,7 @@ Tuple<T>::Tuple(const Tuple &other)
 
 //-----------------------------------------------------------------------------
 template<typename T>
-Tuple<T>::Tuple(T *data, int size)
+Tuple<T>::Tuple(const T *data, int size)
       :
   Size(0),
   Data(0)
@@ -101,7 +105,7 @@ Tuple<T>::~Tuple()
 
 //-----------------------------------------------------------------------------
 template<typename T>
-void Tuple<T>::Initialize(T *data, int size)
+void Tuple<T>::Initialize(const T *data, int size)
 {
   if (this->Data)
     {

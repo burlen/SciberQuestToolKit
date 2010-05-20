@@ -9,12 +9,26 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkSQOOCBOVReader.h"
 
 #include "vtkObjectFactory.h"
-#include "vtkAMRBox.h"
 #include "vtkImageData.h"
+#include "vtkStructuredPointsWriter.h"
 
 #include "BOVMetaData.h"
 #include "BOVReader.h"
 #include "BOVTimeStepImage.h"
+#include "CartesianDecomp.h"
+#include "CartesianDataBlock.h"
+#include "CartesianDataBlockIODescriptor.h"
+#include "PriorityQueue.hxx"
+#include "Tuple.hxx"
+
+#include <sstream>
+using std::ostringstream;
+
+#define vtkSQOOCBOVReaderDEBUG 1
+
+#ifndef vtkSQOOCBOVReaderDEBUG
+  #define vtkSQOOCBOVReaderDEBUG 0
+#endif
 
 vtkCxxRevisionMacro(vtkSQOOCBOVReader, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQOOCBOVReader);
@@ -23,31 +37,78 @@ vtkStandardNewMacro(vtkSQOOCBOVReader);
 vtkSQOOCBOVReader::vtkSQOOCBOVReader()
     :
   Reader(0),
-  Image(0)
+  Image(0),
+  BlockAccessTime(0),
+  BlockCacheSize(10),
+  DomainDecomp(0),
+  LRUQueue(0),
+  CloseClearsCachedBlocks(1),
+  CacheHitCount(0),
+  CacheMissCount(0)
 {
-  this->Reader=new BOVReader;
+  this->LRUQueue=new PriorityQueue<unsigned long int>;
 }
 
 //-----------------------------------------------------------------------------
 vtkSQOOCBOVReader::~vtkSQOOCBOVReader()
 {
-  delete this->Reader;
-  if (this->Image)
-    {
-    this->Close();
-    }
+  this->Close();
+  this->SetReader(0);
+  this->SetDomainDecomp(0);
+  delete this->LRUQueue;
 }
 
+/*
 //-----------------------------------------------------------------------------
 void vtkSQOOCBOVReader::SetReader(BOVReader *reader)
 {
   delete this->Reader;
   this->Reader=new BOVReader;
   *this->Reader=*reader;
-  // TODO It may be better to set on the fly, if
-  // neighborhood size is 0 then comm_world may be better.
-  // Force solo reads!
+
+  // Force solo reads
   // this->Reader->SetCommunicator(MPI_COMM_SELF);
+}
+*/
+
+//-----------------------------------------------------------------------------
+SetRefCountedPointerImpl(vtkSQOOCBOVReader,Reader,BOVReader);
+
+//-----------------------------------------------------------------------------
+SetRefCountedPointerImpl(vtkSQOOCBOVReader,DomainDecomp,CartesianDecomp);
+
+//-----------------------------------------------------------------------------
+void vtkSQOOCBOVReader::InitializeBlockCache()
+{
+  this->ClearBlockCache();
+
+  int nBlocks=this->DomainDecomp->GetNumberOfBlocks();
+
+  this->LRUQueue->Initialize(this->BlockCacheSize,nBlocks);
+
+  this->BlockUse.assign(nBlocks,0);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQOOCBOVReader::ClearBlockCache()
+{
+  this->BlockAccessTime=0;
+
+  this->CacheHitCount=0;
+  this->CacheMissCount=0;
+
+  while (!this->LRUQueue->Empty())
+    {
+    CartesianDataBlock *block
+      = this->DomainDecomp->GetBlock(this->LRUQueue->Pop());
+
+    block->SetData(0);
+    }
+
+  #if vtkSQOOCBOVReaderDEBUG>0
+  int nBlocks=this->BlockUse.size();
+  this->BlockUse.assign(nBlocks,0);
+  #endif
 }
 
 
@@ -60,95 +121,186 @@ void vtkSQOOCBOVReader::SetCommunicator(MPI_Comm comm)
 //-----------------------------------------------------------------------------
 int vtkSQOOCBOVReader::Open()
 {
-  if (this->Image)
-    {
-    this->Close();
-    }
+  this->Close();
+
   this->Image=this->Reader->OpenTimeStep(this->TimeIndex);
   if (!this->Image)
     {
     vtkWarningMacro("Failed to open file image!");
     return 0;
     }
+
   return 1;
 }
 
 //-----------------------------------------------------------------------------
 void vtkSQOOCBOVReader::Close()
 {
-  this->Reader->CloseTimeStep(this->Image);
-  this->Image=0;
-}
-
-//-----------------------------------------------------------------------------
-vtkDataSet *vtkSQOOCBOVReader::Read(double b[6])
-{
-  vtkWarningMacro("Not implemented!");
-  return 0;
-}
-
-//-----------------------------------------------------------------------------
-vtkDataSet *vtkSQOOCBOVReader::ReadNeighborhood(double p[3], int size)
-{
-  cerr << *this->Image << endl;
-
-  // Locate the cell where this point lies.
-  double X0[3];
-  double dX[3];
-
-  const vtkAMRBox &subset=this->Reader->GetMetaData()->GetSubset();
-  subset.GetDataSetOrigin(X0);
-  subset.GetGridSpacing(dX);
-
-  vtkAMRBox decomp(subset);
-  if (size>0)
+  #if vtkSQOOCBOVReaderDEBUG>0
+  int nBlocks=this->BlockUse.size();
+  int nUsed=0;
+  for (int i=0; i<nBlocks; ++i)
     {
-    // TODO this isn't right
-    // for example size=514
-    // (227.161, 12.9863, 80.4431) -> (0,0,0)(484,269,337)(0,0,0)(1,1,1)0x2aaab5939d88
-    // (182.751, 269.052, 82.8395) -> (0,12,0)(439,511,339)(0,0,0)(1,1,1)0x2aaab5939d88
-    // This scheme will perform poorly, we need to
-    // create efficient partitionaing and datastructures
-    // and cache.
-    int cellId[3];
-    cellId[0]=static_cast<int>((p[0]-X0[0])/dX[0]);
-    cellId[1]=static_cast<int>((p[1]-X0[1])/dX[1]);
-    cellId[2]=static_cast<int>((p[2]-X0[2])/dX[2]);
+    nUsed+=this->BlockUse[i];
+    }
+  int worldRank=0;
+  MPI_Comm_rank(MPI_COMM_WORLD,&worldRank);
+  double hitMissRatio
+    = (this->CacheMissCount?(double)this->CacheHitCount/(double)this->CacheMissCount:0.0);
+  cerr
+    << "[" << worldRank << "]"
+    << " CacheSize=" << this->BlockCacheSize
+    << " nUniqueBlocks=" << nUsed
+    << " HitCount=" << this->CacheHitCount
+    << " MissCount=" << this->CacheMissCount
+    << " Ratio=" <<  hitMissRatio
+    << endl;
+  #endif
 
-    // Make a box that contains it
-    decomp.SetDimensions(cellId[0],cellId[1],cellId[2],cellId[0],cellId[1],cellId[2]);
-    decomp.Grow(size/2);
-    decomp&=subset;
+  if (CloseClearsCachedBlocks)
+    {
+    this->ClearBlockCache();
     }
 
-  // Set up a vtk dataset to hold the results.
-  int nPoints[3];
-  decomp.GetNumberOfCells(nPoints); // dual grid
-  decomp.GetBoxOrigin(X0);
-
-  vtkImageData *idds=vtkImageData::New();
-  idds->SetDimensions(nPoints);
-  idds->SetOrigin(X0);
-  idds->SetSpacing(dX);
-
-  // Actual read.
-  this->Reader->GetMetaData()->SetDecomp(decomp);
-  int ok=this->Reader->ReadTimeStep(this->Image,idds,(vtkAlgorithm*)0);
-  if (!ok)
+  if (this->Image)
     {
-    vtkErrorMacro("Read failed. Aborting.");
+    this->Reader->CloseTimeStep(this->Image);
+    this->Image=0;
+    }
+}
+
+//-----------------------------------------------------------------------------
+vtkDataSet *vtkSQOOCBOVReader::ReadNeighborhood(
+    const double pt[3],
+    CartesianBounds &workingDomain)
+{
+  // cerr << *this->Image << endl;
+
+  // Locate the block containing the given point.
+  CartesianDataBlock *block=this->DomainDecomp->GetBlock(pt);
+  if (block==0)
+    {
+    vtkErrorMacro(
+        << "No block in "
+        << this->DomainDecomp->GetBounds()
+        << " contains "
+        << Tuple<double>(pt,3)
+        << ".");
     return 0;
     }
 
-  #if defined vtkSQOOCBOVReaderDEBUG
-  static int ww=0;
-  ++ww;
-  cerr << this->Reader->GetProcId() << " " << ww
-       << " Read (" << p[0] << ", " << p[1] << ", " << p[2]
-       << ") -> ";
-  cerr << decomp.Print(cerr) << endl;
+  #if vtkSQOOCBOVReaderDEBUG>1
+  cerr << "Accessing " << Tuple<int>(block->GetId(),4);
   #endif
-  return idds;
+
+  // update the working domain.
+  double *X0=this->DomainDecomp->GetOrigin();
+  double *dX=this->DomainDecomp->GetSpacing();
+
+  CartesianExtent workingExt(block->GetExtent());
+  workingExt.GetBounds(X0,dX,workingDomain.GetData());
+
+
+  // determine if the data associated with block is cached.
+  vtkImageData *data=block->GetData();
+  if (data)
+    {
+    #if vtkSQOOCBOVReaderDEBUG>1
+    cerr << "\tCache hit" << endl;
+    #endif
+
+    #if vtkSQOOCBOVReaderDEBUG>0
+    ++this->CacheHitCount;
+    #endif
+
+    // The data is locally cached. Update the LRU queue with the block's
+    // new access time, and return the cached dataset.
+    this->LRUQueue->Update(block->GetIndex(),++this->BlockAccessTime);
+
+    return data;
+    }
+  else
+    {
+    #if vtkSQOOCBOVReaderDEBUG>1
+    cerr << "\tCache miss";
+    #endif
+
+    #if vtkSQOOCBOVReaderDEBUG>0
+    ++this->CacheMissCount;
+    this->BlockUse[block->GetIndex()]=1;
+    #endif
+
+    // The data is not cached. If the cache is full then remove
+    // the least recently used block and delete it's dataset. Insert
+    // the requested block into the cache, load and return it's
+    // associated dataset.
+    if ((this->BlockCacheSize>0) && this->LRUQueue->Full())
+      {
+      // get the oldest cahched block and delete it's associated data.
+      CartesianDataBlock *lruBlock
+        = this->DomainDecomp->GetBlock(this->LRUQueue->Pop());
+
+      lruBlock->SetData(0);
+
+      #if vtkSQOOCBOVReaderDEBUG>1
+      cerr << "\tRemoved " << Tuple<int>(lruBlock->GetId(),4);
+      #endif
+      }
+
+    // configure a new dataset and read with ghost cells. Note: working
+    // domain is smaller than the bounds of the dataset that is read.
+    CartesianDataBlockIODescriptor *descr
+      = this->DomainDecomp->GetBlockIODescriptor(block->GetIndex());
+
+    const CartesianExtent &blockExt=descr->GetMemExtent();
+
+    int nPoints[3];
+    blockExt.Size(nPoints);
+
+    double blockX0[3];
+    blockExt.GetLowerBound(X0,dX,blockX0);
+
+    data=vtkImageData::New();
+    data->SetDimensions(nPoints);
+    data->SetOrigin(blockX0);
+    data->SetSpacing(dX);
+
+    int ok=this->Reader->ReadTimeStep(this->Image,descr,data,(vtkAlgorithm*)0);
+    if (!ok)
+      {
+      data->Delete();
+      vtkErrorMacro("Read failed.");
+      return 0;
+      }
+
+
+    #if vtkSQOOCBOVReaderDEBUG>2
+    // data->Print(cerr);
+    vtkStructuredPointsWriter *idw=vtkStructuredPointsWriter::New();
+    ostringstream oss;
+    oss << "block." << block->GetIndex() << ".vtk";
+    idw->SetFileName(oss.str().c_str());
+    idw->SetInput(data);
+    idw->Write();
+    idw->Delete();
+    #endif
+
+    // cache the dataset
+    if (this->BlockCacheSize>0)
+      {
+      #if vtkSQOOCBOVReaderDEBUG>1
+      cerr << "\tInserted " << Tuple<int>(block->GetId(),4) << endl;
+      #endif
+
+      // cache the newly read dataset, and insert this block into
+      // the lru queue.
+      block->SetData(data);
+      data->Delete();
+      this->LRUQueue->Push(block->GetIndex(),++this->BlockAccessTime);
+      }
+    }
+
+  return data;
 }
 
 //-----------------------------------------------------------------------------

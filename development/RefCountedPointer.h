@@ -30,7 +30,7 @@ public:
   virtual void Register(){ ++this->N; }
 
   virtual int GetRefCount(){ return this->N; }
-  virtual int SetRefCount(int rc){ this->N=rc; }
+  virtual void SetRefCount(int rc){ this->N=rc; }
 
   virtual void Print(ostream &os){}
   virtual void PrintRefCount(ostream &os){ os << "RefCount=" << this->N; }

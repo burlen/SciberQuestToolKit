@@ -16,256 +16,537 @@ Copyright 2008 SciberQuest Inc.
 *                                                                             *
 *******************************************************************************
 -->
-<ProxyGroup name="common-ui">
-<!--========================================================================-->
-<Proxy name="BOVReaderUI">
-  <Documentation
-      short_help="BOV reader.">
-      long_help="BOV Reader. Reads raw or brick of values files in parallel handles time."
-  </Documentation>
-  <!-- File Name -->
-  <StringVectorProperty
-    name="FileName"
-    animateable="0"
-    command="SetFileName"
-    number_of_elements="1">
-  <FileListDomain name="files"/>
-  <Documentation>
-    This property specifies the file name for the reader.
-  </Documentation>
-  </StringVectorProperty>
-  <!-- Time Steps -->
-  <DoubleVectorProperty 
-    name="TimestepValues"
-    information_only="1">
-    <TimeStepsInformationHelper/>
-    <Documentation>
-    Available timestep values.
-    </Documentation>
-  </DoubleVectorProperty>
-  <!-- Array selection -->
-  <StringVectorProperty
-    name="PointArrayInfo"
-    information_only="1">
-    <ArraySelectionInformationHelper attribute_name="Point"/>
-  </StringVectorProperty>
-  <StringVectorProperty
-    name="PointArrayStatus"
-    command="SetPointArrayStatus"
-    number_of_elements="0"
-    repeat_command="1"
-    number_of_elements_per_command="2"
-    element_types="2 0"
-    information_property="PointArrayInfo"
-    label="Arrays">
-    <ArraySelectionDomain name="array_list">
-      <RequiredProperties>
-        <Property name="PointArrayInfo" function="ArrayList"/>
-      </RequiredProperties>
-    </ArraySelectionDomain>
-    <Documentation>
-    This property is used to select arrays to read in.
-  </Documentation>
-  </StringVectorProperty>
-  <!-- Subset selection -->
-  <IntVectorProperty 
-    name="ISubsetInfo"
-    command="GetISubsetRange"
-    information_only="1">
-    <SimpleIntInformationHelper/>
-  </IntVectorProperty>
-  <IntVectorProperty 
-    name="ISubset"
-    command="SetISubset"
-    number_of_elements="2" 
-    default_values="1 0"
-    animateable="0"
-    information_property="ISubsetInfo" >
-    <IntRangeDomain name="range">
-      <RequiredProperties>
-          <Property name="ISubsetInfo" function="Range"/>
-      </RequiredProperties>
-    </IntRangeDomain>
-    <Documentation>
-      This property controls what subset of data is read in. Subset for smaller memory footprint and better interactivity.
-    </Documentation>
-  </IntVectorProperty>
-  <IntVectorProperty 
-    name="JSubsetInfo"
-    command="GetJSubsetRange"
-    information_only="1">
-    <SimpleIntInformationHelper/>
-  </IntVectorProperty>
-  <IntVectorProperty 
-    name="JSubset"
-    command="SetJSubset"
-    number_of_elements="2" 
-    default_values="1 0"
-    animateable="0"
-    information_property="JSubsetInfo" >
-    <IntRangeDomain name="range">
-      <RequiredProperties>
-          <Property name="JSubsetInfo" function="Range"/>
-      </RequiredProperties>
-    </IntRangeDomain>
-    <Documentation>
-      This property controls what subset of data is read in. Subset for smaller memory footprint and better interactivity.
-    </Documentation>
-  </IntVectorProperty>
-  <IntVectorProperty 
-    name="KSubsetInfo"
-    command="GetKSubsetRange"
-    information_only="1">
-    <SimpleIntInformationHelper/>
-  </IntVectorProperty>
-  <IntVectorProperty 
-    name="KSubset"
-    command="SetKSubset"
-    number_of_elements="2" 
-    default_values="1 0"
-    animateable="0"
-    information_property="KSubsetInfo" >
-    <IntRangeDomain name="range">
-      <RequiredProperties>
-          <Property name="KSubsetInfo" function="Range"/>
-      </RequiredProperties>
-    </IntRangeDomain>
-    <Documentation>
-      This property controls what subset of data is read in. Subset for smaller memory footprint and better interactivity.
-    </Documentation>
-  </IntVectorProperty>
-
-  <!-- MPI File Hints -->
-  <IntVectorProperty
-    name="UseCollectiveIO"
-    lable="Collective IO"
-    command="SetUseCollectiveIO"
-    number_of_elements="1"
-    default_values="2" >
-    <EnumerationDomain name="enum">
-      <Entry value="0" text="automatic"/>
-      <Entry value="1" text="disabled"/>
-      <Entry value="2" text="enabled"/>
-    </EnumerationDomain>
-    <Documentation>
-      Turn on/off MPI-IO collective buffering.
-    </Documentation>
-  </IntVectorProperty>
-
-  <IntVectorProperty
-    name="NumberOfIONodes"
-    lable="N IO Nodes"
-    command="SetNumberOfIONodes"
-    number_of_elements="1"
-    default_values="0" >
-    <Documentation>
-      Set the number of IO nodes. Set to 0 to use the implementation default.
-    </Documentation>
-  </IntVectorProperty>
-
-  <IntVectorProperty
-    name="CollectBufferSize"
-    lable="CIO Buffer Size"
-    command="SetCollectBufferSize"
-    number_of_elements="1"
-    default_values="0" >
-    <Documentation>
-      Set the size of the buffer for aggregation. Set to 0 to use the implementation default.
-    </Documentation>
-  </IntVectorProperty>
-
-  <IntVectorProperty
-    name="UseDataSieving"
-    lable="Data Sieving"
-    command="SetUseDataSieving"
-    number_of_elements="1"
-    default_values="0" >
-    <EnumerationDomain name="enum">
-      <Entry value="0" text="automatic"/>
-      <Entry value="1" text="disabled"/>
-      <Entry value="2" text="enabled"/>
-    </EnumerationDomain>
-    <Documentation>
-      Turn on/off MPI-IO collective buffering.
-    </Documentation>
-  </IntVectorProperty>
-
-  <IntVectorProperty
-    name="SieveBufferSize"
-    lable="Sieve Buffer Size"
-    command="SetSieveBufferSize"
-    number_of_elements="1"
-    default_values="0" >
-    <Documentation>
-      Set the size of the buffer for sieving. Set to 0 to use the implementation default.
-    </Documentation>
-  </IntVectorProperty>
-
-</Proxy>
-
-</ProxyGroup>
 
 <ProxyGroup name="sources">
 
 <!--========================================================================-->
-<SourceProxy
-    name="BOVReader"
-    class="vtkSQBOVReader"
-    label="SQ BOV Reader"
-    base_proxyname="BOVReaderUI"
-    base_proxygroup="common-ui">
-  <Documentation
-      short_help="BOV reader.">
-      long_help="BOV Reader. Reads raw or brick of values files in parallel handles time."
-  </Documentation>
-  <!-- Meta Flag -->
-  <IntVectorProperty 
-    name="MetaRead" 
-    command="SetMetaRead" 
-    number_of_elements="1"
-    default_values="0">
-    <BooleanDomain name="bool"/>
-    <Documentation>
-    If checked meta mode is active. Meta data will be read and processed however actual read will be 
-    deffered to down stream filters. If unchecked the reader performs as expected, an actual read of
-    the requested arrays.
+  <SourceProxy
+      name="BOVReader"
+      class="vtkSQBOVReader"
+      label="SQ BOV Reader">
+    <Documentation
+        short_help="BOV reader.">
+        long_help="BOV Reader. Reads raw or brick of values files in parallel handles time."
     </Documentation>
-  </IntVectorProperty>
-  <Hints>
-    <Property name="MetaRead" show="0"/>
-    <ReaderFactory extensions="bov" file_description="Brick-Of-Values files." />
-  </Hints>
-</SourceProxy>
 
-<!--========================================================================-->
-<SourceProxy
-    name="BOVMetaReader"
-    class="vtkSQBOVReader"
-    label="SQ BOV Meta Reader"
-    base_proxyname="BOVReaderUI"
-    base_proxygroup="common-ui">
-  <Documentation
-      short_help="BOV reader.">
-      long_help="BOV Reader. Reads raw or brick of values files in parallel handles time."
-  </Documentation>
-  <!-- Meta Flag -->
-  <IntVectorProperty 
-    name="MetaRead" 
-    command="SetMetaRead" 
-    number_of_elements="1"
-    default_values="1">
-    <BooleanDomain name="bool"/>
+    <!-- File Name -->
+    <StringVectorProperty
+        name="FileName"
+        animateable="0"
+        command="SetFileName"
+        number_of_elements="1">
+    <FileListDomain name="files"/>
     <Documentation>
-    If checked meta mode is active. Meta data will be read and processed however actual read will be 
-    deffered to down stream filters. If unchecked the reader performs as expected, an actual read of
-    the requested arrays.
+      This property specifies the file name for the reader.
     </Documentation>
-  </IntVectorProperty>
-  <Hints>
-    <Property name="MetaRead" show="0"/>
-    <ReaderFactory extensions="bovm" file_description="Brick-Of-Values files." />
-  </Hints>
-</SourceProxy>
+    </StringVectorProperty>
+    <!-- Time Steps -->
+    <DoubleVectorProperty 
+        name="TimestepValues"
+        information_only="1">
+      <TimeStepsInformationHelper/>
+      <Documentation>
+      Available timestep values.
+      </Documentation>
+    </DoubleVectorProperty>
+    <!-- Array selection -->
+    <StringVectorProperty
+        name="PointArrayInfo"
+        information_only="1">
+      <ArraySelectionInformationHelper attribute_name="Point"/>
+    </StringVectorProperty>
+    <StringVectorProperty
+        name="PointArrayStatus"
+        command="SetPointArrayStatus"
+        number_of_elements="0"
+        repeat_command="1"
+        number_of_elements_per_command="2"
+        element_types="2 0"
+        information_property="PointArrayInfo"
+        label="Arrays">
+      <ArraySelectionDomain name="array_list">
+        <RequiredProperties>
+          <Property name="PointArrayInfo" function="ArrayList"/>
+        </RequiredProperties>
+      </ArraySelectionDomain>
+      <Documentation>
+      This property is used to select arrays to read in.
+    </Documentation>
+    </StringVectorProperty>
+    <!-- Subset selection -->
+    <IntVectorProperty 
+        name="ISubsetInfo"
+        command="GetISubsetRange"
+        information_only="1">
+      <SimpleIntInformationHelper/>
+    </IntVectorProperty>
+    <IntVectorProperty 
+        name="ISubset"
+        command="SetISubset"
+        number_of_elements="2" 
+        default_values="1 0"
+        animateable="0"
+        information_property="ISubsetInfo" >
+      <IntRangeDomain name="range">
+        <RequiredProperties>
+            <Property name="ISubsetInfo" function="Range"/>
+        </RequiredProperties>
+      </IntRangeDomain>
+      <Documentation>
+        This property controls what subset of data is read in. Subset for smaller memory footprint and better interactivity.
+      </Documentation>
+    </IntVectorProperty>
+    <IntVectorProperty 
+        name="JSubsetInfo"
+        command="GetJSubsetRange"
+        information_only="1">
+      <SimpleIntInformationHelper/>
+    </IntVectorProperty>
+    <IntVectorProperty 
+        name="JSubset"
+        command="SetJSubset"
+        number_of_elements="2" 
+        default_values="1 0"
+        animateable="0"
+        information_property="JSubsetInfo" >
+      <IntRangeDomain name="range">
+        <RequiredProperties>
+            <Property name="JSubsetInfo" function="Range"/>
+        </RequiredProperties>
+      </IntRangeDomain>
+      <Documentation>
+        This property controls what subset of data is read in. Subset for smaller memory footprint and better interactivity.
+      </Documentation>
+    </IntVectorProperty>
+    <IntVectorProperty 
+        name="KSubsetInfo"
+        command="GetKSubsetRange"
+        information_only="1">
+      <SimpleIntInformationHelper/>
+    </IntVectorProperty>
+    <IntVectorProperty 
+        name="KSubset"
+        command="SetKSubset"
+        number_of_elements="2" 
+        default_values="1 0"
+        animateable="0"
+        information_property="KSubsetInfo" >
+      <IntRangeDomain name="range">
+        <RequiredProperties>
+            <Property name="KSubsetInfo" function="Range"/>
+        </RequiredProperties>
+      </IntRangeDomain>
+      <Documentation>
+        This property controls what subset of data is read in. Subset for smaller memory footprint and better interactivity.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- MPI File Hints -->
+    <IntVectorProperty
+        name="UseCollectiveIO"
+        lable="Collective IO"
+        command="SetUseCollectiveIO"
+        number_of_elements="1"
+        default_values="2" >
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="automatic"/>
+        <Entry value="1" text="disabled"/>
+        <Entry value="2" text="enabled"/>
+      </EnumerationDomain>
+      <Documentation>
+        Turn on/off MPI-IO collective buffering.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="NumberOfIONodes"
+        lable="N IO Nodes"
+        command="SetNumberOfIONodes"
+        number_of_elements="1"
+        default_values="0" >
+      <Documentation>
+        Set the number of IO nodes. Set to 0 to use the implementation default.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="CollectBufferSize"
+        lable="CIO Buffer Size"
+        command="SetCollectBufferSize"
+        number_of_elements="1"
+        default_values="1048576" >
+      <EnumerationDomain name="enum">
+        <Entry value="0"       text="default"/>
+        <Entry value="524288"  text=" 512 MB"/>
+        <Entry value="1048576" text=" 1.0 GB"/>
+        <Entry value="1572864" text=" 1.5 GB"/>
+        <Entry value="2097152" text=" 2.0 GB"/>
+      </EnumerationDomain>
+      <Documentation>
+        Set the size of the buffer for aggregation. Set to 0 to use the implementation default.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="UseDataSieving"
+        lable="Data Sieving"
+        command="SetUseDataSieving"
+        number_of_elements="1"
+        default_values="0" >
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="automatic"/>
+        <Entry value="1" text="disabled"/>
+        <Entry value="2" text="enabled"/>
+      </EnumerationDomain>
+      <Documentation>
+        Turn on/off MPI-IO collective buffering.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="SieveBufferSize"
+        lable="Sieve Buffer Size"
+        command="SetSieveBufferSize"
+        number_of_elements="1"
+        default_values="0" >
+      <EnumerationDomain name="enum">
+        <Entry value="0"       text="default"/>
+        <Entry value="524288"  text=" 512 MB"/>
+        <Entry value="1048576" text=" 1.0 GB"/>
+        <Entry value="1572864" text=" 1.5 GB"/>
+        <Entry value="2097152" text=" 2.0 GB"/>
+      </EnumerationDomain>
+      <Documentation>
+        Set the size of the buffer for sieving. Set to 0 to use the implementation default.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Meta Flag -->
+    <IntVectorProperty 
+        name="MetaRead" 
+        command="SetMetaRead" 
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+      If checked meta mode is active. Meta data will be read and processed however actual read will be 
+      deffered to down stream filters. If unchecked the reader performs as expected, an actual read of
+      the requested arrays.
+      </Documentation>
+    </IntVectorProperty>
+    <Hints>
+      <Property name="MetaRead" show="0"/>
+      <ReaderFactory extensions="bov" file_description="Brick-Of-Values files." />
+    </Hints>
+  </SourceProxy>
+
+  <!--========================================================================-->
+  <SourceProxy
+      name="BOVMetaReader"
+      class="vtkSQBOVReader"
+      label="SQ BOV Meta Reader">
+    <Documentation
+        short_help="BOV reader.">
+        long_help="BOV Reader. Reads raw or brick of values files in parallel handles time."
+    </Documentation>
+
+    <!-- File Name -->
+    <StringVectorProperty
+        name="FileName"
+        animateable="0"
+        command="SetFileName"
+        number_of_elements="1">
+    <FileListDomain name="files"/>
+    <Documentation>
+      This property specifies the file name for the reader.
+    </Documentation>
+    </StringVectorProperty>
+
+    <!-- Time Steps -->
+    <DoubleVectorProperty 
+        name="TimestepValues"
+        information_only="1">
+      <TimeStepsInformationHelper/>
+      <Documentation>
+      Available timestep values.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <!-- Array selection -->
+    <StringVectorProperty
+        name="PointArrayInfo"
+        information_only="1">
+      <ArraySelectionInformationHelper attribute_name="Point"/>
+    </StringVectorProperty>
+    <StringVectorProperty
+        name="PointArrayStatus"
+        command="SetPointArrayStatus"
+        number_of_elements="0"
+        repeat_command="1"
+        number_of_elements_per_command="2"
+        element_types="2 0"
+        information_property="PointArrayInfo"
+        label="Arrays">
+      <ArraySelectionDomain name="array_list">
+        <RequiredProperties>
+          <Property name="PointArrayInfo" function="ArrayList"/>
+        </RequiredProperties>
+      </ArraySelectionDomain>
+      <Documentation>
+      This property is used to select arrays to read in.
+    </Documentation>
+    </StringVectorProperty>
+
+    <!-- Subset selection -->
+    <IntVectorProperty 
+        name="ISubsetInfo"
+        command="GetISubsetRange"
+        information_only="1">
+      <SimpleIntInformationHelper/>
+    </IntVectorProperty>
+    <IntVectorProperty 
+        name="ISubset"
+        command="SetISubset"
+        number_of_elements="2" 
+        default_values="1 0"
+        animateable="0"
+        information_property="ISubsetInfo" >
+      <IntRangeDomain name="range">
+        <RequiredProperties>
+            <Property name="ISubsetInfo" function="Range"/>
+        </RequiredProperties>
+      </IntRangeDomain>
+      <Documentation>
+        Set data subset range in the z direction.
+      </Documentation>
+    </IntVectorProperty>
+    <IntVectorProperty 
+        name="JSubsetInfo"
+        command="GetJSubsetRange"
+        information_only="1">
+      <SimpleIntInformationHelper/>
+    </IntVectorProperty>
+    <IntVectorProperty 
+        name="JSubset"
+        command="SetJSubset"
+        number_of_elements="2" 
+        default_values="1 0"
+        animateable="0"
+        information_property="JSubsetInfo" >
+      <IntRangeDomain name="range">
+        <RequiredProperties>
+            <Property name="JSubsetInfo" function="Range"/>
+        </RequiredProperties>
+      </IntRangeDomain>
+      <Documentation>
+        Set data subset range in the y direction.
+      </Documentation>
+    </IntVectorProperty>
+    <IntVectorProperty 
+        name="KSubsetInfo"
+        command="GetKSubsetRange"
+        information_only="1">
+      <SimpleIntInformationHelper/>
+    </IntVectorProperty>
+    <IntVectorProperty 
+        name="KSubset"
+        command="SetKSubset"
+        number_of_elements="2" 
+        default_values="1 0"
+        animateable="0"
+        information_property="KSubsetInfo" >
+      <IntRangeDomain name="range">
+        <RequiredProperties>
+            <Property name="KSubsetInfo" function="Range"/>
+        </RequiredProperties>
+      </IntRangeDomain>
+      <Documentation>
+        Set data subset range in the z direction.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Periodic boundary conditions -->
+    <IntVectorProperty
+        name="XPeriodic"
+        label="Periodic in X"
+        command="SetXHasPeriodicBC"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Apply periodic boundary condition in the x direction during integration.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="YPeriodic"
+        label="Periodic in Y"
+        command="SetYHasPeriodicBC"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Apply periodic boundary condition in the y direction during integration.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="ZPeriodic"
+        label="Periodic in Z"
+        command="SetZHasPeriodicBC"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Apply periodic boundary condition in the z direction during integration.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="NGhosts"
+        label="Number of ghost cells"
+        command="SetNumberOfGhostCells"
+        number_of_elements="1"
+        default_values="1">
+      <Documentation>
+        Number of ghost cells to read.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Subset Decomposition -->
+    <IntVectorProperty 
+        name="DecompDims"
+        command="SetDecompDims" 
+        number_of_elements="3"
+        default_values="1 1 1">
+      <Documentation>
+      Set the number of blocks to be used in an out of core read. If the second and thrid dimension are
+      zero then the first is treated as a number of blocks and a decomposition is generated.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty 
+        name="BlockCacheSize"
+        command="SetBlockCacheSize" 
+        number_of_elements="1"
+        default_values="10">
+      <Documentation>
+      Set the number of blocks to cache during out of core operation. Increasing the number of
+      blocks cached improves the perforomance but increases the memory footprint.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="ClearCachedBlocks"
+        label="Clear Cached Blocks"
+        command="SetClearCachedBlocks"
+        number_of_elements="1"
+        default_values="1">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        If set the block cache is explcitly cleared after each pipeline update.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- MPI File Hints -->
+    <IntVectorProperty
+        name="UseCollectiveIO"
+        lable="Collective IO"
+        command="SetUseCollectiveIO"
+        number_of_elements="1"
+        default_values="1" >
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="automatic"/>
+        <Entry value="1" text="disabled"/>
+        <Entry value="2" text="enabled"/>
+      </EnumerationDomain>
+      <Documentation>
+        Turn on/off MPI-IO collective buffering.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="NumberOfIONodes"
+        lable="N IO Nodes"
+        command="SetNumberOfIONodes"
+        number_of_elements="1"
+        default_values="0" >
+      <Documentation>
+        Set the number of IO nodes. Set to 0 to use the implementation default.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="CollectBufferSize"
+        lable="CIO Buffer Size"
+        command="SetCollectBufferSize"
+        number_of_elements="1"
+        default_values="0" >
+      <EnumerationDomain name="enum">
+        <Entry value="0"       text="default"/>
+        <Entry value="524288"  text=" 512 MB"/>
+        <Entry value="1048576" text=" 1.0 GB"/>
+        <Entry value="1572864" text=" 1.5 GB"/>
+        <Entry value="2097152" text=" 2.0 GB"/>
+      </EnumerationDomain>
+      <Documentation>
+        Set the size of the buffer for aggregation. Set to 0 to use the implementation default.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="UseDataSieving"
+        lable="Data Sieving"
+        command="SetUseDataSieving"
+        number_of_elements="1"
+        default_values="2" >
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="automatic"/>
+        <Entry value="1" text="disabled"/>
+        <Entry value="2" text="enabled"/>
+      </EnumerationDomain>
+      <Documentation>
+        Turn on/off MPI-IO collective buffering.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="SieveBufferSize"
+        lable="Sieve Buffer Size"
+        command="SetSieveBufferSize"
+        number_of_elements="1"
+        default_values="1048576" >
+      <EnumerationDomain name="enum">
+        <Entry value="0"       text="default"/>
+        <Entry value="524288"  text=" 512 MB"/>
+        <Entry value="1048576" text=" 1.0 GB"/>
+        <Entry value="1572864" text=" 1.5 GB"/>
+        <Entry value="2097152" text=" 2.0 GB"/>
+      </EnumerationDomain>
+      <Documentation>
+        Set the size of the buffer for sieving. Set to 0 to use the implementation default.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Meta Flag -->
+    <IntVectorProperty 
+        name="MetaRead" 
+        command="SetMetaRead" 
+        number_of_elements="1"
+        default_values="1">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+      If checked meta mode is active. Meta data will be read and processed however actual read will be 
+      deffered to down stream filters. If unchecked the reader performs as expected, an actual read of
+      the requested arrays.
+      </Documentation>
+    </IntVectorProperty>
+
+    <Hints>
+      <Property name="MetaRead" show="0"/>
+      <ReaderFactory extensions="bovm" file_description="Brick-Of-Values files." />
+    </Hints>
+  </SourceProxy>
 
 </ProxyGroup>
 
@@ -489,8 +770,6 @@ Copyright 2008 SciberQuest Inc.
    <!-- End Sphere -->
    </SourceProxy>
 
-  
-
   <!-- ==================================================================== -->
   <SourceProxy
     name="vtkSQHemisphereSource"
@@ -675,65 +954,55 @@ Copyright 2008 SciberQuest Inc.
       </Documentation>
     </StringVectorProperty>
 
-    <!-- OOC Reader parameter -->
-    <IntVectorProperty 
-        name="OOCNeighborhoodSize" 
-        label="OOC Read Size"
-        command="SetOOCNeighborhoodSize"
+    <!-- Integrator type -->
+    <IntVectorProperty
+        name="IntegratorType"
+        label="Integrator"
+        command="SetIntegratorType"
         number_of_elements="1"
-        default_values="0" >
-        <IntRangeDomain name="range" min="-1"/>
-      <Documentation>
-        IO Block sizes. Set to 0 for in-core operation.
-      </Documentation>
+        default_values="2">
+      <EnumerationDomain name="enum">
+        <Entry value="1"       text="RK-2"/>
+        <Entry value="2"       text="RK-4"/>
+        <!--<Entry value="3"       text="RK-4-5"/>-->
+      </EnumerationDomain>
     </IntVectorProperty>
 
-    <!-- Integrator parameters -->
-    <DoubleVectorProperty
-        name="InitialStep"
-        label="Initial Step"
-        command="SetInitialStep"
-        number_of_elements="1"
-        default_values="0.01" >
-      <DoubleRangeDomain name="range"/>
-      <Documentation>
-        Initial integration step size as a multiple of cell lengths.
-      </Documentation>
-    </DoubleVectorProperty>
-
+    <!-- Integrator parameters
     <DoubleVectorProperty
         name="MinStep"
         label="Minimum Step"
         command="SetMinStep"
         number_of_elements="1"
-        default_values="0.01" >
-      <DoubleRangeDomain name="range"/>
+        default_values="1.0e-8" >
+      <DoubleRangeDomain name="range" min="1.0e-14" max="1.0" />
       <Documentation>
         Minimum integration step size as a multiple of cell lengths.
       </Documentation>
-    </DoubleVectorProperty>
+    </DoubleVectorProperty> -->
 
     <DoubleVectorProperty
         name="MaxStep"
         label="Maximum Step"
         command="SetMaxStep"
         number_of_elements="1"
-        default_values="0.25" >
+        default_values="0.1" >
       <DoubleRangeDomain name="range"/>
       <Documentation>
         Maximum integration step size as a multiple of cell lengths.
       </Documentation>
     </DoubleVectorProperty>
 
-    <DoubleVectorProperty
+    <!--<DoubleVectorProperty
         name="MaxError"
         command="SetMaxError"
         number_of_elements="1"
-        default_values="0.0001">
+        default_values="1.0e-4">
+      <DoubleRangeDomain name="range" min="1.0e-14" max="1.0" />
       <Documentation>
         Error bound for adaptive step size integration.
       </Documentation>
-    </DoubleVectorProperty>
+    </DoubleVectorProperty> -->
 
     <IdTypeVectorProperty
         name="MaxNumberOfSteps"
@@ -774,43 +1043,6 @@ Copyright 2008 SciberQuest Inc.
         Vector field magnitude below which particle advection/integration is terminated.
       </Documentation>
     </DoubleVectorProperty>
-
-    <!-- Periodic boundary conditions -->
-    <IntVectorProperty
-        name="XPeriodic"
-        label="Periodic in X"
-        command="SetXHasPeriodicBC"
-        number_of_elements="1"
-        default_values="0">
-      <BooleanDomain name="bool"/>
-      <Documentation>
-        Apply periodic boundary condition in the x direction during integration.
-      </Documentation>
-    </IntVectorProperty>
-
-    <IntVectorProperty
-        name="YPeriodic"
-        label="Periodic in Y"
-        command="SetYHasPeriodicBC"
-        number_of_elements="1"
-        default_values="0">
-      <BooleanDomain name="bool"/>
-      <Documentation>
-        Apply periodic boundary condition in the y direction during integration.
-      </Documentation>
-    </IntVectorProperty>
-
-    <IntVectorProperty
-        name="ZPeriodic"
-        label="Periodic in Z"
-        command="SetZHasPeriodicBC"
-        number_of_elements="1"
-        default_values="0">
-      <BooleanDomain name="bool"/>
-      <Documentation>
-        Apply periodic boundary condition in the z direction during integration.
-      </Documentation>
-    </IntVectorProperty>
 
     <IntVectorProperty
         name="ForwardOnly"
@@ -902,6 +1134,262 @@ Copyright 2008 SciberQuest Inc.
 
   <!-- ==================================================================== -->
   <SourceProxy
+      name="vtkSQFieldTracerRK45"
+      label="SQ Field Tracer RK-4-5"
+      class="vtkSQFieldTracer">
+
+    <!-- Inputs -->
+    <InputProperty
+        name="DatasetInput"
+        command="AddVectorInputConnection"
+        clean_command="ClearVectorInputConnections"
+        label="Vector Field">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type" composite_data_supported="0">
+        <DataType value="vtkDataSet"/>
+      </DataTypeDomain>
+      <InputArrayDomain name="input_array" attribute_type="point" number_of_components="3"/>
+      <Documentation>
+        Dataset containing the vector field.
+      </Documentation>
+    </InputProperty>
+
+    <InputProperty
+        name="SeedPointInput"
+        command="AddSeedPointInputConnection"
+        clean_command="ClearSeedPointInputConnections"
+        label="Seed Cells"
+        multiple_input="0">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <Documentation>
+        Cells to generate seed points from (at cell center).
+      </Documentation>
+    </InputProperty>
+
+    <InputProperty
+        name="TerminatorInput"
+        command="AddTerminatorInputConnection"
+        clean_command="ClearTerminatorInputConnections"
+        label="Terminator Surfaces"
+        multiple_input="1"
+        optional="1">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <Documentation>
+        Surfaces which if present stop field line integration when a field line crosses one.
+      </Documentation>
+    </InputProperty>
+
+    <!-- Outputs -->
+    <OutputPort name="Streamlines" index="0"/>
+
+    <!-- Vector Field Selection -->
+    <StringVectorProperty 
+        name="SelectInputVectors"
+        command="SetInputArrayToProcess"
+        number_of_elements="5"
+        element_types="0 0 0 0 2"
+        animateable="0"
+        label="Vectors">
+      <ArrayListDomain name="array_list" attribute_type="Vectors">
+        <RequiredProperties>
+          <Property name="DatasetInput" function="Input"/>
+        </RequiredProperties>
+      </ArrayListDomain>
+      <Documentation>
+        This property contains the name of the vector array from which to generate streamlines.
+      </Documentation>
+    </StringVectorProperty>
+
+    <!-- Integrator type -->
+    <IntVectorProperty
+        name="IntegratorType"
+        label="Integrator"
+        command="SetIntegratorType"
+        number_of_elements="1"
+        default_values="3">
+      <EnumerationDomain name="enum">
+        <Entry value="1"       text="RK-2"/>
+        <Entry value="2"       text="RK-4"/>
+        <Entry value="3"       text="RK-4-5"/>
+      </EnumerationDomain>
+    </IntVectorProperty>
+
+    <!-- Integrator parameters -->
+    <DoubleVectorProperty
+        name="MinStep"
+        label="Minimum Step"
+        command="SetMinStep"
+        number_of_elements="1"
+        default_values="1.0e-8" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Minimum integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="MaxStep"
+        label="Maximum Step"
+        command="SetMaxStep"
+        number_of_elements="1"
+        default_values="0.1" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Maximum integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="MaxError"
+        command="SetMaxError"
+        number_of_elements="1"
+        default_values="1.0e-4">
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Error bound for adaptive step size integration.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <IdTypeVectorProperty
+        name="MaxNumberOfSteps"
+        label="Maximum Steps"
+        command="SetMaxNumberOfSteps"
+        number_of_elements="1"
+        default_values="100000000" >
+      <IntRangeDomain name="range"/>
+      <Documentation>
+        Maximum number of steps, beyond which integration is terminated.
+      </Documentation>
+    </IdTypeVectorProperty>
+
+    <DoubleVectorProperty
+        name="MaxLineLength"
+        label="Maximum Length"
+        command="SetMaxLineLength"
+        number_of_elements="1"
+        default_values="1.0" >
+      <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="1000.0">
+        <RequiredProperties>
+          <Property name="DatasetInput" function="Input"/>
+        </RequiredProperties>
+      </BoundsDomain>
+      <Documentation>
+        Maximum streamline arc length beyond which line integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="NullThreshold"
+        label="Null Threshold"
+        command="SetNullThreshold"
+        number_of_elements="1"
+        default_values="0.001" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Vector field magnitude below which particle advection/integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <IntVectorProperty
+        name="ForwardOnly"
+        label="Disable reverse integrate"
+        command="SetForwardOnly"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <!-- Colormap/Legened control -->
+    <IntVectorProperty 
+        name="SqueezeColorMap"
+        label="Squeeze Color Map"
+        command="SetSqueezeColorMap"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+      Use the minimum number of intersect colors required. Requires global reduction.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Integration parameter unit (2=cell length)
+    <IntVectorProperty 
+        name="StepUnit"
+        label="Step Unit"
+        command="SetStepUnit" 
+        number_of_elements="1"
+        default_values="2"/>
+    -->
+
+    <!-- Mode Flag -->
+    <IntVectorProperty 
+        name="Mode"
+        command="SetMode"
+        number_of_elements="1"
+        default_values="1">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Set the mode of operation to one of STREAM,TOPOLOGY,POINCARE.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Load balancing/work scheduling controls -->
+    <IntVectorProperty 
+        name="UseDynamicScheduler"
+        command="SetUseDynamicScheduler"
+        number_of_elements="1"
+        default_values="0" > 
+      <BooleanDomain name="bool"/>
+      <Documentation>
+      When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
+      on all processes. This must be off if this is not the case. Set once before the filter runs.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty 
+        name="MasterBlockSize"
+        command="SetMasterBlockSize"
+        number_of_elements="1"
+        default_values="16"
+        animateable="0">
+      <IntRangeDomain name="range" min="1" max="131072"/>
+      <Documentation>
+        Controls how much work the master does in between servicing work requests
+        from the workers. Should be much smaller the WorkerBlockSize.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty 
+        name="WorkerBlockSize"
+        command="SetWorkerBlockSize"
+        number_of_elements="1"
+        default_values="512"
+        animateable="0">
+      <IntRangeDomain name="range" min="1" max="131072"/>
+      <Documentation>
+        Controls how much work is given to the worker processes at each
+        request.
+      </Documentation>
+    </IntVectorProperty>
+
+    <Hints>
+      <Property name="Mode" show="0"/>
+      <Property name="IntegratorType" show="0"/>
+    </Hints>
+    <!-- End OOCFieldTracer -->
+  </SourceProxy>
+
+  <!-- ==================================================================== -->
+  <SourceProxy
       name="vtkSQFieldTopologyMapper"
       label="SQ Field Topology Mapper"
       class="vtkSQFieldTracer">
@@ -977,38 +1465,27 @@ Copyright 2008 SciberQuest Inc.
       </Documentation>
     </StringVectorProperty>
 
-    <!-- OOC Reader parameter -->
-    <IntVectorProperty 
-        name="OOCNeighborhoodSize" 
-        label="OOC Read Size"
-        command="SetOOCNeighborhoodSize"
+    <!-- Integrator type -->
+    <IntVectorProperty
+        name="IntegratorType"
+        label="Integrator"
+        command="SetIntegratorType"
         number_of_elements="1"
-        default_values="0" >
-        <IntRangeDomain name="range" min="-1"/>
-      <Documentation>
-        IO Block sizes. Set to 0 for in-core operation.
-      </Documentation>
+        default_values="3">
+      <EnumerationDomain name="enum">
+        <Entry value="1"       text="RK-2"/>
+        <Entry value="2"       text="RK-4"/>
+        <Entry value="3"       text="RK-4-5"/>
+      </EnumerationDomain>
     </IntVectorProperty>
 
     <!-- Integrator parameters -->
-    <DoubleVectorProperty
-        name="InitialStep"
-        label="Initial Step"
-        command="SetInitialStep"
-        number_of_elements="1"
-        default_values="0.01" >
-      <DoubleRangeDomain name="range"/>
-      <Documentation>
-        Initial integration step size as a multiple of cell lengths.
-      </Documentation>
-    </DoubleVectorProperty>
-
     <DoubleVectorProperty
         name="MinStep"
         label="Minimum Step"
         command="SetMinStep"
         number_of_elements="1"
-        default_values="0.01" >
+        default_values="1.0e-8" >
       <DoubleRangeDomain name="range"/>
       <Documentation>
         Minimum integration step size as a multiple of cell lengths.
@@ -1020,7 +1497,7 @@ Copyright 2008 SciberQuest Inc.
         label="Maximum Step"
         command="SetMaxStep"
         number_of_elements="1"
-        default_values="0.25" >
+        default_values="0.1" >
       <DoubleRangeDomain name="range"/>
       <Documentation>
         Maximum integration step size as a multiple of cell lengths.
@@ -1031,7 +1508,8 @@ Copyright 2008 SciberQuest Inc.
         name="MaxError"
         command="SetMaxError"
         number_of_elements="1"
-        default_values="0.0001">
+        default_values="1.0e-4">
+      <DoubleRangeDomain name="range"/>
       <Documentation>
         Error bound for adaptive step size integration.
       </Documentation>
@@ -1077,43 +1555,7 @@ Copyright 2008 SciberQuest Inc.
       </Documentation>
     </DoubleVectorProperty>
 
-    <!-- Periodic boundary conditions 
-    <IntVectorProperty
-        name="XPeriodic"
-        label="Periodic in X"
-        command="SetXHasPeriodicBC"
-        number_of_elements="1"
-        default_values="0">
-      <BooleanDomain name="bool"/>
-      <Documentation>
-        Apply periodic boundary condition in the x direction during integration.
-      </Documentation>
-    </IntVectorProperty>
-
-    <IntVectorProperty
-        name="YPeriodic"
-        label="Periodic in Y"
-        command="SetYHasPeriodicBC"
-        number_of_elements="1"
-        default_values="0">
-      <BooleanDomain name="bool"/>
-      <Documentation>
-        Apply periodic boundary condition in the y direction during integration.
-      </Documentation>
-    </IntVectorProperty>
-
-    <IntVectorProperty
-        name="ZPeriodic"
-        label="Periodic in Z"
-        command="SetZHasPeriodicBC"
-        number_of_elements="1"
-        default_values="0">
-      <BooleanDomain name="bool"/>
-      <Documentation>
-        Apply periodic boundary condition in the z direction during integration.
-      </Documentation>
-    </IntVectorProperty>
-
+    <!--
     <IntVectorProperty
         name="ForwardOnly"
         label="Disable reverse integrate"
@@ -1163,7 +1605,7 @@ Copyright 2008 SciberQuest Inc.
         name="UseDynamicScheduler"
         command="SetUseDynamicScheduler"
         number_of_elements="1"
-        default_values="0" > 
+        default_values="1" > 
       <BooleanDomain name="bool"/>
       <Documentation>
       When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
@@ -1202,17 +1644,17 @@ Copyright 2008 SciberQuest Inc.
       <Property name="Mode" show="0"/>
     </Hints>
 
-   <!-- End Topology Mapper -->
-</SourceProxy>
+  <!-- End Topology Mapper -->
+  </SourceProxy>
 
 
-<!-- ==================================================================== -->
-<SourceProxy
+  <!-- ==================================================================== -->
+  <SourceProxy
     name="vtkSQPoincareMapper"
     label="SQ Poincare Mapper"
     class="vtkSQFieldTracer">
 
-   <!-- Inputs -->
+    <!-- Inputs -->
     <InputProperty
         name="DatasetInput"
         command="AddVectorInputConnection"
@@ -1283,65 +1725,56 @@ Copyright 2008 SciberQuest Inc.
       </Documentation>
     </StringVectorProperty>
 
-    <!-- OOC Reader parameter -->
-    <IntVectorProperty 
-        name="OOCNeighborhoodSize" 
-        label="OOC Read Size"
-        command="SetOOCNeighborhoodSize"
+    <!-- Integrator type -->
+    <IntVectorProperty
+        name="IntegratorType"
+        label="Integrator"
+        command="SetIntegratorType"
         number_of_elements="1"
-        default_values="0" >
-        <IntRangeDomain name="range" min="-1"/>
-      <Documentation>
-        IO Block sizes. Set to 0 for in-core operation.
-      </Documentation>
+        default_values="2">
+      <EnumerationDomain name="enum">
+        <Entry value="1"       text="RK-2"/>
+        <Entry value="2"       text="RK-4"/>
+        <!--<Entry value="3"       text="RK-4-5"/>-->
+      </EnumerationDomain>
     </IntVectorProperty>
 
-    <!-- Integrator parameters -->
-    <DoubleVectorProperty
-        name="InitialStep"
-        label="Initial Step"
-        command="SetInitialStep"
-        number_of_elements="1"
-        default_values="0.01" >
-      <DoubleRangeDomain name="range"/>
-      <Documentation>
-        Initial integration step size as a multiple of cell lengths.
-      </Documentation>
-    </DoubleVectorProperty>
-
+    <!-- Integrator parameters 
     <DoubleVectorProperty
         name="MinStep"
         label="Minimum Step"
         command="SetMinStep"
         number_of_elements="1"
-        default_values="0.01" >
+        default_values="1.0e-8" >
       <DoubleRangeDomain name="range"/>
       <Documentation>
         Minimum integration step size as a multiple of cell lengths.
       </Documentation>
-    </DoubleVectorProperty>
+    </DoubleVectorProperty>-->
 
     <DoubleVectorProperty
         name="MaxStep"
         label="Maximum Step"
         command="SetMaxStep"
         number_of_elements="1"
-        default_values="0.25" >
+        default_values="0.1" >
       <DoubleRangeDomain name="range"/>
       <Documentation>
         Maximum integration step size as a multiple of cell lengths.
       </Documentation>
     </DoubleVectorProperty>
 
+    <!--
     <DoubleVectorProperty
         name="MaxError"
         command="SetMaxError"
         number_of_elements="1"
-        default_values="0.0001">
+        default_values="1.0e-4">
+      <DoubleRangeDomain name="range" min="1.0e-14" max="1.0" />
       <Documentation>
         Error bound for adaptive step size integration.
       </Documentation>
-    </DoubleVectorProperty>
+    </DoubleVectorProperty>-->
 
     <IdTypeVectorProperty
         name="MaxNumberOfSteps"
@@ -1382,43 +1815,6 @@ Copyright 2008 SciberQuest Inc.
         Vector field magnitude below which particle advection/integration is terminated.
       </Documentation>
     </DoubleVectorProperty>
-
-    <!-- Periodic boundary conditions -->
-    <IntVectorProperty
-        name="XPeriodic"
-        label="Periodic in X"
-        command="SetXHasPeriodicBC"
-        number_of_elements="1"
-        default_values="0">
-      <BooleanDomain name="bool"/>
-      <Documentation>
-        Apply periodic boundary condition in the x direction during integration.
-      </Documentation>
-    </IntVectorProperty>
-
-    <IntVectorProperty
-        name="YPeriodic"
-        label="Periodic in Y"
-        command="SetYHasPeriodicBC"
-        number_of_elements="1"
-        default_values="0">
-      <BooleanDomain name="bool"/>
-      <Documentation>
-        Apply periodic boundary condition in the y direction during integration.
-      </Documentation>
-    </IntVectorProperty>
-
-    <IntVectorProperty
-        name="ZPeriodic"
-        label="Periodic in Z"
-        command="SetZHasPeriodicBC"
-        number_of_elements="1"
-        default_values="0">
-      <BooleanDomain name="bool"/>
-      <Documentation>
-        Apply periodic boundary condition in the z direction during integration.
-      </Documentation>
-    </IntVectorProperty>
 
     <IntVectorProperty
         name="ForwardOnly"
@@ -1464,7 +1860,7 @@ Copyright 2008 SciberQuest Inc.
       </Documentation>
     </IntVectorProperty>
 
-    <!-- Load balancing/work scheduling controls
+    <!-- Load balancing/work scheduling controls -->
     <IntVectorProperty 
         name="UseDynamicScheduler"
         command="SetUseDynamicScheduler"
@@ -1502,10 +1898,273 @@ Copyright 2008 SciberQuest Inc.
         request.
       </Documentation>
     </IntVectorProperty>
-    -->
 
     <Hints>
       <Property name="Mode" show="0"/>
+      <Property name="UseDynamicScheduler" show="0"/>
+      <Property name="MasterBlockSize" show="0"/>
+      <Property name="WorkerBlockSize" show="0"/>
+    </Hints>
+
+   <!-- End SQ Poincare Mapper -->
+  </SourceProxy>
+
+  <!-- ==================================================================== -->
+  <SourceProxy
+    name="vtkSQPoincareMapperRK45"
+    label="SQ Poincare Mapper RK-4-5"
+    class="vtkSQFieldTracer">
+
+    <!-- Inputs -->
+    <InputProperty
+        name="DatasetInput"
+        command="AddVectorInputConnection"
+        clean_command="ClearVectorInputConnections"
+        label="Vector Field">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type" composite_data_supported="0">
+        <DataType value="vtkDataSet"/>
+      </DataTypeDomain>
+      <InputArrayDomain name="input_array" attribute_type="point" number_of_components="3"/>
+      <Documentation>
+        Dataset containing the vector field.
+      </Documentation>
+    </InputProperty>
+
+    <InputProperty
+        name="SeedPointInput"
+        command="AddSeedPointInputConnection"
+        clean_command="ClearSeedPointInputConnections"
+        label="Seed Cells"
+        multiple_input="0">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <Documentation>
+        Cells to generate seed points from (at cell center).
+      </Documentation>
+    </InputProperty>
+
+    <InputProperty
+        name="TerminatorInput"
+        command="AddTerminatorInputConnection"
+        clean_command="ClearTerminatorInputConnections"
+        label="Map Surfaces"
+        multiple_input="1"
+        optional="1">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <Documentation>
+        Surfaces which if present stop field line integration when a field line crosses one.
+      </Documentation>
+    </InputProperty>
+
+    <!-- Outputs -->
+    <OutputPort name="Poincare Map" index="0" />
+
+    <!-- Vector Field Selection -->
+    <StringVectorProperty 
+        name="SelectInputVectors"
+        command="SetInputArrayToProcess"
+        number_of_elements="5"
+        element_types="0 0 0 0 2"
+        animateable="0"
+        label="Vectors">
+      <ArrayListDomain name="array_list" attribute_type="Vectors">
+        <RequiredProperties>
+          <Property name="DatasetInput" function="Input"/>
+        </RequiredProperties>
+      </ArrayListDomain>
+      <Documentation>
+        This property contains the name of the vector array from which to generate streamlines.
+      </Documentation>
+    </StringVectorProperty>
+
+    <!-- Integrator type -->
+    <IntVectorProperty
+        name="IntegratorType"
+        label="Integrator"
+        command="SetIntegratorType"
+        number_of_elements="1"
+        default_values="3">
+      <EnumerationDomain name="enum">
+        <Entry value="1"       text="RK-2"/>
+        <Entry value="2"       text="RK-4"/>
+        <Entry value="3"       text="RK-4-5"/>
+      </EnumerationDomain>
+    </IntVectorProperty>
+
+    <!-- Integrator parameters -->
+    <DoubleVectorProperty
+        name="MinStep"
+        label="Minimum Step"
+        command="SetMinStep"
+        number_of_elements="1"
+        default_values="1.0e-8" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Minimum integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty> 
+
+    <DoubleVectorProperty
+        name="MaxStep"
+        label="Maximum Step"
+        command="SetMaxStep"
+        number_of_elements="1"
+        default_values="0.1" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Maximum integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="MaxError"
+        command="SetMaxError"
+        number_of_elements="1"
+        default_values="1.0e-6">
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Error bound for adaptive step size integration.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <IdTypeVectorProperty
+        name="MaxNumberOfSteps"
+        label="Maximum Steps"
+        command="SetMaxNumberOfSteps"
+        number_of_elements="1"
+        default_values="100000000" >
+      <IntRangeDomain name="range"/>
+      <Documentation>
+        Maximum number of steps, beyond which integration is terminated.
+      </Documentation>
+    </IdTypeVectorProperty>
+
+    <DoubleVectorProperty
+        name="MaxLineLength"
+        label="Maximum Length"
+        command="SetMaxLineLength"
+        number_of_elements="1"
+        default_values="1.0" >
+      <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="1000.0">
+        <RequiredProperties>
+          <Property name="DatasetInput" function="Input"/>
+        </RequiredProperties>
+      </BoundsDomain>
+      <Documentation>
+        Maximum streamline arc length beyond which line integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="NullThreshold"
+        label="Null Threshold"
+        command="SetNullThreshold"
+        number_of_elements="1"
+        default_values="0.001" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Vector field magnitude below which particle advection/integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <IntVectorProperty
+        name="ForwardOnly"
+        label="Disable reverse integrate"
+        command="SetForwardOnly"
+        number_of_elements="1"
+        default_values="1">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <!-- Colormap/Legened control
+    <IntVectorProperty 
+        name="SqueezeColorMap"
+        label="Squeeze Color Map"
+        command="SetSqueezeColorMap"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Use the minimum number of intersect colors required. Requires global reduction.
+      </Documentation>
+    </IntVectorProperty>
+    -->
+
+    <!-- Integration parameter unit (2=cell length)
+    <IntVectorProperty 
+        name="StepUnit"
+        label="Step Unit"
+        command="SetStepUnit" 
+        number_of_elements="1"
+        default_values="2"/>
+    -->
+
+    <!-- Mode Flag -->
+    <IntVectorProperty 
+        name="Mode"
+        command="SetMode"
+        number_of_elements="1"
+        default_values="3">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Set the mode of operation to one of STREAM,TOPOLOGY,POINCARE.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Load balancing/work scheduling controls -->
+    <IntVectorProperty 
+        name="UseDynamicScheduler"
+        command="SetUseDynamicScheduler"
+        number_of_elements="1"
+        default_values="0" > 
+      <BooleanDomain name="bool"/>
+      <Documentation>
+      When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
+      on all processes. This must be off if this is not the case. Set once before the filter runs.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty 
+        name="MasterBlockSize"
+        command="SetMasterBlockSize"
+        number_of_elements="1"
+        default_values="16"
+        animateable="0">
+      <IntRangeDomain name="range" min="1" max="131072"/>
+      <Documentation>
+        Controls how much work the master does in between servicing work requests
+        from the workers. Should be much smaller the WorkerBlockSize.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty 
+        name="WorkerBlockSize"
+        command="SetWorkerBlockSize"
+        number_of_elements="1"
+        default_values="512"
+        animateable="0">
+      <IntRangeDomain name="range" min="1" max="131072"/>
+      <Documentation>
+        Controls how much work is given to the worker processes at each
+        request.
+      </Documentation>
+    </IntVectorProperty>
+
+    <Hints>
+      <Property name="Mode" show="0"/>
+      <Property name="IntegratorType" show="0"/>
+      <Property name="UseDynamicScheduler" show="0"/>
+      <Property name="MasterBlockSize" show="0"/>
+      <Property name="WorkerBlockSize" show="0"/>
     </Hints>
 
    <!-- End SQ Poincare Mapper -->

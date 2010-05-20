@@ -45,6 +45,12 @@ set(_SOURCES
   BOVTimeStepImage.cxx
   BOVScalarImage.cxx
   BOVVectorImage.cxx
+  CartesianBounds.cxx
+  CartesianDecomp.cxx
+  CartesianDataBlock.cxx
+  CartesianDataBlockIODescriptor.cxx
+  CartesianDataBlockIODescriptorIterator.cxx
+  CartesianExtent.cxx
   FieldLine.cxx
   FieldTraceData.cxx
   FsUtils.cxx
@@ -54,6 +60,7 @@ set(_SOURCES
   PolyDataFieldTopologyMap.cxx
   PoincareMapData.cxx
   PrintUtils.cxx
+  RefCountedPointer.cxx
   StreamlineData.cxx
   TerminationCondition.cxx
   UnstructuredFieldTopologyMap.cxx

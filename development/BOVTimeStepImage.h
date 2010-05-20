@@ -6,17 +6,23 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef BOVTimeStepImage_h
-#define BOVTimeStepImage_h
+#ifndef __BOVTimeStepImage_h
+#define __BOVTimeStepImage_h
 
 #include "BOVScalarImage.h"
 #include "BOVVectorImage.h"
+
 #include <vector>
 using std::vector;
 
 class BOVMetaData;
 
-//=============================================================================
+/// Handle to single timestep in a dataset.
+/**
+Handle to single timestep in a dataset. A collection of 
+handles to the scalar and vector data that comprise the 
+time step.
+*/
 class BOVTimeStepImage
 {
 public:
@@ -27,7 +33,7 @@ public:
       BOVMetaData *metaData);
   ~BOVTimeStepImage();
 
-  int GetNumberOfImages(){ return this->Scalars.size()+this->Vectors.size(); }
+  int GetNumberOfImages() const { return this->Scalars.size()+this->Vectors.size(); }
 
 private:
   vector<BOVScalarImage*> Scalars;
@@ -43,102 +49,5 @@ private:
 };
 
 ostream &operator<<(ostream &os, const BOVTimeStepImage &si);
-
-
-//=============================================================================
-class BOVScalarImageIterator
-{
-public:
-  ///
-  BOVScalarImageIterator(BOVTimeStepImage *step)
-       :
-    Step(step),
-    Idx(0),
-    End(0)
-      {
-      this->End=this->Step->Scalars.size();
-      }
-  ///
-  void Reset(){ this->Idx=0; }
-  ///
-  bool Ok(){ return this->Idx<this->End; }
-  ///
-  int Next(){
-    if (this->Idx<this->End)
-      {
-      ++this->Idx;
-      return this->Idx;
-      }
-      return 0;
-    }
-  ///
-  MPI_File GetFile(){ return this->Step->Scalars[this->Idx]->GetFile(); }
-  ///
-  const char *GetName(){ return this->Step->Scalars[this->Idx]->GetName(); }
-  const char *GetFileName(){ return this->Step->Scalars[this->Idx]->GetFileName(); }
-private:
-  BOVTimeStepImage *Step;
-  int Idx;
-  int End;
-private:
-  BOVScalarImageIterator();
-};
-
-//=============================================================================
-class BOVVectorImageIterator
-{
-public:
-  ///
-  BOVVectorImageIterator(BOVTimeStepImage *step)
-       :
-    Step(step),
-    Idx(0),
-    End(0)
-      {
-      this->End=this->Step->Vectors.size();
-      }
-  ///
-  bool Ok(){ return this->Idx<this->End; }
-  ///
-  int Next(){
-    if (this->Idx<this->End)
-      {
-      ++this->Idx;
-      return this->Idx;
-      }
-      return 0;
-    }
-  ///
-  MPI_File GetXFile(){ return this->Step->Vectors[this->Idx]->GetXFile(); }
-  MPI_File GetYFile(){ return this->Step->Vectors[this->Idx]->GetYFile(); }
-  MPI_File GetZFile(){ return this->Step->Vectors[this->Idx]->GetZFile(); }
-  MPI_File GetComponentFile(int comp)
-    {
-    switch (comp)
-      {
-      case 0:
-        return this->GetXFile();
-        break;
-
-      case 1:
-        return this->GetYFile();
-        break;
-
-      case 2:
-        return this->GetZFile();
-        break;
-      }
-    return 0;
-    }
-  ///
-  const char *GetName(){ return this->Step->Vectors[this->Idx]->GetName(); }
-
-private:
-  BOVTimeStepImage *Step;
-  int Idx;
-  int End;
-private:
-  BOVVectorImageIterator();
-};
 
 #endif

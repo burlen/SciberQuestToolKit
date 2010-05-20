@@ -8,11 +8,17 @@ Copyright 2008 SciberQuest Inc.
 #include "GDAMetaData.h"
 #include "GDAMetaDataKeys.h"
 
-#include<iostream>
-#include<sstream>
+#include <iostream>
+using std::ostream;
+using std::endl;
+
+#include <sstream>
+using std::istringstream;
 
 #include "PrintUtils.h"
 #include "FsUtils.h"
+#include "SQMacros.h"
+#include "Tuple.hxx"
 
 //*****************************************************************************
 void ToLower(string &in)
@@ -48,8 +54,8 @@ size_t ParseValue(string &in,size_t at, string key, T &value)
 GDAMetaData::GDAMetaData()
 {
   this->HasDipoleCenter=false;
-  this->DipoleCenter[0]=-555.5;
-  this->DipoleCenter[1]=-555.5;
+  this->DipoleCenter[0]=
+  this->DipoleCenter[1]=
   this->DipoleCenter[2]=-555.5;
 }
 
@@ -62,7 +68,7 @@ int GDAMetaData::OpenDataset(const char *fileName)
   ifstream metaFile(fileName);
   if (!metaFile.is_open())
     {
-    cerr << __LINE__ << " Error: Could not open " << fileName << endl;
+    sqErrorMacro(cerr,"Could not open " << fileName << ".");
     return 0;
     }
   // Read
@@ -76,26 +82,32 @@ int GDAMetaData::OpenDataset(const char *fileName)
   free(metaDataBuffer); // TODO use string's memory directly
   // Parse
   ToLower(metaData);
-  // All we are expecting are nx,ny, and nz. We'll assume the rest of the
-  // details based on what we know of the simulation. Less than ideal but
-  // until we get a better writer this will suffice.
+  // We are expecting are nx,ny, and nz. We'll assume the rest of the
+  // details based on what we know of the simulation.
   int nx,ny,nz;
   if ( ParseValue(metaData,0,"nx=",nx)==string::npos
     || ParseValue(metaData,0,"ny=",ny)==string::npos
-    || ParseValue(metaData,0,"nz=",nz)==string::npos)
+    || ParseValue(metaData,0,"nz=",nz)==string::npos )
     {
-    cerr << __LINE__ << " Error: Parsing " << fileName 
-         << " dimensions not found. Expected nx=N, ny=M, nz=P." << endl;
+    sqErrorMacro(cerr,
+         << "Parsing " << fileName
+         << " dimensions not found. Expected nx=N, ny=M, nz=P.");
     return 0;
     }
-  vtkAMRBox domain(0,0,0,nx-1,ny-1,nz-1);
+
+  CartesianExtent domain(0,nx-1,0,ny-1,0,nz-1);
   this->SetDomain(domain);
 
+  double X0[3]={0.0,0.0,0.0};
+  this->SetOrigin(X0);
+
+  double dX[3]={1.0,1.0,1.0};
+  this->SetSpacing(dX);
 
   // TODO
   // the following meta data enhancments are disabled until
   // I add the virtual pack/unpack methods, so that the process
-  // that touches disk can actuially stream them to the other
+  // that touches disk can actually stream them to the other
   // processes
 
   // // Look for the dipole center
@@ -136,9 +148,6 @@ int GDAMetaData::OpenDataset(const char *fileName)
   //     k_dipole=128,
   //     R_MP=16.,
   //     R_obstacle_to_MP=0.57732,
-
-
-  // H3D. origin and spacing default to: x0={0,0,0}, dx={1,1,1}
 
   // We expect the bricks to be in the same directory as the metadata file.
   this->SetPathToBricks(StripFileNameFromPath(fileName).c_str());
@@ -214,21 +223,17 @@ int GDAMetaData::OpenDataset(const char *fileName)
     GetSeriesIds(path,prefix.c_str(),this->TimeSteps);
     if (!this->TimeSteps.size())
       {
-      cerr
-        << __LINE__ 
+      sqErrorMacro(cerr,
         << " Error: Time series was not found in " << path << "."
-        << " Expected files named according to the following convention \"array_time.ext\"" 
-        << endl;
+        << " Expected files named according to the following convention \"array_time.ext\".");
       return 0;
       }
     }
   else
     {
-    cerr
-      << __LINE__
+    sqErrorMacro(cerr,
       << " Error: No bricks found in " << path << "."
-      << " Expected bricks in the same directory as the metdata file."
-      << endl;
+      << " Expected bricks in the same directory as the metdata file.");
     return 0;
     }
 
@@ -238,7 +243,7 @@ int GDAMetaData::OpenDataset(const char *fileName)
 }
 
 // this is removed because we don't currently need to free any reosurces
-// when the file closes. I left it in case ata future time we need it.
+// when the file closes. I left it in case at a future time we need it.
 // //-----------------------------------------------------------------------------
 // int GDAMetaData::CloseDataset()
 // {
@@ -272,10 +277,7 @@ GDAMetaData &GDAMetaData::operator=(const GDAMetaData &other)
 void GDAMetaData::Print(ostream &os) const
 {
   os << "GDAMetaData:  " << this << endl;
-  os << "\tDipole:     "
-      << this->DipoleCenter[0] << ", "
-      << this->DipoleCenter[1] << ", "
-      << this->DipoleCenter[2] << endl;
+  os << "\tDipole:     " << Tuple<double>(this->DipoleCenter,3) << endl;
   //os << "\tCellSizeRe: " << this->CellSizeRe << endl;
 
   this->BOVMetaData::Print(os);

@@ -11,6 +11,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkInformationKey.h"
 #include "vtkInformationObjectBaseKey.h"
 #include "vtkInformationDoubleVectorKey.h"
+#include "vtkInformationIntegerVectorKey.h"
 
 //-----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkSQOOCReader, "$Revision: 0.0 $");
@@ -20,6 +21,9 @@ vtkInformationKeyMacro(vtkSQOOCReader,READER,ObjectBase);
 
 //-----------------------------------------------------------------------------
 vtkInformationKeyRestrictedMacro(vtkSQOOCReader,BOUNDS,DoubleVector,6);
+
+//-----------------------------------------------------------------------------
+vtkInformationKeyRestrictedMacro(vtkSQOOCReader,PERIODIC_BC,IntegerVector,3);
 
 //-----------------------------------------------------------------------------
 void vtkSQOOCReader::PrintSelf(ostream& os, vtkIndent indent)

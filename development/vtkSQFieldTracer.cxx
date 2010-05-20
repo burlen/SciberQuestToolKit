@@ -1,7 +1,7 @@
-/*   ____    _ __           ____               __    ____
+/* ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
@@ -20,9 +20,6 @@ Copyright 2008 SciberQuest Inc.
 
 =========================================================================*/
 #include "vtkSQFieldTracer.h"
-#include "Tuple.hxx"
-
-// #define vtkSQFieldTracerDEBUG 2
 
 #include "vtkSmartPointer.h"
 #include "vtkObjectFactory.h"
@@ -43,13 +40,14 @@ Copyright 2008 SciberQuest Inc.
 
 #include "vtkInterpolatedVelocityField.h"
 #include "vtkInitialValueProblemSolver.h"
+#include "vtkRungeKutta2.h"
+#include "vtkRungeKutta4.h"
 #include "vtkRungeKutta45.h"
 #include "vtkMultiProcessController.h"
+#include "vtkMath.h"
 
 #include "vtkSQOOCReader.h"
 #include "vtkSQMetaDataKeys.h"
-#include "vtkMath.h"
-
 #include "FieldLine.h"
 #include "TerminationCondition.h"
 #include "WorkQueue.h"
@@ -58,16 +56,18 @@ Copyright 2008 SciberQuest Inc.
 #include "UnstructuredFieldTopologyMap.h"
 #include "StreamlineData.h"
 #include "PoincareMapData.h"
+#include "Tuple.hxx"
 #include "minmax.h"
 
-#include "mpi.h"
+#include <mpi.h>
+
+#ifndef vtkSQFieldTracerDEBUG
+  #define vtkSQFieldTracerDEBUG 0
+#endif
 
 #ifdef vtkSQFieldTracerTIME
   #include <sys/time.h>
 #endif
-
-
-
 
 vtkCxxRevisionMacro(vtkSQFieldTracer, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQFieldTracer);
@@ -77,28 +77,41 @@ const double vtkSQFieldTracer::EPSILON = 1.0E-12;
 //-----------------------------------------------------------------------------
 vtkSQFieldTracer::vtkSQFieldTracer()
       :
+  WorldSize(1),
+  WorldRank(0),
   UseDynamicScheduler(1),
   WorkerBlockSize(16),
   MasterBlockSize(256),
   ForwardOnly(0),
-  StepUnit(CELL_FRACTION),
-  InitialStep(0.1),
-  MinStep(0.1),
-  MaxStep(0.5),
-  MaxError(1E-5),
-  MaxNumberOfSteps(1000),
-  MaxLineLength(1E6),
-  NullThreshold(1E-6),
-  OOCNeighborhoodSize(0),
+  StepUnit(ARC_LENGTH),
+  MinStep(1.0E-8),
+  MaxStep(1.0),
+  MaxError(1E-4),
+  MaxNumberOfSteps(1000000000),
+  MaxLineLength(1000),
+  NullThreshold(1E-3),
+  IntegratorType(INTEGRATOR_NONE),
+  Integrator(0),
+  UseCommWorld(0),
   Mode(MODE_TOPOLOGY),
   SqueezeColorMap(0)
 {
-  this->PeriodicBC[0]=
-  this->PeriodicBC[1]=
-  this->PeriodicBC[2]=0;
-  this->Integrator=vtkRungeKutta45::New();
+  #if vtkSQFieldTracerDEBUG>1
+  cerr << "===============================vtkSQFieldTracer::vtkSQFieldTracer" << endl;
+  #endif
+
+  int mpiOk=0;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    vtkErrorMacro("MPI has not been initialized. Restart ParaView using mpiexec.");
+    }
+
+  MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
+  MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
+
   this->TermCon=new TerminationCondition;
-  this->Controller=vtkMultiProcessController::GetGlobalController();
+
   this->SetNumberOfInputPorts(3);
   this->SetNumberOfOutputPorts(1);
 }
@@ -106,15 +119,21 @@ vtkSQFieldTracer::vtkSQFieldTracer()
 //-----------------------------------------------------------------------------
 vtkSQFieldTracer::~vtkSQFieldTracer()
 {
-  this->Integrator->Delete();
+  #if vtkSQFieldTracerDEBUG>1
+  cerr << "===============================vtkSQFieldTracer::~vtkSQFieldTracer" << endl;
+  #endif
+  if (this->Integrator)
+    {
+    this->Integrator->Delete();
+    }
   delete this->TermCon;
 }
 
 //-----------------------------------------------------------------------------
 int vtkSQFieldTracer::FillInputPortInformation(int port, vtkInformation *info)
 {
-  #ifdef vtkSQFieldTracerDEBUG
-  cerr << "===============================FillInputPortInformation" << endl;
+  #if vtkSQFieldTracerDEBUG>1
+  cerr << "===============================vtkSQFieldTracer::FillInputPortInformation" << endl;
   #endif
   switch (port)
     {
@@ -142,8 +161,8 @@ int vtkSQFieldTracer::FillInputPortInformation(int port, vtkInformation *info)
 //----------------------------------------------------------------------------
 int vtkSQFieldTracer::FillOutputPortInformation(int port, vtkInformation *info)
 {
-  #ifdef vtkSQFieldTracerDEBUG
-  cerr << "===============================FillOutputPortInformation" << endl;
+  #if vtkSQFieldTracerDEBUG>1
+  cerr << "===============================vtkSQFieldTracer::FillOutputPortInformation" << endl;
   #endif
 
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataSet");
@@ -184,8 +203,8 @@ int vtkSQFieldTracer::FillOutputPortInformation(int port, vtkInformation *info)
 void vtkSQFieldTracer::AddVectorInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
-  #ifdef vtkSQFieldTracerDEBUG
-  cerr << "===============================AddDatasetInputConnectiont" << endl;
+  #if vtkSQFieldTracerDEBUG>1
+  cerr << "===============================vtkSQFieldTracer::AddDatasetInputConnectiont" << endl;
   #endif
 
   this->AddInputConnection(0, algOutput);
@@ -194,8 +213,8 @@ void vtkSQFieldTracer::AddVectorInputConnection(
 //----------------------------------------------------------------------------
 void vtkSQFieldTracer::ClearVectorInputConnections()
 {
-  #ifdef vtkSQFieldTracerDEBUG
-  cerr << "===============================ClearDatasetInputConnections" << endl;
+  #if vtkSQFieldTracerDEBUG>1
+  cerr << "===============================vtkSQFieldTracer::ClearDatasetInputConnections" << endl;
   #endif
 
   this->SetInputConnection(0, 0);
@@ -205,8 +224,8 @@ void vtkSQFieldTracer::ClearVectorInputConnections()
 void vtkSQFieldTracer::AddSeedPointInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
-  #ifdef vtkSQFieldTracerDEBUG
-  cerr << "===============================AddSeedPointInputConnection" << endl;
+  #if vtkSQFieldTracerDEBUG>1
+  cerr << "===============================vtkSQFieldTracer::AddSeedPointInputConnection" << endl;
   #endif
   this->AddInputConnection(1, algOutput);
 }
@@ -214,8 +233,8 @@ void vtkSQFieldTracer::AddSeedPointInputConnection(
 //----------------------------------------------------------------------------
 void vtkSQFieldTracer::ClearSeedPointInputConnections()
 {
-  #ifdef vtkSQFieldTracerDEBUG
-  cerr << "===============================ClearSeedPointInputConnections" << endl;
+  #if vtkSQFieldTracerDEBUG>1
+  cerr << "===============================vtkSQFieldTracer::ClearSeedPointInputConnections" << endl;
   #endif
   this->SetInputConnection(1, 0);
 }
@@ -224,8 +243,8 @@ void vtkSQFieldTracer::ClearSeedPointInputConnections()
 void vtkSQFieldTracer::AddTerminatorInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
-  #ifdef vtkSQFieldTracerDEBUG
-  cerr << "===============================AddBoundaryInputConnection" << endl;
+  #if vtkSQFieldTracerDEBUG>1
+  cerr << "===============================vtkSQFieldTracer::AddBoundaryInputConnection" << endl;
   #endif
   this->AddInputConnection(2, algOutput);
 }
@@ -233,27 +252,73 @@ void vtkSQFieldTracer::AddTerminatorInputConnection(
 //----------------------------------------------------------------------------
 void vtkSQFieldTracer::ClearTerminatorInputConnections()
 {
-  #ifdef vtkSQFieldTracerDEBUG
-  cerr << "===============================ClearBoundaryInputConnections" << endl;
+  #if vtkSQFieldTracerDEBUG>1
+  cerr << "===============================vtkSQFieldTracer::ClearBoundaryInputConnections" << endl;
   #endif
   this->SetInputConnection(2, 0);
 }
 
 //-----------------------------------------------------------------------------
 void vtkSQFieldTracer::SetStepUnit(int unit)
-{ 
-  if (unit!=ARC_LENGTH
-   && unit!=CELL_FRACTION )
-    {
-    unit=CELL_FRACTION;
-    }
-
+{
+  #if vtkSQFieldTracerDEBUG>1
+  cerr << "===============================vtkSQFieldTracer::SetStepUnit" << endl;
+  #endif
   if (unit==this->StepUnit )
     {
     return;
     }
+  if (unit!=ARC_LENGTH)
+    {
+    // Rev 117 removed support for cell fraction.
+    vtkWarningMacro("Unsupported step unit. Using arc length units.");
+    unit=ARC_LENGTH;
+    }
   this->StepUnit = unit;
   this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQFieldTracer::SetIntegratorType(int type)
+{
+  #if vtkSQFieldTracerDEBUG>1
+  cerr << "===============================vtkSQFieldTracer::SetIntegratorType" << endl;
+  #endif
+
+  if (this->IntegratorType==type) 
+    {
+    return;
+    }
+
+  if (this->Integrator)
+    {
+    this->Integrator->Delete();
+    this->Integrator=0;
+    }
+  this->IntegratorType=INTEGRATOR_NONE;
+  this->Modified();
+
+  switch (type)
+    {
+    case INTEGRATOR_RK2:
+      this->Integrator=vtkRungeKutta2::New();
+      break;
+
+    case INTEGRATOR_RK4:
+      this->Integrator=vtkRungeKutta4::New();
+      break;
+
+    case INTEGRATOR_RK45:
+      this->Integrator=vtkRungeKutta45::New();
+      break;
+
+    default:
+      vtkErrorMacro("Unsupported integrator type " << type << ".");
+      return;
+      break;
+    }
+
+  this->IntegratorType=type;
 }
 
 //----------------------------------------------------------------------------
@@ -262,8 +327,8 @@ int vtkSQFieldTracer::RequestDataObject(
                 vtkInformationVector** inInfos,
                 vtkInformationVector* outInfos)
 {
-  #ifdef vtkSQFieldTracerDEBUG
-    cerr << "===============================RequestDataObject" << endl;
+  #if vtkSQFieldTracerDEBUG>1
+    cerr << "===============================vtkSQFieldTracer::RequestDataObject" << endl;
   #endif
   // get the filters output
   vtkInformation* outInfo = outInfos->GetInformationObject(0);
@@ -316,8 +381,8 @@ int vtkSQFieldTracer::RequestUpdateExtent(
                 vtkInformationVector **inInfos,
                 vtkInformationVector *outInfos)
 {
-  #ifdef vtkSQFieldTracerDEBUG
-    cerr << "===============================RequestUpdateExtent" << endl;
+  #if vtkSQFieldTracerDEBUG>1
+    cerr << "===============================vtkSQFieldTracer::RequestUpdateExtent" << endl;
   #endif
 
   vtkInformation *outInfo = outInfos->GetInformationObject(0);
@@ -371,8 +436,8 @@ int vtkSQFieldTracer::RequestInformation(
                 vtkInformationVector **vtkNotUsed(inputVector),
                 vtkInformationVector *outputVector)
 {
-  #ifdef vtkSQFieldTracerDEBUG
-    cerr << "===============================RequestInformation" << endl;
+  #if vtkSQFieldTracerDEBUG>1
+    cerr << "===============================vtkSQFieldTracer::RequestInformation" << endl;
   #endif
 
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
@@ -387,8 +452,8 @@ int vtkSQFieldTracer::RequestData(
                 vtkInformationVector **inputVector,
                 vtkInformationVector *outputVector)
 {
-  #ifdef vtkSQFieldTracerDEBUG
-  cerr << "===============================RequestData" << endl;
+  #if vtkSQFieldTracerDEBUG>1
+  cerr << "===============================vtkSQFieldTracer::RequestData" << endl;
   #endif
   #if defined vtkSQFieldTracerTIME
   timeval wallt;
@@ -396,11 +461,7 @@ int vtkSQFieldTracer::RequestData(
   double walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
   #endif
 
-  int procId=this->Controller->GetLocalProcessId();
-  int nProcs=this->Controller->GetNumberOfProcesses();
-
   vtkInformation *info;
-
 
   /// Reader
   // Get the input on the first port. This should be the dummy dataset
@@ -409,16 +470,16 @@ int vtkSQFieldTracer::RequestData(
   info = inputVector[0]->GetInformationObject(0);
   if (!info->Has(vtkSQOOCReader::READER()))
     {
-    vtkWarningMacro(
-        "OOCReader object not present in input pipeline information! Aborting request.");
+    vtkErrorMacro(
+        "OOCReader object not present in input pipeline information.");
     return 1;
     }
   vtkSmartPointer<vtkSQOOCReader> oocr;
   oocr=dynamic_cast<vtkSQOOCReader*>(info->Get(vtkSQOOCReader::READER()));
   if (!oocr)
     {
-    vtkWarningMacro(
-        "OOCReader object not initialized! Aborting request.");
+    vtkErrorMacro(
+        "OOCReader object not initialized.");
     return 1;
     }
   // Configure the reader
@@ -427,24 +488,33 @@ int vtkSQFieldTracer::RequestData(
   oocr->Register(0);
   oocr->DeActivateAllArrays();
   oocr->ActivateArray(fieldName);
-  oocr->SetCommunicator(this->OOCNeighborhoodSize==-1?MPI_COMM_WORLD:MPI_COMM_SELF);
+  oocr->SetCommunicator(this->UseCommWorld?MPI_COMM_WORLD:MPI_COMM_SELF);
   oocr->Open();
   // We provide the integrator a pointer to a cache. The integrator
   // uses this as it sees fit to reduce the number of reads. If its
   // not null after the integrator returns we have to delete.
   vtkDataSet *oocrCache=0;
 
-  // also the bounds (problem domain) of the data should be provided by the
+  // the bounds (problem domain) of the data should be provided by the
   // meta reader.
   if (!info->Has(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX()))
     {
-    vtkWarningMacro(
-        "Bounds not found in pipeline information! Aborting request.");
+    vtkErrorMacro(
+        "Bounds not found in pipeline information.");
     return 1;
     }
   double pDomain[6];
   info->Get(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),pDomain);
 
+  // the bounadry condition flags should be provided by the reader
+  if (!info->Has(vtkSQOOCReader::PERIODIC_BC()))
+    {
+    vtkErrorMacro(
+        "Boundary condition flags not found in pipeline information.");
+    return 1;
+    }
+  int periodicBC[3];
+  info->Get(vtkSQOOCReader::PERIODIC_BC(),periodicBC);
 
   /// Seed source
   // TODO for now we consider a seed single source, but we should handle
@@ -454,7 +524,7 @@ int vtkSQFieldTracer::RequestData(
     = dynamic_cast<vtkDataSet*>(info->Get(vtkDataObject::DATA_OBJECT()));
   if (source==0)
     {
-    vtkWarningMacro("Seed source input was not present. Aborting request.");
+    vtkErrorMacro("Seed source input was not present.");
     return 1;
     }
 
@@ -465,7 +535,7 @@ int vtkSQFieldTracer::RequestData(
     = dynamic_cast<vtkDataSet*>(info->Get(vtkDataObject::DATA_OBJECT()));
   if (out==0)
     {
-    vtkWarningMacro("Output dataset was not present. Aborting request.");
+    vtkErrorMacro("Output dataset was not present.");
     return 1;
     }
 
@@ -507,9 +577,18 @@ int vtkSQFieldTracer::RequestData(
       break;
 
     case MODE_POINCARE:
-      traceData=new PoincareMapData;
-      traceData->SetSource(source);
-      traceData->SetOutput(out);
+      {
+      unsigned long gid=0;
+      if (!this->UseDynamicScheduler)
+        {
+        gid=this->GetGlobalCellId(source);
+        }
+      PoincareMapData *mapData=new PoincareMapData;
+      mapData->SetSourceCellGid(gid);
+      mapData->SetSource(source);
+      mapData->SetOutput(out);
+      traceData=mapData;
+      }
       break;
 
     default:
@@ -520,7 +599,7 @@ int vtkSQFieldTracer::RequestData(
   TerminationCondition *tcon=traceData->GetTerminationCondition();
   // Initialize termination condition with the problem
   // domain, any other termination conditions are optional.
-  tcon->SetProblemDomain(pDomain,this->PeriodicBC);
+  tcon->SetProblemDomain(pDomain,periodicBC);
   // Include and additional termination surfaces from the third and
   // optional input.
   int nSurf=inputVector[2]->GetNumberOfInformationObjects();
@@ -548,7 +627,7 @@ int vtkSQFieldTracer::RequestData(
   /// Work loops
   if (this->UseDynamicScheduler)
     {
-    #ifdef vtkSQFieldTracerDEBUG
+    #if vtkSQFieldTracerDEBUG>1
     cerr << "Starting dynamic scheduler." << endl;
     #endif
     // This requires all process to have all the seed source data
@@ -556,11 +635,19 @@ int vtkSQFieldTracer::RequestData(
 
     // TODO implement a test to verify this is so. Eg.all should have the same first point
     // and number of cells.
-    this->IntegrateDynamic(procId,nProcs,source,out,fieldName,oocr.GetPointer(),oocrCache,traceData);
+    this->IntegrateDynamic(
+          this->WorldRank,
+          this->WorldSize,
+          source,
+          out,
+          fieldName,
+          oocr.GetPointer(),
+          oocrCache,
+          traceData);
     }
   else
     {
-    #ifdef vtkSQFieldTracerDEBUG
+    #if vtkSQFieldTracerDEBUG>1
     cerr << "Static distribution assumed." << endl;
     #endif
     // This assumes that seed source is distrubuted such that each 
@@ -576,11 +663,11 @@ int vtkSQFieldTracer::RequestData(
   #if defined vtkSQFieldTracerTIME
   gettimeofday(&wallt,0x0);
   double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-  cerr << procId << " finished " << walle-walls << endl;
+  cerr << this->WorldRank << " finished " << walle-walls << endl;
   #endif
 
   // free cache
-  if (oocrCache){ oocrCache->Delete(); }
+  // if (oocrCache){ oocrCache->Delete(); }
 
   /// Clean up
   // print a legend, and (optionally) reduce the number of colors to that which
@@ -668,7 +755,7 @@ int vtkSQFieldTracer::IntegrateDynamic(
             {
             --nActiveWorkers;
             }
-           #ifdef vtkSQFieldTracerDEBUG
+           #if vtkSQFieldTracerDEBUG>1
            cerr << "Master filled request from " << otherProc << " " << sourceIds << endl;
            #endif
           }
@@ -681,7 +768,7 @@ int vtkSQFieldTracer::IntegrateDynamic(
       moreWork=Q.GetBlock(sourceIds,masterBlockSize);
       if (moreWork)
         {
-        #ifdef vtkSQFieldTracerDEBUG
+        #if vtkSQFieldTracerDEBUG>1
         cerr << "Master integrating " << sourceIds << endl;
         #endif
         this->IntegrateBlock(
@@ -699,7 +786,7 @@ int vtkSQFieldTracer::IntegrateDynamic(
     {
     while (1)
       {
-      #ifdef vtkSQFieldTracerDEBUG
+      #if vtkSQFieldTracerDEBUG>1
       cerr << "Slave " << procId << " requesting work" << endl;
       #endif
       // get a block of seed cell ids to process.
@@ -708,7 +795,7 @@ int vtkSQFieldTracer::IntegrateDynamic(
       CellIdBlock sourceIds;
       MPI_Recv(sourceIds.data(),sourceIds.dataSize(),MPI_INT,masterProcId,BLOCK_REQ,MPI_COMM_WORLD,&stat);
 
-      #ifdef vtkSQFieldTracerDEBUG
+      #if vtkSQFieldTracerDEBUG>1
       cerr << "Slave " << procId << " received " << sourceIds << endl;
       #endif
 
@@ -739,13 +826,30 @@ int vtkSQFieldTracer::IntegrateBlock(
   // build the output.
   vtkIdType nLines=traceData->InsertCells(sourceIds);
 
+  double prog=0.0;
+  double progInc=1.0/(double)nLines;
+  double progIntv=1.0/min((double)nLines,10.0);
+  double progNext=0.0;
+
   TerminationCondition *tcon=traceData->GetTerminationCondition();
 
-  // integrate from each source cell.
-  for (vtkIdType i=0; i<nLines; ++i)
+  for (vtkIdType i=0; i<nLines; ++i, prog+=progInc)
     {
+    // report progress to PV
+    if (!this->UseDynamicScheduler && prog>=progNext)
+      {
+      progNext+=progIntv;
+      this->UpdateProgress(prog);
+      }
+    // tarce a stream line
     FieldLine *line=traceData->GetFieldLine(i);
     this->IntegrateOne(oocr,oocrCache,fieldName,line,tcon);
+
+
+    if (this->Mode==MODE_POINCARE)
+      {
+      cerr << ".";
+      }
     }
 
   // sync results to output. free resources in preparation
@@ -770,7 +874,7 @@ void vtkSQFieldTracer::IntegrateOne(
   line->GetSeedPoint(seed);
   if (tcon->OutsideProblemDomain(seed))
     {
-    #if vtkSQFieldTracerDEBUG>=2
+    #if vtkSQFieldTracerDEBUG>0
     cerr
       << "Terminated: Seed " << Tuple<double>(line->GetSeedPoint(),3)
       << " outside problem domain.";
@@ -788,16 +892,20 @@ void vtkSQFieldTracer::IntegrateOne(
 
   for (; i<2; stepSign+=2, ++i)
     {
-    double minStep=0.0;             // smallest step to take (can be a function of cell size)
-    double maxStep=0.0;             // largest step to take
-    double stepSize=this->MaxStep;  // next recommended step size
-    double lineLength=0.0;          // cumulative length of stream line
-    vtkIdType numSteps=0;           // cumulative number of steps taken in integration
-    double V0[3]={0.0};             // vector field interpolated at the start point
-    double p0[3]={0.0};             // a start point
-    double p1[3]={0.0};             // integrated point
-    static                          // interpolator
+    double minStep=this->MinStep;
+    double maxStep=this->MaxStep;
+    double stepSize=this->MaxStep;     // computed step size
+    double lineLength=0.0;             // cumulative length of stream line
+    vtkIdType numSteps=0;              // cumulative number of steps taken in integration
+    double V0[3]={0.0};                // vector field interpolated at the start point
+    double p0[3]={0.0};                // a start point
+    double p1[3]={0.0};                // integrated point
+    static                             // interpolator
     vtkInterpolatedVelocityField *interp=0;
+    #if vtkSQFieldTracerDEBUG>1
+    double minStepTaken=VTK_DOUBLE_MAX;
+    double maxStepTaken=VTK_DOUBLE_MIN;
+    #endif
 
     line->GetSeedPoint(p0);
 
@@ -805,7 +913,7 @@ void vtkSQFieldTracer::IntegrateOne(
     // steps is reached or until a termination surface is encountered.
     while (1)
       {
-      #if vtkSQFieldTracerDEBUG>=4
+      #if vtkSQFieldTracerDEBUG>4
       cerr << " " << Tuple<double>(p0,3) << endl;
       #endif
 
@@ -813,20 +921,12 @@ void vtkSQFieldTracer::IntegrateOne(
       // in memory data, whence we request more data.
       if (tcon->OutsideWorkingDomain(p0))
         {
-        // Read data in the neighborhood of the seed point.
-        if (oocRCache)
-          {
-          oocRCache->Delete();
-          }
-        oocRCache=oocR->ReadNeighborhood(p0,this->OOCNeighborhoodSize);
+        oocRCache=oocR->ReadNeighborhood(p0,tcon->GetWorkingDomain());
         if (!oocRCache)
           {
-          vtkWarningMacro("Failed to read neighborhood. Aborting.");
+          vtkErrorMacro("Read neighborhood failed.");
           return;
           }
-        // update the working domain. It will be used to validate the next read.
-        tcon->SetWorkingDomain(oocRCache->GetBounds());
-
         // Initialize the vector field interpolator.
         interp=vtkInterpolatedVelocityField::New();
         interp->AddDataSet(oocRCache);
@@ -841,35 +941,79 @@ void vtkSQFieldTracer::IntegrateOne(
       // check for field null
       if ((speed==0) || (speed<=this->NullThreshold))
         {
-        #if vtkSQFieldTracerDEBUG>=2
+        #if vtkSQFieldTracerDEBUG>0
         cerr << "Terminated: Interpolated field null." << endl;
         #endif
         line->SetTerminator(i,tcon->GetFieldNullId());
         break;
         }
 
-      // Convert intervals from cell fractions into lengths.
-      vtkCell* cell=oocRCache->GetCell(interp->GetLastCellId());
-      double cellLength=sqrt(cell->GetLength2());
-      this->ClipStep(stepSize,stepSign,minStep,maxStep,cellLength,lineLength);
+      if (this->IntegratorType==INTEGRATOR_RK45)
+        {
+        // check step size for error bound violation.
+        minStep=this->MinStep;
+        maxStep=this->MaxStep;
+        if (stepSize<=minStep)
+          {
+          vtkErrorMacro(
+            << "Error bound of "
+            << this->MaxError << " could not be met with "
+            << "minimum step size of " << this->MinStep << ". "
+            << "Either raise the error bound or reduce the "
+            << "minimum step size.");
+          return;
+          }
+        // clip step to max step size.
+        else
+        if (stepSize>maxStep)
+          {
+          stepSize=maxStep;
+          }
+        // fix sign
+        minStep*=stepSign;
+        maxStep*=stepSign;
+        }
+
+      // clip to max line length
+      double newLineLength=stepSize+lineLength;
+      if (newLineLength>this->MaxLineLength)
+        {
+        stepSize=newLineLength-this->MaxLineLength;
+        }
+      // fix sign
+      stepSize*=stepSign;
 
       /// Integrate
-      // Calculate the next step using the integrator provided.
-      // Note, both stepSizeInterval and stepTaken are modified
+      // Note, both stepSize and stepTaken are updated
       // by the rk45 integrator.
       interp->SetNormalizeVector(true);
       double error=0.0;
       double stepTaken=0.0;
-      this->Integrator->ComputeNextStep(
+      int iErr=this->Integrator->ComputeNextStep(
           p0,p1,0,
-          stepSize,stepTaken,
-          minStep,maxStep,
+          stepSize,
+          stepTaken,
+          minStep,
+          maxStep,
           this->MaxError,
           error);
       interp->SetNormalizeVector(false);
+      if (iErr)
+        {
+        vtkErrorMacro("Integrator error " << iErr << ".");
+        break;
+        }
 
-      #if vtkSQFieldTracerDEBUG>=3
+      #if vtkSQFieldTracerDEBUG>3
       cerr << (stepSign<0?"<":">");
+      #endif
+
+      #if vtkSQFieldTracerDEBUG>1
+      if (this->IntegratorType==INTEGRATOR_RK45)
+        {
+        minStepTaken=min(minStepTaken,fabs(stepTaken));
+        maxStepTaken=max(maxStepTaken,fabs(stepTaken));
+        }
       #endif
 
       // Use v=dx/dt to calculate speed and check if it is below
@@ -880,10 +1024,10 @@ void vtkSQFieldTracer::IntegrateOne(
       dx+=(p1[2]-p0[2])*(p1[2]-p0[2]);
       dx=sqrt(dx);
       double dt=fabs(stepTaken);
-      double v=dx/(dt+1E-12);
+      double v=dx/(dt+1E-15);
       if (v<=this->NullThreshold)
         {
-        #if vtkSQFieldTracerDEBUG>=2
+        #if vtkSQFieldTracerDEBUG>0
         cerr
           << "Terminated: Field null encountered. "
           << "v=" << v << ". "
@@ -899,7 +1043,7 @@ void vtkSQFieldTracer::IntegrateOne(
       int surfIsect=tcon->IntersectsTerminationSurface(p0,p1,pi);
       if (surfIsect)
         {
-        #if vtkSQFieldTracerDEBUG>=2
+        #if vtkSQFieldTracerDEBUG>0
         cerr
           << (this->Mode==MODE_POINCARE?"Continued:":"Terminated:")
           << "Surface " << surfIsect-1 << " intersected." << endl;
@@ -911,11 +1055,11 @@ void vtkSQFieldTracer::IntegrateOne(
 
       // Update the arc length, step count  and check were within the integration
       // limits.
-      lineLength+=fabs(stepTaken);
+      lineLength+=dx;
       ++numSteps;
       if (lineLength>this->MaxLineLength || numSteps>this->MaxNumberOfSteps)
         {
-        #if vtkSQFieldTracerDEBUG>=2
+        #if vtkSQFieldTracerDEBUG>0
         cerr
           << "Terminated: Integration limmit exceeded. "
           << "nSteps= " << numSteps << "."
@@ -933,14 +1077,14 @@ void vtkSQFieldTracer::IntegrateOne(
       int bcSurf=tcon->ApplyPeriodicBC(p0,p1);
       if (bcSurf)
         {
-        #if vtkSQFieldTracerDEBUG>=2
+        #if vtkSQFieldTracerDEBUG>0
         cerr << "Periodic BC Applied: At " << bcSurf << "." << endl;
         #endif
         }
       else
       if (tcon->OutsideProblemDomain(p0,p1))
         {
-        #if vtkSQFieldTracerDEBUG>=2
+        #if vtkSQFieldTracerDEBUG>0
         cerr << "Terminated: Integration outside problem domain." << endl;
         #endif
         line->SetTerminator(i,tcon->GetProblemDomainSurfaceId());
@@ -956,11 +1100,39 @@ void vtkSQFieldTracer::IntegrateOne(
       p0[1]=p1[1];
       p0[2]=p1[2];
       }
+
+    #if vtkSQFieldTracerDEBUG>1
+    if (this->IntegratorType==INTEGRATOR_RK45)
+      {
+      cerr
+        << "[" << this->WorldRank << "] rk-4-5 step sizes "
+        << minStepTaken << ", " << maxStepTaken <<  "."
+        << endl;
+      }
+    #endif
     }
 
   return;
 }
 
+//-----------------------------------------------------------------------------
+unsigned long vtkSQFieldTracer::GetGlobalCellId(vtkDataSet *data)
+{
+  unsigned long gid=0;
+  unsigned long nGlobal[this->WorldSize];
+  unsigned long nLocal=data->GetNumberOfCells();
+  MPI_Allgather(
+        &nLocal,1,MPI_UNSIGNED_LONG,
+        &nGlobal,1,MPI_UNSIGNED_LONG,
+        MPI_COMM_WORLD);
+
+  for (int i=0; i<this->WorldRank; ++i)
+    {
+    gid+=nGlobal[i];
+    }
+
+  return gid;
+}
 
 //-----------------------------------------------------------------------------
 double vtkSQFieldTracer::ConvertToLength(
@@ -969,14 +1141,14 @@ double vtkSQFieldTracer::ConvertToLength(
       double cellLength)
 {
   double retVal = 0.0;
-  if (unit==ARC_LENGTH )
+  switch (unit)
     {
-    retVal=interval;
-    }
-  else
-  if (unit==CELL_FRACTION)
-    {
-    retVal=interval*cellLength;
+    case ARC_LENGTH:
+      retVal=interval;
+      break;
+    case CELL_FRACTION:
+      retVal=interval*cellLength;
+      break;
     }
   return retVal;
 }
@@ -1012,8 +1184,8 @@ void vtkSQFieldTracer::ClipStep(
   step*=stepSign;
   minStep*=stepSign;
   maxStep*=stepSign;
-  /// cerr << "Intervals: " << minStep << ", " << step << ", " << maxStep << ", " << direction << endl;
 }
+
 
 //-----------------------------------------------------------------------------
 void vtkSQFieldTracer::PrintSelf(ostream& os, vtkIndent indent)

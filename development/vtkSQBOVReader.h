@@ -65,6 +65,7 @@ public:
   void SetSubset(int ilo,int ihi, int jlo, int jhi, int klo, int khi);
   void SetSubset(const int *s);
   vtkGetVector6Macro(Subset,int);
+
   // Description:
   // For PV UI. Range domains only work with arrays of size 2.
   void SetISubset(int ilo, int ihi);
@@ -75,23 +76,48 @@ public:
   vtkGetVector2Macro(KSubsetRange,int);
 
   // Description:
-  // Activate a meta read where no arrays are read.
-  // The meta data incuding file name is passed
-  // downstream via pipeline information objects. The
-  // reader may be used in either mode, however take care
-  // that RequestInformation is called after.
-  vtkSetMacro(MetaRead,int);
-  vtkGetMacro(MetaRead,int);
+  // Mark a coordinate direction as periodic. When periodic boundaries
+  // are specified out of core reads will load ghost cells.
+  void SetPeriodicBC(int *flags);
+  void SetXHasPeriodicBC(int flag);
+  void SetYHasPeriodicBC(int flag);
+  void SetZHasPeriodicBC(int flag);
 
   // Description:
-  // Sets modified if array selection changes.
-  static void SelectionModifiedCallback( 
-      vtkObject*,
-      unsigned long,
-      void* clientdata,
-      void* );
+  // Set/Get the number of ghost cells to load during ooc
+  // reads. Does not affect in core operation.
+  void SetNumberOfGhostCells(int n) { this->NGhosts=n; }
+  int GetNumberOfGhostCells() { return this->NGhosts; }
+
+  // Description:
+  // Set the size of the domain decomposition of the requested
+  // subset in each direction.
+  vtkSetVector3Macro(DecompDims,int);
+  vtkGetVector3Macro(DecompDims,int);
+  // TODO PV range domain 1-nCells[0], 0-nCells[1], 0-nCells[2]
+
+  // Description:
+  // Set the size of the block cache used during out-of-core
+  // operation.
+  vtkSetMacro(BlockCacheSize,int);
+  vtkGetMacro(BlockCacheSize,int);
+  // TODO PV range domain 0-nCells[0]*nCells[1]*nCells[2]
 
 
+  // Description:
+  // If set cahce is cleared after the filter is done
+  // with each pass. If you can afford the memory then
+  // unset it.
+  vtkSetMacro(ClearCachedBlocks,int);
+  vtkGetMacro(ClearCachedBlocks,int);
+
+  // // Description:
+  // // Sets modified if array selection changes.
+  // static void SelectionModifiedCallback( 
+  //     vtkObject*,
+  //     unsigned long,
+  //     void* clientdata,
+  //     void* );
 
   //BTX
   enum
@@ -118,6 +144,15 @@ public:
   vtkSetMacro(SieveBufferSize,long);
   vtkGetMacro(SieveBufferSize,long);
 
+  // Description:
+  // Activate a meta read where no arrays are read.
+  // The meta data incuding file name is passed
+  // downstream via pipeline information objects. The
+  // reader may be used in either mode, however take care
+  // that RequestInformation is called after.
+  vtkSetMacro(MetaRead,int);
+  vtkGetMacro(MetaRead,int);
+
 protected:
   /// Pipeline internals.
   int RequestData(vtkInformation *req,vtkInformationVector **inInfos,vtkInformationVector *outInfos);
@@ -143,6 +178,11 @@ private:
   int JSubsetRange[2];
   int KSubsetRange[2];
   int MetaRead;            // flag indicating type of read meta or actual
+  int PeriodicBC[3];       // flag indicating which directions have periodic BC
+  int NGhosts;             // number of ghosts cells to load (ooc only)
+  int DecompDims[3];       // subset split into an LxMxN cartesian decomposition
+  int BlockCacheSize;      // number of blocks to cache during ooc oepration
+  int ClearCachedBlocks;   // control persistence of cahce
   int WorldRank;           // rank of this process
   int WorldSize;           // number of processes
   char HostName[5];        // short host name where this process runs

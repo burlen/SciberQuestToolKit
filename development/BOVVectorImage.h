@@ -15,6 +15,7 @@ Copyright 2008 SciberQuest Inc.
 using std::ostream;
 using std::endl;
 
+/// Handle to a vector (3 scalar handles).
 class BOVVectorImage
 {
 public:

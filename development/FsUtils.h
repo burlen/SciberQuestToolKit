@@ -15,7 +15,6 @@ using std::string;
 #include<iostream>
 using std::ostream;
 
-
 int Represented(const char *path, const char *prefix);
 int GetSeriesIds(const char *path, const char *prefix, vector<int> &ids);
 string StripFileNameFromPath(const string fileName);

@@ -4,34 +4,20 @@
 #include "vtkPolyData.h"
 #include "vtkPoints.h"
 #include "vtkCellArray.h"
+#include "vtkCellLocator.h"
+
+#include "SQMacros.h"
+#include "Tuple.hxx"
 
 #include <sstream>
 using std::ostringstream;
 #include "vtkPolyDataWriter.h"
 
-#define SafeDelete(a)\
-  if (a)\
-    {\
-    a->Delete();\
-    }
+
 
 //-----------------------------------------------------------------------------
 TerminationCondition::TerminationCondition()
 {
-  this->ProblemDomain[0]=
-  this->ProblemDomain[2]=
-  this->ProblemDomain[4]=1;
-  this->ProblemDomain[1]=
-  this->ProblemDomain[3]=
-  this->ProblemDomain[5]=0;
-
-  this->WorkingDomain[0]=
-  this->WorkingDomain[2]=
-  this->WorkingDomain[4]=1;
-  this->WorkingDomain[1]=
-  this->WorkingDomain[3]=
-  this->WorkingDomain[5]=0;
-
   this->PeriodicBCFaces[0]=
   this->PeriodicBCFaces[1]=
   this->PeriodicBCFaces[2]=
@@ -73,13 +59,27 @@ void TerminationCondition::ClearPeriodicBC()
 }
 
 //-----------------------------------------------------------------------------
-void TerminationCondition::SetProblemDomain(double dom[6], int periodic[3])
+void TerminationCondition::SetProblemDomain(
+      const CartesianBounds &dom,
+      const int periodic[3])
 {
-  // Copy the domain, for in/out tests
-  for (int i=0; i<6; ++i)
-    {
-    this->ProblemDomain[i]=dom[i];
-    }
+  if (&dom==&this->ProblemDomain) return;
+  this->SetProblemDomain(dom.GetData(),periodic);
+}
+
+//-----------------------------------------------------------------------------
+void TerminationCondition::SetProblemDomain(
+      const double dom[6],
+      const int periodic[3])
+{
+  this->ProblemDomain.Set(dom);
+
+  // When we apply periodic BC, if we end up exactly on the domain
+  // bounds the next interpolation will fail. Tweak the periodic
+  // dimension in the least significant digit to be sure we are
+  // safely inside the problem domain.
+  this->ProblemDomain.ShrinkScaledEpsilon();
+
 
   // Construct faces and coords needed to apply periodic BC's
   // if any.
@@ -87,14 +87,16 @@ void TerminationCondition::SetProblemDomain(double dom[6], int periodic[3])
 
   vtkPoints *verts=vtkPoints::New();
   verts->SetNumberOfPoints(8);
-  verts->SetPoint(0, dom[0], dom[2], dom[4]); // b
-  verts->SetPoint(1, dom[1], dom[2], dom[4]);
-  verts->SetPoint(2, dom[1], dom[3], dom[4]);
-  verts->SetPoint(3, dom[0], dom[3], dom[4]);
-  verts->SetPoint(4, dom[0], dom[2], dom[5]); // t
-  verts->SetPoint(5, dom[1], dom[2], dom[5]);
-  verts->SetPoint(6, dom[1], dom[3], dom[5]);
-  verts->SetPoint(7, dom[0], dom[3], dom[5]);
+  // bottom face
+  verts->SetPoint(0, this->ProblemDomain[0], this->ProblemDomain[2], this->ProblemDomain[4]);
+  verts->SetPoint(1, this->ProblemDomain[1], this->ProblemDomain[2], this->ProblemDomain[4]);
+  verts->SetPoint(2, this->ProblemDomain[1], this->ProblemDomain[3], this->ProblemDomain[4]);
+  verts->SetPoint(3, this->ProblemDomain[0], this->ProblemDomain[3], this->ProblemDomain[4]);
+   // top face
+  verts->SetPoint(4, this->ProblemDomain[0], this->ProblemDomain[2], this->ProblemDomain[5]);
+  verts->SetPoint(5, this->ProblemDomain[1], this->ProblemDomain[2], this->ProblemDomain[5]);
+  verts->SetPoint(6, this->ProblemDomain[1], this->ProblemDomain[3], this->ProblemDomain[5]);
+  verts->SetPoint(7, this->ProblemDomain[0], this->ProblemDomain[3], this->ProblemDomain[5]);
 
   vtkIdType cellPts[24]
     ={
@@ -105,7 +107,7 @@ void TerminationCondition::SetProblemDomain(double dom[6], int periodic[3])
     0,1,3,2,  // b
     4,5,7,6}; // t
 
-  // in each cardinal direction
+  // in each coordinate direction
   for (int q=0; q<3; ++q)
     {
     if (periodic[q])
@@ -133,16 +135,8 @@ void TerminationCondition::SetProblemDomain(double dom[6], int periodic[3])
         }
       }
     }
-  verts->Delete();
-}
 
-//-----------------------------------------------------------------------------
-void TerminationCondition::SetWorkingDomain(double dom[6])
-{
-  for (int i=0; i<6; ++i)
-    {
-    this->WorkingDomain[i]=dom[i];
-    }
+  verts->Delete();
 }
 
 //-----------------------------------------------------------------------------
@@ -165,6 +159,68 @@ void TerminationCondition::PushTerminationSurface(
     {
     this->TerminationSurfaceNames.push_back(name);
     }
+}
+
+//-----------------------------------------------------------------------------
+int TerminationCondition::IntersectsTerminationSurface(
+      double p0[3],
+      double p1[3],
+      double *pi)
+{
+  size_t nSurfaces=this->TerminationSurfaces.size();
+  for (size_t i=0; i<nSurfaces; ++i)
+    {
+    double p[3]={0.0};
+    double t=0.0;
+    int c=0;
+    int hitSurface
+      = this->TerminationSurfaces[i]->IntersectWithLine(p0,p1,1E-6,t,pi,p,c);
+    if (hitSurface)
+      {
+      return i+1;
+      }
+    }
+  return 0;
+}
+
+//-----------------------------------------------------------------------------
+int TerminationCondition::ApplyPeriodicBC(double p0[3], double p1[3])
+{
+  for (int i=0; i<6;)
+    {
+    vtkCellLocator *face=this->PeriodicBCFaces[i];
+    // a null entry indicates non-periodic boundary
+    if (face)
+      {
+      double t=0.0;
+      double x[3]={0.0};
+      double p[3]={0.0};
+      int c=0;
+      int hitSurface
+        = this->PeriodicBCFaces[i]->IntersectWithLine(p0,p1,1E-6,t,x,p,c);
+      if (hitSurface)
+        {
+        // replace input with the location of the intersection
+        p1[0]=x[0];
+        p1[1]=x[1];
+        p1[2]=x[2];
+
+        int q=i/2;      // periodic direction
+        int p=(i+1)%2;  // selects opposite face
+
+        // apply the periodic BC
+        p1[q]=this->ProblemDomain[2*q+p];
+
+        return i;
+        }
+      i+=1;
+      }
+    else
+      {
+      i+=2; // periodic bc faces come in pairs.
+      }
+    }
+  return 0;
 }
 
 //-----------------------------------------------------------------------------

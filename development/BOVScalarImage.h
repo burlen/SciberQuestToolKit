@@ -6,17 +6,17 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef BOVScalarImage_h
-#define BOVScalarImage_h
+#ifndef __BOVScalarImage_h
+#define __BOVScalarImage_h
 
-#include "mpi.h"
+#include <mpi.h>
+
 #include <string>
 using std::string;
 #include <iostream>
 using std::ostream;
-using std::endl;
-using std::cerr;
 
+/// Handle to file containing a scalar array.
 class BOVScalarImage
 {
 public:

@@ -8,8 +8,6 @@ Copyright 2008 SciberQuest Inc.
 */ 
 #include "vtkSQBOVReader.h"
 
-#include "mpi.h"
-
 #include "vtkObjectFactory.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkImageData.h"
@@ -30,9 +28,13 @@ Copyright 2008 SciberQuest Inc.
 #include "BOVReader.h"
 #include "GDAMetaData.h"
 #include "BOVTimeStepImage.h"
+#include "CartesianDecomp.h"
 #include "Tuple.hxx"
 #include "PrintUtils.h"
+#include "SQMacros.h"
 #include "minmax.h"
+
+#include <mpi.h>
 
 #include <sstream>
 using std::ostringstream;
@@ -95,6 +97,14 @@ vtkSQBOVReader::vtkSQBOVReader()
   this->JSubsetRange[1]=0;
   this->KSubsetRange[0]=1;
   this->KSubsetRange[1]=0;
+  this->PeriodicBC[0]=
+  this->PeriodicBC[1]=
+  this->PeriodicBC[2]=0;
+  this->DecompDims[0]=
+  this->DecompDims[1]=
+  this->DecompDims[2]=1;
+  this->BlockCacheSize=10;
+  this->ClearCachedBlocks=1;
   this->UseCollectiveIO=HINT_ENABLED;
   this->NumberOfIONodes=0;
   this->CollectBufferSize=0;
@@ -126,7 +136,7 @@ vtkSQBOVReader::vtkSQBOVReader()
   #endif
 
   // Configure the internal reader.
-  this->Reader=new BOVReader;
+  this->Reader=BOVReader::New();
 
   GDAMetaData md;
   this->Reader->SetMetaData(&md);
@@ -144,7 +154,7 @@ vtkSQBOVReader::~vtkSQBOVReader()
   #endif
 
   this->Clear();
-  delete this->Reader;
+  this->Reader->Delete();
 }
 
 //-----------------------------------------------------------------------------
@@ -226,6 +236,7 @@ void vtkSQBOVReader::SetFileName(const char* _arg)
     {
     this->Reader->Close();
     }
+
   // Open the newly named dataset.
   if (this->FileName)
     {
@@ -235,17 +246,22 @@ void vtkSQBOVReader::SetFileName(const char* _arg)
       vtkErrorMacro("Failed to open the file \"" << safeio(this->FileName) << "\".");
       return;
       }
+
     // Update index space ranges provided in the U.I.
-    this->Reader->GetMetaData()->GetSubset().GetDimensions(this->Subset);
-    this->ISubsetRange[0]=this->Subset[0];
-    this->ISubsetRange[1]=this->Subset[1];
-    this->JSubsetRange[0]=this->Subset[2];
-    this->JSubsetRange[1]=this->Subset[3];
-    this->KSubsetRange[0]=this->Subset[4];
-    this->KSubsetRange[1]=this->Subset[5];
+    const CartesianExtent &subset=this->Reader->GetMetaData()->GetSubset();
+    this->ISubsetRange[0]=this->Subset[0]=subset[0];
+    this->ISubsetRange[1]=this->Subset[1]=subset[1];
+    this->JSubsetRange[0]=this->Subset[2]=subset[2];
+    this->JSubsetRange[1]=this->Subset[3]=subset[3];
+    this->KSubsetRange[0]=this->Subset[4]=subset[4];
+    this->KSubsetRange[1]=this->Subset[5]=subset[5];
 
     #if defined vtkSQBOVReaderDEBUG
-    cerr << "vtkSQBOVReader " << this->HostName << " " << this->WorldRank << " Open succeeded." << endl;
+    cerr
+      << "vtkSQBOVReader "
+      << this->HostName << " "
+      << this->WorldRank
+      << " Open succeeded." << endl;
     #endif
     }
 
@@ -278,23 +294,30 @@ void vtkSQBOVReader::SetSubset(int ilo,int ihi, int jlo, int jhi, int klo, int k
   cerr << "===============================SetSubset" << endl;
   #endif
   // Avoid unecessary pipeline execution.
-  if (this->Subset[0]==ilo && this->Subset[1]==ihi
+  if ( this->Subset[0]==ilo && this->Subset[1]==ihi
     && this->Subset[2]==jlo && this->Subset[3]==jhi
-    && this->Subset[4]==klo && this->Subset[5]==khi)
+    && this->Subset[4]==klo && this->Subset[5]==khi )
     {
     return;
     }
+
   // Copy for get pointer return.
-  this->Subset[0]=ilo; this->Subset[1]=ihi;
-  this->Subset[2]=jlo; this->Subset[3]=jhi;
-  this->Subset[4]=klo; this->Subset[5]=khi;
+  this->Subset[0]=ilo;
+  this->Subset[1]=ihi;
+  this->Subset[2]=jlo;
+  this->Subset[3]=jhi;
+  this->Subset[4]=klo;
+  this->Subset[5]=khi;
+
   // Pass through to reader.
-  vtkAMRBox subset(this->Subset);
+  CartesianExtent subset(this->Subset);
   this->Reader->GetMetaData()->SetSubset(subset);
+
   // Mark object dirty.
   this->Modified();
+
   #if defined vtkSQBOVReaderDEBUG
-  subset.Print(cerr) << endl;
+  cerr << "SetSubset(" << subset << ")" << endl;
   #endif
 }
 
@@ -317,6 +340,62 @@ void vtkSQBOVReader::SetKSubset(int klo, int khi)
 {
   int *s=this->Subset;
   this->SetSubset(s[0],s[1],s[2],s[3],klo,khi);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQBOVReader::SetPeriodicBC(int *flags)
+{
+  if ( (this->PeriodicBC[0]==flags[0])
+    && (this->PeriodicBC[1]==flags[1])
+    && (this->PeriodicBC[2]==flags[2]) )
+    {
+    return;
+    }
+
+  this->PeriodicBC[0]=flags[0];
+  this->PeriodicBC[1]=flags[1];
+  this->PeriodicBC[2]=flags[2];
+
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQBOVReader::SetXHasPeriodicBC(int flag) 
+{
+  if (this->PeriodicBC[0]==flag)
+    {
+    return;
+    }
+
+  this->PeriodicBC[0]=flag;
+
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQBOVReader::SetYHasPeriodicBC(int flag)
+{
+  if (this->PeriodicBC[1]==flag)
+    {
+    return;
+    }
+
+  this->PeriodicBC[1]=flag;
+
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQBOVReader::SetZHasPeriodicBC(int flag)
+{
+  if (this->PeriodicBC[2]==flag)
+    {
+    return;
+    }
+
+  this->PeriodicBC[2]=flag;
+
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
@@ -406,13 +485,14 @@ int vtkSQBOVReader::RequestInformation(
     // 0 and range to nProcs and 1. This will neccesitate a false origin
     // and spacing as well.
     wholeExtent[1]=this->WorldSize;
+
     // Save the real extent in our own key.
     // info->Set(vtkSQOOCReader::WHOLE_EXTENT(),this->Subset,6);
-
     // Set the origin and spacing
     // We save the actuals in our own keys.
     // info->Set(vtkSQOOCReader::ORIGIN(),X0,3);
     // info->Set(vtkSQOOCReader::SPACING(),dX,3);
+
     // Adjust PV's keys for the false subsetting extents.
     X0[0]=X0[0]+this->Subset[0]*dX[0];
     X0[1]=X0[1]+this->Subset[2]*dX[1];
@@ -441,9 +521,8 @@ int vtkSQBOVReader::RequestInformation(
     // index space.
     this->GetSubset(wholeExtent);
     //
-    const vtkAMRBox &subset=this->Reader->GetMetaData()->GetSubset();
-    subset.GetDataSetOrigin(X0);
-    subset.GetGridSpacing(dX);
+    this->Reader->GetMetaData()->GetOrigin(X0);
+    this->Reader->GetMetaData()->GetSpacing(dX);
     }
 
   // Pass values into the pipeline.
@@ -459,10 +538,12 @@ int vtkSQBOVReader::RequestInformation(
     {
     times[i]=(double)steps[i]; // use the index rather than the actual.
     }
+
   #if defined vtkSQBOVReaderDEBUG
   cerr << times << endl;
   cerr << "Total: " << nSteps << endl;
   #endif
+
   // Set available time steps on pipeline.
   info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),&times[0],times.size());
   double timeRange[2]={times[0],times[times.size()-1]};
@@ -470,7 +551,6 @@ int vtkSQBOVReader::RequestInformation(
 
   return 1;
 }
-
 
 //-----------------------------------------------------------------------------
 void vtkSQBOVReader::SetMPIFileHints()
@@ -533,6 +613,7 @@ void vtkSQBOVReader::SetMPIFileHints()
     }
 
   this->Reader->SetHints(hints);
+
   MPI_Info_free(&hints);
 }
 
@@ -562,7 +643,7 @@ int vtkSQBOVReader::RequestData(
     = dynamic_cast<vtkImageData *>(info->Get(vtkDataObject::DATA_OBJECT()));
   if (idds==NULL)
     {
-    vtkWarningMacro("Filter data has not been configured correctly. Aborting.");
+    vtkErrorMacro("Filter data has not been configured correctly.");
     return 1;
     }
 
@@ -599,15 +680,15 @@ int vtkSQBOVReader::RequestData(
   // the reader reads the requested arrays.
 
 
-  // This is what the user selected via th UI.
-  const vtkAMRBox &subset=this->Reader->GetMetaData()->GetSubset();
+  // index space selected in the UI.
+  CartesianExtent subset=this->Reader->GetMetaData()->GetSubset();
 
   // Set the number of points in the output depending on the
   // reader mode.
   int nPoints[3]={2,2,2};
   if (this->MetaRead)
     {
-    // A meta reade makes a grid consisting of nProcs cells along
+    // A meta read makes a grid consisting of nProcs cells along
     // the x-axis minimizing the memory footprint while allowing domain
     // decomposition to take place.
     nPoints[0]=this->WorldSize+1;
@@ -616,14 +697,20 @@ int vtkSQBOVReader::RequestData(
     }
   else
     {
-    // The actual read will  use actual grid dimensions which
-    // in this case are cell centered and being read onto the
-    // dual node centered grid.
-    subset.GetNumberOfCells(nPoints);
+    // A read pulls data from file on a cell centered grid
+    // into memory on a node centered grid. The memory grid
+    // is the dual grid of the file grid. In other words
+    // file->nCells==memory->nPoints
+    subset.Size(nPoints);
     }
 
+  // now that we have the number of points, convert the
+  // subset extent from a node based extent to a cell based
+  // one.
+  subset.NodeToCell(); // dual grid
+
   // Get the values for origin and spacing from our previous computation
-  // in RequestInformation.
+  // in RequestInformation. For a meta-read these are pseudo values.
   double dX[3];
   info->Get(vtkDataObject::SPACING(),dX);
   double X0[3];
@@ -641,20 +728,14 @@ int vtkSQBOVReader::RequestData(
   idds->SetExtent(decomp);
 
   #if defined vtkSQBOVReaderDEBUG
-  cerr << "RequestData "
-       << this->HostName << " "
-       << this->WorldRank << " "
-       << subset.GetNumberOfCells() << " "
-       << endl;
-  cerr << "RequestData "
-       << this->HostName << " "
-       << this->WorldRank << " "
-       << decomp[0] << " " << decomp[1] << " "
-       << decomp[2] << " " << decomp[3] << " "
-       << decomp[4] << " " << decomp[5] << " "
-       << endl;
+  cerr
+    << "RequestData "
+    << this->HostName << " "
+    << this->WorldRank << " "
+    << this->Reader->GetMetaData()->GetSubset().Size() << " "
+    << Tuple<int>(decomp,6)
+    << endl;
   #endif
-
 
   // Construct MPI File hints for the reader.
   this->SetMPIFileHints();
@@ -665,12 +746,38 @@ int vtkSQBOVReader::RequestData(
     {
     // Meta read.
     ok=this->Reader->ReadMetaTimeStep(stepId,idds,this);
-    // Pass the actual reader into the pipeline.
+
+    // Make a domain decomposition of the requested subset.
+    double *subsetX0=this->Reader->GetMetaData()->GetOrigin();
+    double *subsetDX=this->Reader->GetMetaData()->GetSpacing();
+
+    CartesianExtent fileExt=this->Reader->GetMetaData()->GetDomain();
+    fileExt.NodeToCell(); // dual grid
+
+    CartesianDecomp *ddecomp=CartesianDecomp::New();
+    ddecomp->SetFileExtent(fileExt);
+    ddecomp->SetExtent(subset);
+    ddecomp->SetOrigin(subsetX0);
+    ddecomp->SetSpacing(subsetDX);
+    ddecomp->ComputeBounds();
+    ddecomp->SetDecompDims(this->DecompDims);
+    ddecomp->SetPeriodicBC(this->PeriodicBC);
+    ddecomp->SetNumberOfGhostCells(this->NGhosts);
+    ddecomp->DecomposeDomain();
+
+    // Pass the reader into the pipeline, actual read takes
+    // place later intiated by downstream filter.
     vtkSQOOCBOVReader *OOCReader=vtkSQOOCBOVReader::New();
     OOCReader->SetReader(this->Reader);
     OOCReader->SetTimeIndex(stepId);
+    OOCReader->SetDomainDecomp(ddecomp);
+    OOCReader->SetBlockCacheSize(this->BlockCacheSize);
+    OOCReader->SetCloseClearsCachedBlocks(this->ClearCachedBlocks);
+    OOCReader->InitializeBlockCache();
     info->Set(vtkSQOOCReader::READER(),OOCReader);
     OOCReader->Delete();
+    ddecomp->Delete();
+
     // Pass the bounds of what would have been read on all
     // processes. The subset describes what the user has
     // marked for reading.
@@ -682,37 +789,30 @@ int vtkSQBOVReader::RequestData(
     subsetBounds[4]=X0[2];
     subsetBounds[5]=X0[2]+dX[2];
     info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
+
+    // pass the boundary condition flags
+    info->Set(vtkSQOOCReader::PERIODIC_BC(),this->PeriodicBC,3);
     }
   else
     {
-    // Actual read.
+    // Read.
     this->Reader->GetMetaData()->SetDecomp(decomp);
+
     BOVTimeStepImage *stepImg=this->Reader->OpenTimeStep(stepId);
+
     ok=this->Reader->ReadTimeStep(stepImg,idds,this);
+
     this->Reader->CloseTimeStep(stepImg);
+
     // pass the bounds
-    int subsetExt[6];
-    subset.GetDimensions(subsetExt);
-
-    double subsetX0[3];
-    subsetX0[0]=X0[0]+dX[0]*subsetExt[0];
-    subsetX0[1]=X0[1]+dX[1]*subsetExt[2];
-    subsetX0[2]=X0[2]+dX[2]*subsetExt[4];
-
     double subsetBounds[6];
-    subsetBounds[0]=subsetX0[0];
-    subsetBounds[1]=subsetX0[0]+dX[0]*(subsetExt[1]-subsetExt[0]); // on dual grid
-    subsetBounds[2]=subsetX0[1];
-    subsetBounds[3]=subsetX0[1]+dX[1]*(subsetExt[3]-subsetExt[2]);
-    subsetBounds[4]=subsetX0[2];
-    subsetBounds[5]=subsetX0[2]+dX[2]*(subsetExt[5]-subsetExt[4]);
+    subset.GetBounds(X0,dX,subsetBounds);
 
     info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
     }
   if (!ok)
     {
-    vtkWarningMacro(
-      << "BOV Reader encountered an error. Aborting execution.");
+    vtkErrorMacro("Read failed.");
     return 1;
     }
 
@@ -751,17 +851,17 @@ void vtkSQBOVReader::PrintSelf(ostream& os, vtkIndent indent)
 }
 
 /// PV U.I.
-//----------------------------------------------------------------------------
-// observe PV interface and set modified if user makes changes
-void vtkSQBOVReader::SelectionModifiedCallback(
-        vtkObject*,
-        unsigned long,
-        void* clientdata,
-        void*)
-{
-  vtkSQBOVReader *dbb
-    = static_cast<vtkSQBOVReader*>(clientdata);
-
-  dbb->Modified();
-}
+// //----------------------------------------------------------------------------
+// // observe PV interface and set modified if user makes changes
+// void vtkSQBOVReader::SelectionModifiedCallback(
+//         vtkObject*,
+//         unsigned long,
+//         void* clientdata,
+//         void*)
+// {
+//   vtkSQBOVReader *dbb
+//     = static_cast<vtkSQBOVReader*>(clientdata);
+// 
+//   dbb->Modified();
+// }
 

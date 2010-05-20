@@ -13,6 +13,7 @@ Copyright 2008 SciberQuest Inc.
 #include <iostream>
 using std::ostream;
 
+/// A block of adjecent indexes into a collection of cells.
 class CellIdBlock
 {
 public:
@@ -27,12 +28,12 @@ public:
   int *data(){ return m_data; }
   int dataSize(){ return 2; }
 private:
-  int m_data[2];// m_data={first, size}
+  int m_data[2];
 private:
   friend ostream &operator<<(ostream &os, const CellIdBlock &b);
 };
 
-
+/// Partitions a contiguous set of indices on demand.
 class WorkQueue
 {
 public:

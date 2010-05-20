@@ -7,12 +7,12 @@
 Copyright 2008 SciberQuest Inc.
 */
 #include "BOVTimeStepImage.h"
+
 #include "BOVMetaData.h"
+#include "SQMacros.h"
 
 #include <sstream>
-#include <string>
-#include <iostream>
-using namespace std;
+using std::ostringstream;
 
 #ifdef WIN32
   #define PATH_SEP "\\"
@@ -79,7 +79,7 @@ BOVTimeStepImage::BOVTimeStepImage(
     // other ?
     else
       {
-      cerr << __LINE__ << " Error: bad array type for array " << arrayName << "." << endl; 
+      sqErrorMacro(cerr,"Bad array type for array " << arrayName << ".");
       }
     }
 }

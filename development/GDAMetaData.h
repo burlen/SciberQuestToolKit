@@ -9,10 +9,10 @@ Copyright 2008 SciberQuest Inc.
 #define GDAMetaData_h
 
 #include "BOVMetaData.h"
-#include "vtkType.h"
+//#include "vtkType.h"
+#include <iostream>
+using std::ostream;
 
-#include<vector> // STL include.
-using namespace std;
 
 /// Parser for SciberQuest GDA dataset format.
 /**
