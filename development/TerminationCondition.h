@@ -28,9 +28,9 @@ public:
   virtual ~TerminationCondition();
 
   /**
-  Return a value of zero if the field line with last segment 
-  from points p0->p1 intersects a periodic boundary. If so
-  then p1 is set to its periodic image.
+  Determine if the segment p0->p1 intersects a periodic boundary.
+  If so the bc is applied and the face id (1-6) is returned. 
+  Otherwise return 0.
   */
   int ApplyPeriodicBC(double p0[3], double p1[3]);
 

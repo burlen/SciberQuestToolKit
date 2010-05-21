@@ -74,13 +74,6 @@ void TerminationCondition::SetProblemDomain(
 {
   this->ProblemDomain.Set(dom);
 
-  // When we apply periodic BC, if we end up exactly on the domain
-  // bounds the next interpolation will fail. Tweak the periodic
-  // dimension in the least significant digit to be sure we are
-  // safely inside the problem domain.
-  this->ProblemDomain.ShrinkScaledEpsilon();
-
-
   // Construct faces and coords needed to apply periodic BC's
   // if any.
   this->ClearPeriodicBC();
@@ -211,7 +204,8 @@ int TerminationCondition::ApplyPeriodicBC(double p0[3], double p1[3])
         // apply the periodic BC
         p1[q]=this->ProblemDomain[2*q+p];
 
-        return i;
+        // surfaces are identified 1-6.
+        return i+1;
         }
       i+=1;
       }

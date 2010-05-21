@@ -62,6 +62,10 @@ Copyright 2008 SciberQuest Inc.
 #include <mpi.h>
 
 #ifndef vtkSQFieldTracerDEBUG
+  // 0 -- no output
+  // 1 -- adds integration events
+  // 2 -- adds pipeline trace
+  // 3 -- adds all integration info
   #define vtkSQFieldTracerDEBUG 0
 #endif
 
@@ -499,8 +503,7 @@ int vtkSQFieldTracer::RequestData(
   // meta reader.
   if (!info->Has(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX()))
     {
-    vtkErrorMacro(
-        "Bounds not found in pipeline information.");
+    vtkErrorMacro("Bounds are not present in the pipeline information.");
     return 1;
     }
   double pDomain[6];
@@ -623,6 +626,7 @@ int vtkSQFieldTracer::RequestData(
     tcon->PushTerminationSurface(pd,surfName);
     }
   tcon->InitializeColorMapper();
+
 
   /// Work loops
   if (this->UseDynamicScheduler)
@@ -894,13 +898,14 @@ void vtkSQFieldTracer::IntegrateOne(
     {
     double minStep=this->MinStep;
     double maxStep=this->MaxStep;
-    double stepSize=this->MaxStep;     // computed step size
-    double lineLength=0.0;             // cumulative length of stream line
-    vtkIdType numSteps=0;              // cumulative number of steps taken in integration
-    double V0[3]={0.0};                // vector field interpolated at the start point
-    double p0[3]={0.0};                // a start point
-    double p1[3]={0.0};                // integrated point
-    static                             // interpolator
+    double stepSize=stepSign*this->MaxStep; // initial step size
+    double lineLength=0.0;                  // cumulative length of stream line
+    vtkIdType numSteps=0;                   // cumulative number of steps taken in integration
+    double V0[3]={0.0};                     // vector field interpolated at the start point
+    double p0[3]={0.0};                     // a start point
+    double p1[3]={0.0};                     // integrated point
+    int bcSurf=0;                           // set when a periodic boundary condition has been applied.
+    static                                  // interpolator
     vtkInterpolatedVelocityField *interp=0;
     #if vtkSQFieldTracerDEBUG>1
     double minStepTaken=VTK_DOUBLE_MAX;
@@ -917,8 +922,7 @@ void vtkSQFieldTracer::IntegrateOne(
       cerr << " " << Tuple<double>(p0,3) << endl;
       #endif
 
-      // For out of core operation the trace may pass out of the
-      // in memory data, whence we request more data.
+      // Load a block if the seed point is not sontained in the current block.
       if (tcon->OutsideWorkingDomain(p0))
         {
         oocRCache=oocR->ReadNeighborhood(p0,tcon->GetWorkingDomain());
@@ -950,6 +954,9 @@ void vtkSQFieldTracer::IntegrateOne(
 
       if (this->IntegratorType==INTEGRATOR_RK45)
         {
+        // clear step sign
+        stepSize=fabs(stepSize);
+
         // check step size for error bound violation.
         minStep=this->MinStep;
         maxStep=this->MaxStep;
@@ -969,19 +976,12 @@ void vtkSQFieldTracer::IntegrateOne(
           {
           stepSize=maxStep;
           }
-        // fix sign
+        // fix sign on step bounds
         minStep*=stepSign;
         maxStep*=stepSign;
+        // fix sign of step size
+        stepSize*=stepSign;
         }
-
-      // clip to max line length
-      double newLineLength=stepSize+lineLength;
-      if (newLineLength>this->MaxLineLength)
-        {
-        stepSize=newLineLength-this->MaxLineLength;
-        }
-      // fix sign
-      stepSize*=stepSign;
 
       /// Integrate
       // Note, both stepSize and stepTaken are updated
@@ -1004,7 +1004,7 @@ void vtkSQFieldTracer::IntegrateOne(
         break;
         }
 
-      #if vtkSQFieldTracerDEBUG>3
+      #if vtkSQFieldTracerDEBUG>2
       cerr << (stepSign<0?"<":">");
       #endif
 
@@ -1016,15 +1016,20 @@ void vtkSQFieldTracer::IntegrateOne(
         }
       #endif
 
-      // Use v=dx/dt to calculate speed and check if it is below
-      // stagnation threshold. (test prior to tests that modify p1)
+      // update the arc length and number of steps taken.
       double dx=0;
       dx+=(p1[0]-p0[0])*(p1[0]-p0[0]);
       dx+=(p1[1]-p0[1])*(p1[1]-p0[1]);
       dx+=(p1[2]-p0[2])*(p1[2]-p0[2]);
       dx=sqrt(dx);
+      lineLength+=dx;
+      ++numSteps;
+
+      // TODO does this test neccessary ???
+      // Use v=dx/dt to calculate speed and check if it is below
+      // stagnation threshold. (test prior to tests that modify p1)
       double dt=fabs(stepTaken);
-      double v=dx/(dt+1E-15);
+      double v=dx/dt;
       if (v<=this->NullThreshold)
         {
         #if vtkSQFieldTracerDEBUG>0
@@ -1034,6 +1039,37 @@ void vtkSQFieldTracer::IntegrateOne(
           << "thresh=" << this->NullThreshold << "." << endl;
         #endif
         line->SetTerminator(i,tcon->GetFieldNullId());
+        if (this->Mode==MODE_STREAM) line->PushPoint(i,p1);
+        break;
+        }
+
+      // check arc-length for a termination condition
+      if (lineLength>this->MaxLineLength)
+        {
+        #if vtkSQFieldTracerDEBUG>0
+        cerr
+          << "Terminated: Max arc length exceeded. "
+          << "nSteps= " << numSteps << "."
+          << "arcLen= " << lineLength << "."
+          << endl;
+        #endif
+        line->SetTerminator(i,tcon->GetShortIntegrationId());
+        if (this->Mode==MODE_STREAM) line->PushPoint(i,p1);
+        break;
+        }
+
+      // check step number agnainst the fail-safe termination condition.
+      if ( (this->IntegratorType==INTEGRATOR_RK45)
+        && (numSteps>this->MaxNumberOfSteps) )
+        {
+        #if vtkSQFieldTracerDEBUG>0
+        cerr
+          << "Terminated: Max number of steps exceeded. "
+          << "nSteps= " << numSteps << "."
+          << "arcLen= " << lineLength << "."
+          << endl;
+        #endif
+        line->SetTerminator(i,tcon->GetShortIntegrationId());
         if (this->Mode==MODE_STREAM) line->PushPoint(i,p1);
         break;
         }
@@ -1053,34 +1089,26 @@ void vtkSQFieldTracer::IntegrateOne(
         if (!(this->Mode==MODE_POINCARE)) break;
         }
 
-      // Update the arc length, step count  and check were within the integration
-      // limits.
-      lineLength+=dx;
-      ++numSteps;
-      if (lineLength>this->MaxLineLength || numSteps>this->MaxNumberOfSteps)
+      // Check for and apply periodic BC on p1 only if in the last
+      // a periodic boundary condition wasn't applied (otherwise
+      // you can ping pong back and forth)
+      if (!bcSurf)
         {
-        #if vtkSQFieldTracerDEBUG>0
-        cerr
-          << "Terminated: Integration limmit exceeded. "
-          << "nSteps= " << numSteps << "."
-          << "arcLen= " << lineLength << "."
-          << endl;
-        #endif
-        line->SetTerminator(i,tcon->GetShortIntegrationId());
-        if (this->Mode==MODE_STREAM) line->PushPoint(i,p1);
-        break;
+        bcSurf=tcon->ApplyPeriodicBC(p0,p1);
         }
-
-      // Check for and apply periodic BC on p1. If we aren't applying
-      // a periodic boundary condition then make a sure we are still
-      // integrating inside the vaid region.
-      int bcSurf=tcon->ApplyPeriodicBC(p0,p1);
+      else
+        {
+        bcSurf=0;
+        }
       if (bcSurf)
         {
         #if vtkSQFieldTracerDEBUG>0
         cerr << "Periodic BC Applied: At " << bcSurf << "." << endl;
         #endif
         }
+      // If we aren't applying a periodic boundary condition
+      // then make a sure we are still integrating inside the
+      // vaid region.
       else
       if (tcon->OutsideProblemDomain(p0,p1))
         {

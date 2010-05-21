@@ -27,6 +27,10 @@ using std::ostringstream;
 #define vtkSQOOCBOVReaderDEBUG 1
 
 #ifndef vtkSQOOCBOVReaderDEBUG
+  // 0 -- no output
+  // 1 -- report usage statistics
+  // 2 -- adds block request trace
+  // 3 -- adds block dump in vtk legacy format
   #define vtkSQOOCBOVReaderDEBUG 0
 #endif
 
@@ -35,7 +39,7 @@ vtkStandardNewMacro(vtkSQOOCBOVReader);
 
 //-----------------------------------------------------------------------------
 vtkSQOOCBOVReader::vtkSQOOCBOVReader()
-    :
+      :
   Reader(0),
   Image(0),
   BlockAccessTime(0),
@@ -57,19 +61,6 @@ vtkSQOOCBOVReader::~vtkSQOOCBOVReader()
   this->SetDomainDecomp(0);
   delete this->LRUQueue;
 }
-
-/*
-//-----------------------------------------------------------------------------
-void vtkSQOOCBOVReader::SetReader(BOVReader *reader)
-{
-  delete this->Reader;
-  this->Reader=new BOVReader;
-  *this->Reader=*reader;
-
-  // Force solo reads
-  // this->Reader->SetCommunicator(MPI_COMM_SELF);
-}
-*/
 
 //-----------------------------------------------------------------------------
 SetRefCountedPointerImpl(vtkSQOOCBOVReader,Reader,BOVReader);
