@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>562</width>
-    <height>315</height>
+    <width>558</width>
+    <height>523</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,7 +16,7 @@
   <property name="toolTip">
    <string/>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
     <layout class="QGridLayout" name="gridLayout">
      <item row="0" column="0">
@@ -227,6 +227,73 @@
     </layout>
    </item>
    <item>
+    <widget class="QGroupBox" name="groupFPE">
+     <property name="title">
+      <string>Signals</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QCheckBox" name="btSignalHandler">
+        <property name="text">
+         <string>Backtrace on SEGV, ILL, BUS, &amp;&amp; FPE.</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Floating Point Exceptions</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QCheckBox" name="fpeTrapAll">
+        <property name="text">
+         <string>Trap all</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="fpeTrapUnderflow">
+        <property name="text">
+         <string>Trap underflow</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="fpeTrapOverflow">
+        <property name="text">
+         <string>Trap overflow</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="fpeTrapDivByZero">
+        <property name="text">
+         <string>Trap divide by zero</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="fpeTrapInvalid">
+        <property name="text">
+         <string>Trap invalid</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="fpeTrapInexact">
+        <property name="text">
+         <string>Trap inexact</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -242,5 +309,166 @@
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>fpeTrapAll</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>fpeTrapUnderflow</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>278</x>
+     <y>359</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>386</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fpeTrapAll</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>fpeTrapUnderflow</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>278</x>
+     <y>359</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>386</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fpeTrapAll</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>fpeTrapOverflow</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>278</x>
+     <y>359</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>413</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fpeTrapAll</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>fpeTrapOverflow</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>278</x>
+     <y>359</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>413</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fpeTrapAll</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>fpeTrapDivByZero</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>278</x>
+     <y>359</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>440</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fpeTrapAll</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>fpeTrapDivByZero</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>278</x>
+     <y>359</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>440</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fpeTrapAll</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>fpeTrapInexact</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>278</x>
+     <y>359</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>494</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fpeTrapAll</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>fpeTrapInexact</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>278</x>
+     <y>359</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>494</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fpeTrapAll</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>fpeTrapInvalid</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>278</x>
+     <y>359</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>467</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fpeTrapAll</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>fpeTrapInvalid</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>278</x>
+     <y>359</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>467</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

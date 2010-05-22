@@ -50,7 +50,7 @@ pqSQProcessMonitor::pqSQProcessMonitor(
   : pqNamedObjectPanel(proxy, widget)
 {
   #if defined pqSQProcessMonitorDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::pqSQProcessMonitor" << endl;
+  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::pqSQProcessMonitor" << endl;
   #endif
 
   // Construct Qt form.
@@ -81,13 +81,22 @@ pqSQProcessMonitor::pqSQProcessMonitor(
 
   // Let the super class do the undocumented stuff that needs to hapen.
   pqNamedObjectPanel::linkServerManagerProperties();
+
+  // connect to pv apply button
+  QObject::connect(this->Form->btSignalHandler,SIGNAL(toggled(bool)),this,SLOT(setModified()));
+  QObject::connect(this->Form->fpeTrapAll,SIGNAL(toggled(bool)),this,SLOT(setModified()));
+  QObject::connect(this->Form->fpeTrapOverflow,SIGNAL(toggled(bool)),this,SLOT(setModified()));
+  QObject::connect(this->Form->fpeTrapUnderflow,SIGNAL(toggled(bool)),this,SLOT(setModified()));
+  QObject::connect(this->Form->fpeTrapDivByZero,SIGNAL(toggled(bool)),this,SLOT(setModified()));
+  QObject::connect(this->Form->fpeTrapInvalid,SIGNAL(toggled(bool)),this,SLOT(setModified()));
+  QObject::connect(this->Form->fpeTrapInexact,SIGNAL(toggled(bool)),this,SLOT(setModified()));
 }
 
 //-----------------------------------------------------------------------------
 pqSQProcessMonitor::~pqSQProcessMonitor()
 {
   #if defined pqSQProcessMonitorDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::~pqSQProcessMonitor" << endl;
+  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::~pqSQProcessMonitor" << endl;
   #endif
 
   this->Save();
@@ -147,7 +156,7 @@ void pqSQProcessMonitor::Save()
 void pqSQProcessMonitor::UpdateInformationEvent()
 {
   #if defined pqSQProcessMonitorDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::UpdateInformationEvent" << endl;
+  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::UpdateInformationEvent" << endl;
   #endif
   // vtkSMProxy* dpProxy=this->referenceProxy()->getProxy();
 }
@@ -156,6 +165,9 @@ void pqSQProcessMonitor::UpdateInformationEvent()
 //-----------------------------------------------------------------------------
 void pqSQProcessMonitor::PullServerConfig()
 {
+  #if defined pqSQProcessMonitorDEBUG
+  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::PullServerConfig" << endl;
+  #endif
   vtkSMProxy* dpProxy=this->referenceProxy()->getProxy();
 
   // client
@@ -247,7 +259,7 @@ void pqSQProcessMonitor::EditCommand(bool state)
 void pqSQProcessMonitor::ExecCommand()
 {
   #if defined pqSQProcessMonitorDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::ForkExec" << endl;
+  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::ExecCommand" << endl;
   #endif
 
   QTreeWidgetItem *item=this->Form->configView->currentItem();
@@ -339,7 +351,7 @@ void pqSQProcessMonitor::ExecCommand()
 // void pqSQProcessMonitor::Signal()
 // {
 //   #if defined pqSQProcessMonitorDEBUG
-//   cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::Signal" << endl;
+//   cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::Signal" << endl;
 //   #endif
 // 
 //   QTreeWidgetItem *item=this->Form->configView->currentItem();
@@ -400,12 +412,42 @@ void pqSQProcessMonitor::ExecCommand()
 void pqSQProcessMonitor::accept()
 {
   #if defined pqSQProcessMonitorDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::accept" << endl;
+  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::accept" << endl;
   #endif
 
   // Let our superclass do the undocumented stuff that needs to be done.
   pqNamedObjectPanel::accept();
+
+
+  vtkSMProxy* proxy=this->referenceProxy()->getProxy();
+
+  vtkSMIntVectorProperty *prop=0;
+
+  prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableBacktraceHandler"));
+  prop->SetElement(0,this->Form->btSignalHandler->isChecked());
+  //proxy->UpdateProperty("EnableBacktraceHandler");
+
+  prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_DIVBYZERO"));
+  prop->SetElement(0,this->Form->fpeTrapDivByZero->isChecked());
+
+  prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_INEXACT"));
+  prop->SetElement(0,this->Form->fpeTrapInexact->isChecked());
+
+  prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_INVALID"));
+  prop->SetElement(0,this->Form->fpeTrapInvalid->isChecked());
+
+  prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_OVERFLOW"));
+  prop->SetElement(0,this->Form->fpeTrapOverflow->isChecked());
+
+  prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_UNDERFLOW"));
+  prop->SetElement(0,this->Form->fpeTrapUnderflow->isChecked());
+
+  proxy->UpdateVTKObjects();
 }
+
+
+
+
 
 /// VTK stuffs
 //   // Connect to server side pipeline's UpdateInformation events.
@@ -469,10 +511,6 @@ void pqSQProcessMonitor::accept()
   reader->UpdatePropertyInformation(reader->GetProperty("Pid"));
   int stamp = vtkSMPropertyHelper(reader, "Pid").GetAsInt();
   cerr << stamp;*/
-
-
-
-
-  /// NOTE how to get something from the server.
-  /// dbbProxy->UpdatePropertyInformation(reader->GetProperty("SILUpdateStamp"));
-  /// int stamp = vtkSMPropertyHelper(dbbProxy, "SILUpdateStamp").GetAsInt();
+/// how to get something from the server.
+// dbbProxy->UpdatePropertyInformation(reader->GetProperty("SILUpdateStamp"));
+// int stamp = vtkSMPropertyHelper(dbbProxy, "SILUpdateStamp").GetAsInt();

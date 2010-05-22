@@ -75,12 +75,14 @@ int fequal(double a, double b, double tol)
   return 0;
 }
 
+
 //-----------------------------------------------------------------------------
 vtkSQBOVReader::vtkSQBOVReader()
 {
   #if defined vtkSQBOVReaderDEBUG
   cerr << "===============================vtkSQBOVReader" << endl;
   #endif
+
   // Initialize variables
   this->MetaRead=0;
   this->FileName=0;
@@ -812,7 +814,10 @@ int vtkSQBOVReader::RequestData(
     }
   if (!ok)
     {
-    vtkErrorMacro("Read failed.");
+    vtkErrorMacro(
+      << "Read failed." << endl
+      << *this->Reader->GetMetaData()
+      );
     return 1;
     }
 

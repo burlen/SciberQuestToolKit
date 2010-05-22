@@ -195,3 +195,12 @@ void BOVMetaData::Print(ostream &os) const
   os << "\tArrays: " << this->Arrays << endl;
   os << "\tTimeSteps: " << this->TimeSteps << endl;
 }
+
+//-----------------------------------------------------------------------------
+ostream &operator<<(ostream &os, const BOVMetaData &md)
+{
+  md.Print(os);
+  return os;
+}
+
+

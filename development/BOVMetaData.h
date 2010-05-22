@@ -229,6 +229,9 @@ public:
   /// Print internal state.
   virtual void Print(ostream &os) const;
 
+private:
+  friend ostream &operator<<(ostream &os, const BOVMetaData &md);
+
 protected:
   int IsOpen;
   string PathToBricks;      // path to the brick files.
@@ -240,6 +243,8 @@ protected:
   map<string,int> Arrays;   // map of srray names to a status flag.
   vector<int> TimeSteps;    // Time values.
 };
+
+ostream &operator<<(ostream &os, const BOVMetaData &md);
 
 // TODO develop workable traits model.
 /*
