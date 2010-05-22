@@ -924,6 +924,16 @@ Copyright 2008 SciberQuest Inc.
     </Documentation>
   </IntVectorProperty>
 
+  <IntVectorProperty
+      name="EnableFE_ALL"
+      command="SetEnableFE_ALL"
+      number_of_elements="1"
+      default_values="0">
+    <Documentation>
+      Enable/Disable all floating point exceptions.
+    </Documentation>
+  </IntVectorProperty>
+
    <!-- End Debug Panel -->
    </SourceProxy>
 

@@ -249,13 +249,6 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
-       <widget class="QCheckBox" name="fpeTrapAll">
-        <property name="text">
-         <string>Trap all</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QCheckBox" name="fpeTrapUnderflow">
         <property name="text">
          <string>Trap underflow</string>
@@ -290,6 +283,13 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QCheckBox" name="fpeDisableAll">
+        <property name="text">
+         <string>Disable all</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -311,7 +311,7 @@
  <resources/>
  <connections>
   <connection>
-   <sender>fpeTrapAll</sender>
+   <sender>fpeDisableAll</sender>
    <signal>toggled(bool)</signal>
    <receiver>fpeTrapUnderflow</receiver>
    <slot>setDisabled(bool)</slot>
@@ -327,23 +327,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>fpeTrapAll</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>fpeTrapUnderflow</receiver>
-   <slot>setChecked(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>278</x>
-     <y>359</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>278</x>
-     <y>386</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>fpeTrapAll</sender>
+   <sender>fpeDisableAll</sender>
    <signal>toggled(bool)</signal>
    <receiver>fpeTrapOverflow</receiver>
    <slot>setDisabled(bool)</slot>
@@ -359,23 +343,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>fpeTrapAll</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>fpeTrapOverflow</receiver>
-   <slot>setChecked(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>278</x>
-     <y>359</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>278</x>
-     <y>413</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>fpeTrapAll</sender>
+   <sender>fpeDisableAll</sender>
    <signal>toggled(bool)</signal>
    <receiver>fpeTrapDivByZero</receiver>
    <slot>setDisabled(bool)</slot>
@@ -391,23 +359,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>fpeTrapAll</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>fpeTrapDivByZero</receiver>
-   <slot>setChecked(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>278</x>
-     <y>359</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>278</x>
-     <y>440</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>fpeTrapAll</sender>
+   <sender>fpeDisableAll</sender>
    <signal>toggled(bool)</signal>
    <receiver>fpeTrapInexact</receiver>
    <slot>setDisabled(bool)</slot>
@@ -423,42 +375,10 @@
    </hints>
   </connection>
   <connection>
-   <sender>fpeTrapAll</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>fpeTrapInexact</receiver>
-   <slot>setChecked(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>278</x>
-     <y>359</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>278</x>
-     <y>494</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>fpeTrapAll</sender>
+   <sender>fpeDisableAll</sender>
    <signal>toggled(bool)</signal>
    <receiver>fpeTrapInvalid</receiver>
    <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>278</x>
-     <y>359</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>278</x>
-     <y>467</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>fpeTrapAll</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>fpeTrapInvalid</receiver>
-   <slot>setChecked(bool)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>278</x>

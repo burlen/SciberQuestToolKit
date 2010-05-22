@@ -73,23 +73,76 @@ pqSQProcessMonitor::pqSQProcessMonitor(
   // Set up configuration viewer
   this->PullServerConfig();
 
-  // set up buttons
-  QObject::connect(this->Form->execCommand,SIGNAL(clicked()),this,SLOT(ExecCommand()));
-  // QObject::connect(this->Form->addCommand,SIGNAL(clicked()),this,SLOT(AddCommand()));
-  QObject::connect(this->Form->delCommand,SIGNAL(clicked()),this,SLOT(DelCommand()));
-  QObject::connect(this->Form->editCommand,SIGNAL(toggled(bool)),this,SLOT(EditCommand(bool)));
+  // set command add,edit,del,exec buttons
+  QObject::connect(
+        this->Form->execCommand,
+        SIGNAL(clicked()),
+        this,
+        SLOT(ExecCommand()));
 
-  // Let the super class do the undocumented stuff that needs to hapen.
+  // QObject::connect(
+  //       this->Form->addCommand,
+  //       SIGNAL(clicked()),
+  //       this,
+  //       SLOT(AddCommand()));
+
+  QObject::connect(
+        this->Form->delCommand,
+        SIGNAL(clicked()),
+        this,
+        SLOT(DelCommand()));
+
+  QObject::connect(
+        this->Form->editCommand,
+        SIGNAL(toggled(bool)),
+        this,
+        SLOT(EditCommand(bool)));
+
+  // connect execption handing checks to pv apply button
+  QObject::connect(
+        this->Form->btSignalHandler,
+        SIGNAL(toggled(bool)),
+        this,
+        SLOT(setModified()));
+
+  QObject::connect(
+        this->Form->fpeDisableAll,
+        SIGNAL(toggled(bool)),
+        this,
+        SLOT(setModified()));
+
+  QObject::connect(
+        this->Form->fpeTrapOverflow,
+        SIGNAL(toggled(bool)),
+        this,
+        SLOT(setModified()));
+
+  QObject::connect(
+        this->Form->fpeTrapUnderflow,
+        SIGNAL(toggled(bool)),
+        this,
+        SLOT(setModified()));
+
+  QObject::connect(
+        this->Form->fpeTrapDivByZero,
+        SIGNAL(toggled(bool)),
+        this,
+        SLOT(setModified()));
+
+  QObject::connect(
+        this->Form->fpeTrapInvalid,
+        SIGNAL(toggled(bool)),
+        this,
+        SLOT(setModified()));
+
+  QObject::connect(
+        this->Form->fpeTrapInexact,
+        SIGNAL(toggled(bool)),
+        this,
+        SLOT(setModified()));
+
+  // Let the superclass do the undocumented stuff that needs to hapen.
   pqNamedObjectPanel::linkServerManagerProperties();
-
-  // connect to pv apply button
-  QObject::connect(this->Form->btSignalHandler,SIGNAL(toggled(bool)),this,SLOT(setModified()));
-  QObject::connect(this->Form->fpeTrapAll,SIGNAL(toggled(bool)),this,SLOT(setModified()));
-  QObject::connect(this->Form->fpeTrapOverflow,SIGNAL(toggled(bool)),this,SLOT(setModified()));
-  QObject::connect(this->Form->fpeTrapUnderflow,SIGNAL(toggled(bool)),this,SLOT(setModified()));
-  QObject::connect(this->Form->fpeTrapDivByZero,SIGNAL(toggled(bool)),this,SLOT(setModified()));
-  QObject::connect(this->Form->fpeTrapInvalid,SIGNAL(toggled(bool)),this,SLOT(setModified()));
-  QObject::connect(this->Form->fpeTrapInexact,SIGNAL(toggled(bool)),this,SLOT(setModified()));
 }
 
 //-----------------------------------------------------------------------------
@@ -146,7 +199,7 @@ void pqSQProcessMonitor::Save()
     defs << this->Form->commandCombo->itemText(i);
     }
 
-  QSettings settings("SciberQuest", "SciVisToolKit");
+  QSettings settings("SciberQuest","SciVisToolKit");
 
   settings.setValue("ProcessMonitor/defaults",defs);
 }
@@ -427,20 +480,36 @@ void pqSQProcessMonitor::accept()
   prop->SetElement(0,this->Form->btSignalHandler->isChecked());
   //proxy->UpdateProperty("EnableBacktraceHandler");
 
-  prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_DIVBYZERO"));
-  prop->SetElement(0,this->Form->fpeTrapDivByZero->isChecked());
 
-  prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_INEXACT"));
-  prop->SetElement(0,this->Form->fpeTrapInexact->isChecked());
+  bool disableFPE=this->Form->fpeDisableAll->isChecked();
+  if (disableFPE)
+    {
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_ALL"));
+    prop->SetElement(0,0);
+    prop->Modified();
+    }
+  else
+    {
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_DIVBYZERO"));
+    prop->SetElement(0,this->Form->fpeTrapDivByZero->isChecked());
+    prop->Modified(); // force push
 
-  prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_INVALID"));
-  prop->SetElement(0,this->Form->fpeTrapInvalid->isChecked());
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_INEXACT"));
+    prop->SetElement(0,this->Form->fpeTrapInexact->isChecked());
+    prop->Modified();
 
-  prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_OVERFLOW"));
-  prop->SetElement(0,this->Form->fpeTrapOverflow->isChecked());
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_INVALID"));
+    prop->SetElement(0,this->Form->fpeTrapInvalid->isChecked());
+    prop->Modified();
 
-  prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_UNDERFLOW"));
-  prop->SetElement(0,this->Form->fpeTrapUnderflow->isChecked());
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_OVERFLOW"));
+    prop->SetElement(0,this->Form->fpeTrapOverflow->isChecked());
+    prop->Modified();
+
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_UNDERFLOW"));
+    prop->SetElement(0,this->Form->fpeTrapUnderflow->isChecked());
+    prop->Modified();
+    }
 
   proxy->UpdateVTKObjects();
 }
