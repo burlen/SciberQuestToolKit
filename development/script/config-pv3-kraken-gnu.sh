@@ -19,4 +19,4 @@ cmake \
     -DPARAVIEW_USE_MPI=ON \
     -DMPI_INCLUDE_PATH=/opt/cray/mpt/4.0.1/xt/seastar/mpich2-gnu/include \
     -DMPI_LIBRARY=/opt/cray/mpt/4.0.1/xt/seastar/mpich2-gnu/lib/libmpich.a \
-    ../ParaView3
+    $1 
