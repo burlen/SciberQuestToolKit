@@ -26,6 +26,8 @@
 #include "vtkPolyData.h"
 #include "vtkType.h"
 
+#include <time.h>
+
 // #define vtkSQRandomSeedPointsDEBUG
 
 vtkCxxRevisionMacro(vtkSQRandomSeedPoints, "$Revision: 0.0 $");

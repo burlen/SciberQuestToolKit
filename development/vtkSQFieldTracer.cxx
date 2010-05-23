@@ -172,35 +172,35 @@ int vtkSQFieldTracer::FillOutputPortInformation(int port, vtkInformation *info)
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataSet");
   return 1;
 
-  switch (port)
-    {
-
-    case 0:
-      switch (this->Mode)
-        {
-
-        // set the output data type based on the mode the filter
-        // is run in. See SetMode in header documentation.
-        case (MODE_TOPOLOGY):
-          info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataSet");
-          break;
-
-        case (MODE_STREAM):
-        case (MODE_POINCARE):
-          info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData");
-          break;
-
-        default:
-          vtkErrorMacro("Invalid mode " << this->Mode << ".");
-          break;
-        }
-      break;
-
-    default:
-      vtkWarningMacro("Invalid output port requested.");
-      break;
-    }
-  return 1;
+  // switch (port)
+  //   {
+  // 
+  //   case 0:
+  //     switch (this->Mode)
+  //      {
+  // 
+  //       // set the output data type based on the mode the filter
+  //       // is run in. See SetMode in header documentation.
+  //       case (MODE_TOPOLOGY):
+  //         info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataSet");
+  //         break;
+  // 
+  //       case (MODE_STREAM):
+  //       case (MODE_POINCARE):
+  //         info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData");
+  //         break;
+  //
+  //       default:
+  //         vtkErrorMacro("Invalid mode " << this->Mode << ".");
+  //         break;
+  //       }
+  //     break;
+  //
+  //   default:
+  //     vtkWarningMacro("Invalid output port requested.");
+  //     break;
+  //   }
+  // return 1;
 }
 
 //----------------------------------------------------------------------------
@@ -319,7 +319,7 @@ void vtkSQFieldTracer::SetIntegratorType(int type)
     default:
       vtkErrorMacro("Unsupported integrator type " << type << ".");
       return;
-      break;
+      // break;
     }
 
   this->IntegratorType=type;
