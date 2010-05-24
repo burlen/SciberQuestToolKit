@@ -23,8 +23,6 @@ endif("${PROJECT_SOURCE_DIR}"  STREQUAL "${PROJECT_BINARY_DIR}")
 # Locate our PV build/development install.
 include(ParaViewConfig.cmake)
 include(EigenConfig.cmake)
-include(MPICHConfig.cmake)
-include(StateFileConfig.cmake)
 
 # Server manager wrapped sources.
 set(SM_SOURCES
@@ -162,28 +160,4 @@ add_paraview_plugin(
 install(TARGETS SciVisToolKit DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 target_link_libraries(SciVisToolKit)
-
-# gentp -- command line utility
-if (UNIX)
-set(BUILD_GENTP OFF CACHE BOOL "Build gentp the utility to generate temperature and pressure arrays.")
-  if (BUILD_GENTP)
-    message(STATUS "-- Including gentp.")
-    include(FindMPI)
-    if (NOT MPI_FOUND)
-      message(SEND_ERROR "MPI is required for the gentp utility.")
-    endif(NOT MPI_FOUND)
-    add_definitions("-DMPICH_IGNORE_CXX_SEEK")
-    add_executable(gentp gentp.cpp FsUtils.cxx)
-    target_link_libraries(gentp ${MPI_LIBRARIES})
-    install(TARGETS gentp DESTINATION ${CMAKE_INSTALL_PREFIX})
-  endif (BUILD_GENTP)
-endif (UNIX)
-
-# instrument -- command line utility
-set(BUILD_INSTRUMENT OFF CACHE BOOL "Build intrumentation utility to intrument cxx classes.")
-if (BUILD_INSTRUMENT)
-  message(STATUS "-- Including InstrumentClass.")
-  add_executable(instrumentClass InstrumentClass.cpp FsUtils.cxx)
-  install(TARGETS instrumentClass DESTINATION ${CMAKE_INSTALL_PREFIX})
-endif (BUILD_INSTRUMENT)
 

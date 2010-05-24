@@ -5,7 +5,7 @@
 # +---------------------------------------------------------------------------+
 
 set(Eigen_DIR 
-  ${CMAKE_CURRENT_SOURCE_DIR}/../eigen-2.0.12/
+  ${CMAKE_CURRENT_SOURCE_DIR}/eigen-2.0.12/
   CACHE FILEPATH
   "Path to Eigen 2 install.")
 
