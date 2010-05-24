@@ -293,8 +293,7 @@ int vtkSQSeedPointLatice::RequestData(
     = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
 
   // sanity - the requst cannot be fullfilled
-  int rank=vtkMultiProcessController::GetGlobalController()->GetLocalProcessId();
-  if (rank>=nPieces)
+  if (pieceNo>=nPieces)
     {
     output->Initialize();
     return 1;
@@ -431,6 +430,7 @@ int vtkSQSeedPointLatice::RequestData(
 
 
   #ifdef vtkSQSeedPointLaticeDEBUG
+  int rank=vtkMultiProcessController::GetGlobalController()->GetLocalProcessId();
   cerr
     << "pieceNo = " << pieceNo << endl
     << "nPieces = " << nPieces << endl

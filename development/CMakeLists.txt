@@ -91,18 +91,6 @@ if (NOT WIN32)
 endif (NOT WIN32)
 
 
-# Verison dependent sources.
-set(PV_VER ${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR})
-if (PV_VER LESS 3.6)
-  message(STATUS "Using ParaView 3.7 classes in build for ParaView ${PV_VER}.")
-  set(_SOURCES 
-    ${_SOURCES} 
-    vtkAMRBox_3.7.cxx
-    vtkInterpolatedVelocityField-3.7.cxx)
-  add_definitions(-DPV_3_4_BUILD)
-endif (PV_VER LESS 3.6)
-
-
 if(PARAVIEW_BUILD_QT_GUI)
 message(STATUS "Including custom panels.")
 set(_IFACES)

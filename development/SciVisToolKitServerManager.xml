@@ -147,7 +147,7 @@ Copyright 2008 SciberQuest Inc.
         lable="Collective IO"
         command="SetUseCollectiveIO"
         number_of_elements="1"
-        default_values="2" >
+        default_values="1" >
       <EnumerationDomain name="enum">
         <Entry value="0" text="automatic"/>
         <Entry value="1" text="disabled"/>
@@ -192,7 +192,7 @@ Copyright 2008 SciberQuest Inc.
         lable="Data Sieving"
         command="SetUseDataSieving"
         number_of_elements="1"
-        default_values="0" >
+        default_values="2" >
       <EnumerationDomain name="enum">
         <Entry value="0" text="automatic"/>
         <Entry value="1" text="disabled"/>
@@ -208,7 +208,7 @@ Copyright 2008 SciberQuest Inc.
         lable="Sieve Buffer Size"
         command="SetSieveBufferSize"
         number_of_elements="1"
-        default_values="0" >
+        default_values="2097152" >
       <EnumerationDomain name="enum">
         <Entry value="0"       text="default"/>
         <Entry value="524288"  text=" 512 MB"/>
@@ -515,7 +515,7 @@ Copyright 2008 SciberQuest Inc.
         lable="Sieve Buffer Size"
         command="SetSieveBufferSize"
         number_of_elements="1"
-        default_values="1048576" >
+        default_values="2097152" >
       <EnumerationDomain name="enum">
         <Entry value="0"       text="default"/>
         <Entry value="524288"  text=" 512 MB"/>
@@ -1016,7 +1016,7 @@ Copyright 2008 SciberQuest Inc.
         number_of_elements="5"
         element_types="0 0 0 0 2"
         animateable="0"
-        label="Vectors">
+        label="Vector Field">
       <ArrayListDomain name="array_list" attribute_type="Vectors">
         <RequiredProperties>
           <Property name="DatasetInput" function="Input"/>
@@ -1271,7 +1271,7 @@ Copyright 2008 SciberQuest Inc.
         number_of_elements="5"
         element_types="0 0 0 0 2"
         animateable="0"
-        label="Vectors">
+        label="Vector Field">
       <ArrayListDomain name="array_list" attribute_type="Vectors">
         <RequiredProperties>
           <Property name="DatasetInput" function="Input"/>
@@ -1299,7 +1299,7 @@ Copyright 2008 SciberQuest Inc.
     <!-- Integrator parameters -->
     <DoubleVectorProperty
         name="MinStep"
-        label="Minimum Step"
+        label="Min Step Size"
         command="SetMinStep"
         number_of_elements="1"
         default_values="1.0e-8" >
@@ -1323,6 +1323,7 @@ Copyright 2008 SciberQuest Inc.
 
     <DoubleVectorProperty
         name="MaxError"
+        label="Max Error"
         command="SetMaxError"
         number_of_elements="1"
         default_values="1.0e-4">
@@ -1527,7 +1528,7 @@ Copyright 2008 SciberQuest Inc.
         number_of_elements="5"
         element_types="0 0 0 0 2"
         animateable="0"
-        label="Vectors">
+        label="Vector Field">
       <ArrayListDomain name="array_list" attribute_type="Vectors">
         <RequiredProperties>
           <Property name="DatasetInput" function="Input"/>
@@ -1555,7 +1556,7 @@ Copyright 2008 SciberQuest Inc.
     <!-- Integrator parameters -->
     <DoubleVectorProperty
         name="MinStep"
-        label="Minimum Step"
+        label="Min Step Size"
         command="SetMinStep"
         number_of_elements="1"
         default_values="1.0e-8" >
@@ -1579,6 +1580,7 @@ Copyright 2008 SciberQuest Inc.
 
     <DoubleVectorProperty
         name="MaxError"
+        label="Max Error"
         command="SetMaxError"
         number_of_elements="1"
         default_values="1.0e-4">
@@ -1787,7 +1789,7 @@ Copyright 2008 SciberQuest Inc.
         number_of_elements="5"
         element_types="0 0 0 0 2"
         animateable="0"
-        label="Vectors">
+        label="Vector Field">
       <ArrayListDomain name="array_list" attribute_type="Vectors">
         <RequiredProperties>
           <Property name="DatasetInput" function="Input"/>
@@ -1938,7 +1940,7 @@ Copyright 2008 SciberQuest Inc.
         name="UseDynamicScheduler"
         command="SetUseDynamicScheduler"
         number_of_elements="1"
-        default_values="0" > 
+        default_values="1" > 
       <BooleanDomain name="bool"/>
       <Documentation>
       When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
@@ -1950,9 +1952,9 @@ Copyright 2008 SciberQuest Inc.
         name="MasterBlockSize"
         command="SetMasterBlockSize"
         number_of_elements="1"
-        default_values="16"
+        default_values="1"
         animateable="0">
-      <IntRangeDomain name="range" min="1" max="131072"/>
+      <IntRangeDomain name="range" min="1"/>
       <Documentation>
         Controls how much work the master does in between servicing work requests
         from the workers. Should be much smaller the WorkerBlockSize.
@@ -1963,9 +1965,9 @@ Copyright 2008 SciberQuest Inc.
         name="WorkerBlockSize"
         command="SetWorkerBlockSize"
         number_of_elements="1"
-        default_values="512"
+        default_values="1"
         animateable="0">
-      <IntRangeDomain name="range" min="1" max="131072"/>
+      <IntRangeDomain name="range" min="1"/>
       <Documentation>
         Controls how much work is given to the worker processes at each
         request.
@@ -1975,8 +1977,8 @@ Copyright 2008 SciberQuest Inc.
     <Hints>
       <Property name="Mode" show="0"/>
       <Property name="UseDynamicScheduler" show="0"/>
-      <Property name="MasterBlockSize" show="0"/>
-      <Property name="WorkerBlockSize" show="0"/>
+      <Property name="MasterBlockSize" show="1"/>
+      <Property name="WorkerBlockSize" show="1"/>
     </Hints>
 
    <!-- End SQ Poincare Mapper -->
@@ -2048,7 +2050,7 @@ Copyright 2008 SciberQuest Inc.
         number_of_elements="5"
         element_types="0 0 0 0 2"
         animateable="0"
-        label="Vectors">
+        label="Vector Field">
       <ArrayListDomain name="array_list" attribute_type="Vectors">
         <RequiredProperties>
           <Property name="DatasetInput" function="Input"/>
@@ -2076,7 +2078,7 @@ Copyright 2008 SciberQuest Inc.
     <!-- Integrator parameters -->
     <DoubleVectorProperty
         name="MinStep"
-        label="Minimum Step"
+        label="Min Step Size"
         command="SetMinStep"
         number_of_elements="1"
         default_values="1.0e-8" >
@@ -2100,6 +2102,7 @@ Copyright 2008 SciberQuest Inc.
 
     <DoubleVectorProperty
         name="MaxError"
+        label="Max Error"
         command="SetMaxError"
         number_of_elements="1"
         default_values="1.0e-6">
@@ -2198,7 +2201,7 @@ Copyright 2008 SciberQuest Inc.
         name="UseDynamicScheduler"
         command="SetUseDynamicScheduler"
         number_of_elements="1"
-        default_values="0" > 
+        default_values="1">
       <BooleanDomain name="bool"/>
       <Documentation>
       When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
@@ -2206,13 +2209,12 @@ Copyright 2008 SciberQuest Inc.
       </Documentation>
     </IntVectorProperty>
 
-    <IntVectorProperty 
+    <IntVectorProperty
         name="MasterBlockSize"
         command="SetMasterBlockSize"
         number_of_elements="1"
-        default_values="16"
-        animateable="0">
-      <IntRangeDomain name="range" min="1" max="131072"/>
+        default_values="1">
+      <IntRangeDomain name="range" min="1"/>
       <Documentation>
         Controls how much work the master does in between servicing work requests
         from the workers. Should be much smaller the WorkerBlockSize.
@@ -2223,9 +2225,8 @@ Copyright 2008 SciberQuest Inc.
         name="WorkerBlockSize"
         command="SetWorkerBlockSize"
         number_of_elements="1"
-        default_values="512"
-        animateable="0">
-      <IntRangeDomain name="range" min="1" max="131072"/>
+        default_values="1">
+      <IntRangeDomain name="range" min="1"/>
       <Documentation>
         Controls how much work is given to the worker processes at each
         request.
@@ -2236,8 +2237,8 @@ Copyright 2008 SciberQuest Inc.
       <Property name="Mode" show="0"/>
       <Property name="IntegratorType" show="0"/>
       <Property name="UseDynamicScheduler" show="0"/>
-      <Property name="MasterBlockSize" show="0"/>
-      <Property name="WorkerBlockSize" show="0"/>
+      <Property name="MasterBlockSize" show="1"/>
+      <Property name="WorkerBlockSize" show="1"/>
     </Hints>
 
    <!-- End SQ Poincare Mapper -->
@@ -2277,7 +2278,7 @@ Copyright 2008 SciberQuest Inc.
          command="SetInputArrayToProcess"
          number_of_elements="5"
          element_types="0 0 0 0 2"
-         label="Vectors">
+         label="Vector Field">
             <ArrayListDomain name="array_list" attribute_type="Vectors">
               <RequiredProperties>
                  <Property name="Input" function="Input"/>
@@ -2435,7 +2436,7 @@ Copyright 2008 SciberQuest Inc.
         label="Latice Resolution"
         command="SetNX"
         number_of_elements="3"
-        default_values="1 10 1">
+        default_values="1 1 1">
      </IntVectorProperty>
 
      <!-- Transforms -->

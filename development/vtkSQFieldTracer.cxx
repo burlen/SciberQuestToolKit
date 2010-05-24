@@ -174,17 +174,17 @@ int vtkSQFieldTracer::FillOutputPortInformation(int port, vtkInformation *info)
 
   // switch (port)
   //   {
-  // 
+  //
   //   case 0:
   //     switch (this->Mode)
   //      {
-  // 
+  //
   //       // set the output data type based on the mode the filter
   //       // is run in. See SetMode in header documentation.
   //       case (MODE_TOPOLOGY):
   //         info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataSet");
   //         break;
-  // 
+  //
   //       case (MODE_STREAM):
   //       case (MODE_POINCARE):
   //         info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData");
@@ -415,6 +415,7 @@ int vtkSQFieldTracer::RequestUpdateExtent(
       sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(),piece);
       sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(),numPieces);
       sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(),ghostLevel);
+      sourceInfo->Set(vtkStreamingDemandDrivenPipeline::EXACT_EXTENT(),1);
       }
     }
 
@@ -428,6 +429,7 @@ int vtkSQFieldTracer::RequestUpdateExtent(
       sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(),0);
       sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(),1);
       sourceInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(),ghostLevel);
+      sourceInfo->Set(vtkStreamingDemandDrivenPipeline::EXACT_EXTENT(),1);
       }
     }
 
@@ -722,18 +724,23 @@ int vtkSQFieldTracer::IntegrateDynamic(
       vtkDataSet *&oocrCache,
       FieldTraceData *traceData)
 {
+  const int nCells=source->GetNumberOfCells();
+
   const int masterProcId=(nProcs>1?1:0); // NOTE: proc 0 is busy with PV overhead.
   const int BLOCK_REQ=2222;
   // Master process distributes the work and integrates
   // in between servicing requests for work.
+  // when running poincare mapper master should not start integrating until
+  // all workers have started because a single trace can take a long time
+  // leaving workers idle.
   if (procId==masterProcId)
     {
-    int nCells=source->GetNumberOfCells();
     int workerBlockSize=min(this->WorkerBlockSize,max(nCells/nProcs,1));
     int masterBlockSize=min(workerBlockSize,this->MasterBlockSize);
     WorkQueue Q(nCells);
     int nActiveWorkers=nProcs-1;
     int moreWork=1;
+    int workerStartUp=(this->Mode==MODE_POINCARE?nActiveWorkers:0);
     while (nActiveWorkers || moreWork)
       {
       // dispatch any and all pending requests
@@ -762,9 +769,14 @@ int vtkSQFieldTracer::IntegrateDynamic(
            #if vtkSQFieldTracerDEBUG>1
            cerr << "Master filled request from " << otherProc << " " << sourceIds << endl;
            #endif
+
+          if (workerStartUp>0)
+            {
+            --workerStartUp;
+            }
           }
         }
-      while (pendingReq);
+      while (pendingReq || workerStartUp);
 
       // now that all the worker that need work have it. Do a small amount
       // of work while the others are busy.
@@ -781,6 +793,9 @@ int vtkSQFieldTracer::IntegrateDynamic(
                 fieldName,
                 oocr,
                 oocrCache);
+
+        double prog=(double)sourceIds.last()/(double)nCells;
+        this->UpdateProgress(prog);
         }
       }
     }
@@ -813,6 +828,9 @@ int vtkSQFieldTracer::IntegrateDynamic(
                 fieldName,
                 oocr,
                 oocrCache);
+
+      double prog=(double)sourceIds.last()/(double)nCells;
+      this->UpdateProgress(prog);
       }
     }
   return 1;
@@ -830,25 +848,25 @@ int vtkSQFieldTracer::IntegrateBlock(
   // build the output.
   vtkIdType nLines=traceData->InsertCells(sourceIds);
 
-  double prog=0.0;
-  double progInc=1.0/(double)nLines;
-  double progIntv=1.0/min((double)nLines,10.0);
-  double progNext=0.0;
+  // double prog=0.0;
+  // double progInc=1.0/(double)nLines;
+  // double progIntv=1.0/min((double)nLines,10.0);
+  // double progNext=0.0;
 
   TerminationCondition *tcon=traceData->GetTerminationCondition();
 
-  for (vtkIdType i=0; i<nLines; ++i, prog+=progInc)
+  for (vtkIdType i=0; i<nLines; ++i) //, prog+=progInc)
     {
     // report progress to PV
-    if (!this->UseDynamicScheduler && prog>=progNext)
-      {
-      progNext+=progIntv;
-      this->UpdateProgress(prog);
-      }
+    // if (!this->UseDynamicScheduler && prog>=progNext)
+    //   {
+    //   progNext+=progIntv;
+    //   this->UpdateProgress(prog);
+    //   }
+
     // tarce a stream line
     FieldLine *line=traceData->GetFieldLine(i);
     this->IntegrateOne(oocr,oocrCache,fieldName,line,tcon);
-
 
     if (this->Mode==MODE_POINCARE)
       {
