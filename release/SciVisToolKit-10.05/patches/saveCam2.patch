@@ -1,0 +1,3690 @@
+Index: Servers/ServerManager/CMakeLists.txt
+===================================================================
+RCS file: /cvsroot/ParaView3/ParaView3/Servers/ServerManager/CMakeLists.txt,v
+retrieving revision 1.264
+diff -u -r1.264 CMakeLists.txt
+--- Servers/ServerManager/CMakeLists.txt	10 Feb 2010 19:07:33 -0000	1.264
++++ Servers/ServerManager/CMakeLists.txt	7 Mar 2010 23:52:54 -0000
+@@ -42,6 +42,8 @@
+   vtkSMBoundsDomain.cxx
+   vtkSMBoxProxy.cxx
+   vtkSMBoxRepresentationProxy.cxx
++  vtkSMCameraConfigurationReader.cxx
++  vtkSMCameraConfigurationWriter.cxx
+   vtkSMCameraKeyFrameProxy.cxx
+   vtkSMCameraLink.cxx
+   vtkSMCameraManipulatorProxy.cxx
+@@ -126,10 +128,13 @@
+   vtkSMProperty.cxx
+   vtkSMPropertyHelper.cxx
+   vtkSMPropertyIterator.cxx
++  vtkSMNamedPropertyIterator.cxx
+   vtkSMPropertyLink.cxx
+   vtkSMPropertyModificationUndoElement.cxx
+   vtkSMPropRepresentationProxy.cxx
+   vtkSMProxy.cxx
++  vtkSMProxyConfigurationReader.cxx
++  vtkSMProxyConfigurationWriter.cxx
+   vtkSMProxyDefinitionIterator.cxx
+   vtkSMProxyGroupDomain.cxx
+   vtkSMProxyIterator.cxx
+Index: Servers/ServerManager/vtkSMCameraConfigurationFileInfo.h
+===================================================================
+RCS file: Servers/ServerManager/vtkSMCameraConfigurationFileInfo.h
+diff -N Servers/ServerManager/vtkSMCameraConfigurationFileInfo.h
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ Servers/ServerManager/vtkSMCameraConfigurationFileInfo.h	7 Mar 2010 23:52:54 -0000
+@@ -0,0 +1,55 @@
++/*=========================================================================
++
++  Program:   Visualization Toolkit
++  Module:    $RCSfile: vtkSMCameraConfigurationFileInfo.h,v $
++
++  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
++  All rights reserved.
++  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
++
++     This software is distributed WITHOUT ANY WARRANTY; without even
++     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++     PURPOSE.  See the above copyright notice for more information.
++
++=========================================================================*/
++// .NAME vtkSMCameraConfigurationFileInfo - Camera configuration file meta data.
++//
++// .SECTION Description
++// Organizes meta-data that is used by both reader and writer in a single
++// location.
++//
++// .SECTION See Also
++// vtkSMCameraConfigurationReader, vtkSMCameraConfigurationWriter
++//
++// .SECTION Thanks
++// This class was contributed by SciberQuest Inc.
++#ifndef __vtkSMCameraConfigurationFileInfo_h
++#define __vtkSMCameraConfigurationFileInfo_h
++
++#include "vtkObject.h"
++
++class vtkSMCameraConfigurationFileInfo
++{
++public:
++  vtkSMCameraConfigurationFileInfo()
++        :
++    FileIdentifier("PVCameraConfiguration"),
++    FileDescription("ParaView camera configuration"),
++    FileExtension(".pvcc")
++      { }
++
++  virtual void PrintSelf(ostream &os, vtkIndent indent)
++    {
++    os
++      << indent << "FileIdentifier: " << this->FileIdentifier << endl
++      << indent << "FileDescription: " << this->FileDescription << endl
++      << indent << "FileExtension: " << this->FileExtension << endl;
++    }
++
++  const char *FileIdentifier;
++  const char *FileDescription;
++  const char *FileExtension;
++};
++
++#endif
++
+Index: Servers/ServerManager/vtkSMCameraConfigurationReader.cxx
+===================================================================
+RCS file: Servers/ServerManager/vtkSMCameraConfigurationReader.cxx
+diff -N Servers/ServerManager/vtkSMCameraConfigurationReader.cxx
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ Servers/ServerManager/vtkSMCameraConfigurationReader.cxx	7 Mar 2010 23:52:54 -0000
+@@ -0,0 +1,83 @@
++/*=========================================================================
++
++  Program:   Visualization Toolkit
++  Module:    $RCSfile: vtkSMCameraConfigurationReader.cxx,v $
++
++  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
++  All rights reserved.
++  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
++
++     This software is distributed WITHOUT ANY WARRANTY; without even
++     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++     PURPOSE.  See the above copyright notice for more information.
++
++=========================================================================*/
++#include "vtkSMCameraConfigurationReader.h"
++#include "vtkSMCameraConfigurationFileInfo.h"
++
++#include "vtkObjectFactory.h"
++#include "vtkSMProxy.h"
++#include "vtkSMRenderViewProxy.h"
++
++
++vtkCxxRevisionMacro(vtkSMCameraConfigurationReader,"$Revision: 1.0$");
++vtkStandardNewMacro(vtkSMCameraConfigurationReader);
++
++//-----------------------------------------------------------------------------
++vtkSMCameraConfigurationReader::vtkSMCameraConfigurationReader()
++{
++  // Valid camera configuration can come from a various
++  // proxy types, eg RenderView,IceTRenderView and so on.
++  this->SetValidateProxyType(0);
++
++  vtkSMCameraConfigurationFileInfo info;
++  this->SetFileIdentifier(info.FileIdentifier);
++  this->SetFileDescription(info.FileDescription);
++  this->SetFileExtension(info.FileExtension);
++}
++
++//-----------------------------------------------------------------------------
++vtkSMCameraConfigurationReader::~vtkSMCameraConfigurationReader()
++{}
++
++//-----------------------------------------------------------------------------
++void vtkSMCameraConfigurationReader::SetRenderViewProxy(
++      vtkSMRenderViewProxy *rvProxy)
++{
++  this->vtkSMProxyConfigurationReader::SetProxy(rvProxy);
++}
++
++//-----------------------------------------------------------------------------
++int vtkSMCameraConfigurationReader::ReadConfiguration(const char *filename)
++{
++  int ok=this->Superclass::ReadConfiguration(filename);
++  if (!ok)
++    {
++    return 0;
++    }
++
++  this->GetProxy()->UpdateVTKObjects();
++
++  return 1;
++}
++
++//-----------------------------------------------------------------------------
++int vtkSMCameraConfigurationReader::ReadConfiguration(vtkPVXMLElement *x)
++{
++  int ok=this->Superclass::ReadConfiguration(x);
++  if (!ok)
++    {
++    return 0;
++    }
++
++  this->GetProxy()->UpdateVTKObjects();
++
++  return 1;
++}
++
++//-----------------------------------------------------------------------------
++void vtkSMCameraConfigurationReader::PrintSelf(ostream& os, vtkIndent indent)
++{
++  this->Superclass::PrintSelf(os,indent);
++}
++
+Index: Servers/ServerManager/vtkSMCameraConfigurationReader.h
+===================================================================
+RCS file: Servers/ServerManager/vtkSMCameraConfigurationReader.h
+diff -N Servers/ServerManager/vtkSMCameraConfigurationReader.h
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ Servers/ServerManager/vtkSMCameraConfigurationReader.h	7 Mar 2010 23:52:54 -0000
+@@ -0,0 +1,73 @@
++/*=========================================================================
++
++  Program:   Visualization Toolkit
++  Module:    $RCSfile: vtkSMCameraConfigurationReader.h,v $
++
++  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
++  All rights reserved.
++  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
++
++     This software is distributed WITHOUT ANY WARRANTY; without even
++     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++     PURPOSE.  See the above copyright notice for more information.
++
++=========================================================================*/
++// .NAME vtkSMCameraConfigurationReader - A reader for XML camera configuration.
++//
++// .SECTION Description
++// A reader for XML camera configuration. Reades camera configuration files.
++// writen by the vtkSMCameraConfigurationWriter.
++//
++// .SECTION See Also
++// vtkSMCameraConfigurationWriter, vtkSMProxyConfigurationReader
++//
++// .SECTION Thanks
++// This class was contributed by SciberQuest Inc.
++#ifndef __vtkSMCameraConfigurationReader_h
++#define __vtkSMCameraConfigurationReader_h
++
++#include "vtkSMProxyConfigurationReader.h"
++
++class vtkSMProxy;
++class vtkSMRenderViewProxy;
++class vtkPVXMLElement;
++
++class VTK_EXPORT vtkSMCameraConfigurationReader : public vtkSMProxyConfigurationReader
++{
++public:
++  vtkTypeRevisionMacro(vtkSMCameraConfigurationReader,vtkSMProxyConfigurationReader);
++  void PrintSelf(ostream& os, vtkIndent indent);
++  static vtkSMCameraConfigurationReader *New();
++
++  // Description:
++  // Set the render view proxy to extract camera properties from.
++  void SetRenderViewProxy(vtkSMRenderViewProxy *rvProxy);
++
++
++  // Description:
++  // Read the named file, and push the properties into the underying
++  // managed render view proxy. This will make sure the renderview is
++  // updated after the read.
++  virtual int ReadConfiguration(const char *filename);
++  virtual int ReadConfiguration(vtkPVXMLElement *x);
++  // unhide
++  virtual int ReadConfiguration()
++    {
++    return this->Superclass::ReadConfiguration();
++    }
++
++protected:
++  vtkSMCameraConfigurationReader();
++  virtual ~vtkSMCameraConfigurationReader();
++
++  // Protect the superclass's SetProxy, clients are forced to use
++  // SetRenderViewProxy
++  void SetProxy(vtkSMProxy *proxy){ vtkErrorMacro("Use SetRenderViewProxy."); }
++
++private:
++  vtkSMCameraConfigurationReader(const vtkSMCameraConfigurationReader&);  // Not implemented.
++  void operator=(const vtkSMCameraConfigurationReader&);  // Not implemented.
++};
++
++#endif
++
+Index: Servers/ServerManager/vtkSMCameraConfigurationWriter.cxx
+===================================================================
+RCS file: Servers/ServerManager/vtkSMCameraConfigurationWriter.cxx
+diff -N Servers/ServerManager/vtkSMCameraConfigurationWriter.cxx
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ Servers/ServerManager/vtkSMCameraConfigurationWriter.cxx	7 Mar 2010 23:52:54 -0000
+@@ -0,0 +1,64 @@
++/*=========================================================================
++
++  Program:   Visualization Toolkit
++  Module:    $RCSfile: vtkSMCameraConfigurationWriter.cxx,v $
++
++  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
++  All rights reserved.
++  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
++
++     This software is distributed WITHOUT ANY WARRANTY; without even
++     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++     PURPOSE.  See the above copyright notice for more information.
++
++=========================================================================*/
++#include "vtkSMCameraConfigurationWriter.h"
++#include "vtkSMCameraConfigurationFileInfo.h"
++
++#include "vtkObjectFactory.h"
++#include "vtkStringList.h"
++#include "vtkSMNamedPropertyIterator.h"
++#include "vtkSMRenderViewProxy.h"
++
++vtkCxxRevisionMacro(vtkSMCameraConfigurationWriter,"$Revision: 1.0$");
++vtkStandardNewMacro(vtkSMCameraConfigurationWriter);
++
++//-----------------------------------------------------------------------------
++vtkSMCameraConfigurationWriter::vtkSMCameraConfigurationWriter()
++{
++  vtkStringList *propNames=vtkStringList::New();
++  propNames->AddString("CameraPosition");
++  propNames->AddString("CameraFocalPoint");
++  propNames->AddString("CameraViewUp");
++  propNames->AddString("CenterOfRotation");
++  propNames->AddString("CameraViewAngle");
++  vtkSMNamedPropertyIterator *propIt=vtkSMNamedPropertyIterator::New();
++  propIt->SetPropertyNames(propNames);
++  propNames->Delete();
++  this->SetPropertyIterator(propIt);
++  propIt->Delete();
++
++  vtkSMCameraConfigurationFileInfo info;
++  this->SetFileIdentifier(info.FileIdentifier);
++  this->SetFileDescription(info.FileDescription);
++  this->SetFileExtension(info.FileExtension);
++}
++
++//-----------------------------------------------------------------------------
++vtkSMCameraConfigurationWriter::~vtkSMCameraConfigurationWriter()
++{}
++
++//-----------------------------------------------------------------------------
++void vtkSMCameraConfigurationWriter::SetRenderViewProxy(
++      vtkSMRenderViewProxy *rvProxy)
++{
++  this->vtkSMProxyConfigurationWriter::SetProxy(rvProxy);
++  this->GetPropertyIterator()->SetProxy(rvProxy);
++}
++
++//-----------------------------------------------------------------------------
++void vtkSMCameraConfigurationWriter::PrintSelf(ostream& os, vtkIndent indent)
++{
++  this->Superclass::PrintSelf(os,indent);
++}
++
+Index: Servers/ServerManager/vtkSMCameraConfigurationWriter.h
+===================================================================
+RCS file: Servers/ServerManager/vtkSMCameraConfigurationWriter.h
+diff -N Servers/ServerManager/vtkSMCameraConfigurationWriter.h
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ Servers/ServerManager/vtkSMCameraConfigurationWriter.h	7 Mar 2010 23:52:54 -0000
+@@ -0,0 +1,59 @@
++/*=========================================================================
++
++  Program:   Visualization Toolkit
++  Module:    $RCSfile: vtkSMCameraConfigurationWriter.h,v $
++
++  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
++  All rights reserved.
++  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
++
++     This software is distributed WITHOUT ANY WARRANTY; without even
++     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++     PURPOSE.  See the above copyright notice for more information.
++
++=========================================================================*/
++// .NAME vtkSMCameraConfigurationWriter - A writer for XML camera configuration.
++//
++// .SECTION Description
++// A writer for XML camera configuration. Writes camera configuration files
++// using ParaView state file machinery.
++//
++// .SECTION See Also
++// vtkSMCameraConfigurationReader, vtkSMProxyConfigurationWriter
++//
++// .SECTION Thanks
++// This class was contributed by SciberQuest Inc.
++#ifndef __vtkSMCameraConfigurationWriter_h
++#define __vtkSMCameraConfigurationWriter_h
++
++#include "vtkSMProxyConfigurationWriter.h"
++
++class vtkSMRenderViewProxy;
++class vtkSMProxy;
++
++class VTK_EXPORT vtkSMCameraConfigurationWriter : public vtkSMProxyConfigurationWriter
++{
++public:
++  vtkTypeRevisionMacro(vtkSMCameraConfigurationWriter,vtkObject);
++  void PrintSelf(ostream& os, vtkIndent indent);
++  static vtkSMCameraConfigurationWriter *New();
++
++  // Description:
++  // Set the render view proxy to extract camera properties from.
++  void SetRenderViewProxy(vtkSMRenderViewProxy *rvProxy);
++
++protected:
++  vtkSMCameraConfigurationWriter();
++  ~vtkSMCameraConfigurationWriter();
++
++  // Protect the superclass's SetProxy, clients are forced to use
++  // SetRenderViewProxy
++  void SetProxy(vtkSMProxy *proxy){ vtkErrorMacro("Use SetRenderViewProxy."); }
++
++private:
++  vtkSMCameraConfigurationWriter(const vtkSMCameraConfigurationWriter&);  // Not implemented.
++  void operator=(const vtkSMCameraConfigurationWriter&);  // Not implemented.
++};
++
++#endif
++
+Index: Servers/ServerManager/vtkSMNamedPropertyIterator.cxx
+===================================================================
+RCS file: Servers/ServerManager/vtkSMNamedPropertyIterator.cxx
+diff -N Servers/ServerManager/vtkSMNamedPropertyIterator.cxx
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ Servers/ServerManager/vtkSMNamedPropertyIterator.cxx	7 Mar 2010 23:52:54 -0000
+@@ -0,0 +1,164 @@
++/*=========================================================================
++
++  Program:   ParaView
++  Module:    $RCSfile: vtkSMNamedPropertyIterator.cxx,v $
++
++  Copyright (c) Kitware, Inc.
++  All rights reserved.
++  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
++
++     This software is distributed WITHOUT ANY WARRANTY; without even
++     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++     PURPOSE.  See the above copyright notice for more information.
++
++=========================================================================*/
++#include "vtkSMNamedPropertyIterator.h"
++
++#include "vtkObjectFactory.h"
++#include "vtkSMProxy.h"
++#include "vtkSMProxyInternals.h"
++#include "vtkStringList.h"
++
++vtkStandardNewMacro(vtkSMNamedPropertyIterator);
++vtkCxxRevisionMacro(vtkSMNamedPropertyIterator, "$Revision: 0.0 $");
++
++typedef vtkSMProxyInternals::PropertyInfoMap::iterator PropertyIterator;
++typedef vtkSMProxyInternals::ExposedPropertyInfoMap::iterator ExposedPropertyIterator;
++
++//---------------------------------------------------------------------------
++vtkSMNamedPropertyIterator::vtkSMNamedPropertyIterator()
++      :
++  PropertyNames(0),
++  PropertyNameIndex(0)
++{}
++
++//---------------------------------------------------------------------------
++vtkSMNamedPropertyIterator::~vtkSMNamedPropertyIterator()
++{
++  this->SetPropertyNames(0);
++}
++
++//---------------------------------------------------------------------------
++vtkCxxSetObjectMacro(vtkSMNamedPropertyIterator,PropertyNames,vtkStringList);
++
++//---------------------------------------------------------------------------
++void vtkSMNamedPropertyIterator::Begin()
++{
++  this->PropertyNameIndex=0;
++}
++
++//---------------------------------------------------------------------------
++int vtkSMNamedPropertyIterator::IsAtEnd()
++{
++  if (!this->PropertyNames)
++    {
++    vtkErrorMacro("PropertyNames is not set. Can not perform operation: IsAtEnd()");
++    return 0;
++    }
++
++  return this->PropertyNameIndex>=this->PropertyNames->GetNumberOfStrings();
++}
++
++//---------------------------------------------------------------------------
++void vtkSMNamedPropertyIterator::Next()
++{
++  ++this->PropertyNameIndex;
++}
++
++//---------------------------------------------------------------------------
++const char* vtkSMNamedPropertyIterator::GetKey()
++{
++  if (!this->PropertyNames)
++    {
++    vtkErrorMacro("PropertyNames is not set. Can not perform operation: GetKey()");
++    return 0;
++    }
++
++  return this->PropertyNames->GetString(this->PropertyNameIndex);
++}
++
++//---------------------------------------------------------------------------
++const char* vtkSMNamedPropertyIterator::GetPropertyLabel()
++{
++  return this->GetProperty()->GetXMLLabel();
++}
++
++//---------------------------------------------------------------------------
++vtkSMProperty* vtkSMNamedPropertyIterator::GetProperty()
++{
++  if (!this->PropertyNames)
++    {
++    vtkErrorMacro("PropertyNames is not set. Can not perform operation: GetProperty()");
++    return 0;
++    }
++  if (!this->Proxy)
++    {
++    vtkErrorMacro("Proxy is not set. Can not perform operation: GetProperty()");
++    return 0;
++    }
++
++  // get the requested prooperty's name, it's the key into
++  // the map.
++  vtkStdString name=this->PropertyNames->GetString(this->PropertyNameIndex);
++
++  // Is the requested property in this proxy?
++  PropertyIterator propEnd=this->Proxy->Internals->Properties.end();
++  PropertyIterator propIt=this->Proxy->Internals->Properties.find(name);
++
++  // Yes, we have it.
++  if (propIt!=propEnd)
++    {
++    return propIt->second.Property.GetPointer();
++    }
++
++  // No, but it may be in the exposed properties.
++  if (this->TraverseSubProxies)
++    {
++    ExposedPropertyIterator expPropEnd=this->Proxy->Internals->ExposedProperties.end();
++    ExposedPropertyIterator expPropIt=this->Proxy->Internals->ExposedProperties.find(name);
++
++    // Yes, we have it.
++    if (expPropIt!=expPropEnd)
++      {
++      const char *subProxyName=expPropIt->second.SubProxyName.c_str();
++      vtkSMProxy* subProxy=this->Proxy->GetSubProxy(subProxyName);
++      // The sub proxy should always be present.
++      if (!subProxy)
++        {
++        vtkErrorMacro(
++            << "In proxy " << this->Proxy->GetXMLName()
++            << " cannot find sub proxy " << subProxyName << ".");
++        return 0;
++        }
++      const char *expPropName=expPropIt->second.PropertyName.c_str();
++      vtkSMProperty *expProp=subProxy->GetProperty(expPropName);
++      // the property should always be present.
++      if (!expProp)
++        {
++        vtkErrorMacro(
++            << "In proxy " << this->Proxy->GetXMLName()
++            << " cannot find exposed property " << name.c_str() << "."
++            << " Which is expected to be " << expPropName << " of "
++            << subProxyName << ".");
++        }
++      return expProp;
++      }
++    }
++
++  // Exhausted all the possibilities, we do not have the requested
++  // property.
++  vtkErrorMacro(
++      << "In proxy " << this->Proxy->GetXMLName()
++      << " no property named " << name.c_str() << " was found.");
++  return 0;
++}
++
++//---------------------------------------------------------------------------
++void vtkSMNamedPropertyIterator::PrintSelf(ostream& os, vtkIndent indent)
++{
++  this->Superclass::PrintSelf(os, indent);
++
++  os << indent << "PropertyNames: " << this->PropertyNames << endl;
++  os << indent << "PropertyNameIndex: " << this->PropertyNameIndex << endl;
++}
++
+Index: Servers/ServerManager/vtkSMNamedPropertyIterator.h
+===================================================================
+RCS file: Servers/ServerManager/vtkSMNamedPropertyIterator.h
+diff -N Servers/ServerManager/vtkSMNamedPropertyIterator.h
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ Servers/ServerManager/vtkSMNamedPropertyIterator.h	7 Mar 2010 23:52:54 -0000
+@@ -0,0 +1,86 @@
++/*=========================================================================
++
++  Program:   ParaView
++  Module:    $RCSfile: vtkSMNamedPropertyIterator.h,v $
++
++  Copyright (c) Kitware, Inc.
++  All rights reserved.
++  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
++
++     This software is distributed WITHOUT ANY WARRANTY; without even
++     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++     PURPOSE.  See the above copyright notice for more information.
++
++=========================================================================*/
++// .NAME vtkSMNamedPropertyIterator - iterates over a subset of a proxy's properties
++//
++// .SECTION Description
++// vtkSMNamedPropertyIterator can be used to iterate over a subset of a proxy's 
++// properties. The subset is defined through a list of strings naming properties.
++// The properties of the root proxies as well as sub-proxies are  included in the
++// iteration. For sub-proxies, only exposed properties are iterated over.
++//
++// .SECTION See Also
++// vtkSMPropertyIterator
++//
++// .SECTION Thanks
++// This class was contributed by SciberQuest Inc.
++#ifndef __vtkSMNamedPropertyIterator_h
++#define __vtkSMNamedPropertyIterator_h
++
++#include "vtkSMPropertyIterator.h"
++
++class vtkSMProperty;
++class vtkSMProxy;
++class vtkStringList;
++
++class VTK_EXPORT vtkSMNamedPropertyIterator : public vtkSMPropertyIterator
++{
++public:
++  static vtkSMNamedPropertyIterator* New();
++  vtkTypeRevisionMacro(vtkSMNamedPropertyIterator, vtkSMPropertyIterator);
++  virtual void PrintSelf(ostream& os, vtkIndent indent);
++
++  // Description:
++  // Set the names of properties to iterate over.
++  void SetPropertyNames(vtkStringList *names);
++
++  // Description:
++  // Go to the first property.
++  virtual void Begin();
++
++  // Description:
++  // Returns true if iterator points past the end of the collection.
++  virtual int IsAtEnd();
++
++  // Description:
++  // Move to the next property.
++  virtual void Next();
++
++  // Description:
++  // Returns the key (name) at the current iterator position.
++  virtual const char* GetKey();
++
++  // Description:
++  // Returns the XMLLabel for self properties and the exposed name for
++  // sub-proxy properties.
++  virtual const char* GetPropertyLabel();
++
++  // Description:
++  // Returns the property at the current iterator position.
++  virtual vtkSMProperty* GetProperty();
++
++protected:
++  vtkSMNamedPropertyIterator();
++  ~vtkSMNamedPropertyIterator();
++
++  vtkStringList *PropertyNames;
++  int PropertyNameIndex;
++
++private:
++  vtkSMNamedPropertyIterator(const vtkSMNamedPropertyIterator&); // Not implemented
++  void operator=(const vtkSMNamedPropertyIterator&); // Not implemented
++};
++
++#endif
++
+Index: Servers/ServerManager/vtkSMPropertyIterator.h
+===================================================================
+RCS file: /cvsroot/ParaView3/ParaView3/Servers/ServerManager/vtkSMPropertyIterator.h,v
+retrieving revision 1.7
+diff -u -r1.7 vtkSMPropertyIterator.h
+--- Servers/ServerManager/vtkSMPropertyIterator.h	24 May 2009 14:41:01 -0000	1.7
++++ Servers/ServerManager/vtkSMPropertyIterator.h	7 Mar 2010 23:52:54 -0000
+@@ -36,11 +36,11 @@
+ public:
+   static vtkSMPropertyIterator* New();
+   vtkTypeRevisionMacro(vtkSMPropertyIterator, vtkSMObject);
+-  void PrintSelf(ostream& os, vtkIndent indent);
++  virtual void PrintSelf(ostream& os, vtkIndent indent);
+ 
+   // Description:
+   // Set the proxy to be used.
+-  void SetProxy(vtkSMProxy* proxy);
++  virtual void SetProxy(vtkSMProxy* proxy);
+ 
+   // Description:
+   // Return the proxy.
+@@ -48,28 +48,28 @@
+ 
+   // Description:
+   // Go to the first property.
+-  void Begin();
++  virtual void Begin();
+ 
+   // Description:
+   // Returns true if iterator points past the end of the collection.
+-  int IsAtEnd();
++  virtual int IsAtEnd();
+ 
+   // Description:
+   // Move to the next property.
+-  void Next();
++  virtual void Next();
+ 
+   // Description:
+   // Returns the key (name) at the current iterator position.
+-  const char* GetKey();
++  virtual const char* GetKey();
+ 
+   // Description:
+   // Returns the XMLLabel for self properties and the exposed name for
+   // sub-proxy properties.
+-  const char* GetPropertyLabel();
++  virtual const char* GetPropertyLabel();
+ 
+   // Description:
+   // Returns the property at the current iterator position.
+-  vtkSMProperty* GetProperty();
++  virtual vtkSMProperty* GetProperty();
+ 
+   // Description:
+   // If TraverseSubProxies is false, only the properties belonging
+Index: Servers/ServerManager/vtkSMProxy.cxx
+===================================================================
+RCS file: /cvsroot/ParaView3/ParaView3/Servers/ServerManager/vtkSMProxy.cxx,v
+retrieving revision 1.117
+diff -u -r1.117 vtkSMProxy.cxx
+--- Servers/ServerManager/vtkSMProxy.cxx	10 Feb 2010 19:14:17 -0000	1.117
++++ Servers/ServerManager/vtkSMProxy.cxx	7 Mar 2010 23:52:55 -0000
+@@ -2285,9 +2285,22 @@
+   return 1;
+ }
+ 
++
+ //---------------------------------------------------------------------------
+ vtkPVXMLElement* vtkSMProxy::SaveState(vtkPVXMLElement* root)
+ {
++  vtkSMPropertyIterator *iter=this->NewPropertyIterator();
++  vtkPVXMLElement *proxyXml=this->SaveState(root,iter,1);
++  iter->Delete();
++  return proxyXml;
++}
++
++//---------------------------------------------------------------------------
++vtkPVXMLElement* vtkSMProxy::SaveState(
++    vtkPVXMLElement* root,
++    vtkSMPropertyIterator *iter,
++    int saveSubProxies)
++{
+   vtkPVXMLElement* proxyElement = vtkPVXMLElement::New();
+   proxyElement->SetName("Proxy");
+   proxyElement->AddAttribute("group", this->XMLGroup);
+@@ -2295,9 +2308,8 @@
+   proxyElement->AddAttribute("id", this->GetSelfIDAsString());
+   proxyElement->AddAttribute("servers", 
+     static_cast<unsigned int>(this->Servers));
+-  vtkSMPropertyIterator* iter = this->NewPropertyIterator();
+ 
+-  while (!iter->IsAtEnd())
++  for (iter->Begin(); !iter->IsAtEnd(); iter->Next())
+     {
+     if (!iter->GetProperty())
+       {
+@@ -2312,18 +2324,19 @@
+       iter->GetProperty()->SaveState(proxyElement, iter->GetKey(),
+         propID.str().c_str());
+       }
+-    iter->Next();
+     }
+ 
+-  iter->Delete();
+-
+   if (root)
+     {
+     root->AddNestedElement(proxyElement);
+     proxyElement->Delete();
+     }
+ 
+-  this->SaveSubProxyState(proxyElement);
++  if (saveSubProxies)
++    {
++    this->SaveSubProxyState(proxyElement);
++    }
++
+   return proxyElement;
+ }
+ 
+Index: Servers/ServerManager/vtkSMProxy.h
+===================================================================
+RCS file: /cvsroot/ParaView3/ParaView3/Servers/ServerManager/vtkSMProxy.h,v
+retrieving revision 1.98
+diff -u -r1.98 vtkSMProxy.h
+--- Servers/ServerManager/vtkSMProxy.h	15 Jul 2009 15:14:28 -0000	1.98
++++ Servers/ServerManager/vtkSMProxy.h	7 Mar 2010 23:52:55 -0000
+@@ -421,7 +421,22 @@
+   // Description:
+   // Saves the state of the proxy. This state can be reloaded
+   // to create a new proxy that is identical the present state of this proxy.
++  // The resulting proxy's XML hieratchy is returned, in addition if the root
++  // argument is not NULL then it's also inserted as a nested element.
++  // This call saves all a proxy's properties, including exposed properties
++  // and sub-proxies. More control is provided by the following overload.
+   virtual vtkPVXMLElement* SaveState(vtkPVXMLElement* root);
++  // Description:
++  // Saves the state of the proxy. This state can be reloaded
++  // to create a new proxy that is identical the present state of this proxy.
++  // The resulting proxy's XML hieratchy is returned, in addition if the root
++  // argument is not NULL then it's also inserted as a nested element.
++  // The iterator argument is provided as a means for subsetting properties.
++  // The saveSubProxies argument turns on and off the saving of sub-proxies.
++  virtual vtkPVXMLElement* SaveState(
++        vtkPVXMLElement* root,
++        vtkSMPropertyIterator *iter,
++        int saveSubProxies);
+ 
+   // Description:
+   // Loads the proxy state from the XML element. Returns 0 on failure.
+@@ -485,6 +500,7 @@
+   friend class vtkSMPart;
+   friend class vtkSMProperty;
+   friend class vtkSMPropertyIterator;
++  friend class vtkSMNamedPropertyIterator;
+   friend class vtkSMProxyManager;
+   friend class vtkSMProxyObserver;
+   friend class vtkSMProxyProperty;
+Index: Servers/ServerManager/vtkSMProxyConfigurationFileInfo.h
+===================================================================
+RCS file: Servers/ServerManager/vtkSMProxyConfigurationFileInfo.h
+diff -N Servers/ServerManager/vtkSMProxyConfigurationFileInfo.h
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ Servers/ServerManager/vtkSMProxyConfigurationFileInfo.h	7 Mar 2010 23:52:55 -0000
+@@ -0,0 +1,55 @@
++/*=========================================================================
++
++  Program:   Visualization Toolkit
++  Module:    $RCSfile: vtkSMProxyConfigurationFileInfo.h,v $
++
++  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
++  All rights reserved.
++  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
++
++     This software is distributed WITHOUT ANY WARRANTY; without even
++     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++     PURPOSE.  See the above copyright notice for more information.
++
++=========================================================================*/
++// .NAME vtkSMProxyConfigurationFileInfo - Proxy configuration file meta data.
++//
++// .SECTION Description
++// Organizes meta-data that is used by both reader and writer in a single
++// location.
++//
++// .SECTION See Also
++// vtkSMProxyConfigurationReader, vtkSMProxyConfigurationWriter
++//
++// .SECTION Thanks
++// This class was contributed by SciberQuest Inc.
++#ifndef __vtkSMConfigurationFileInfo_h
++#define __vtkSMConfigurationFileInfo_h
++
++#include "vtkObject.h"
++
++class vtkSMProxyConfigurationFileInfo
++{
++public:
++  vtkSMProxyConfigurationFileInfo()
++        :
++    FileIdentifier("SMProxyConfiguration"),
++    FileDescription("ParaView server manager proxy configuration"),
++    FileExtension(".pvpc")
++      { }
++
++  virtual void PrintSelf(ostream &os, vtkIndent indent)
++    {
++    os
++      << indent << "FileIdentifier: " << this->FileIdentifier << endl
++      << indent << "FileDescription: " << this->FileDescription << endl
++      << indent << "FileExtension: " << this->FileExtension << endl;
++    }
++
++  const char *FileIdentifier;
++  const char *FileDescription;
++  const char *FileExtension;
++};
++
++#endif
++
+Index: Servers/ServerManager/vtkSMProxyConfigurationReader.cxx
+===================================================================
+RCS file: Servers/ServerManager/vtkSMProxyConfigurationReader.cxx
+diff -N Servers/ServerManager/vtkSMProxyConfigurationReader.cxx
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ Servers/ServerManager/vtkSMProxyConfigurationReader.cxx	7 Mar 2010 23:52:55 -0000
+@@ -0,0 +1,171 @@
++/*=========================================================================
++
++  Program:   Visualization Toolkit
++  Module:    $RCSfile: vtkSMProxyConfigurationReader.cxx,v $
++
++  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
++  All rights reserved.
++  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
++
++     This software is distributed WITHOUT ANY WARRANTY; without even
++     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++     PURPOSE.  See the above copyright notice for more information.
++
++=========================================================================*/
++#include "vtkSMProxyConfigurationReader.h"
++#include "vtkSMCameraConfigurationFileInfo.h"
++
++#include "vtkObjectFactory.h"
++#include "vtkSmartPointer.h"
++#include "vtkPVXMLElement.h"
++#include "vtkPVXMLParser.h"
++#include "vtkSMProxy.h"
++
++#include <vtkstd/string>
++
++#define safeio(a) ((a)?(a):"NULL")
++
++vtkCxxRevisionMacro(vtkSMProxyConfigurationReader,"$Revision: 1.0$");
++vtkStandardNewMacro(vtkSMProxyConfigurationReader);
++
++//-----------------------------------------------------------------------------
++vtkSMProxyConfigurationReader::vtkSMProxyConfigurationReader()
++        :
++    FileName(0),
++    ValidateProxyType(1),
++    Proxy(0),
++    FileIdentifier(0),
++    FileDescription(0),
++    FileExtension(0)
++{
++  vtkSMCameraConfigurationFileInfo info;
++  this->SetFileIdentifier(info.FileIdentifier);
++  this->SetFileDescription(info.FileDescription);
++  this->SetFileExtension(info.FileExtension);
++}
++
++//-----------------------------------------------------------------------------
++vtkSMProxyConfigurationReader::~vtkSMProxyConfigurationReader()
++{
++  this->SetFileName(0);
++  this->SetProxy(0);
++  this->SetFileIdentifier(0);
++  this->SetFileDescription(0);
++  this->SetFileExtension(0);
++}
++
++//-----------------------------------------------------------------------------
++vtkCxxSetObjectMacro(vtkSMProxyConfigurationReader,Proxy,vtkSMProxy);
++
++//-----------------------------------------------------------------------------
++bool vtkSMProxyConfigurationReader::CanReadVersion(const char *version)
++{
++  return vtkstd::string(version)==this->GetReaderVersion();
++}
++
++//-----------------------------------------------------------------------------
++int vtkSMProxyConfigurationReader::ReadConfiguration()
++{
++  return this->ReadConfiguration(this->FileName);
++}
++
++//-----------------------------------------------------------------------------
++int vtkSMProxyConfigurationReader::ReadConfiguration(const char *filename)
++{
++  if (filename==0)
++    {
++    vtkErrorMacro("Cannot read from filename NULL.");
++    return 0;
++    }
++
++  vtkSmartPointer<vtkPVXMLParser> parser=vtkSmartPointer<vtkPVXMLParser>::New();
++  parser->SetFileName(filename);
++  if (parser->Parse()==0)
++    {
++    vtkErrorMacro("Invalid XML in file: " << filename << ".");
++    return 0;
++    }
++
++  vtkPVXMLElement *xmlStream=parser->GetRootElement();
++  if (xmlStream==0)
++    {
++    vtkErrorMacro("Invalid XML in file: " << filename << ".");
++    return 0;
++    }
++
++  return this->ReadConfiguration(xmlStream);
++}
++
++//-----------------------------------------------------------------------------
++int vtkSMProxyConfigurationReader::ReadConfiguration(vtkPVXMLElement *configXml)
++{
++  vtkstd::string requiredIdentifier(this->GetFileIdentifier());
++  const char *foundIdentifier=configXml->GetName();
++  if (foundIdentifier==0 || foundIdentifier!=requiredIdentifier)
++    {
++    vtkErrorMacro(
++        << "This is not a valid " << this->GetFileDescription()
++        << " XML hierarchy.");
++    return 0;
++    }
++
++  const char *foundVersion=configXml->GetAttribute("version");
++  if (foundVersion==0)
++    {
++    vtkErrorMacro("No \"version\" attribute was found.");
++    return 0;
++    }
++
++  if (!this->CanReadVersion(foundVersion))
++    {
++    vtkErrorMacro("Unsupported version " << foundVersion << ".");
++    return 0;
++    }
++
++  // Find a proxy emlement, this hierarchy is expected to contain one
++  // and only one Proxy element.
++  vtkPVXMLElement *proxyXml=configXml->FindNestedElementByName("Proxy");
++  if (proxyXml==0)
++    {
++    vtkErrorMacro("No \"Proxy\" element was found.");
++    return 0;
++    }
++
++  // Compare type of proxy in the file with the one we have to make
++  // sure they match.
++  const char *foundType=proxyXml->GetAttribute("type");
++  vtkstd::string requiredType=this->Proxy->GetXMLName();
++  if (this->ValidateProxyType
++    && (foundType==0 || foundType!=requiredType))
++    {
++    vtkErrorMacro(
++        << "This is not a valid " << requiredType
++        << " XML hierarchy.");
++    return 0;
++    }
++
++  // Push hierarchy to the proxy.
++  int ok=this->Proxy->LoadState(proxyXml,0);
++  if (!ok)
++    {
++    vtkErrorMacro("Proxy::LoadState failed.");
++    return 0;
++    }
++  this->Proxy->UpdateVTKObjects();
++
++  return 1;
++}
++
++//-----------------------------------------------------------------------------
++void vtkSMProxyConfigurationReader::PrintSelf(ostream& os, vtkIndent indent)
++{
++  this->Superclass::PrintSelf(os,indent);
++
++  os << indent << "FileName: " << safeio(this->FileName) << endl
++     << indent << "Proxy: " << Proxy << endl
++     << indent << "FileIdentifier: " << safeio(this->GetFileIdentifier()) << endl
++     << indent << "FileDescription: " << safeio(this->GetFileDescription()) << endl
++     << indent << "FileExtension: " << safeio(this->GetFileExtension()) << endl
++     << indent << "ReaderVersion: " << safeio(this->GetReaderVersion()) << endl;
++}
++
+Index: Servers/ServerManager/vtkSMProxyConfigurationReader.h
+===================================================================
+RCS file: Servers/ServerManager/vtkSMProxyConfigurationReader.h
+diff -N Servers/ServerManager/vtkSMProxyConfigurationReader.h
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ Servers/ServerManager/vtkSMProxyConfigurationReader.h	7 Mar 2010 23:52:55 -0000
+@@ -0,0 +1,118 @@
++/*=========================================================================
++
++  Program:   Visualization Toolkit
++  Module:    $RCSfile: vtkSMProxyConfigurationReader.h,v $
++
++  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
++  All rights reserved.
++  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
++
++     This software is distributed WITHOUT ANY WARRANTY; without even
++     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++     PURPOSE.  See the above copyright notice for more information.
++
++=========================================================================*/
++// .NAME vtkSMProxyConfigurationReader - Base readers of a vtkSMProxy's vtkSMProperty's.
++//
++// .SECTION Description
++// vtkSMProxyConfigurationReader reads state for properties for a single
++// proxy. Internally the ParaView state machinery is employed.
++//
++// The notion of proxy configuration is similar to state but lighter
++// as the proxy its domains and and its server side objects are assumed to
++// already exist. Configuration also provides subseting mechanism so that
++// properties may be excluded if needed.
++//
++// The subsetting mechanism is implemented in the writer, the reader simply
++// reads which ever properties are found.
++//
++// .SECTION See also
++// vtkSMProxyConfigurationWriter
++//
++// .SECTION Thanks
++// This class was contribued by SciberQuest Inc.
++#ifndef __vtkSMProxyConfigurationReader_h
++#define __vtkSMProxyConfigurationReader_h
++
++#include "vtkSMObject.h"
++
++class vtkPVXMLElement;
++class vtkSMProxy;
++
++class VTK_EXPORT vtkSMProxyConfigurationReader : public vtkSMObject
++{
++public:
++  static vtkSMProxyConfigurationReader *New();
++  vtkTypeRevisionMacro(vtkSMProxyConfigurationReader,vtkSMObject);
++  void PrintSelf(ostream& os, vtkIndent indent);
++
++  // Description:
++  // Set/Get the file name.
++  vtkSetStringMacro(FileName);
++  vtkGetStringMacro(FileName);
++
++  // Description:
++  // Set the proxy to write out.
++  virtual void SetProxy(vtkSMProxy *proxy);
++  vtkGetObjectMacro(Proxy,vtkSMProxy);
++
++  // Description:
++  // Set/get file meta data.
++  vtkSetStringMacro(FileIdentifier);
++  vtkGetStringMacro(FileIdentifier);
++
++  vtkSetStringMacro(FileDescription);
++  vtkGetStringMacro(FileDescription);
++
++  vtkSetStringMacro(FileExtension);
++  vtkGetStringMacro(FileExtension);
++
++  // Description:
++  // Turns on/off proxy type validation. If on then the proxy's
++  // type is compared with that found in the configuration file.
++  // The read fails if they do not match. The feature is on by
++  // default.
++  vtkSetMacro(ValidateProxyType,int);
++  vtkGetMacro(ValidateProxyType,int);
++
++  // Description:
++  // Return the reader version.
++  virtual const char *GetReaderVersion(){ return "1.0"; }
++
++  // Description:
++  // Return true if the reader can read the specified version.
++  virtual bool CanReadVersion(const char *version);
++
++  // Description:
++  // Read the configuration from the file. UpdateVTKObjects
++  // is intentionally not called so that caller may have full
++  // control as to when the push from client to server takes
++  // place.
++  virtual int ReadConfiguration();
++  virtual int ReadConfiguration(const char *filename);
++  // Description:
++  // Read the configuration from the stream. PV state machinery is
++  // employed.
++  virtual int ReadConfiguration(vtkPVXMLElement *xmlStream);
++
++protected:
++  vtkSMProxyConfigurationReader();
++  virtual ~vtkSMProxyConfigurationReader();
++
++private:
++  char *FileName;
++  int ValidateProxyType;
++  //-------------------
++  vtkSMProxy *Proxy;
++  //-------------------
++  char *FileIdentifier;
++  char *FileDescription;
++  char *FileExtension;
++
++private:
++  vtkSMProxyConfigurationReader(const vtkSMProxyConfigurationReader&);  // Not implemented.
++  void operator=(const vtkSMProxyConfigurationReader&);  // Not implemented.
++};
++
++#endif
++
+Index: Servers/ServerManager/vtkSMProxyConfigurationWriter.cxx
+===================================================================
+RCS file: Servers/ServerManager/vtkSMProxyConfigurationWriter.cxx
+diff -N Servers/ServerManager/vtkSMProxyConfigurationWriter.cxx
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ Servers/ServerManager/vtkSMProxyConfigurationWriter.cxx	7 Mar 2010 23:52:55 -0000
+@@ -0,0 +1,157 @@
++/*=========================================================================
++
++  Program:   ParaView
++  Module:    $RCSfile: vtkSMProxyConfigurationWriter.cxx,v $
++
++  Copyright (c) Kitware, Inc.
++  All rights reserved.
++  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
++
++     This software is distributed WITHOUT ANY WARRANTY; without even
++     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++     PURPOSE.  See the above copyright notice for more information.
++
++=========================================================================*/
++#include "vtkSMProxyConfigurationWriter.h"
++
++#include "vtkObjectFactory.h"
++#include "vtkSMProxy.h"
++#include "vtkSMPropertyIterator.h"
++#include "vtkSMNamedPropertyIterator.h"
++#include "vtkSMProxyConfigurationFileInfo.h"
++
++#include "vtkStringList.h"
++#include "vtkPVXMLElement.h"
++
++#include <vtksys/ios/fstream>
++#include <vtksys/ios/iostream>
++
++#define safeio(a) ((a)?(a):"NULL")
++
++
++vtkStandardNewMacro(vtkSMProxyConfigurationWriter);
++vtkCxxRevisionMacro(vtkSMProxyConfigurationWriter, "$Revision: 0.0$");
++
++
++//---------------------------------------------------------------------------
++vtkSMProxyConfigurationWriter::vtkSMProxyConfigurationWriter()
++        :
++    FileName(0),
++    Proxy(0),
++    PropertyIterator(0),
++    FileIdentifier(0),
++    FileDescription(0),
++    FileExtension(0)
++{
++  vtkSMProxyConfigurationFileInfo info;
++  this->SetFileIdentifier(info.FileIdentifier);
++  this->SetFileDescription(info.FileDescription);
++  this->SetFileExtension(info.FileExtension);
++}
++
++//---------------------------------------------------------------------------
++vtkSMProxyConfigurationWriter::~vtkSMProxyConfigurationWriter()
++{
++  this->SetFileName(0);
++  this->SetProxy(0);
++  this->SetPropertyIterator(0);
++  this->SetFileIdentifier(0);
++  this->SetFileDescription(0);
++  this->SetFileExtension(0);
++}
++
++//---------------------------------------------------------------------------
++vtkCxxSetObjectMacro(vtkSMProxyConfigurationWriter,PropertyIterator,vtkSMPropertyIterator);
++
++//---------------------------------------------------------------------------
++vtkCxxSetObjectMacro(vtkSMProxyConfigurationWriter,Proxy,vtkSMProxy);
++
++//---------------------------------------------------------------------------
++int vtkSMProxyConfigurationWriter::WriteConfiguration(ostream &os)
++{
++  // The user didn't set a iterator, assume he wants all
++  // of the properties saved, use the default iterator.
++  int deleteIter=0;
++  vtkSMPropertyIterator *iter=this->PropertyIterator;
++  if (!iter)
++    {
++    iter=this->Proxy->NewPropertyIterator();
++    deleteIter=1;
++    }
++
++  os << "<?xml version=\"1.0\"?>" << endl;
++
++  vtkPVXMLElement* state=vtkPVXMLElement::New();
++  state->SetName(this->GetFileIdentifier());
++  state->AddAttribute("description",this->GetFileDescription());
++  state->AddAttribute("version",this->GetWriterVersion());
++
++  this->Proxy->SaveState(state, iter, 0);
++
++  state->PrintXML(os, vtkIndent());
++  state->Delete();
++
++  // clean up the default iterator
++  if (deleteIter)
++    {
++    iter->Delete();
++    }
++
++  return 1;
++}
++
++//---------------------------------------------------------------------------
++int vtkSMProxyConfigurationWriter::WriteConfiguration(const char *cFilename)
++{
++  if (cFilename==0)
++    {
++    vtkErrorMacro("Cannot write filename NULL.");
++    return 0;
++    }
++
++  // If there client has set an extension then we add it if it's not
++  // present. To save with out th eextension, set it NULL.
++  const char *cExt=this->GetFileExtension();
++  cExt=(cExt==NULL?"":cExt);
++  vtkstd::string filename(cFilename);
++  vtkstd::string ext(cExt);
++  if (!ext.empty()
++    && (filename.size()<=ext.size()
++    || filename.find(ext,filename.size()-ext.size())==vtkstd::string::npos))
++    {
++    filename+=ext;
++    }
++
++  ofstream os(filename.c_str(), ios::out);
++  if (!os.good())
++    {
++    vtkErrorMacro("Failed to open " << filename.c_str() << " for writing.");
++    return 0;
++    }
++  this->WriteConfiguration(os);
++  os.close();
++
++  return 1;
++}
++
++//---------------------------------------------------------------------------
++int vtkSMProxyConfigurationWriter::WriteConfiguration()
++{
++  return this->WriteConfiguration(this->FileName);
++}
++
++//---------------------------------------------------------------------------
++void vtkSMProxyConfigurationWriter::PrintSelf(ostream &os, vtkIndent indent)
++{
++  this->Superclass::PrintSelf(os,indent);
++
++  os << indent << "FileName: " << safeio(this->FileName) << endl
++     << indent << "Proxy: " << this->Proxy << endl
++     << indent << "PropertyIterator: " << this->PropertyIterator << endl
++     << indent << "Proxy: " << Proxy << endl
++     << indent << "FileIdentifier: " << safeio(this->GetFileIdentifier()) << endl
++     << indent << "FileDescription: " << safeio(this->GetFileDescription()) << endl
++     << indent << "FileExtension: " << safeio(this->GetFileExtension()) << endl
++     << indent << "WriterVersion: " << safeio(this->GetWriterVersion()) << endl;
++}
++
+Index: Servers/ServerManager/vtkSMProxyConfigurationWriter.h
+===================================================================
+RCS file: Servers/ServerManager/vtkSMProxyConfigurationWriter.h
+diff -N Servers/ServerManager/vtkSMProxyConfigurationWriter.h
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ Servers/ServerManager/vtkSMProxyConfigurationWriter.h	7 Mar 2010 23:52:55 -0000
+@@ -0,0 +1,108 @@
++/*=========================================================================
++
++  Program:   ParaView
++  Module:    $RCSfile: vtkSMProxyConfigurationWriter.h,v $
++
++  Copyright (c) Kitware, Inc.
++  All rights reserved.
++  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
++
++     This software is distributed WITHOUT ANY WARRANTY; without even
++     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++     PURPOSE.  See the above copyright notice for more information.
++
++=========================================================================*/
++// .NAME vtkSMProxyConfigurationWriter - Base readers of a vtkSMProxy's vtkSMProperty's.
++//
++// .SECTION Description
++// vtkSMProxyConfigurationWriter writes state for properties for a single
++// proxy. Internally the ParaView state machinery is employed.
++//
++// The notion of proxy configuration is similar to state but lighter
++// as the proxy its domains and and its server side objects are assumed to
++// already exist. Configuration also provides subseting mechanism so that
++// properties may be excluded if needed.
++//
++// Subsetting is achieved through a specialized iterator derived from
++// vtkSMPropertyIterator.
++//
++// .SECTION See also
++// vtkSMProxyConfigurationReader, vtkSMPropertyIterator, vtkSMNamedPropertyIterator
++//
++// .SECTION Thanks
++// This class was contribued by SciberQuest Inc.
++#ifndef __vtkSMProxyConfigurationWriter_h
++#define __vtkSMProxyConfigurationWriter_h
++
++#include "vtkSMObject.h"
++
++class vtkSMPropertyIterator;
++class vtkSMProxy;
++class vtkStringList;
++
++class vtkSMProxyConfigurationWriter : public vtkSMObject
++{
++public:
++  static vtkSMProxyConfigurationWriter* New();
++  vtkTypeRevisionMacro(vtkSMProxyConfigurationWriter, vtkSMObject);
++  virtual void PrintSelf(ostream& os, vtkIndent indent);
++
++  // Description:
++  // Set the proxy to write out.
++  virtual void SetProxy(vtkSMProxy *proxy);
++  vtkGetObjectMacro(Proxy,vtkSMProxy);
++
++  // Description:
++  // Set the ieterator used to traverse properties during the write.
++  // If no iterator is set then all properties are written.
++  virtual void SetPropertyIterator(vtkSMPropertyIterator *iter);
++  vtkGetObjectMacro(PropertyIterator,vtkSMPropertyIterator);
++
++  // Description:
++  // Set/Get the file name.
++  vtkSetStringMacro(FileName);
++  vtkGetStringMacro(FileName);
++
++  // Description:
++  // Set/get file meta data.
++  vtkSetStringMacro(FileIdentifier);
++  vtkGetStringMacro(FileIdentifier);
++
++  vtkSetStringMacro(FileDescription);
++  vtkGetStringMacro(FileDescription);
++
++  vtkSetStringMacro(FileExtension);
++  vtkGetStringMacro(FileExtension);
++
++  // Description:
++  // Return the writer version string.
++  virtual const char *GetWriterVersion(){ return "1.0"; }
++
++  // Description:
++  // Write the proxy's state directly to an XML file, in PV state format.
++  virtual int WriteConfiguration();
++  virtual int WriteConfiguration(const char *fileName);
++  // Description:
++  // Write the proxy's state to a stream, in PV state format.
++  virtual int WriteConfiguration(ostream &os);
++
++
++protected:
++  vtkSMProxyConfigurationWriter();
++  virtual ~vtkSMProxyConfigurationWriter();
++  vtkSMProxyConfigurationWriter(const vtkSMProxyConfigurationWriter &); // not implemented
++  vtkSMProxyConfigurationWriter &operator=(const vtkSMProxyConfigurationWriter &); // not implemented
++
++private:
++  char *FileName;
++  //-------------------
++  vtkSMProxy *Proxy;
++  vtkSMPropertyIterator *PropertyIterator;
++  //-------------------
++  char *FileIdentifier;
++  char *FileDescription;
++  char *FileExtension;
++};
++
++#endif
++
+Index: Qt/Components/CMakeLists.txt
+===================================================================
+RCS file: /cvsroot/ParaView3/ParaView3/Qt/Components/CMakeLists.txt,v
+retrieving revision 1.181
+diff -u -r1.181 CMakeLists.txt
+--- Qt/Components/CMakeLists.txt	23 Feb 2010 19:20:08 -0000	1.181
++++ Qt/Components/CMakeLists.txt	7 Mar 2010 23:52:56 -0000
+@@ -94,6 +94,7 @@
+   pqCustomFilterDefinitionWizard.h
+   pqCustomFilterManager.h
+   pqCustomFilterManagerModel.h
++  pqCustomViewButtonDialog.h
+   pqCutPanel.h
+   pqDataInformationModel.h
+   pqDataInformationModelSelectionAdaptor.h
+@@ -233,6 +234,7 @@
+   Resources/UI/pqCreateServerStartupDialog.ui
+   Resources/UI/pqCustomFilterDefinitionWizard.ui
+   Resources/UI/pqCustomFilterManager.ui
++  Resources/UI/pqCustomViewButtonDialog.ui
+   Resources/UI/pqCubeAxesEditorDialog.ui
+   Resources/UI/pqDisplayProxyEditor.ui
+   Resources/UI/pqDisplayProxyEditorWidget.ui
+@@ -446,6 +448,8 @@
+   pqCustomFilterManager.h
+   pqCustomFilterManagerModel.cxx
+   pqCustomFilterManagerModel.h
++  pqCustomViewButtonDialog.h
++  pqCustomViewButtonDialog.cxx
+   pqCutPanel.cxx
+   pqCutPanel.h
+   pqDataInformationModel.cxx
+Index: Qt/Components/pqCameraDialog.cxx
+===================================================================
+RCS file: /cvsroot/ParaView3/ParaView3/Qt/Components/pqCameraDialog.cxx,v
+retrieving revision 1.5
+diff -u -r1.5 pqCameraDialog.cxx
+--- Qt/Components/pqCameraDialog.cxx	23 Jun 2008 14:27:17 -0000	1.5
++++ Qt/Components/pqCameraDialog.cxx	7 Mar 2010 23:52:56 -0000
+@@ -33,20 +33,42 @@
+ #include "ui_pqCameraDialog.h"
+ 
+ // ParaView Server Manager includes.
++#include "vtkSmartPointer.h"
+ #include "vtkCamera.h"
+ #include "vtkProcessModule.h"
+ #include "vtkSMProxy.h"
+ #include "vtkSMRenderViewProxy.h"
++#include "vtkSMProperty.h"
++#include "vtkSMCameraConfigurationReader.h"
++#include "vtkSMCameraConfigurationWriter.h"
++
++#include "vtkPVXMLElement.h"
++#include "vtkPVXMLParser.h"
+ 
+ // Qt includes.
+ #include <QPointer>
++#include <QString>
++#include <QDebug>
+ 
+ // ParaView Client includes.
+ #include "pqApplicationCore.h"
+ #include "pqRenderView.h"
+ #include "pqPropertyLinks.h"
++#include "pqSettings.h"
++#include "pqFileDialog.h"
++#include "pqCustomViewButtonDialog.h"
++
++// STL
++#include <vtkstd/string>
++#include <vtksys/ios/sstream>
++
++#define pqErrorMacro(estr)\
++  qDebug()\
++      << "Error in:" << endl\
++      << __FILE__ << ", line " << __LINE__ << endl\
++      << "" estr << endl;
+ 
+-//-----------------------------------------------------------------------------
++//=============================================================================
+ class pqCameraDialogInternal : public Ui::pqCameraDialog
+ {
+ public:
+@@ -103,6 +125,47 @@
+   QObject::connect(
+     this->Internal->azimuthButton, SIGNAL(clicked()),
+     this, SLOT(applyCameraAzimuth()));
++
++  QObject::connect(
++    this->Internal->saveCameraConfiguration, SIGNAL(clicked()),
++    this, SLOT(saveCameraConfiguration()));
++
++  QObject::connect(
++    this->Internal->loadCameraConfiguration, SIGNAL(clicked()),
++    this, SLOT(loadCameraConfiguration()));
++
++  QObject::connect(
++    this->Internal->customView0, SIGNAL(clicked()),
++    this, SLOT(applyCustomView0()));
++
++  QObject::connect(
++    this->Internal->customView1, SIGNAL(clicked()),
++    this, SLOT(applyCustomView1()));
++
++  QObject::connect(
++    this->Internal->customView2, SIGNAL(clicked()),
++    this, SLOT(applyCustomView2()));
++
++  QObject::connect(
++    this->Internal->customView3, SIGNAL(clicked()),
++    this, SLOT(applyCustomView3()));
++
++  QObject::connect(
++    this->Internal->configureCustomViews, SIGNAL(clicked()),
++    this, SLOT(configureCustomViews()));
++
++  // load custom view buttons with any tool tips set by the user in a previous
++  // session.
++  pqCameraDialogInternal *w=this->Internal;
++  pqSettings *settings=pqApplicationCore::instance()->settings();
++  settings->beginGroup("CustomViewButtons");
++  settings->beginGroup("ToolTips");
++  w->customView0->setToolTip(settings->value("0","not configured.").toString());
++  w->customView1->setToolTip(settings->value("1","not configured.").toString());
++  w->customView2->setToolTip(settings->value("2","not configured.").toString());
++  w->customView3->setToolTip(settings->value("3","not configured.").toString());
++  settings->endGroup();
++  settings->endGroup();
+ }
+ 
+ //-----------------------------------------------------------------------------
+@@ -326,3 +389,173 @@
+     }
+ }
+ 
++//-----------------------------------------------------------------------------
++void pqCameraDialog::configureCustomViews()
++{
++  pqCameraDialogInternal *ui=this->Internal;
++
++  // load the existing button configurations from the app wide settings.
++  QStringList toolTips;
++  QStringList configs;
++
++  pqSettings *settings;
++  settings=pqApplicationCore::instance()->settings();
++  settings->beginGroup("CustomViewButtons");
++
++  settings->beginGroup("Configurations");
++  configs << settings->value("0","").toString();
++  configs << settings->value("1","").toString();
++  configs << settings->value("2","").toString();
++  configs << settings->value("3","").toString();
++  settings->endGroup();
++
++  settings->beginGroup("ToolTips");
++  toolTips << settings->value("0",ui->customView0->toolTip()).toString();
++  toolTips << settings->value("1",ui->customView1->toolTip()).toString();
++  toolTips << settings->value("2",ui->customView2->toolTip()).toString();
++  toolTips << settings->value("3",ui->customView3->toolTip()).toString();
++  settings->endGroup();
++  settings->endGroup();
++
++  // grab the current camera configuration.
++  vtksys_ios::ostringstream os;
++
++  vtkSMCameraConfigurationWriter *writer=vtkSMCameraConfigurationWriter::New();
++  writer->SetRenderViewProxy(ui->RenderModule->getRenderViewProxy());
++  writer->WriteConfiguration(os);
++
++  QString currentConfig(os.str().c_str());
++
++  // user modifies the configuration
++  pqCustomViewButtonDialog dialog(this,0,toolTips,configs,currentConfig);
++  if (dialog.exec()==QDialog::Accepted)
++    {
++    // save the new configuration into the app wide settings.
++    configs=dialog.getConfigurations();
++    settings->beginGroup("CustomViewButtons");
++    settings->beginGroup("Configurations");
++    settings->setValue("0",configs[0]);
++    settings->setValue("1",configs[1]);
++    settings->setValue("2",configs[2]);
++    settings->setValue("3",configs[3]);
++    settings->endGroup();
++
++    toolTips=dialog.getToolTips();
++    settings->beginGroup("ToolTips");
++    settings->setValue("0",toolTips[0]);
++    settings->setValue("1",toolTips[1]);
++    settings->setValue("2",toolTips[2]);
++    settings->setValue("3",toolTips[3]);
++    settings->endGroup();
++    settings->endGroup();
++
++    ui->customView0->setToolTip(toolTips[0]);
++    ui->customView1->setToolTip(toolTips[1]);
++    ui->customView2->setToolTip(toolTips[2]);
++    ui->customView3->setToolTip(toolTips[3]);
++    }
++
++  writer->Delete();
++}
++
++//-----------------------------------------------------------------------------
++void pqCameraDialog::applyCustomView(int buttonId)
++{
++  pqCameraDialogInternal *ui=this->Internal;
++
++  pqSettings *settings=pqApplicationCore::instance()->settings();
++  settings->beginGroup("CustomViewButtons");
++  settings->beginGroup("Configurations");
++  QString config=settings->value(QString::number(buttonId),"").toString();
++  settings->endGroup();
++  settings->endGroup();
++
++  if (!config.isEmpty())
++    {
++    vtkSmartPointer<vtkPVXMLParser> parser=vtkSmartPointer<vtkPVXMLParser>::New();
++    parser->InitializeParser();
++    parser->ParseChunk(config.toAscii().data(),static_cast<unsigned int>(config.size()));
++    parser->CleanupParser();
++
++    vtkPVXMLElement *xmlStream=parser->GetRootElement();
++    if (!xmlStream)
++      {
++      pqErrorMacro("Invalid XML in custom view button configuration.");
++      return;
++      }
++
++    vtkSmartPointer<vtkSMCameraConfigurationReader> reader
++      = vtkSmartPointer<vtkSMCameraConfigurationReader>::New();
++
++    reader->SetRenderViewProxy(ui->RenderModule->getRenderViewProxy());
++    int ok=reader->ReadConfiguration(xmlStream);
++    if (!ok)
++      {
++      pqErrorMacro(
++          << "Invalid XML in custom view button " 
++          << buttonId << " configuration.");
++      return;
++      }
++
++    // camera configuration has been modified update the scene.
++    ui->RenderModule->render();
++    }
++}
++
++//-----------------------------------------------------------------------------
++void pqCameraDialog::saveCameraConfiguration()
++{
++  vtkSMCameraConfigurationWriter *writer=vtkSMCameraConfigurationWriter::New();
++  writer->SetRenderViewProxy(this->Internal->RenderModule->getRenderViewProxy());
++
++  QString filters
++    = QString("%1 (*%2);;All Files (*.*)")
++        .arg(writer->GetFileDescription()).arg(writer->GetFileExtension());
++
++  pqFileDialog dialog(0,this,"Save Camera Configuration","",filters);
++  dialog.setFileMode(pqFileDialog::AnyFile);
++
++  if (dialog.exec()==QDialog::Accepted)
++    {
++    QString filename(dialog.getSelectedFiles()[0]);
++
++    int ok=writer->WriteConfiguration(filename.toStdString().c_str());
++    if (!ok)
++      {
++      pqErrorMacro("Failed to save the camera configuration.");
++      }
++    }
++
++  writer->Delete();
++}
++
++//-----------------------------------------------------------------------------
++void pqCameraDialog::loadCameraConfiguration()
++{
++  vtkSMCameraConfigurationReader *reader=vtkSMCameraConfigurationReader::New();
++  reader->SetRenderViewProxy(this->Internal->RenderModule->getRenderViewProxy());
++
++  QString filters
++    = QString("%1 (*%2);;All Files (*.*)")
++        .arg(reader->GetFileDescription()).arg(reader->GetFileExtension());
++
++  pqFileDialog dialog(0,this,"Load Camera Configuration","",filters);
++  dialog.setFileMode(pqFileDialog::ExistingFile);
++
++  if (dialog.exec()==QDialog::Accepted)
++    {
++    QString filename;
++    filename=dialog.getSelectedFiles()[0];
++
++    int ok=reader->ReadConfiguration(filename.toStdString().c_str());
++    if (!ok)
++      {
++      pqErrorMacro("Failed to load the camera configuration.");
++      }
++
++    // Update the scene with the new camera settings.
++    this->Internal->RenderModule->render();
++    }
++
++  reader->Delete();
++}
+Index: Qt/Components/pqCameraDialog.h
+===================================================================
+RCS file: /cvsroot/ParaView3/ParaView3/Qt/Components/pqCameraDialog.h,v
+retrieving revision 1.4
+diff -u -r1.4 pqCameraDialog.h
+--- Qt/Components/pqCameraDialog.h	9 May 2008 18:14:30 -0000	1.4
++++ Qt/Components/pqCameraDialog.h	7 Mar 2010 23:52:56 -0000
+@@ -45,11 +45,26 @@
+   virtual ~pqCameraDialog();
+ 
+   void SetCameraGroupsEnabled(bool enabled);
+-  
++
+ public slots:
+   void setRenderModule(pqRenderView*);
+ 
+ private slots:
++  // Description:
++  // Choose a file and load/save camera properties.
++  void saveCameraConfiguration();
++  void loadCameraConfiguration();
++
++  // Description:
++  // Assign/restore the current camera properties to 
++  // a custom view button.
++  void configureCustomViews();
++  void applyCustomView(int buttonId);
++  void applyCustomView0(){ this->applyCustomView(0); }
++  void applyCustomView1(){ this->applyCustomView(1); }
++  void applyCustomView2(){ this->applyCustomView(2); }
++  void applyCustomView3(){ this->applyCustomView(3); }
++
+   void resetViewDirectionPosX();
+   void resetViewDirectionNegX();
+   void resetViewDirectionPosY();
+@@ -72,15 +87,14 @@
+ 
+ private:
+   pqCameraDialogInternal* Internal;
+-  
++
+   enum CameraAdjustmentType
+     {
+     Roll=0,
+     Elevation,
+     Azimuth
+     };
+-  void adjustCamera(CameraAdjustmentType enType, 
+-    double angle);
++  void adjustCamera(CameraAdjustmentType enType, double angle);
+ };
+ 
+ #endif
+Index: Qt/Components/pqCustomViewButtonDialog.cxx
+===================================================================
+RCS file: Qt/Components/pqCustomViewButtonDialog.cxx
+diff -N Qt/Components/pqCustomViewButtonDialog.cxx
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ Qt/Components/pqCustomViewButtonDialog.cxx	7 Mar 2010 23:52:57 -0000
+@@ -0,0 +1,403 @@
++#include "pqCustomViewButtonDialog.h"
++
++#include "ui_pqCustomViewButtonDialog.h"
++
++#include <QDebug>
++
++#include "vtkIndent.h"
++#include "vtkSmartPointer.h"
++#include "vtkPVXMLElement.h"
++#include "vtkPVXMLParser.h"
++#include "vtkSMCameraConfigurationFileInfo.h"
++
++#include "pqFileDialog.h"
++
++#include <vtkstd/string>
++#include <vtksys/ios/sstream>
++
++#define pqErrorMacro(estr)\
++  qDebug()\
++      << "Error in:" << endl\
++      << __FILE__ << ", line " << __LINE__ << endl\
++      << "" estr << endl;
++
++// User interface
++//=============================================================================
++class pqCustomViewButtonDialogUI
++    :
++  public Ui::pqCustomViewButtonDialog
++    {};
++
++// Organizes button config file info in a single location.
++//=============================================================================
++class pqCustomViewButtonFileInfo
++{
++public:
++  pqCustomViewButtonFileInfo()
++        :
++    FileIdentifier("CustomViewButtonConfiguration"),
++    FileDescription("Custom View Button Configuration"),
++    FileExtension(".pvcvbc"),
++    WriterVersion("1.0")
++      {}
++  const char *FileIdentifier;
++  const char *FileDescription;
++  const char *FileExtension;
++  const char *WriterVersion;
++};
++
++//------------------------------------------------------------------------------
++pqCustomViewButtonDialog::pqCustomViewButtonDialog(
++    QWidget *parent,
++    Qt::WindowFlags flags,
++    QStringList &toolTips,
++    QStringList &configs,
++    QString &curConfig)
++            :
++    QDialog(parent,flags),
++    NButtons(0),
++    ui(0)
++{
++  this->ui = new pqCustomViewButtonDialogUI;
++  this->ui->setupUi(this);
++
++  this->ToolTips
++      << this->ui->toolTip0
++      << this->ui->toolTip1
++      << this->ui->toolTip2
++      << this->ui->toolTip3;
++  this->NButtons=4;
++
++  this->setToolTips(toolTips);
++  this->setConfigurations(configs);
++  this->setCurrentConfiguration(curConfig);
++
++  QObject::connect(
++    this->ui->clearAll, SIGNAL(clicked()),
++    this, SLOT(clearAll()));
++
++  QObject::connect(
++    this->ui->importAll, SIGNAL(clicked()),
++    this, SLOT(importConfigurations()));
++
++  QObject::connect(
++    this->ui->exportAll, SIGNAL(clicked()),
++    this, SLOT(exportConfigurations()));
++
++  QObject::connect(
++    this->ui->assignCurrentView0, SIGNAL(clicked()),
++    this, SLOT(assignCurrentView0()));
++
++  QObject::connect(
++    this->ui->assignCurrentView1, SIGNAL(clicked()),
++    this, SLOT(assignCurrentView1()));
++
++  QObject::connect(
++    this->ui->assignCurrentView2, SIGNAL(clicked()),
++    this, SLOT(assignCurrentView2()));
++
++  QObject::connect(
++    this->ui->assignCurrentView3, SIGNAL(clicked()),
++    this, SLOT(assignCurrentView3()));
++}
++
++//------------------------------------------------------------------------------
++pqCustomViewButtonDialog::~pqCustomViewButtonDialog()
++{}
++
++//------------------------------------------------------------------------------
++void pqCustomViewButtonDialog::setToolTips(QStringList &toolTips)
++{
++  if (toolTips.length()!=this->NButtons)
++    {
++    pqErrorMacro("Error: Wrong number of tool tips.");
++    return;
++    }
++
++  for (int i=0; i<this->NButtons; ++i)
++    {
++    this->ToolTips[i]->setText(toolTips[i]);
++    }
++}
++
++//------------------------------------------------------------------------------
++QStringList pqCustomViewButtonDialog::getToolTips()
++{
++  QStringList toolTips;
++  for (int i=0; i<this->NButtons; ++i)
++    {
++    toolTips << this->ToolTips[i]->text();
++    }
++  return toolTips;
++}
++
++//------------------------------------------------------------------------------
++void pqCustomViewButtonDialog::setConfigurations(QStringList &configs)
++{
++  if (configs.length()!=this->NButtons)
++    {
++    pqErrorMacro("Error: Wrong number of configurations.");
++    return;
++    }
++
++  this->Configurations=configs;
++}
++
++//------------------------------------------------------------------------------
++QStringList pqCustomViewButtonDialog::getConfigurations()
++{
++  return this->Configurations;
++}
++
++//------------------------------------------------------------------------------
++void pqCustomViewButtonDialog::setCurrentConfiguration(QString &config)
++{
++  this->CurrentConfiguration=config;
++}
++
++//------------------------------------------------------------------------------
++QString pqCustomViewButtonDialog::getCurrentConfiguration()
++{
++  return this->CurrentConfiguration;
++}
++
++//------------------------------------------------------------------------------
++void pqCustomViewButtonDialog::importConfigurations()
++{
++  // What follows is a reader for an xml format that contains
++  // a group of nested Camera Configuration XML hierarchies
++  // each written by the vtkSMCameraConfigurationWriter.
++  // The nested configuration hierarchies might be empty.
++  pqCustomViewButtonFileInfo fileInfo;
++
++  QString filters
++    = QString("%1 (*%2);;All Files (*.*)")
++        .arg(fileInfo.FileDescription).arg(fileInfo.FileExtension);
++
++  pqFileDialog dialog(0,this,"Load Custom View Button Configuration","",filters);
++  dialog.setFileMode(pqFileDialog::ExistingFile);
++
++  if (dialog.exec()==QDialog::Accepted)
++    {
++    QString filename;
++    filename=dialog.getSelectedFiles()[0];
++
++    vtkSmartPointer<vtkPVXMLParser> parser=vtkSmartPointer<vtkPVXMLParser>::New();
++    parser->SetFileName(filename.toStdString().c_str());
++    if (parser->Parse()==0)
++      {
++      pqErrorMacro("Invalid XML in file: " << filename << ".");
++      return;
++      }
++
++    vtkPVXMLElement *root=parser->GetRootElement();
++    if (root==0)
++      {
++      pqErrorMacro("Invalid XML in file: " << filename << ".");
++      return;
++      }
++
++    // check type
++    vtkstd::string requiredType(fileInfo.FileIdentifier);
++    const char *foundType=root->GetName();
++    if (foundType==0 || foundType!=requiredType)
++      {
++      pqErrorMacro(
++          << "This is not a valid " << fileInfo.FileDescription
++          << " XML hierarchy.");
++      return;
++      }
++
++    // check version
++    const char *foundVersion=root->GetAttribute("version");
++    if (foundVersion==0)
++      {
++      pqErrorMacro("No version attribute was found.");
++      return;
++      }
++    vtkstd::string requiredVersion(fileInfo.WriterVersion);
++    if (foundVersion!=requiredVersion)
++      {
++      pqErrorMacro("Unsupported version " << foundVersion << ".");
++      return;
++      }
++
++    // read buttons, their toolTips, and configurations.
++    QStringList toolTips;
++    QStringList configs;
++    for (int i=0; i<this->NButtons; ++i)
++      {
++      // button
++      QString buttonTagId=QString("CustomViewButton%1").arg(i);
++      vtkPVXMLElement *button=root->FindNestedElementByName(buttonTagId.toStdString().c_str());
++      if (button==0)
++        {
++        pqErrorMacro("Missing " << buttonTagId << " representation.");
++        return;
++        }
++
++      // tool tip
++      vtkPVXMLElement *toolTip=button->FindNestedElementByName("ToolTip");
++      if (toolTip==0)
++        {
++        pqErrorMacro(<< buttonTagId << " is missing ToolTip.");
++        return;
++        }
++      const char *toolTipValue=toolTip->GetAttribute("value");
++      if (toolTipValue==0)
++        {
++        pqErrorMacro("In " << buttonTagId
++            << " ToolTip is missing value attribute.");
++        return;
++        }
++
++      toolTips << toolTipValue;
++
++      // Here are the optionally nested Camera Configurations.
++      vtkPVXMLElement *config=button->FindNestedElementByName("Configuration");
++      if (config==0)
++        {
++        pqErrorMacro(<< buttonTagId << " is missing Configuration.");
++        return;
++        }
++      const char *isEmptyValue=config->GetAttribute("is_empty");
++      if (isEmptyValue==0)
++        {
++        pqErrorMacro("In " << buttonTagId
++            << " Configuration is missing is_empty attribute.");
++        return;
++        }
++      int isEmpty;
++      vtksys_ios::istringstream is(isEmptyValue);
++      is >> isEmpty;
++      if (isEmpty)
++        {
++        // Configuration for this button is un-assigned.
++        configs << "";
++        }
++      else
++        {
++        vtkSMCameraConfigurationFileInfo pvccInfo;
++        // Configuration for this button is assigned.
++        vtkPVXMLElement *cameraConfig
++            = config->FindNestedElementByName(pvccInfo.FileIdentifier);
++        if (cameraConfig==0)
++          {
++          pqErrorMacro(
++            << "In " << buttonTagId << " invalid "
++            << pvccInfo.FileDescription << ".");
++          return;
++          }
++
++        // Extract configuration hierarchy from the stream
++        // we should validate it but PV state doesn't support this.
++        vtksys_ios::ostringstream os;
++        cameraConfig->PrintXML(os,vtkIndent());
++
++        configs << os.str().c_str();
++        }
++      }
++
++    // Pass the newly loaded configuration to the GUI.
++    this->setToolTips(toolTips);
++    this->setConfigurations(configs);
++    //this->accept();
++    }
++}
++
++//------------------------------------------------------------------------------
++void pqCustomViewButtonDialog::exportConfigurations()
++{
++  pqCustomViewButtonFileInfo fileInfo;
++
++  QString filters
++    = QString("%1 (*%2);;All Files (*.*)")
++        .arg(fileInfo.FileDescription).arg(fileInfo.FileExtension);
++
++  pqFileDialog dialog(0,this,"Save Custom View Button Configuration","",filters);
++  dialog.setFileMode(pqFileDialog::AnyFile);
++
++  if (dialog.exec()==QDialog::Accepted)
++    {
++    QString filename;
++    filename=dialog.getSelectedFiles()[0];
++
++    vtkPVXMLElement *xmlStream=vtkPVXMLElement::New();
++    xmlStream->SetName(fileInfo.FileIdentifier);
++    xmlStream->SetAttribute("version",fileInfo.WriterVersion);
++
++    for (int i=0; i<this->NButtons; ++i)
++      {
++      // tool tip
++      vtkPVXMLElement *toolTip=vtkPVXMLElement::New();
++      toolTip->SetName("ToolTip");
++      toolTip->SetAttribute("value",this->ToolTips[i]->text().toStdString().c_str());
++
++      // camera configuration
++      vtksys_ios::ostringstream os;
++      os << (this->Configurations[i].isEmpty()?1:0);
++
++      vtkPVXMLElement *config=vtkPVXMLElement::New();
++      config->SetName("Configuration");
++      config->AddAttribute("is_empty",os.str().c_str());
++
++      if (!this->Configurations[i].isEmpty())
++        {
++        vtkstd::string camConfig(this->Configurations[i].toStdString());
++
++        vtkPVXMLParser *parser=vtkPVXMLParser::New();
++        parser->InitializeParser();
++        parser->ParseChunk(camConfig.c_str(),static_cast<unsigned int>(camConfig.size()));
++        parser->CleanupParser();
++
++        vtkPVXMLElement *camConfigXml=parser->GetRootElement();
++
++        config->AddNestedElement(camConfigXml);
++        parser->Delete();
++        }
++
++      vtkPVXMLElement *button=vtkPVXMLElement::New();
++      button->SetName(QString("CustomViewButton%1").arg(i).toStdString().c_str());
++      button->AddNestedElement(toolTip);
++      button->AddNestedElement(config);
++
++      xmlStream->AddNestedElement(button);
++
++      toolTip->Delete();
++      config->Delete();
++      button->Delete();
++      }
++
++    ofstream os(filename.toStdString().c_str(),ios::out);
++    xmlStream->PrintXML(os,vtkIndent());
++    os << endl;
++    os.close();
++
++    xmlStream->Delete();
++    }
++}
++
++//------------------------------------------------------------------------------
++void pqCustomViewButtonDialog::clearAll()
++{
++  QStringList toolTips;
++  toolTips
++      << "Not configured."
++      << "Not configured."
++      << "Not configured."
++      << "Not configured.";
++  this->setToolTips(toolTips);
++
++  QStringList configs;
++  configs << "" << "" << "" << "";
++  this->setConfigurations(configs);
++}
++
++//------------------------------------------------------------------------------
++void pqCustomViewButtonDialog::assignCurrentView(int id)
++{
++  this->Configurations[id]=this->CurrentConfiguration;
++
++  this->ToolTips[id]->selectAll();
++  this->ToolTips[id]->setFocus();
++}
+Index: Qt/Components/pqCustomViewButtonDialog.h
+===================================================================
+RCS file: Qt/Components/pqCustomViewButtonDialog.h
+diff -N Qt/Components/pqCustomViewButtonDialog.h
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ Qt/Components/pqCustomViewButtonDialog.h	7 Mar 2010 23:52:57 -0000
+@@ -0,0 +1,111 @@
++/*=========================================================================
++
++   Program: ParaView
++   Module:    $RCSfile: pqCameraDialog.h,v $
++
++   Copyright (c) 2005-2008 Sandia Corporation, Kitware Inc.
++   All rights reserved.
++
++   ParaView is a free software; you can redistribute it and/or modify it
++   under the terms of the ParaView license version 1.2. 
++
++   See License_v1.2.txt for the full ParaView license.
++   A copy of this license can be obtained by contacting
++   Kitware Inc.
++   28 Corporate Drive
++   Clifton Park, NY 12065
++   USA
++
++THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR
++CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
++=========================================================================*/
++#ifndef __pqCustomViewDialog_h
++#define __pqCustomViewDialog_h
++// .NAME pqCustomViewDialog - Dialog for configuring custom view buttons.
++//
++// .SECTION Description
++// Provides the machinery for associating the current camera configuration
++// to a custom view button, and importing or exporting all of the custom view
++// button configurations.
++//
++// .SECTION See Also
++// pqCameraDialog
++//
++// .SECTION Thanks
++// This class was contributed by SciberQuest Inc.
++
++#include <QDialog>
++#include <QLineEdit>
++#include <QList>
++#include <QStringList>
++#include <QString>
++
++class pqCustomViewButtonDialogUI;
++class vtkSMCameraConfigurationReader;
++
++class pqCustomViewButtonDialog : public QDialog
++{
++Q_OBJECT
++
++public:
++  // Description:
++  // Create and initialize the dialog.
++  pqCustomViewButtonDialog(
++      QWidget *parent,
++      Qt::WindowFlags f,
++      QStringList &toolTips,
++      QStringList &configurations,
++      QString &currentConfig);
++
++  ~pqCustomViewButtonDialog();
++
++  // Description:
++  // Set/get a list of tool tips, one for each button.
++  void setToolTips(QStringList &toolTips);
++  QStringList getToolTips();
++
++  // Description:
++  // Set/get a list of camera configurations, one for each buttton.
++  void setConfigurations(QStringList &configs);
++  QStringList getConfigurations();
++
++  // Descrition:
++  // Set/get the current camera configuration.
++  void setCurrentConfiguration(QString &config);
++  QString getCurrentConfiguration();
++
++private slots:
++  void importConfigurations();
++  void exportConfigurations();
++  void clearAll();
++
++  void assignCurrentView(int id);
++  void assignCurrentView0(){ this->assignCurrentView(0); }
++  void assignCurrentView1(){ this->assignCurrentView(1); }
++  void assignCurrentView2(){ this->assignCurrentView(2); }
++  void assignCurrentView3(){ this->assignCurrentView(3); }
++
++private:
++  pqCustomViewButtonDialog(){}
++
++  int NButtons;
++
++  QList<QLineEdit *> ToolTips;
++  QStringList Configurations;
++  QString CurrentConfiguration;
++
++  pqCustomViewButtonDialogUI *ui;
++};
++
++#endif
++
+Index: Qt/Components/Resources/UI/pqCameraDialog.ui
+===================================================================
+RCS file: /cvsroot/ParaView3/ParaView3/Qt/Components/Resources/UI/pqCameraDialog.ui,v
+retrieving revision 1.4
+diff -u -r1.4 pqCameraDialog.ui
+--- Qt/Components/Resources/UI/pqCameraDialog.ui	23 Jun 2008 14:27:18 -0000	1.4
++++ Qt/Components/Resources/UI/pqCameraDialog.ui	7 Mar 2010 23:52:58 -0000
+@@ -1,353 +1,525 @@
+-<ui version="4.0" >
++<?xml version="1.0" encoding="UTF-8"?>
++<ui version="4.0">
+  <class>pqCameraDialog</class>
+- <widget class="QDialog" name="pqCameraDialog" >
+-  <property name="windowModality" >
++ <widget class="QDialog" name="pqCameraDialog">
++  <property name="windowModality">
+    <enum>Qt::NonModal</enum>
+   </property>
+-  <property name="geometry" >
++  <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+-    <width>315</width>
+-    <height>473</height>
++    <width>349</width>
++    <height>712</height>
+    </rect>
+   </property>
+-  <property name="windowTitle" >
++  <property name="sizePolicy">
++   <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
++    <horstretch>0</horstretch>
++    <verstretch>0</verstretch>
++   </sizepolicy>
++  </property>
++  <property name="windowTitle">
+    <string>Adjusting Camera</string>
+   </property>
+-  <layout class="QVBoxLayout" >
+-   <property name="spacing" >
+-    <number>6</number>
+-   </property>
+-   <property name="leftMargin" >
+-    <number>9</number>
+-   </property>
+-   <property name="topMargin" >
+-    <number>9</number>
+-   </property>
+-   <property name="rightMargin" >
+-    <number>9</number>
+-   </property>
+-   <property name="bottomMargin" >
+-    <number>9</number>
+-   </property>
++  <layout class="QVBoxLayout" name="verticalLayout_3">
+    <item>
+-    <widget class="pqCollapsedGroup" name="viewsGroup" >
+-     <property name="title" >
+-      <string>Standard Views</string>
++    <widget class="pqCollapsedGroup" name="groupBox_2">
++     <property name="toolTip">
++      <string>Apply a preset camera configuration.</string>
+      </property>
+-     <layout class="QHBoxLayout" >
+-      <property name="spacing" >
+-       <number>6</number>
+-      </property>
+-      <property name="leftMargin" >
+-       <number>6</number>
+-      </property>
+-      <property name="topMargin" >
+-       <number>6</number>
++     <property name="statusTip">
++      <string/>
++     </property>
++     <property name="title">
++      <string>Views</string>
++     </property>
++     <layout class="QVBoxLayout" name="verticalLayout_2">
++      <property name="spacing">
++       <number>0</number>
+       </property>
+-      <property name="rightMargin" >
+-       <number>6</number>
++      <property name="topMargin">
++       <number>0</number>
+       </property>
+-      <property name="bottomMargin" >
+-       <number>6</number>
++      <property name="bottomMargin">
++       <number>4</number>
+       </property>
+       <item>
+-       <widget class="QToolButton" name="viewXPlus" >
+-        <property name="toolTip" >
+-         <string>Looking down X axis from (1, 0, 0)</string>
+-        </property>
+-        <property name="text" >
+-         <string/>
+-        </property>
+-        <property name="icon" >
+-         <iconset resource="../pqComponents.qrc" >:/pqWidgets/Icons/pqXPlus24.png</iconset>
+-        </property>
+-        <property name="iconSize" >
+-         <size>
+-          <width>24</width>
+-          <height>24</height>
+-         </size>
+-        </property>
++       <widget class="QGroupBox" name="viewsGroup">
++        <property name="title">
++         <string>Standard</string>
++        </property>
++        <property name="flat">
++         <bool>true</bool>
++        </property>
++        <layout class="QHBoxLayout" name="horizontalLayout_3">
++         <item>
++          <widget class="QToolButton" name="viewXPlus">
++           <property name="toolTip">
++            <string>Looking down X axis from (1, 0, 0)</string>
++           </property>
++           <property name="text">
++            <string/>
++           </property>
++           <property name="icon">
++            <iconset resource="../pqComponents.qrc">
++             <normaloff>:/pqWidgets/Icons/pqXPlus24.png</normaloff>:/pqWidgets/Icons/pqXPlus24.png</iconset>
++           </property>
++           <property name="iconSize">
++            <size>
++             <width>24</width>
++             <height>24</height>
++            </size>
++           </property>
++          </widget>
++         </item>
++         <item>
++          <widget class="QToolButton" name="viewXMinus">
++           <property name="toolTip">
++            <string>Looking down X axis from (-1, 0, 0)</string>
++           </property>
++           <property name="text">
++            <string/>
++           </property>
++           <property name="icon">
++            <iconset resource="../pqComponents.qrc">
++             <normaloff>:/pqWidgets/Icons/pqXMinus24.png</normaloff>:/pqWidgets/Icons/pqXMinus24.png</iconset>
++           </property>
++           <property name="iconSize">
++            <size>
++             <width>24</width>
++             <height>24</height>
++            </size>
++           </property>
++          </widget>
++         </item>
++         <item>
++          <widget class="QToolButton" name="viewYPlus">
++           <property name="toolTip">
++            <string>Looking down Y axis from (0, 1, 0)</string>
++           </property>
++           <property name="text">
++            <string/>
++           </property>
++           <property name="icon">
++            <iconset resource="../pqComponents.qrc">
++             <normaloff>:/pqWidgets/Icons/pqYPlus24.png</normaloff>:/pqWidgets/Icons/pqYPlus24.png</iconset>
++           </property>
++           <property name="iconSize">
++            <size>
++             <width>24</width>
++             <height>24</height>
++            </size>
++           </property>
++          </widget>
++         </item>
++         <item>
++          <widget class="QToolButton" name="viewYMinus">
++           <property name="toolTip">
++            <string>Looking down Y axis from (0, -1, 0)</string>
++           </property>
++           <property name="text">
++            <string/>
++           </property>
++           <property name="icon">
++            <iconset resource="../pqComponents.qrc">
++             <normaloff>:/pqWidgets/Icons/pqYMinus24.png</normaloff>:/pqWidgets/Icons/pqYMinus24.png</iconset>
++           </property>
++           <property name="iconSize">
++            <size>
++             <width>24</width>
++             <height>24</height>
++            </size>
++           </property>
++          </widget>
++         </item>
++         <item>
++          <widget class="QToolButton" name="viewZPlus">
++           <property name="toolTip">
++            <string>Looking down X axis from (0, 0, 1)</string>
++           </property>
++           <property name="text">
++            <string/>
++           </property>
++           <property name="icon">
++            <iconset resource="../pqComponents.qrc">
++             <normaloff>:/pqWidgets/Icons/pqZPlus24.png</normaloff>:/pqWidgets/Icons/pqZPlus24.png</iconset>
++           </property>
++           <property name="iconSize">
++            <size>
++             <width>24</width>
++             <height>24</height>
++            </size>
++           </property>
++          </widget>
++         </item>
++         <item>
++          <widget class="QToolButton" name="viewZMinus">
++           <property name="toolTip">
++            <string>Looking down Z axis from (0, 0, -1)</string>
++           </property>
++           <property name="text">
++            <string/>
++           </property>
++           <property name="icon">
++            <iconset resource="../pqComponents.qrc">
++             <normaloff>:/pqWidgets/Icons/pqZMinus24.png</normaloff>:/pqWidgets/Icons/pqZMinus24.png</iconset>
++           </property>
++           <property name="iconSize">
++            <size>
++             <width>24</width>
++             <height>24</height>
++            </size>
++           </property>
++          </widget>
++         </item>
++         <item>
++          <spacer>
++           <property name="orientation">
++            <enum>Qt::Horizontal</enum>
++           </property>
++           <property name="sizeHint" stdset="0">
++            <size>
++             <width>0</width>
++             <height>20</height>
++            </size>
++           </property>
++          </spacer>
++         </item>
++        </layout>
+        </widget>
+       </item>
+       <item>
+-       <widget class="QToolButton" name="viewXMinus" >
+-        <property name="toolTip" >
+-         <string>Looking down X axis from (-1, 0, 0)</string>
+-        </property>
+-        <property name="text" >
+-         <string/>
+-        </property>
+-        <property name="icon" >
+-         <iconset resource="../pqComponents.qrc" >:/pqWidgets/Icons/pqXMinus24.png</iconset>
+-        </property>
+-        <property name="iconSize" >
+-         <size>
+-          <width>24</width>
+-          <height>24</height>
+-         </size>
+-        </property>
++       <widget class="QGroupBox" name="customViewsGroup">
++        <property name="title">
++         <string>Custom</string>
++        </property>
++        <property name="flat">
++         <bool>true</bool>
++        </property>
++        <layout class="QHBoxLayout" name="horizontalLayout_4">
++         <item>
++          <widget class="QToolButton" name="customView0">
++           <property name="minimumSize">
++            <size>
++             <width>34</width>
++             <height>33</height>
++            </size>
++           </property>
++           <property name="toolTip">
++            <string>not configured</string>
++           </property>
++           <property name="text">
++            <string>1</string>
++           </property>
++           <property name="iconSize">
++            <size>
++             <width>24</width>
++             <height>24</height>
++            </size>
++           </property>
++          </widget>
++         </item>
++         <item>
++          <widget class="QToolButton" name="customView1">
++           <property name="minimumSize">
++            <size>
++             <width>34</width>
++             <height>33</height>
++            </size>
++           </property>
++           <property name="toolTip">
++            <string>not configured</string>
++           </property>
++           <property name="text">
++            <string>2</string>
++           </property>
++           <property name="iconSize">
++            <size>
++             <width>24</width>
++             <height>24</height>
++            </size>
++           </property>
++          </widget>
++         </item>
++         <item>
++          <widget class="QToolButton" name="customView2">
++           <property name="minimumSize">
++            <size>
++             <width>34</width>
++             <height>33</height>
++            </size>
++           </property>
++           <property name="toolTip">
++            <string>not configured</string>
++           </property>
++           <property name="text">
++            <string>3</string>
++           </property>
++           <property name="iconSize">
++            <size>
++             <width>24</width>
++             <height>24</height>
++            </size>
++           </property>
++          </widget>
++         </item>
++         <item>
++          <widget class="QToolButton" name="customView3">
++           <property name="minimumSize">
++            <size>
++             <width>34</width>
++             <height>33</height>
++            </size>
++           </property>
++           <property name="toolTip">
++            <string>not configured</string>
++           </property>
++           <property name="text">
++            <string>4</string>
++           </property>
++           <property name="iconSize">
++            <size>
++             <width>24</width>
++             <height>24</height>
++            </size>
++           </property>
++          </widget>
++         </item>
++         <item>
++          <spacer name="horizontalSpacer_2">
++           <property name="orientation">
++            <enum>Qt::Horizontal</enum>
++           </property>
++           <property name="sizeHint" stdset="0">
++            <size>
++             <width>49</width>
++             <height>20</height>
++            </size>
++           </property>
++          </spacer>
++         </item>
++         <item>
++          <widget class="QPushButton" name="configureCustomViews">
++           <property name="toolTip">
++            <string>Configure custom view buttons.</string>
++           </property>
++           <property name="text">
++            <string>configure...</string>
++           </property>
++          </widget>
++         </item>
++        </layout>
+        </widget>
+       </item>
+-      <item>
+-       <widget class="QToolButton" name="viewYPlus" >
+-        <property name="toolTip" >
+-         <string>Looking down Y axis from (0, 1, 0)</string>
+-        </property>
+-        <property name="text" >
+-         <string/>
+-        </property>
+-        <property name="icon" >
+-         <iconset resource="../pqComponents.qrc" >:/pqWidgets/Icons/pqYPlus24.png</iconset>
+-        </property>
+-        <property name="iconSize" >
+-         <size>
+-          <width>24</width>
+-          <height>24</height>
+-         </size>
+-        </property>
+-       </widget>
+-      </item>
+-      <item>
+-       <widget class="QToolButton" name="viewYMinus" >
+-        <property name="toolTip" >
+-         <string>Looking down Y axis from (0, -1, 0)</string>
+-        </property>
+-        <property name="text" >
+-         <string/>
+-        </property>
+-        <property name="icon" >
+-         <iconset resource="../pqComponents.qrc" >:/pqWidgets/Icons/pqYMinus24.png</iconset>
+-        </property>
+-        <property name="iconSize" >
+-         <size>
+-          <width>24</width>
+-          <height>24</height>
+-         </size>
+-        </property>
+-       </widget>
+-      </item>
+-      <item>
+-       <widget class="QToolButton" name="viewZPlus" >
+-        <property name="toolTip" >
+-         <string>Looking down X axis from (0, 0, 1)</string>
+-        </property>
+-        <property name="text" >
+-         <string/>
+-        </property>
+-        <property name="icon" >
+-         <iconset resource="../pqComponents.qrc" >:/pqWidgets/Icons/pqZPlus24.png</iconset>
+-        </property>
+-        <property name="iconSize" >
+-         <size>
+-          <width>24</width>
+-          <height>24</height>
+-         </size>
+-        </property>
+-       </widget>
+-      </item>
+-      <item>
+-       <widget class="QToolButton" name="viewZMinus" >
+-        <property name="toolTip" >
+-         <string>Looking down Z axis from (0, 0, -1)</string>
+-        </property>
+-        <property name="text" >
+-         <string/>
+-        </property>
+-        <property name="icon" >
+-         <iconset resource="../pqComponents.qrc" >:/pqWidgets/Icons/pqZMinus24.png</iconset>
+-        </property>
+-        <property name="iconSize" >
+-         <size>
+-          <width>24</width>
+-          <height>24</height>
+-         </size>
+-        </property>
+-       </widget>
+-      </item>
+-      <item>
+-       <spacer>
+-        <property name="orientation" >
+-         <enum>Qt::Horizontal</enum>
+-        </property>
+-        <property name="sizeHint" >
+-         <size>
+-          <width>0</width>
+-          <height>20</height>
+-         </size>
+-        </property>
+-       </spacer>
+-      </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+-    <widget class="QGroupBox" name="centerGroup" >
+-     <property name="title" >
+-      <string>Center of Rotation</string>
++    <widget class="pqCollapsedGroup" name="groupBox">
++     <property name="toolTip">
++      <string>View, and edit the current camera configuration.</string>
+      </property>
+-     <layout class="QGridLayout" >
+-      <item row="0" column="0" >
+-       <widget class="QLineEdit" name="CenterX" />
+-      </item>
+-      <item row="0" column="1" >
+-       <widget class="QLineEdit" name="CenterY" />
+-      </item>
+-      <item row="0" column="2" >
+-       <widget class="QLineEdit" name="CenterZ" />
+-      </item>
+-      <item row="1" column="0" colspan="3" >
+-       <widget class="QCheckBox" name="AutoResetCenterOfRotation" >
+-        <property name="toolTip" >
+-         <string>Reset center of rotation when camera is reset.</string>
+-        </property>
+-        <property name="text" >
+-         <string>Reset Center of Rotation When Camera is Reset</string>
+-        </property>
+-       </widget>
+-      </item>
+-     </layout>
+-    </widget>
+-   </item>
+-   <item>
+-    <widget class="pqCollapsedGroup" name="positionsGroup" >
+-     <property name="title" >
+-      <string>Camera Positions</string>
++     <property name="title">
++      <string>Configuration</string>
+      </property>
+-     <layout class="QGridLayout" >
+-      <property name="leftMargin" >
+-       <number>6</number>
+-      </property>
+-      <property name="topMargin" >
+-       <number>6</number>
+-      </property>
+-      <property name="rightMargin" >
+-       <number>6</number>
+-      </property>
+-      <property name="bottomMargin" >
+-       <number>6</number>
+-      </property>
+-      <property name="horizontalSpacing" >
+-       <number>6</number>
+-      </property>
+-      <property name="verticalSpacing" >
++     <layout class="QVBoxLayout" name="verticalLayout">
++      <property name="margin">
+        <number>6</number>
+       </property>
+-      <item row="0" column="0" >
+-       <widget class="QLabel" name="label_22" >
+-        <property name="text" >
+-         <string>Position</string>
+-        </property>
+-       </widget>
+-      </item>
+-      <item row="1" column="0" >
+-       <widget class="QLabel" name="label_17" >
+-        <property name="text" >
+-         <string>Focal Point</string>
+-        </property>
+-       </widget>
+-      </item>
+-      <item row="2" column="0" >
+-       <widget class="QLabel" name="label_14" >
+-        <property name="text" >
+-         <string>View Up</string>
+-        </property>
+-       </widget>
+-      </item>
+-      <item row="3" column="0" >
+-       <widget class="QLabel" name="label_23" >
+-        <property name="text" >
+-         <string>View Angle</string>
+-        </property>
++      <item>
++       <widget class="QGroupBox" name="centerGroup">
++        <property name="title">
++         <string>Center of Rotation</string>
++        </property>
++        <property name="flat">
++         <bool>true</bool>
++        </property>
++        <layout class="QGridLayout">
++         <item row="0" column="0">
++          <widget class="QLineEdit" name="CenterX"/>
++         </item>
++         <item row="0" column="1">
++          <widget class="QLineEdit" name="CenterY"/>
++         </item>
++         <item row="0" column="2">
++          <widget class="QLineEdit" name="CenterZ"/>
++         </item>
++         <item row="1" column="0" colspan="3">
++          <widget class="QCheckBox" name="AutoResetCenterOfRotation">
++           <property name="toolTip">
++            <string>Reset center of rotation when camera is reset.</string>
++           </property>
++           <property name="text">
++            <string>Reset Center of Rotation When Camera is Reset</string>
++           </property>
++          </widget>
++         </item>
++        </layout>
+        </widget>
+       </item>
+-      <item row="3" column="1" >
+-       <widget class="QDoubleSpinBox" name="viewAngle" >
+-        <property name="minimum" >
+-         <double>-360.000000000000000</double>
+-        </property>
+-        <property name="maximum" >
+-         <double>360.000000000000000</double>
+-        </property>
++      <item>
++       <widget class="QGroupBox" name="positionsGroup">
++        <property name="title">
++         <string>Camera Positions</string>
++        </property>
++        <property name="flat">
++         <bool>true</bool>
++        </property>
++        <layout class="QGridLayout">
++         <property name="margin">
++          <number>4</number>
++         </property>
++         <property name="spacing">
++          <number>-1</number>
++         </property>
++         <item row="0" column="0">
++          <widget class="QLabel" name="label_22">
++           <property name="text">
++            <string>Position</string>
++           </property>
++          </widget>
++         </item>
++         <item row="1" column="0">
++          <widget class="QLabel" name="label_17">
++           <property name="text">
++            <string>Focal Point</string>
++           </property>
++          </widget>
++         </item>
++         <item row="2" column="0">
++          <widget class="QLabel" name="label_14">
++           <property name="text">
++            <string>View Up</string>
++           </property>
++          </widget>
++         </item>
++         <item row="3" column="0">
++          <widget class="QLabel" name="label_23">
++           <property name="text">
++            <string>View Angle</string>
++           </property>
++          </widget>
++         </item>
++         <item row="3" column="1">
++          <widget class="QDoubleSpinBox" name="viewAngle">
++           <property name="minimum">
++            <double>-360.000000000000000</double>
++           </property>
++           <property name="maximum">
++            <double>360.000000000000000</double>
++           </property>
++          </widget>
++         </item>
++         <item row="0" column="1">
++          <widget class="QLineEdit" name="position0"/>
++         </item>
++         <item row="0" column="2">
++          <widget class="QLineEdit" name="position1"/>
++         </item>
++         <item row="0" column="3">
++          <widget class="QLineEdit" name="position2"/>
++         </item>
++         <item row="1" column="1">
++          <widget class="QLineEdit" name="focalPoint0"/>
++         </item>
++         <item row="1" column="2">
++          <widget class="QLineEdit" name="focalPoint1"/>
++         </item>
++         <item row="1" column="3">
++          <widget class="QLineEdit" name="focalPoint2"/>
++         </item>
++         <item row="2" column="1">
++          <widget class="QLineEdit" name="viewUp0"/>
++         </item>
++         <item row="2" column="2">
++          <widget class="QLineEdit" name="viewUp1"/>
++         </item>
++         <item row="2" column="3">
++          <widget class="QLineEdit" name="viewUp2"/>
++         </item>
++        </layout>
+        </widget>
+       </item>
+-      <item row="0" column="1" >
+-       <widget class="QLineEdit" name="position0" />
+-      </item>
+-      <item row="0" column="2" >
+-       <widget class="QLineEdit" name="position1" />
+-      </item>
+-      <item row="0" column="3" >
+-       <widget class="QLineEdit" name="position2" />
+-      </item>
+-      <item row="1" column="1" >
+-       <widget class="QLineEdit" name="focalPoint0" />
+-      </item>
+-      <item row="1" column="2" >
+-       <widget class="QLineEdit" name="focalPoint1" />
+-      </item>
+-      <item row="1" column="3" >
+-       <widget class="QLineEdit" name="focalPoint2" />
+-      </item>
+-      <item row="2" column="1" >
+-       <widget class="QLineEdit" name="viewUp0" />
+-      </item>
+-      <item row="2" column="2" >
+-       <widget class="QLineEdit" name="viewUp1" />
+-      </item>
+-      <item row="2" column="3" >
+-       <widget class="QLineEdit" name="viewUp2" />
++      <item>
++       <layout class="QHBoxLayout" name="horizontalLayout">
++        <item>
++         <spacer name="horizontalSpacer">
++          <property name="orientation">
++           <enum>Qt::Horizontal</enum>
++          </property>
++          <property name="sizeHint" stdset="0">
++           <size>
++            <width>40</width>
++            <height>20</height>
++           </size>
++          </property>
++         </spacer>
++        </item>
++        <item>
++         <widget class="QPushButton" name="loadCameraConfiguration">
++          <property name="toolTip">
++           <string>Load camera properties.</string>
++          </property>
++          <property name="text">
++           <string>load</string>
++          </property>
++         </widget>
++        </item>
++        <item>
++         <widget class="QPushButton" name="saveCameraConfiguration">
++          <property name="toolTip">
++           <string>Save camera properties.</string>
++          </property>
++          <property name="text">
++           <string>save</string>
++          </property>
++         </widget>
++        </item>
++       </layout>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+-    <widget class="QGroupBox" name="orientationsGroup" >
+-     <property name="title" >
+-      <string>Camera Orientation</string>
++    <widget class="pqCollapsedGroup" name="orientationsGroup">
++     <property name="title">
++      <string>Apply Manipulation</string>
+      </property>
+-     <layout class="QGridLayout" >
+-      <property name="leftMargin" >
+-       <number>6</number>
+-      </property>
+-      <property name="topMargin" >
+-       <number>6</number>
+-      </property>
+-      <property name="rightMargin" >
+-       <number>6</number>
+-      </property>
+-      <property name="bottomMargin" >
+-       <number>6</number>
+-      </property>
+-      <property name="horizontalSpacing" >
+-       <number>6</number>
+-      </property>
+-      <property name="verticalSpacing" >
+-       <number>6</number>
+-      </property>
+-      <item row="0" column="2" >
+-       <widget class="QLabel" name="label_20" >
+-        <property name="sizePolicy" >
+-         <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
++     <layout class="QGridLayout">
++      <property name="margin">
++       <number>4</number>
++      </property>
++      <property name="spacing">
++       <number>4</number>
++      </property>
++      <item row="0" column="2">
++       <widget class="QLabel" name="label_20">
++        <property name="sizePolicy">
++         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+-        <property name="text" >
++        <property name="toolTip">
++         <string>Apply a manipulation to the current camera using the buttons on the left.</string>
++        </property>
++        <property name="text">
+          <string>degrees</string>
+         </property>
+        </widget>
+       </item>
+-      <item row="2" column="0" >
+-       <widget class="QPushButton" name="azimuthButton" >
+-        <property name="text" >
++      <item row="2" column="0">
++       <widget class="QPushButton" name="azimuthButton">
++        <property name="text">
+          <string>Azimuth</string>
+         </property>
+-        <property name="icon" >
+-         <iconset/>
++        <property name="icon">
++         <iconset>
++          <normaloff/>
++         </iconset>
+         </property>
+-        <property name="iconSize" >
++        <property name="iconSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+@@ -355,15 +527,17 @@
+         </property>
+        </widget>
+       </item>
+-      <item row="1" column="0" >
+-       <widget class="QPushButton" name="elevationButton" >
+-        <property name="text" >
++      <item row="1" column="0">
++       <widget class="QPushButton" name="elevationButton">
++        <property name="text">
+          <string>Elevation</string>
+         </property>
+-        <property name="icon" >
+-         <iconset/>
++        <property name="icon">
++         <iconset>
++          <normaloff/>
++         </iconset>
+         </property>
+-        <property name="iconSize" >
++        <property name="iconSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+@@ -371,15 +545,17 @@
+         </property>
+        </widget>
+       </item>
+-      <item row="0" column="0" >
+-       <widget class="QPushButton" name="rollButton" >
+-        <property name="text" >
++      <item row="0" column="0">
++       <widget class="QPushButton" name="rollButton">
++        <property name="text">
+          <string>Roll</string>
+         </property>
+-        <property name="icon" >
+-         <iconset/>
++        <property name="icon">
++         <iconset>
++          <normaloff/>
++         </iconset>
+         </property>
+-        <property name="iconSize" >
++        <property name="iconSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+@@ -387,58 +563,58 @@
+         </property>
+        </widget>
+       </item>
+-      <item row="2" column="1" >
+-       <widget class="QDoubleSpinBox" name="azimuthAngle" >
+-        <property name="minimum" >
++      <item row="2" column="1">
++       <widget class="QDoubleSpinBox" name="azimuthAngle">
++        <property name="minimum">
+          <double>-360.000000000000000</double>
+         </property>
+-        <property name="maximum" >
++        <property name="maximum">
+          <double>360.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+-      <item row="1" column="1" >
+-       <widget class="QDoubleSpinBox" name="elevationAngle" >
+-        <property name="minimum" >
++      <item row="1" column="1">
++       <widget class="QDoubleSpinBox" name="elevationAngle">
++        <property name="minimum">
+          <double>-360.000000000000000</double>
+         </property>
+-        <property name="maximum" >
++        <property name="maximum">
+          <double>360.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+-      <item row="0" column="1" >
+-       <widget class="QDoubleSpinBox" name="rollAngle" >
+-        <property name="minimum" >
++      <item row="0" column="1">
++       <widget class="QDoubleSpinBox" name="rollAngle">
++        <property name="minimum">
+          <double>-360.000000000000000</double>
+         </property>
+-        <property name="maximum" >
++        <property name="maximum">
+          <double>360.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+-      <item row="1" column="2" >
+-       <widget class="QLabel" name="label_21" >
+-        <property name="sizePolicy" >
+-         <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
++      <item row="1" column="2">
++       <widget class="QLabel" name="label_21">
++        <property name="sizePolicy">
++         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+-        <property name="text" >
++        <property name="text">
+          <string>degrees</string>
+         </property>
+        </widget>
+       </item>
+-      <item row="2" column="2" >
+-       <widget class="QLabel" name="label_16" >
+-        <property name="sizePolicy" >
+-         <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
++      <item row="2" column="2">
++       <widget class="QLabel" name="label_16">
++        <property name="sizePolicy">
++         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+-        <property name="text" >
++        <property name="text">
+          <string>degrees</string>
+         </property>
+        </widget>
+@@ -447,50 +623,51 @@
+     </widget>
+    </item>
+    <item>
+-    <layout class="QHBoxLayout" >
+-     <property name="spacing" >
+-      <number>6</number>
+-     </property>
+-     <property name="leftMargin" >
+-      <number>0</number>
+-     </property>
+-     <property name="topMargin" >
+-      <number>0</number>
+-     </property>
+-     <property name="rightMargin" >
+-      <number>0</number>
+-     </property>
+-     <property name="bottomMargin" >
+-      <number>0</number>
+-     </property>
++    <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <spacer>
+-       <property name="orientation" >
++       <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+-       <property name="sizeHint" >
++       <property name="sizeHint" stdset="0">
+         <size>
+-         <width>0</width>
++         <width>13</width>
+          <height>24</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+-      <widget class="QPushButton" name="closeButton" >
+-       <property name="sizePolicy" >
+-        <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
++      <widget class="QPushButton" name="closeButton">
++       <property name="sizePolicy">
++        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+-       <property name="text" >
++       <property name="text">
+         <string>Close</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
++   <item>
++    <spacer name="verticalSpacer">
++     <property name="orientation">
++      <enum>Qt::Vertical</enum>
++     </property>
++     <property name="sizeType">
++      <enum>QSizePolicy::MinimumExpanding</enum>
++     </property>
++     <property name="sizeHint" stdset="0">
++      <size>
++       <width>20</width>
++       <height>1</height>
++      </size>
++     </property>
++    </spacer>
++   </item>
+   </layout>
+  </widget>
+  <customwidgets>
+@@ -530,7 +707,9 @@
+   <tabstop>azimuthAngle</tabstop>
+   <tabstop>azimuthButton</tabstop>
+  </tabstops>
+- <resources/>
++ <resources>
++  <include location="../pqComponents.qrc"/>
++ </resources>
+  <connections>
+   <connection>
+    <sender>closeButton</sender>
+@@ -538,11 +717,11 @@
+    <receiver>pqCameraDialog</receiver>
+    <slot>close()</slot>
+    <hints>
+-    <hint type="sourcelabel" >
++    <hint type="sourcelabel">
+      <x>280</x>
+      <y>566</y>
+     </hint>
+-    <hint type="destinationlabel" >
++    <hint type="destinationlabel">
+      <x>185</x>
+      <y>443</y>
+     </hint>
+Index: Qt/Components/Resources/UI/pqCustomViewButtonDialog.ui
+===================================================================
+RCS file: Qt/Components/Resources/UI/pqCustomViewButtonDialog.ui
+diff -N Qt/Components/Resources/UI/pqCustomViewButtonDialog.ui
+--- /dev/null	1 Jan 1970 00:00:00 -0000
++++ Qt/Components/Resources/UI/pqCustomViewButtonDialog.ui	7 Mar 2010 23:52:58 -0000
+@@ -0,0 +1,269 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<ui version="4.0">
++ <class>pqCustomViewButtonDialog</class>
++ <widget class="QDialog" name="pqCustomViewButtonDialog">
++  <property name="geometry">
++   <rect>
++    <x>0</x>
++    <y>0</y>
++    <width>437</width>
++    <height>221</height>
++   </rect>
++  </property>
++  <property name="sizePolicy">
++   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
++    <horstretch>0</horstretch>
++    <verstretch>0</verstretch>
++   </sizepolicy>
++  </property>
++  <property name="windowTitle">
++   <string>Configure custom view buttons</string>
++  </property>
++  <layout class="QVBoxLayout" name="verticalLayout">
++   <item>
++    <layout class="QGridLayout" name="gridLayout">
++     <item row="0" column="0">
++      <widget class="QLabel" name="label_7">
++       <property name="font">
++        <font>
++         <weight>75</weight>
++         <bold>true</bold>
++         <underline>true</underline>
++        </font>
++       </property>
++       <property name="text">
++        <string>Button</string>
++       </property>
++       <property name="alignment">
++        <set>Qt::AlignCenter</set>
++       </property>
++      </widget>
++     </item>
++     <item row="0" column="1">
++      <widget class="QLabel" name="label_8">
++       <property name="font">
++        <font>
++         <weight>75</weight>
++         <bold>true</bold>
++         <underline>true</underline>
++        </font>
++       </property>
++       <property name="text">
++        <string>Tool Tip</string>
++       </property>
++       <property name="alignment">
++        <set>Qt::AlignCenter</set>
++       </property>
++      </widget>
++     </item>
++     <item row="0" column="2">
++      <widget class="QLabel" name="label_9">
++       <property name="font">
++        <font>
++         <weight>75</weight>
++         <bold>true</bold>
++         <underline>true</underline>
++        </font>
++       </property>
++       <property name="text">
++        <string>Assign</string>
++       </property>
++       <property name="alignment">
++        <set>Qt::AlignCenter</set>
++       </property>
++      </widget>
++     </item>
++     <item row="1" column="0">
++      <widget class="QLabel" name="label_3">
++       <property name="text">
++        <string>1</string>
++       </property>
++       <property name="alignment">
++        <set>Qt::AlignCenter</set>
++       </property>
++      </widget>
++     </item>
++     <item row="1" column="1">
++      <widget class="QLineEdit" name="toolTip0">
++       <property name="toolTip">
++        <string>This text will be set to the buttons tool tip.</string>
++       </property>
++      </widget>
++     </item>
++     <item row="1" column="2">
++      <widget class="QPushButton" name="assignCurrentView0">
++       <property name="text">
++        <string>current view</string>
++       </property>
++      </widget>
++     </item>
++     <item row="2" column="0">
++      <widget class="QLabel" name="label_4">
++       <property name="text">
++        <string>2</string>
++       </property>
++       <property name="alignment">
++        <set>Qt::AlignCenter</set>
++       </property>
++      </widget>
++     </item>
++     <item row="2" column="1">
++      <widget class="QLineEdit" name="toolTip1">
++       <property name="toolTip">
++        <string>This text will be set to the buttons tool tip.</string>
++       </property>
++      </widget>
++     </item>
++     <item row="2" column="2">
++      <widget class="QPushButton" name="assignCurrentView1">
++       <property name="text">
++        <string>current view</string>
++       </property>
++      </widget>
++     </item>
++     <item row="3" column="0">
++      <widget class="QLabel" name="label_5">
++       <property name="text">
++        <string>3</string>
++       </property>
++       <property name="alignment">
++        <set>Qt::AlignCenter</set>
++       </property>
++      </widget>
++     </item>
++     <item row="3" column="1">
++      <widget class="QLineEdit" name="toolTip2">
++       <property name="toolTip">
++        <string>This text will be set to the buttons tool tip.</string>
++       </property>
++      </widget>
++     </item>
++     <item row="3" column="2">
++      <widget class="QPushButton" name="assignCurrentView2">
++       <property name="text">
++        <string>current view</string>
++       </property>
++      </widget>
++     </item>
++     <item row="4" column="0">
++      <widget class="QLabel" name="label_6">
++       <property name="text">
++        <string>4</string>
++       </property>
++       <property name="alignment">
++        <set>Qt::AlignCenter</set>
++       </property>
++      </widget>
++     </item>
++     <item row="4" column="1">
++      <widget class="QLineEdit" name="toolTip3">
++       <property name="toolTip">
++        <string>This text will be set to the buttons tool tip.</string>
++       </property>
++      </widget>
++     </item>
++     <item row="4" column="2">
++      <widget class="QPushButton" name="assignCurrentView3">
++       <property name="text">
++        <string>current view</string>
++       </property>
++      </widget>
++     </item>
++    </layout>
++   </item>
++   <item>
++    <layout class="QHBoxLayout" name="horizontalLayout">
++     <item>
++      <spacer name="horizontalSpacer">
++       <property name="orientation">
++        <enum>Qt::Horizontal</enum>
++       </property>
++       <property name="sizeHint" stdset="0">
++        <size>
++         <width>40</width>
++         <height>20</height>
++        </size>
++       </property>
++      </spacer>
++     </item>
++     <item>
++      <widget class="QPushButton" name="clearAll">
++       <property name="text">
++        <string>clear all</string>
++       </property>
++      </widget>
++     </item>
++     <item>
++      <widget class="QPushButton" name="importAll">
++       <property name="text">
++        <string>import...</string>
++       </property>
++      </widget>
++     </item>
++     <item>
++      <widget class="QPushButton" name="exportAll">
++       <property name="text">
++        <string>export...</string>
++       </property>
++      </widget>
++     </item>
++    </layout>
++   </item>
++   <item>
++    <spacer name="verticalSpacer">
++     <property name="orientation">
++      <enum>Qt::Vertical</enum>
++     </property>
++     <property name="sizeHint" stdset="0">
++      <size>
++       <width>20</width>
++       <height>17</height>
++      </size>
++     </property>
++    </spacer>
++   </item>
++   <item>
++    <widget class="QDialogButtonBox" name="buttonBox">
++     <property name="standardButtons">
++      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
++     </property>
++    </widget>
++   </item>
++  </layout>
++ </widget>
++ <resources/>
++ <connections>
++  <connection>
++   <sender>buttonBox</sender>
++   <signal>accepted()</signal>
++   <receiver>pqCustomViewButtonDialog</receiver>
++   <slot>accept()</slot>
++   <hints>
++    <hint type="sourcelabel">
++     <x>218</x>
++     <y>211</y>
++    </hint>
++    <hint type="destinationlabel">
++     <x>218</x>
++     <y>113</y>
++    </hint>
++   </hints>
++  </connection>
++  <connection>
++   <sender>buttonBox</sender>
++   <signal>rejected()</signal>
++   <receiver>pqCustomViewButtonDialog</receiver>
++   <slot>reject()</slot>
++   <hints>
++    <hint type="sourcelabel">
++     <x>218</x>
++     <y>211</y>
++    </hint>
++    <hint type="destinationlabel">
++     <x>218</x>
++     <y>113</y>
++    </hint>
++   </hints>
++  </connection>
++ </connections>
++</ui>
