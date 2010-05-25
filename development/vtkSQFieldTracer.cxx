@@ -61,6 +61,8 @@ Copyright 2008 SciberQuest Inc.
 
 #include <mpi.h>
 
+#define vtkSQFieldTracerTIME
+
 #ifndef vtkSQFieldTracerDEBUG
   // 0 -- no output
   // 1 -- adds integration events
@@ -463,8 +465,12 @@ int vtkSQFieldTracer::RequestData(
   #endif
   #if defined vtkSQFieldTracerTIME
   timeval wallt;
-  gettimeofday(&wallt,0x0);
-  double walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+  double walls;
+  if (!this->UseDynamicScheduler || this->WorldRank==0)
+    {
+    gettimeofday(&wallt,0x0);
+    walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+    }
   #endif
 
   vtkInformation *info;
@@ -638,9 +644,6 @@ int vtkSQFieldTracer::RequestData(
     #endif
     // This requires all process to have all the seed source data
     // present.
-
-    // TODO implement a test to verify this is so. Eg.all should have the same first point
-    // and number of cells.
     this->IntegrateDynamic(
           this->WorldRank,
           this->WorldSize,
@@ -658,18 +661,31 @@ int vtkSQFieldTracer::RequestData(
     #endif
     // This assumes that seed source is distrubuted such that each 
     // process has a unique portion of the work.
-
-    // TODO implement a test to verify this is so.
-    this->IntegrateStatic(source,out,fieldName,oocr.GetPointer(),oocrCache,traceData);
+    this->IntegrateStatic(
+          source,
+          out,
+          fieldName,
+          oocr.GetPointer(),
+          oocrCache,traceData);
     }
 
   out->ComputeBounds();
 
-
   #if defined vtkSQFieldTracerTIME
-  gettimeofday(&wallt,0x0);
-  double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-  cerr << this->WorldRank << " finished " << walle-walls << endl;
+  if (!this->UseDynamicScheduler || this->WorldRank==0)
+    {
+    gettimeofday(&wallt,0x0);
+    double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+    cerr << "[" << this->WorldRank << "]";
+    if (this->IntegratorType==INTEGRATOR_RK45)
+      {
+      cerr << " MaxError=" << this->MaxError;
+      }
+    cerr
+      << " MaxStepSize=" << this->MaxStep
+      << " RunTime=" << walle-walls 
+      << endl;
+    }
   #endif
 
   // free cache
@@ -864,7 +880,7 @@ int vtkSQFieldTracer::IntegrateBlock(
     //   this->UpdateProgress(prog);
     //   }
 
-    // tarce a stream line
+    // trace a stream line
     FieldLine *line=traceData->GetFieldLine(i);
     this->IntegrateOne(oocr,oocrCache,fieldName,line,tcon);
 
