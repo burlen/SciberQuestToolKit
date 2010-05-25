@@ -604,7 +604,7 @@ int pqSQPlaneSource::CalculateNormal(double *n)
   int ok=vtkMath::Normalize(n);
   if (!ok)
     {
-    sqErrorMacro(qDebug(),"Invalid coordinate system.");
+    // sqErrorMacro(qDebug(),"Invalid coordinate system.");
     return 0;
     }
 
