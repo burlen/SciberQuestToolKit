@@ -128,24 +128,25 @@ int vtkSQOOCBOVReader::Open()
 void vtkSQOOCBOVReader::Close()
 {
   #if vtkSQOOCBOVReaderDEBUG>0
-  int nBlocks=this->BlockUse.size();
-  int nUsed=0;
-  for (int i=0; i<nBlocks; ++i)
+  if (this->CacheMissCount>0)
     {
-    nUsed+=this->BlockUse[i];
+    int nBlocks=this->BlockUse.size();
+    int nUsed=0;
+    for (int i=0; i<nBlocks; ++i)
+      {
+      nUsed+=this->BlockUse[i];
+      }
+    int worldRank=0;
+    MPI_Comm_rank(MPI_COMM_WORLD,&worldRank);
+
+    cerr
+      << "[" << worldRank << "]"
+      << " CacheSize=" << this->BlockCacheSize
+      << " nUniqueBlocks=" << nUsed
+      << " HitCount=" << this->CacheHitCount
+      << " MissCount=" << this->CacheMissCount
+      << endl;
     }
-  int worldRank=0;
-  MPI_Comm_rank(MPI_COMM_WORLD,&worldRank);
-  double hitMissRatio
-    = (this->CacheMissCount?(double)this->CacheHitCount/(double)this->CacheMissCount:0.0);
-  cerr
-    << "[" << worldRank << "]"
-    << " CacheSize=" << this->BlockCacheSize
-    << " nUniqueBlocks=" << nUsed
-    << " HitCount=" << this->CacheHitCount
-    << " MissCount=" << this->CacheMissCount
-    << " Ratio=" <<  hitMissRatio
-    << endl;
   #endif
 
   if (CloseClearsCachedBlocks)
