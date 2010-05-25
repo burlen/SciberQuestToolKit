@@ -128,6 +128,15 @@ ADD_PARAVIEW_OBJECT_PANEL(
 set(_IFACES ${_IFACES} ${IFACES})
 set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
+set (_SOURCES
+  ${_SOURCES}
+  ${MOC_SRCS}
+  ${UI_SRCS}
+  ${_IFACE_SRCS}
+  pqSQFieldTracerPanel.cxx
+  )
+
+
 
 if (NOT WIN32)
   message(STATUS "Building process monitor ui.")
