@@ -334,7 +334,7 @@ int vtkSQFieldTracer::RequestDataObject(
                 vtkInformationVector* outInfos)
 {
   #if vtkSQFieldTracerDEBUG>1
-    cerr << "===============================vtkSQFieldTracer::RequestDataObject" << endl;
+  cerr << "===============================vtkSQFieldTracer::RequestDataObject" << endl;
   #endif
   // get the filters output
   vtkInformation* outInfo = outInfos->GetInformationObject(0);
@@ -388,7 +388,7 @@ int vtkSQFieldTracer::RequestUpdateExtent(
                 vtkInformationVector *outInfos)
 {
   #if vtkSQFieldTracerDEBUG>1
-    cerr << "===============================vtkSQFieldTracer::RequestUpdateExtent" << endl;
+  cerr << "===============================vtkSQFieldTracer::RequestUpdateExtent" << endl;
   #endif
 
   vtkInformation *outInfo = outInfos->GetInformationObject(0);
@@ -400,7 +400,7 @@ int vtkSQFieldTracer::RequestUpdateExtent(
   int piece=0;
   int numPieces=1;
   // The dynamic scheduler requires all processes have all of the seeds,
-  // while the static scheduler sxpects each process has a unique sub set
+  // while the static scheduler expects each process has a unique sub set
   // of the seeeds.
   if (!this->UseDynamicScheduler)
     {
@@ -445,7 +445,7 @@ int vtkSQFieldTracer::RequestInformation(
                 vtkInformationVector *outputVector)
 {
   #if vtkSQFieldTracerDEBUG>1
-    cerr << "===============================vtkSQFieldTracer::RequestInformation" << endl;
+  cerr << "===============================vtkSQFieldTracer::RequestInformation" << endl;
   #endif
 
   vtkInformation *outInfo = outputVector->GetInformationObject(0);

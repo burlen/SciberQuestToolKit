@@ -1179,7 +1179,7 @@ Copyright 2008 SciberQuest Inc.
         number_of_elements="1"
         default_values="16"
         animateable="0">
-      <IntRangeDomain name="range" min="1" max="131072"/>
+      <IntRangeDomain name="range" min="1"/>
       <Documentation>
         Controls how much work the master does in between servicing work requests
         from the workers. Should be much smaller the WorkerBlockSize.
@@ -1192,7 +1192,7 @@ Copyright 2008 SciberQuest Inc.
         number_of_elements="1"
         default_values="512"
         animateable="0">
-      <IntRangeDomain name="range" min="1" max="131072"/>
+      <IntRangeDomain name="range" min="1"/>
       <Documentation>
         Controls how much work is given to the worker processes at each
         request.
@@ -1435,7 +1435,7 @@ Copyright 2008 SciberQuest Inc.
         number_of_elements="1"
         default_values="16"
         animateable="0">
-      <IntRangeDomain name="range" min="1" max="131072"/>
+      <IntRangeDomain name="range" min="1"/>
       <Documentation>
         Controls how much work the master does in between servicing work requests
         from the workers. Should be much smaller the WorkerBlockSize.
@@ -1448,7 +1448,7 @@ Copyright 2008 SciberQuest Inc.
         number_of_elements="1"
         default_values="512"
         animateable="0">
-      <IntRangeDomain name="range" min="1" max="131072"/>
+      <IntRangeDomain name="range" min="1"/>
       <Documentation>
         Controls how much work is given to the worker processes at each
         request.

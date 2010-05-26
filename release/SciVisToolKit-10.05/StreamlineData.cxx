@@ -30,6 +30,7 @@ StreamlineData::~StreamlineData()
 //-----------------------------------------------------------------------------
 void StreamlineData::ClearSource()
 {
+  this->SeedAtCellCenter=1;
   if (this->SourcePts){ this->SourcePts->Delete(); }
   if (this->SourceCells){ this->SourceCells->Delete(); }
   this->SourcePts=0;
@@ -94,8 +95,15 @@ void StreamlineData::SetSource(vtkDataSet *s)
       this->SourceCells=sourcepd->GetPolys();
       }
     else
+    if (sourcepd->GetNumberOfLines())
+      {
+      this->SeedAtCellCenter=0;
+      this->SourceCells=sourcepd->GetLines();
+      }
+    else
     if (sourcepd->GetNumberOfVerts())
       {
+      this->SeedAtCellCenter=0;
       this->SourceCells=sourcepd->GetVerts();
       }
     else
@@ -137,17 +145,15 @@ void StreamlineData::SetOutput(vtkDataSet *o)
 //-----------------------------------------------------------------------------
 int StreamlineData::InsertCells(CellIdBlock *SourceIds)
 {
+  vtkIdType nSeeds=0;
+
   vtkIdType startId=SourceIds->first();
   vtkIdType endId=SourceIds->last();
-  vtkIdType nCellsLocal=SourceIds->size();
-
-  int lId=this->Lines.size();
-  this->Lines.resize(lId+nCellsLocal,0);
 
   float *pSourcePts=this->SourcePts->GetPointer(0);
 
-  // Cells are sequentially acccessed (not random) so explicitly skip all cells
-  // we aren't interested in.
+  // Cells are sequentially acccessed (not random) so explicitly 
+  // skip all cells we aren't interested in.
   this->SourceCells->InitTraversal();
   for (vtkIdType i=0; i<startId; ++i)
     {
@@ -156,40 +162,68 @@ int StreamlineData::InsertCells(CellIdBlock *SourceIds)
     SourceCells->GetNextCell(n,ptIds);
     }
 
-  // For each cell asigned to us we'll get its center (this is the seed point)
-  // and build corresponding cell in the output, The output only will have
-  // the cells assigned to this process.
-  vtkIdList *ptIds=vtkIdList::New();
-  for (vtkIdType cId=startId; cId<endId; ++cId)
+  int lId=this->Lines.size();
+
+  // for the cells assigned to us, generate seed points.
+  if (this->SeedAtCellCenter)
     {
-    // get the cell that belong to us.
-    vtkIdType nPtIds=0;
-    vtkIdType *ptIds=0;
-    SourceCells->GetNextCell(nPtIds,ptIds);
+    nSeeds=SourceIds->size();
+    this->Lines.resize(lId+nSeeds,0);
 
-    // the seed point we will use the center of the cell
-    double seed[3]={0.0};
-    // transfer from input to output (only what we own)
-    for (vtkIdType pId=0; pId<nPtIds; ++pId)
+    // Compute the center of the cell, and use this for
+    // a seed point.
+    for (vtkIdType cId=startId; cId<endId; ++cId)
       {
-      vtkIdType idx=3*ptIds[pId];
-      // compute contribution to cell center.
-      seed[0]+=pSourcePts[idx  ];
-      seed[1]+=pSourcePts[idx+1];
-      seed[2]+=pSourcePts[idx+2];
+      vtkIdType nPtIds;
+      vtkIdType *ptIds;
+      SourceCells->GetNextCell(nPtIds,ptIds);
+
+      // the seed point we will use the center of the cell
+      double seed[3]={0.0};
+      for (vtkIdType pId=0; pId<nPtIds; ++pId)
+        {
+        vtkIdType idx=3*ptIds[pId];
+        // compute contribution to cell center.
+        seed[0]+=pSourcePts[idx  ];
+        seed[1]+=pSourcePts[idx+1];
+        seed[2]+=pSourcePts[idx+2];
+        }
+      // finsih the seed point computation (at cell center).
+      seed[0]/=nPtIds;
+      seed[1]/=nPtIds;
+      seed[2]/=nPtIds;
+
+      this->Lines[lId]=new FieldLine(seed,cId);
+      this->Lines[lId]->AllocateTrace();
+      ++lId;
       }
-    // finsih the seed point computation (at cell center).
-    seed[0]/=nPtIds;
-    seed[1]/=nPtIds;
-    seed[2]/=nPtIds;
-
-    this->Lines[lId]=new FieldLine(seed,cId);
-    this->Lines[lId]->AllocateTrace();
-    ++lId;
     }
-  ptIds->Delete();
+  else
+    {
+    // Use all the points that make up the cell as seed points.
+    // This only really useful for VERTS, for other cells
+    // this would result in duplicate seeds.
+    for (vtkIdType cId=startId; cId<endId; ++cId)
+      {
+      vtkIdType nPtIds;
+      vtkIdType *ptIds;
+      SourceCells->GetNextCell(nPtIds,ptIds);
 
-  return nCellsLocal;
+      nSeeds+=nPtIds;
+      this->Lines.resize(lId+nPtIds,0);
+
+      for (vtkIdType pId=0; pId<nPtIds; ++pId)
+        {
+        vtkIdType idx=3*ptIds[pId];
+
+        this->Lines[lId]=new FieldLine(pSourcePts+idx,cId);
+        this->Lines[lId]->AllocateTrace();
+        ++lId;
+        }
+      }
+    }
+
+  return nSeeds;
 }
 
 //-----------------------------------------------------------------------------

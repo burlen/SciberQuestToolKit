@@ -36,6 +36,7 @@ class PoincareMapData : public FieldTraceData
 public:
   PoincareMapData()
         :
+    SeedAtCellCenter(1),
     SourcePts(0),
     SourceCells(0),
     OutPts(0),
@@ -90,6 +91,8 @@ private:
   void ClearOut();
 
 private:
+  int SeedAtCellCenter;
+
   vtkFloatArray *SourcePts;
   vtkCellArray *SourceCells;
 
