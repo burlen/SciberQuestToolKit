@@ -48,9 +48,11 @@ using std::ostringstream;
   #define HOST_NAME_MAX 255
 #endif
 
+// #define vtkSQBOVReaderDEBUG
+
 #if defined vtkSQBOVReaderTIME
-#include <sys/time.h>
-#include <unistd.h>
+  #include <sys/time.h>
+  #include <unistd.h>
 #endif
 
 // disbale warning about passing string literals.

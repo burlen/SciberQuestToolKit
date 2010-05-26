@@ -36,11 +36,12 @@ class StreamlineData : public FieldTraceData
 public:
   StreamlineData()
         :
+    SeedAtCellCenter(1),
     SourcePts(0),
     SourceCells(0),
     OutPts(0),
     OutCells(0)
-      {  }
+       { }
 
   virtual ~StreamlineData();
 
@@ -68,6 +69,8 @@ private:
   void ClearOut();
 
 private:
+  int SeedAtCellCenter;
+
   vtkFloatArray *SourcePts;
   vtkCellArray *SourceCells;
 

@@ -21,6 +21,7 @@ class FieldLine
 public:
 
   FieldLine();
+  FieldLine(float p[3], int seedId=0);
   FieldLine(double p[3], int seedId=0);
   FieldLine(const FieldLine &other) { *this=other; }
   ~FieldLine() { this->DeleteTrace(); }
@@ -116,6 +117,22 @@ FieldLine::FieldLine(double p[3], int seedId)
   this->Seed[1]=p[1];
   this->Seed[2]=p[2];
 }
+
+//-----------------------------------------------------------------------------
+inline
+FieldLine::FieldLine(float p[3], int seedId)
+    :
+  FwdTrace(0),
+  BwdTrace(0),
+  SeedId(seedId),
+  FwdTerminator(0),
+  BwdTerminator(0)
+{
+  this->Seed[0]=p[0];
+  this->Seed[1]=p[1];
+  this->Seed[2]=p[2];
+}
+
 
 //-----------------------------------------------------------------------------
 inline
