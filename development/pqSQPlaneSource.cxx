@@ -8,6 +8,7 @@ Copyright 2008 SciberQuest Inc.
 
 */
 #include "pqSQPlaneSource.h"
+
 #include "vtkSQPlaneSourceConfigurationReader.h"
 #include "vtkSQPlaneSourceConfigurationWriter.h"
 #include "SQMacros.h"
@@ -20,19 +21,14 @@ Copyright 2008 SciberQuest Inc.
 
 #include "vtkSMProxy.h"
 #include "vtkSMRenderViewProxy.h"
-
 #include "vtkSMProperty.h"
 #include "vtkSMStringVectorProperty.h"
 #include "vtkSMIntVectorProperty.h"
 #include "vtkSMDoubleVectorProperty.h"
 #include "vtkSMPropertyHelper.h"
-#include "vtkPVXMLElement.h"
-#include "vtkPVXMLParser.h"
 #include "vtkMath.h"
-#include "vtkSmartPointer.h"
 
-#include "vtkEventQtSlotConnect.h"
-#include "vtkProcessModule.h"
+// #include "vtkEventQtSlotConnect.h"
 
 #include <QString>
 #include <QMessageBox>
@@ -43,17 +39,16 @@ Copyright 2008 SciberQuest Inc.
 #include <QSettings>
 #include <QDebug>
 
-#include "FsUtils.h"
-#if defined pqSQPlaneSourceDEBUG
-#include <PrintUtils.h>
-#endif
-
-
-
-#include <vector>
-using vtkstd::vector;
 #include <string>
 using vtkstd::string;
+
+#include <iostream>
+using std::cerr;
+using std::endl;
+
+// I think these can be removed when the old configuration
+// writing code is cleaned up.
+#include "FsUtils.h"
 #include <fstream>
 using std::ofstream;
 using std::ifstream;
@@ -61,16 +56,6 @@ using std::ios_base;
 #include <sstream>
 using std::ostringstream;
 using std::istringstream;
-#include <iostream>
-using std::cerr;
-using std::endl;
-
-enum {
-  PROCESS_TYPE=Qt::UserRole,
-  PROCESS_TYPE_INVALID,
-  PROCESS_TYPE_LOCAL,
-  PROCESS_TYPE_REMOTE
-};
 
 //-----------------------------------------------------------------------------
 pqSQPlaneSource::pqSQPlaneSource(
@@ -259,9 +244,7 @@ pqSQPlaneSource::pqSQPlaneSource(
       SIGNAL(textChanged(QString)),
       this, SLOT(setModified()));
 
-  // Let the super class do the undocumented stuff that needs to hapen.
   pqNamedObjectPanel::linkServerManagerProperties();
-
 }
 
 //-----------------------------------------------------------------------------
@@ -466,18 +449,18 @@ int pqSQPlaneSource::ValidateCoordinates()
   int ok=this->CalculateNormal(n);
   if (ok)
     {
-    // this->Form->coordStatus->setText("OK");
-    // this->Form->coordStatus->setStyleSheet("color:green; background-color:white;");
+    this->Form->coordStatus->setText("OK");
+    this->Form->coordStatus->setStyleSheet("color:green; background-color:white;");
     }
   else
     {
-    // this->Form->coordStatus->setText("Error");
-    // this->Form->coordStatus->setStyleSheet("color:red; background-color:lightyellow;");
-    // this->Form->n_x->setText("");
-    // this->Form->n_y->setText("");
-    // this->Form->n_z->setText("");
-    // this->Form->dim_x->setText("");
-    // this->Form->dim_y->setText("");
+    this->Form->coordStatus->setText("Error");
+    this->Form->coordStatus->setStyleSheet("color:red; background-color:lightyellow;");
+    this->Form->n_x->setText("");
+    this->Form->n_y->setText("");
+    this->Form->n_z->setText("");
+    this->Form->dim_x->setText("");
+    this->Form->dim_y->setText("");
     }
   return ok;
 }
@@ -581,6 +564,9 @@ int pqSQPlaneSource::CalculateNormal(double *n)
   cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::CaclulateNormal" << endl;
   #endif
 
+  this->Form->coordStatus->setText("OK");
+  this->Form->coordStatus->setStyleSheet("color:green; background-color:white;");
+
   double o[3];
   this->GetOrigin(o);
 
@@ -604,11 +590,17 @@ int pqSQPlaneSource::CalculateNormal(double *n)
   int ok=vtkMath::Normalize(n);
   if (!ok)
     {
-    sqErrorMacro(qDebug(),"Invalid coordinate system.");
-    return 0;
+    this->Form->coordStatus->setText("Error");
+    this->Form->coordStatus->setStyleSheet("color:red; background-color:lightyellow;");
+    this->Form->n_x->setText("Error");
+    this->Form->n_y->setText("Error");
+    this->Form->n_z->setText("Error");
+    this->Form->nCells->setText("Error");
+    this->Form->dim_x->setText("Error");
+    this->Form->dim_y->setText("Error");
     }
 
-  return 1;
+  return ok;
 }
 
 //-----------------------------------------------------------------------------
@@ -929,9 +921,13 @@ void pqSQPlaneSource::accept()
   cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::accept" << endl;
   #endif
 
+  if (!this->ValidateCoordinates())
+    {
+    sqErrorMacro(qDebug(),"Invalid coordinate system.");
+    }
+
   this->PushServerConfig();
 
-  // Let our superclass do the undocumented stuff that needs to be done.
   pqNamedObjectPanel::accept();
 }
 
@@ -946,76 +942,5 @@ void pqSQPlaneSource::reset()
 
   this->PullServerConfig();
 
-  // Let our superclass do the undocumented stuff that needs to be done.
   pqNamedObjectPanel::reset();
 }
-
-/// VTK stuffs
-//   // Connect to server side pipeline's UpdateInformation events.
-//   this->VTKConnect=vtkEventQtSlotConnect::New();
-//   this->VTKConnect->Connect(
-//       dbbProxy,
-//       vtkCommand::UpdateInformationEvent,
-//       this, SLOT(UpdateInformationEvent()));
-//   // Get our initial state from the server side. In server side RequestInformation
-//   // the database view is encoded in vtkInformationObject. We are relying on the 
-//   // fact that there is a pending event waiting for us.
-//   this->UpdateInformationEvent();
-
-// 
-//   // These connection let PV know that we have changed, and makes the apply button
-//   // is activated.
-//   QObject::connect(
-//       this->Form->DatabaseView,
-//       SIGNAL(itemChanged(QTreeWidgetItem*, int)),
-//       this, SLOT(setModified()));
-
-// vtkSMProxy* dbbProxy=this->referenceProxy()->getProxy();
-/// Example of how to get stuff from the server side.
-// vtkSMIntVectorProperty *serverDVMTimeProp
-//   =dynamic_cast<vtkSMIntVectorProperty *>(dbbProxy->GetProperty("DatabaseViewMTime"));
-// dbbProxy->UpdatePropertyInformation(serverDVMTimeProp);
-// const int *serverDVMTime=dvmtProp->GetElement(0);
-/// Example of how to get stuff from the XML configuration.
-// vtkSMStringVectorProperty *ppProp
-//   =dynamic_cast<vtkSMStringVectorProperty *>(dbbProxy->GetProperty("PluginPath"));
-// const char *pp=ppProp->GetElement(0);
-// this->Form->PluginPath->setText(pp);
-/// Imediate update example.
-// These are bad because it gets updated more than when you call
-// modified, see the PV guide.
-//  iuiProp->SetImmediateUpdate(1); set this in constructor
-// vtkSMProperty *iuiProp=dbbProxy->GetProperty("InitializeUI");
-// iuiProp->Modified();
-/// Do some changes and force a push.
-// vtkSMIntVectorProperty *meshProp
-//   = dynamic_cast<vtkSMIntVectorProperty *>(dbbProxy->GetProperty("PushMeshId"));
-// meshProp->SetElement(meshIdx,meshId);
-// ++meshIdx;
-// dbbProxy->UpdateProperty("PushMeshId");
-/// Catch all, update anything else that may need updating.
-// dbbProxy->UpdateVTKObjects();
-/// How a wiget in custom panel tells PV that things need to be applied
-// QObject::connect(
-//     this->Form->DatabaseView,
-//     SIGNAL(itemChanged(QTreeWidgetItem*, int)),
-//     this, SLOT(setModified()));
-  // Pull run time configuration from server. The values are transfered
-  // in the form of an ascii stream.
-//   vtkSMIntVectorProperty *pidProp
-//     = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("Pid"));
-//   pProxy->UpdatePropertyInformation(pidProp);
-//   pid_t p=pidProp->GetElement(0);
-//   cerr << "PID=" << p << endl;
-/*
-  vtkSMProxy* reader = this->referenceProxy()->getProxy();
-  reader->UpdatePropertyInformation(reader->GetProperty("Pid"));
-  int stamp = vtkSMPropertyHelper(reader, "Pid").GetAsInt();
-  cerr << stamp;*/
-
-
-
-
-  /// NOTE how to get something from the server.
-  /// dbbProxy->UpdatePropertyInformation(reader->GetProperty("SILUpdateStamp"));
-  /// int stamp = vtkSMPropertyHelper(dbbProxy, "SILUpdateStamp").GetAsInt();
