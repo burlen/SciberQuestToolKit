@@ -82,13 +82,6 @@ if (WIN32)
   set(_SOURCES ${_SOURCES} win_windirent.cxx)
 endif (WIN32)
 
-if (NOT WIN32)
-  # process monitor currently has some unix only features
-  message(STATUS "Building process monitor.")
-  set(SM_SOURCES ${SM_SOURCES} vtkSQProcessMonitor.cxx)
-endif (NOT WIN32)
-
-
 if(PARAVIEW_BUILD_QT_GUI)
 message(STATUS "Including custom panels.")
 set(_IFACES)
@@ -114,19 +107,6 @@ ADD_PARAVIEW_OBJECT_PANEL(
 set(_IFACES ${_IFACES} ${IFACES})
 set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
-if (NOT WIN32)
-  message(STATUS "Building process monitor ui.")
-  QT4_WRAP_CPP(MOC_SRCS pqSQProcessMonitor.h)
-  QT4_WRAP_UI(UI_SRCS pqSQProcessMonitorForm.ui)
-  ADD_PARAVIEW_OBJECT_PANEL(
-    IFACES IFACE_SRCS
-    CLASS_NAME pqSQProcessMonitor
-    XML_NAME vtkSQProcessMonitor
-    XML_GROUP sources)
-  set(_IFACES ${_IFACES} ${IFACES})
-  set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
-endif (NOT WIN32)
-
 set (_SOURCES
   ${_SOURCES}
   ${MOC_SRCS}
@@ -135,11 +115,6 @@ set (_SOURCES
   pqSQHemisphereSource.cxx
   pqSQPlaneSource.cxx
   )
-
-if (NOT WIN32)
-  # process monitor currently has some unix only features
-  set (_SOURCES ${_SOURCES} pqSQProcessMonitor.cxx)
-endif (NOT WIN32)
 
 endif (PARAVIEW_BUILD_QT_GUI)
 

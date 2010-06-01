@@ -11,7 +11,6 @@ Copyright 2008 SciberQuest Inc.
   <Category name="SciberQuestSciVis" menu_label="Sciber&amp;Quest">
     <Proxy group="sources" name="vtkSQHemisphereSource"/>
     <Proxy group="sources" name="vtkSQPlaneSource"/>
-    <Proxy group="sources" name="vtkSQProcessMonitor"/>
     <Proxy group="filters" name="vtkSQRandomSeedPoints"/>
     <Proxy group="filters" name="vtkSQSeedPointLatice"/>
     <Proxy group="sources" name="vtkSQSphereSource"/>
