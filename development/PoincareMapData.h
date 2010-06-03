@@ -6,8 +6,8 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef PoincareMapData_h
-#define PoincareMapData_h
+#ifndef __PoincareMapData_h
+#define __PoincareMapData_h
 
 #include "FieldTraceData.h"
 
@@ -36,7 +36,6 @@ class PoincareMapData : public FieldTraceData
 public:
   PoincareMapData()
         :
-    SeedAtCellCenter(1),
     SourcePts(0),
     SourceCells(0),
     OutPts(0),
@@ -91,8 +90,6 @@ private:
   void ClearOut();
 
 private:
-  int SeedAtCellCenter;
-
   vtkFloatArray *SourcePts;
   vtkCellArray *SourceCells;
 

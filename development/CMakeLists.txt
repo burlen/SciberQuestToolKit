@@ -31,9 +31,11 @@ set(SM_SOURCES
   vtkSQBOVReader.cxx
   vtkSQFieldTracer.cxx
   vtkSQHemisphereSource.cxx
-  vtkSQSeedPointLatice.cxx
+  vtkSQLineSource.cxx
   vtkSQPlaneSource.cxx
+  vtkSQPointSource.cxx
   vtkSQRandomSeedPoints.cxx
+  vtkSQSeedPointLatice.cxx
   vtkSQSphereSource.cxx
   vtkSQVortexFilter.cxx
   )
@@ -120,8 +122,17 @@ QT4_WRAP_CPP( MOC_SRCS pqSQFieldTracer.h )
 ADD_PARAVIEW_OBJECT_PANEL(
   IFACES IFACE_SRCS
   CLASS_NAME pqSQFieldTracer
-  XML_NAME vtkSQFieldTracer XML_GROUP filters
-)
+  XML_NAME vtkSQFieldTracer XML_GROUP filters)
+set(_IFACES ${_IFACES} ${IFACES})
+set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+
+QT4_WRAP_CPP(MOC_SRCS pqSQBOVMetaReader.h)
+QT4_WRAP_UI(UI_SRCS pqSQBlockCacheWidget.ui)
+ADD_PARAVIEW_OBJECT_PANEL(
+  IFACES IFACE_SRCS
+  CLASS_NAME pqSQBOVMetaReader
+  XML_NAME vtkSQBOVMetaReader
+  XML_GROUP sources)
 set(_IFACES ${_IFACES} ${IFACES})
 set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
@@ -143,6 +154,7 @@ set (_SOURCES
   ${MOC_SRCS}
   ${UI_SRCS}
   ${_IFACE_SRCS}
+  pqSQBOVMetaReader.cxx
   pqSQFieldTracer.cxx
   pqSQHemisphereSource.cxx
   pqSQPlaneSource.cxx

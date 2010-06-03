@@ -672,7 +672,7 @@ int vtkSQFieldTracer::RequestData(
   out->ComputeBounds();
 
   #if defined vtkSQFieldTracerTIME
-  if (!this->UseDynamicScheduler || this->WorldRank==0)
+  if ( (this->WorldRank==0) || (!this->UseDynamicScheduler) )
     {
     gettimeofday(&wallt,0x0);
     double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
@@ -687,9 +687,6 @@ int vtkSQFieldTracer::RequestData(
       << endl;
     }
   #endif
-
-  // free cache
-  // if (oocrCache){ oocrCache->Delete(); }
 
   /// Clean up
   // print a legend, and (optionally) reduce the number of colors to that which

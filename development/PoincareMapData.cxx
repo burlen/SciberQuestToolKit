@@ -11,6 +11,7 @@ Copyright 2008 SciberQuest Inc.
 #include "WorkQueue.h"
 #include "FieldLine.h"
 #include "TerminationCondition.h"
+
 #include "vtkDataSet.h"
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
@@ -18,7 +19,6 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkCellData.h"
 #include "vtkFloatArray.h"
 #include "vtkCellArray.h"
-#include "vtkUnsignedCharArray.h"
 #include "vtkIdTypeArray.h"
 
 //-----------------------------------------------------------------------------
@@ -31,7 +31,6 @@ PoincareMapData::~PoincareMapData()
 //-----------------------------------------------------------------------------
 void PoincareMapData::ClearSource()
 {
-  this->SeedAtCellCenter=1;
   if (this->SourcePts){ this->SourcePts->Delete(); }
   if (this->SourceCells){ this->SourceCells->Delete(); }
   this->SourcePts=0;
@@ -100,13 +99,11 @@ void PoincareMapData::SetSource(vtkDataSet *s)
     else
     if (sourcepd->GetNumberOfLines())
       {
-      this->SeedAtCellCenter=0;
       this->SourceCells=sourcepd->GetLines();
       }
     else
     if (sourcepd->GetNumberOfVerts())
       {
-      this->SeedAtCellCenter=0;
       this->SourceCells=sourcepd->GetVerts();
       }
     else
@@ -150,12 +147,8 @@ void PoincareMapData::SetOutput(vtkDataSet *o)
 //-----------------------------------------------------------------------------
 int PoincareMapData::InsertCells(CellIdBlock *SourceIds)
 {
-  vtkIdType nSeeds=0;
-
   vtkIdType startId=SourceIds->first();
   vtkIdType endId=SourceIds->last();
-
-  float *pSourcePts=this->SourcePts->GetPointer(0);
 
   // Cells are sequentially acccessed (not random) so explicitly
   // skip all cells we aren't interested in.
@@ -167,65 +160,39 @@ int PoincareMapData::InsertCells(CellIdBlock *SourceIds)
     SourceCells->GetNextCell(n,ptIds);
     }
 
-  int lId=this->Lines.size();
-
   // for the cells assigned to us, generate seed points.
-  if (this->SeedAtCellCenter)
+  vtkIdType lId=this->Lines.size();
+  vtkIdType nSeeds=SourceIds->size();
+  this->Lines.resize(lId+nSeeds,0);
+
+  float *pSourcePts=this->SourcePts->GetPointer(0);
+
+  // Compute the center of the cell, and use this for
+  // a seed point.
+  for (vtkIdType cId=startId; cId<endId; ++cId)
     {
-    nSeeds=SourceIds->size();
-    this->Lines.resize(lId+nSeeds,0);
+    vtkIdType nPtIds;
+    vtkIdType *ptIds;
+    SourceCells->GetNextCell(nPtIds,ptIds);
 
-    // Compute the center of the cell, and use this for
-    // a seed point.
-    for (vtkIdType cId=startId; cId<endId; ++cId)
+    // the seed point we will use the center of the cell
+    double seed[3]={0.0};
+    for (vtkIdType pId=0; pId<nPtIds; ++pId)
       {
-      vtkIdType nPtIds;
-      vtkIdType *ptIds;
-      SourceCells->GetNextCell(nPtIds,ptIds);
-
-      // the seed point we will use the center of the cell
-      double seed[3]={0.0};
-      for (vtkIdType pId=0; pId<nPtIds; ++pId)
-        {
-        vtkIdType idx=3*ptIds[pId];
-        // compute contribution to cell center.
-        seed[0]+=pSourcePts[idx  ];
-        seed[1]+=pSourcePts[idx+1];
-        seed[2]+=pSourcePts[idx+2];
-        }
-      // finsih the seed point computation (at cell center).
-      seed[0]/=nPtIds;
-      seed[1]/=nPtIds;
-      seed[2]/=nPtIds;
-
-      this->Lines[lId]=new FieldLine(seed,this->SourceCellGid+cId);
-      this->Lines[lId]->AllocateTrace();
-      ++lId;
+      vtkIdType idx=3*ptIds[pId];
+      // compute contribution to cell center.
+      seed[0]+=pSourcePts[idx  ];
+      seed[1]+=pSourcePts[idx+1];
+      seed[2]+=pSourcePts[idx+2];
       }
-    }
-  else
-    {
-    // Use all the points that make up the cell as seed points.
-    // This only really useful for VERTS, for other cells
-    // this would result in duplicate seeds.
-    for (vtkIdType cId=startId; cId<endId; ++cId)
-      {
-      vtkIdType nPtIds;
-      vtkIdType *ptIds;
-      SourceCells->GetNextCell(nPtIds,ptIds);
+    // finsih the seed point computation (at cell center).
+    seed[0]/=nPtIds;
+    seed[1]/=nPtIds;
+    seed[2]/=nPtIds;
 
-      nSeeds+=nPtIds;
-      this->Lines.resize(lId+nPtIds,0);
-
-      for (vtkIdType pId=0; pId<nPtIds; ++pId)
-        {
-        vtkIdType idx=3*ptIds[pId];
-
-        this->Lines[lId]=new FieldLine(pSourcePts+idx,this->SourceCellGid+cId);
-        this->Lines[lId]->AllocateTrace();
-        ++lId;
-        }
-      }
+    this->Lines[lId]=new FieldLine(seed,this->SourceCellGid+cId);
+    this->Lines[lId]->AllocateTrace();
+    ++lId;
     }
 
   return nSeeds;
