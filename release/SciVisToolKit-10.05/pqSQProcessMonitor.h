@@ -7,14 +7,12 @@
 Copyright 2008 SciberQuest Inc.
 
 */
-#ifndef pqSQProcessMonitor_h
-#define pqSQProcessMonitor_h
+#ifndef __pqSQProcessMonitor_h
+#define __pqSQProcessMonitor_h
 
 #include "pqNamedObjectPanel.h"
-#include "pqComponentsExport.h"// no comment
-#include <vtkstd/vector>// no comment
 
-#include "ui_pqSQProcessMonitorForm.h"//  no comment
+#include "ui_pqSQProcessMonitorForm.h"
 using Ui::pqSQProcessMonitorForm;
 
 // Define the following to enable debug io

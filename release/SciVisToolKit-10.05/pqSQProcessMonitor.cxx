@@ -1,13 +1,12 @@
 #include "pqSQProcessMonitor.h"
 
-
+#include "pqComponentsExport.h"
 #include "pqProxy.h"
 #include "vtkSMProxy.h"
 #include "vtkSMProperty.h"
 #include "vtkSMStringVectorProperty.h"
 #include "vtkSMIntVectorProperty.h"
 #include "vtkSMPropertyHelper.h"
-
 
 #include "vtkEventQtSlotConnect.h"
 #include "vtkProcessModule.h"
@@ -21,7 +20,7 @@
 #include <unistd.h>
 
 #if defined pqSQProcessMonitorDEBUG
-#include "PrintUtils.h"
+  #include "PrintUtils.h"
 #endif
 #include "FsUtils.h"
 

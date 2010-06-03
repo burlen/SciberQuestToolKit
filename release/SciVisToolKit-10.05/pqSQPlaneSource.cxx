@@ -80,7 +80,7 @@ pqSQPlaneSource::pqSQPlaneSource(
       pqNamedObjectPanel(proxy, widget)
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::pqSQPlaneSource" << endl;
+  cerr << ":::::::::::::::::::::::::::::::pqSQPlaneSource" << endl;
   #endif
 
   this->dims[0]=this->dims[1]=1.0;
@@ -268,7 +268,7 @@ pqSQPlaneSource::pqSQPlaneSource(
 pqSQPlaneSource::~pqSQPlaneSource()
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::~pqSQPlaneSource" << endl;
+  cerr << ":::::::::::::::::::::::::::::::~pqSQPlaneSource" << endl;
   #endif
 
   delete this->Form;
@@ -356,7 +356,7 @@ void pqSQPlaneSource::Restore()
 void pqSQPlaneSource::Save()
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::Save" << endl;
+  cerr << ":::::::::::::::::::::::::::::::Save" << endl;
   #endif
 
   QString fn=QFileDialog::getSaveFileName(this,"Save SQ Plane Source","","*.sqps");
@@ -432,7 +432,7 @@ void pqSQPlaneSource::loadConfiguration()
 void pqSQPlaneSource::saveConfiguration()
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::saveConfiguration" << endl;
+  cerr << ":::::::::::::::::::::::::::::::saveConfiguration" << endl;
   #endif
 
   vtkSQPlaneSourceConfigurationWriter *writer=vtkSQPlaneSourceConfigurationWriter::New();
@@ -578,7 +578,7 @@ void pqSQPlaneSource::SetNormal(double *n)
 int pqSQPlaneSource::CalculateNormal(double *n)
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::CaclulateNormal" << endl;
+  cerr << ":::::::::::::::::::::::::::::::CaclulateNormal" << endl;
   #endif
 
   double o[3];
@@ -615,7 +615,7 @@ int pqSQPlaneSource::CalculateNormal(double *n)
 void pqSQPlaneSource::DimensionsModified()
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::DimensionsModified" << endl;
+  cerr << ":::::::::::::::::::::::::::::::DimensionsModified" << endl;
   #endif
 
   int ok=this->CalculateNormal(this->N);
@@ -663,7 +663,7 @@ void pqSQPlaneSource::DimensionsModified()
 void pqSQPlaneSource::SpacingModified()
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::SpacingModified" << endl;
+  cerr << ":::::::::::::::::::::::::::::::SpacingModified" << endl;
   #endif
 
   // retreive the requested spacing.
@@ -696,7 +696,7 @@ void pqSQPlaneSource::SpacingModified()
 void pqSQPlaneSource::ResolutionModified()
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::ResolutionModified" << endl;
+  cerr << ":::::::::::::::::::::::::::::::ResolutionModified" << endl;
   #endif
 
   // retreive the requested resolution.
@@ -725,7 +725,7 @@ void pqSQPlaneSource::ResolutionModified()
 void pqSQPlaneSource::SnapViewToNormal()
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::SnapViewToNormal" << endl;
+  cerr << ":::::::::::::::::::::::::::::::SnapViewToNormal" << endl;
   #endif
 
   double o[3];
@@ -815,7 +815,7 @@ void pqSQPlaneSource::SnapViewToNormal()
 void pqSQPlaneSource::UpdateInformationEvent()
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::UpdateInformationEvent" << endl;
+  cerr << ":::::::::::::::::::::::::::::::UpdateInformationEvent" << endl;
   #endif
   // vtkSMProxy* pProxy=this->referenceProxy()->getProxy();
 }
@@ -824,7 +824,7 @@ void pqSQPlaneSource::UpdateInformationEvent()
 void pqSQPlaneSource::PullServerConfig()
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::PullServerConfig" << endl;
+  cerr << ":::::::::::::::::::::::::::::::PullServerConfig" << endl;
   #endif
 
   vtkSMProxy* pProxy=this->referenceProxy()->getProxy();
@@ -878,7 +878,8 @@ void pqSQPlaneSource::PullServerConfig()
 void pqSQPlaneSource::PushServerConfig()
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::PushServerConfig" << endl;
+
+  cerr << ":::::::::::::::::::::::::::::::PushServerConfig" << endl;
   #endif
   vtkSMProxy* pProxy=this->referenceProxy()->getProxy();
 
@@ -926,7 +927,7 @@ void pqSQPlaneSource::PushServerConfig()
 void pqSQPlaneSource::accept()
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::accept" << endl;
+  cerr << ":::::::::::::::::::::::::::::::accept" << endl;
   #endif
 
   this->PushServerConfig();
@@ -941,7 +942,7 @@ void pqSQPlaneSource::accept()
 void pqSQPlaneSource::reset()
 {
   #if defined pqSQPlaneSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::reset" << endl;
+  cerr << ":::::::::::::::::::::::::::::::reset" << endl;
   #endif
 
   this->PullServerConfig();

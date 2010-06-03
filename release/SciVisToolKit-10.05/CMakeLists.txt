@@ -29,9 +29,11 @@ set(SM_SOURCES
   vtkSQBOVReader.cxx
   vtkSQFieldTracer.cxx
   vtkSQHemisphereSource.cxx
-  vtkSQSeedPointLatice.cxx
+  vtkSQLineSource.cxx
   vtkSQPlaneSource.cxx
+  vtkSQPointSource.cxx
   vtkSQRandomSeedPoints.cxx
+  vtkSQSeedPointLatice.cxx
   vtkSQSphereSource.cxx
   vtkSQVortexFilter.cxx
   )
@@ -107,11 +109,21 @@ ADD_PARAVIEW_OBJECT_PANEL(
 set(_IFACES ${_IFACES} ${IFACES})
 set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
+QT4_WRAP_CPP(MOC_SRCS pqSQBOVMetaReader.h)
+ADD_PARAVIEW_OBJECT_PANEL(
+  IFACES IFACE_SRCS
+  CLASS_NAME pqSQBOVMetaReader
+  XML_NAME vtkSQBOVMetaReader
+  XML_GROUP sources)
+set(_IFACES ${_IFACES} ${IFACES})
+set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+
 set (_SOURCES
   ${_SOURCES}
   ${MOC_SRCS}
   ${UI_SRCS}
   ${_IFACE_SRCS}
+  pqSQBOVMetaReader.cxx
   pqSQHemisphereSource.cxx
   pqSQPlaneSource.cxx
   )
@@ -133,6 +145,3 @@ add_paraview_plugin(
   SOURCES ${_SOURCES} )
 
 install(TARGETS SciVisToolKit DESTINATION ${CMAKE_INSTALL_PREFIX})
-
-target_link_libraries(SciVisToolKit)
-
