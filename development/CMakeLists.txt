@@ -61,6 +61,7 @@ set(_SOURCES
   IntersectionSet.cxx
   PolyDataFieldTopologyMap.cxx
   PoincareMapData.cxx
+  postream.cxx
   PrintUtils.cxx
   RefCountedPointer.cxx
   StreamlineData.cxx

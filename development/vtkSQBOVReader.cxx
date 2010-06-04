@@ -33,6 +33,7 @@ Copyright 2008 SciberQuest Inc.
 #include "PrintUtils.h"
 #include "SQMacros.h"
 #include "minmax.h"
+#include "postream.h"
 
 #include <mpi.h>
 
@@ -83,7 +84,7 @@ int fequal(double a, double b, double tol)
 vtkSQBOVReader::vtkSQBOVReader()
 {
   #if defined vtkSQBOVReaderDEBUG
-  cerr << "===============================vtkSQBOVReader" << endl;
+  pCerr() << "===============================vtkSQBOVReader" << endl;
   #endif
 
   // Initialize variables
@@ -155,7 +156,7 @@ vtkSQBOVReader::vtkSQBOVReader()
 vtkSQBOVReader::~vtkSQBOVReader()
 {
   #if defined vtkSQBOVReaderDEBUG
-  cerr << "===============================~vtkSQBOVReader" << endl;
+  pCerr() << "===============================~vtkSQBOVReader" << endl;
   #endif
 
   this->Clear();
@@ -191,8 +192,8 @@ void vtkSQBOVReader::Clear()
 int vtkSQBOVReader::CanReadFile(const char *file)
 {
   #if defined vtkSQBOVReaderDEBUG
-  cerr << "===============================CanReadFile" << endl;
-  cerr << "Check " << safeio(file) << "." << endl;
+  pCerr() << "===============================CanReadFile" << endl;
+  pCerr() << "Check " << safeio(file) << "." << endl;
   #endif
 
   this->Reader->SetCommunicator(MPI_COMM_SELF);
@@ -206,8 +207,8 @@ int vtkSQBOVReader::CanReadFile(const char *file)
 void vtkSQBOVReader::SetFileName(const char* _arg)
 {
   #if defined vtkSQBOVReaderDEBUG
-  cerr << "===============================SetFileName" << endl;
-  cerr << "Set FileName from " << safeio(this->FileName) << " to " << safeio(_arg) << "." << endl;
+  pCerr() << "===============================SetFileName" << endl;
+  pCerr() << "Set FileName from " << safeio(this->FileName) << " to " << safeio(_arg) << "." << endl;
   #endif
   #if defined vtkSQBOVReaderTIME
   double walls=0.0;
@@ -262,7 +263,7 @@ void vtkSQBOVReader::SetFileName(const char* _arg)
     this->KSubsetRange[1]=this->Subset[5]=subset[5];
 
     #if defined vtkSQBOVReaderDEBUG
-    cerr
+    pCerr()
       << "vtkSQBOVReader "
       << this->HostName << " "
       << this->WorldRank
@@ -278,7 +279,7 @@ void vtkSQBOVReader::SetFileName(const char* _arg)
     {
     gettimeofday(&wallt,0x0);
     double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-    cerr << "vtkSQBOVReader::SetFileName " << walle-walls << endl;
+    pCerr() << "vtkSQBOVReader::SetFileName " << walle-walls << endl;
     }
   #endif
 }
@@ -287,7 +288,7 @@ void vtkSQBOVReader::SetFileName(const char* _arg)
 void vtkSQBOVReader::SetSubset(const int *s)
 {
   #if defined vtkSQBOVReaderDEBUG
-  cerr << "===============================SetSubset*" << endl;
+  pCerr() << "===============================SetSubset*" << endl;
   #endif
   this->SetSubset(s[0],s[1],s[2],s[3],s[4],s[5]);
 }
@@ -296,7 +297,7 @@ void vtkSQBOVReader::SetSubset(const int *s)
 void vtkSQBOVReader::SetSubset(int ilo,int ihi, int jlo, int jhi, int klo, int khi)
 {
   #if defined vtkSQBOVReaderDEBUG
-  cerr << "===============================SetSubset" << endl;
+  pCerr() << "===============================SetSubset" << endl;
   #endif
   // Avoid unecessary pipeline execution.
   if ( this->Subset[0]==ilo && this->Subset[1]==ihi
@@ -322,7 +323,7 @@ void vtkSQBOVReader::SetSubset(int ilo,int ihi, int jlo, int jhi, int klo, int k
   this->Modified();
 
   #if defined vtkSQBOVReaderDEBUG
-  cerr << "SetSubset(" << subset << ")" << endl;
+  pCerr() << "SetSubset(" << subset << ")" << endl;
   #endif
 }
 
@@ -407,8 +408,8 @@ void vtkSQBOVReader::SetZHasPeriodicBC(int flag)
 void vtkSQBOVReader::SetPointArrayStatus(const char *name, int status)
 {
   #if defined vtkSQBOVReaderDEBUG
-  cerr << "===============================SetPointArrayStatus" << endl;
-  cerr << safeio(name) << " " << status << endl;
+  pCerr() << "===============================SetPointArrayStatus" << endl;
+  pCerr() << safeio(name) << " " << status << endl;
   #endif
   if (status)
     {
@@ -425,7 +426,7 @@ void vtkSQBOVReader::SetPointArrayStatus(const char *name, int status)
 int vtkSQBOVReader::GetPointArrayStatus(const char *name)
 {
   #if defined vtkSQBOVReaderDEBUG
-  cerr << "===============================GetPointArrayStatus" << endl;
+  pCerr() << "===============================GetPointArrayStatus" << endl;
   #endif
   return this->Reader->GetMetaData()->IsArrayActive(name);
 }
@@ -434,7 +435,7 @@ int vtkSQBOVReader::GetPointArrayStatus(const char *name)
 int vtkSQBOVReader::GetNumberOfPointArrays()
 {
   #if defined vtkSQBOVReaderDEBUG
-  cerr << "===============================GetNumberOfPointArrays" << endl;
+  pCerr() << "===============================GetNumberOfPointArrays" << endl;
   #endif
   return this->Reader->GetMetaData()->GetNumberOfArrays();
 }
@@ -443,7 +444,7 @@ int vtkSQBOVReader::GetNumberOfPointArrays()
 const char* vtkSQBOVReader::GetPointArrayName(int idx)
 {
   #if defined vtkSQBOVReaderDEBUG
-  cerr << "===============================GetArrayName" << endl;
+  pCerr() << "===============================GetArrayName" << endl;
   #endif
   return this->Reader->GetMetaData()->GetArrayName(idx);
 }
@@ -455,7 +456,7 @@ int vtkSQBOVReader::RequestInformation(
   vtkInformationVector* outInfos)
 {
   #if defined vtkSQBOVReaderDEBUG
-  cerr << "===============================RequestInformation" << endl;
+  pCerr() << "===============================RequestInformation" << endl;
   #endif
 
   if (!this->Reader->IsOpen())
@@ -545,8 +546,8 @@ int vtkSQBOVReader::RequestInformation(
     }
 
   #if defined vtkSQBOVReaderDEBUG
-  cerr << times << endl;
-  cerr << "Total: " << nSteps << endl;
+  pCerr() << times << endl;
+  pCerr() << "Total: " << nSteps << endl;
   #endif
 
   // Set available time steps on pipeline.
@@ -629,7 +630,7 @@ int vtkSQBOVReader::RequestData(
         vtkInformationVector *outInfos)
 {
   #if defined vtkSQBOVReaderDEBUG
-  cerr << "===============================RequestData" << endl;
+  pCerr() << "===============================RequestData" << endl;
   #endif
   #if defined vtkSQBOVReaderTIME
   double walls=0.0;
@@ -674,7 +675,7 @@ int vtkSQBOVReader::RequestData(
       }
     info->Set(vtkDataObject::DATA_TIME_STEPS(),step,1);
     #if defined vtkSQBOVReaderDEBUG
-    cerr << "Requested time " << *step << " using " << stepId << "." << endl;
+    pCerr() << "Requested time " << *step << " using " << stepId << "." << endl;
     #endif
     }
 
@@ -733,12 +734,10 @@ int vtkSQBOVReader::RequestData(
   idds->SetExtent(decomp);
 
   #if defined vtkSQBOVReaderDEBUG
-  cerr
-    << "RequestData "
-    << this->HostName << " "
-    << this->WorldRank << " "
-    << this->Reader->GetMetaData()->GetSubset().Size() << " "
-    << Tuple<int>(decomp,6)
+  pCerr()
+    << "nBytes=" 
+    << this->Reader->GetMetaData()->GetSubset().Size()*sizeof(float) << " "
+    << "subset=" << Tuple<int>(decomp,6)
     << endl;
   #endif
 
@@ -819,8 +818,8 @@ int vtkSQBOVReader::RequestData(
     {
     vtkErrorMacro(
       << "Read failed." << endl
-      << *this->Reader->GetMetaData()
-      );
+      << *this->Reader->GetMetaData());
+    idds->Initialize();
     return 1;
     }
 
@@ -829,8 +828,8 @@ int vtkSQBOVReader::RequestData(
   this->Reader->GetMetaData()->PushPipelineInformation(info);
 
   #if defined vtkSQBOVReaderDEBUG
-  this->Reader->PrintSelf(cerr);
-  //idds->Print(cerr);
+  this->Reader->PrintSelf(pCerr());
+  //idds->Print(pCerr());
   #endif
 
   #if defined vtkSQBOVReaderTIME
@@ -839,7 +838,7 @@ int vtkSQBOVReader::RequestData(
     {
     gettimeofday(&wallt,0x0);
     double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-    cerr << "vtkSQBOVReader::RequestData " << walle-walls << endl;
+    pCerr() << "vtkSQBOVReader::RequestData " << walle-walls << endl;
     }
   #endif
 
