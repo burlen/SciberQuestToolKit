@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# Set the path to the mpi install and choose one use on of
+# the fololowing:
+#
+MPI2=/opt/cray/mpt/4.0.1/xt/seastar/mpich2-gnu
+# MPI2=/nics/c/home/bloring/apps/mpich2-1.2.1p1-gnu
+#
+# PVMPI="-DMPI_COMPILER=$MPI2/bin/mpicc"
+PVMPI="-DMPI_INCLUDE_PATH=$MPI2/include -DMPI_LIBRARY=$MPI2/lib/libmpich.a"
+
+MESA=/nics/c/home/bloring/apps/Mesa-7.7-osmesa-gnu
+
 cmake \
     -DCMAKE_C_COMPILER=/opt/cray/xt-asyncpe/3.6/bin/cc \
     -DCMAKE_CXX_COMPILER=/opt/cray/xt-asyncpe/3.6/bin/CC \
@@ -9,15 +20,14 @@ cmake \
     -DPARAVIEW_BUILD_QT_GUI=OFF \
     -DVTK_USE_X=OFF \
     -DVTK_OPENGL_HAS_OSMESA=ON \
-    -DOPENGL_INCLUDE_DIR=/nics/c/home/bloring/apps/Mesa-7.7-osmesa-gnu/include \
+    -DOPENGL_INCLUDE_DIR=$MESA/include \
     -DOPENGL_gl_LIBRARY="" \
-    -DOPENGL_glu_LIBRARY=/nics/c/home/bloring/apps/Mesa-7.7-osmesa-gnu/lib/libGLU.a \
-    -DOPENGL_xmesa_INCLUDE_DIR=/nics/c/home/bloring/apps/Mesa-7.7-osmesa-gnu/include \
-    -DOSMESA_INCLUDE_DIR=/nics/c/home/bloring/apps/Mesa-7.7-osmesa-gnu/include \
-    -DOSMESA_LIBRARY=/nics/c/home/bloring/apps/Mesa-7.7-osmesa-gnu/lib/libOSMesa.a \
+    -DOPENGL_glu_LIBRARY=$MESA/lib/libGLU.a \
+    -DOPENGL_xmesa_INCLUDE_DIR=$MESA/include \
+    -DOSMESA_INCLUDE_DIR=$MESA/include \
+    -DOSMESA_LIBRARY=$MESA/lib/libOSMesa.a \
     -DPARAVIEW_USE_MPI=ON \
-    -DMPI_INCLUDE_PATH=/opt/cray/mpt/4.0.1/xt/seastar/mpich2-gnu/include \
-    -DMPI_LIBRARY=/opt/cray/mpt/4.0.1/xt/seastar/mpich2-gnu/lib/libmpich.a \
+    $PVMPI \
     -DPARAVIEW_BUILD_PLUGIN_Array=OFF \
     -DPARAVIEW_BUILD_PLUGIN_ChartViewFrame=OFF \
     -DPARAVIEW_BUILD_PLUGIN_ClientChartView=OFF \
@@ -55,3 +65,4 @@ cmake \
     -DPARAVIEW_BUILD_PLUGIN_AnalyzeNIfTIReaderWriter=OFF \
     -DPARAVIEW_BUILD_PLUGIN_VisTrails=OFF \
     $* 
+

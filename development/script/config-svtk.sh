@@ -1,7 +1,5 @@
 #!/bin/bash
 
-BRANCH=development
-
 # Config type
 if [ -z "$1" ]
 then
@@ -31,7 +29,7 @@ shift
 case $CONFIG in
 
   "pleiades-intel" )
-    ccmake ../SciVisToolKit/$BRANCH \
+    ccmake  \
     -DCMAKE_C_COMPILER=/nasa/intel/Compiler/11.0/083/bin/intel64/icc \
     -DCMAKE_CXX_COMPILER=/nasa/intel/Compiler/11.0/083/bin/intel64/icpc \
     -DCMAKE_LINKER=/nasa/intel/Compiler/11.0/083/bin/intel64/icpc \
@@ -43,7 +41,7 @@ case $CONFIG in
     ;;
 
   "kraken-gnu" )
-    cmake ../SciVisToolKit/$BRANCH \
+    cmake  \
     -DCMAKE_C_COMPILER=/opt/cray/xt-asyncpe/3.6/bin/cc \
     -DCMAKE_CXX_COMPILER=/opt/cray/xt-asyncpe/3.6/bin/CC \
     -DCMAKE_LINKER=/opt/cray/xt-asyncpe/3.6/bin/CC \
@@ -55,7 +53,7 @@ case $CONFIG in
     ;;
 
   "kraken-pgi" )
-    cmake ../SciVisToolKit/$BRANCH \
+    cmake  \
     -DCMAKE_C_COMPILER=/opt/cray/xt-asyncpe/3.6/bin/cc \
     -DCMAKE_CXX_COMPILER=/opt/cray/xt-asyncpe/3.6/bin/CC \
     -DCMAKE_LINKER=/opt/cray/xt-asyncpe/3.6/bin/CC \
@@ -67,7 +65,7 @@ case $CONFIG in
     ;;
 
   "linux-debug" )
-    cmake ../SciVisToolKit/$BRANCH \
+    cmake  \
     -DCMAKE_CXX_FLAGS="-Wall" \
     -DCMAKE_BUILD_TYPE=Debug \
     -DParaView_DIR=$PV3 \
@@ -75,7 +73,7 @@ case $CONFIG in
     ;;
 
   "linux-release" )
-    cmake ../SciVisToolKit/$BRANCH \
+    cmake  \
     -DCMAKE_BUILD_TYPE=Release \
     -DParaView_DIR=$PV3 \
     $*
