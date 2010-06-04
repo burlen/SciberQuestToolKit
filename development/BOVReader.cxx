@@ -562,11 +562,28 @@ int BOVReader::ReadMetaTimeStep(int stepIdx, vtkImageData *grid, vtkAlgorithm *a
 //-----------------------------------------------------------------------------
 void BOVReader::PrintSelf(ostream &os)
 {
-  os << "BOVReader: " << this << endl;
-  os << "\tComm: " << this->Comm << endl;
-  os << "\tNGhost: " << this->NGhost << endl;
-  os << "\tProcId: " << this->ProcId << endl;
-  os << "\tNProcs: " << this->NProcs << endl;
+  os
+    << "BOVReader: " << this << endl
+    << "  Comm: " << this->Comm << endl
+    << "  NGhost: " << this->NGhost << endl
+    << "  ProcId: " << this->ProcId << endl
+    << "  NProcs: " << this->NProcs << endl;
+
+  if (this->Hints!=MPI_INFO_NULL)
+    {
+    os << "  Hints:" << endl;
+    int nKeys=0;
+    MPI_Info_get_nkeys(this->Hints,&nKeys);
+    for (int i=0; i<nKeys; ++i)
+      {
+      char key[256];
+      char val[256];
+      int flag=0;
+      MPI_Info_get_nthkey(this->Hints,i,key);
+      MPI_Info_get(this->Hints,key,256,val,&flag);
+      os << "    " << key << "=" << val << endl;
+      }
+    }
 
   this->MetaData->Print(os);
 }

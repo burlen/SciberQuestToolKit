@@ -49,6 +49,7 @@ using std::ostringstream;
 #endif
 
 // #define vtkSQBOVReaderDEBUG
+#define vtkSQBOVReaderTIME
 
 #if defined vtkSQBOVReaderTIME
   #include <sys/time.h>
@@ -829,7 +830,7 @@ int vtkSQBOVReader::RequestData(
 
   #if defined vtkSQBOVReaderDEBUG
   this->Reader->PrintSelf(cerr);
-  idds->Print(cerr);
+  //idds->Print(cerr);
   #endif
 
   #if defined vtkSQBOVReaderTIME
