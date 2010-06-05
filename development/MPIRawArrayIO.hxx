@@ -17,6 +17,7 @@ Copyright 2008 SciberQuest Inc.
 
 #include "CartesianExtent.h"
 #include "SQMacros.h"
+#include "postream.h"
 
 //=============================================================================
 template<typename T> class DataTraits;
@@ -26,7 +27,7 @@ template <>
 class DataTraits<float>
 {
 public:
-  static MPI_Datatype Type(){ 
+  static MPI_Datatype Type(){
     return MPI_FLOAT;
     }
 };
@@ -48,6 +49,8 @@ void CreateCartesianView(
       const CartesianExtent &decomp,
       MPI_Datatype &view)
 {
+  int iErr;
+
   MPI_Datatype nativeType=DataTraits<T>::Type();
 
   int domainDims[3];
@@ -65,11 +68,15 @@ void CreateCartesianView(
   // use a contiguous type when possible.
   if (domain==decomp)
     {
-    MPI_Type_contiguous(nCells,nativeType,&view);
+    iErr=MPI_Type_contiguous(nCells,nativeType,&view);
+    if (iErr) 
+      {
+      sqErrorMacro(pCerr(),"MPI_Type_contiguous failed.");
+      }
     }
   else
     {
-    MPI_Type_create_subarray(
+    iErr=MPI_Type_create_subarray(
         3,
         domainDims,
         decompDims,
@@ -77,10 +84,17 @@ void CreateCartesianView(
         MPI_ORDER_FORTRAN,
         nativeType,
         &view);
+    if (iErr)
+      {
+      sqErrorMacro(pCerr(),"MPI_Type_create_subarray failed.");
+      }
     }
-  MPI_Type_commit(&view);
+  iErr=MPI_Type_commit(&view);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_commit failed.");
+    }
 }
-
 
 
 //*****************************************************************************
@@ -107,7 +121,7 @@ MPI_Status WriteDataArray(
   if (iErr!=MPI_SUCCESS)
     {
     MPI_Error_string(iErr,eStr,const_cast<int *>(&eStrLen));
-    sqErrorMacro(cerr,
+    sqErrorMacro(pCerr(),
         << "Error opeing file: " << fileName << endl
         << eStr);
     return 0;
@@ -126,27 +140,46 @@ MPI_Status WriteDataArray(
   // file view
   MPI_Datatype nativeType=DataTraits<T>::Type();
   MPI_Datatype fileView;
-  MPI_Type_create_subarray(3,
+  iErr=MPI_Type_create_subarray(
+      3,
       domainDims,
       decompDims,
       decompStart,
       MPI_ORDER_FORTRAN,
       nativeType,
       &fileView);
-  MPI_Type_commit(&fileView);
-  MPI_File_set_view(
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_create_subarray failed.");
+    }
+  iErr=MPI_Type_commit(&fileView);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_commit failed.");
+    }
+  iErr=MPI_File_set_view(
       file,
       0,
       nativeType,
       fileView,
       "native",
       hints);
-
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_File_set_view failed.");
+    }
   // memory view
   MPI_Datatype memView;
-  MPI_Type_contiguous(nCells,nativeType,&memView);
-  MPI_Type_commit(&memView);
-
+  iErr=MPI_Type_contiguous(nCells,nativeType,&memView);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_contiguous failed.");
+    }
+  iErr=MPI_Type_commit(&memView);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_commit failed.");
+    }
 
   // Write
   MPI_Status ok;
@@ -157,7 +190,7 @@ MPI_Status WriteDataArray(
   if (iErr!=MPI_SUCCESS)
     {
     MPI_Error_string(iErr,eStr,const_cast<int *>(&eStrLen));
-    sqErrorMacro(cerr,
+    sqErrorMacro(pCerr(),
         << "Error writing file: " << fileName << endl
         << eStr);
     return 0;
@@ -199,7 +232,7 @@ int ReadDataArray(
   if (iErr!=MPI_SUCCESS)
     {
     MPI_Error_string(iErr,eStr,const_cast<int *>(&eStrLen));
-    sqErrorMacro(cerr,
+    sqErrorMacro(pCerr(),
         << "Error opeing file: " << fileName << endl
         << eStr);
     return 0;
@@ -218,7 +251,7 @@ int ReadDataArray(
   // file view
   MPI_Datatype nativeType=DataTraits<T>::Type();
   MPI_Datatype fileView;
-  MPI_Type_create_subarray(
+  iErr=MPI_Type_create_subarray(
       3,
       domainDims,
       decompDims,
@@ -226,26 +259,50 @@ int ReadDataArray(
       MPI_ORDER_FORTRAN,
       nativeType,
       &fileView);
-  MPI_Type_commit(&fileView);
-  MPI_File_set_view(
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_create_subarray failed.");
+    }
+  iErr=MPI_Type_commit(&fileView);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_commit failed.");
+    }
+  iErr=MPI_File_set_view(
       file,
       0,
       nativeType,
       fileView,
       "native",
       hints);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_File_set_view failed.");
+    }
 
   // memory view.
   MPI_Datatype memView;
   if (nCompsMem==1)
     {
-    MPI_Type_contiguous(nCells,nativeType,&memView);
+    iErr=MPI_Type_contiguous(nCells,nativeType,&memView);
+    if (iErr)
+      {
+      sqErrorMacro(pCerr(),"MPI_Type_contiguous failed.");
+      }
     }
   else
     {
-    MPI_Type_vector(nCells,1,nCompsMem,nativeType,&memView);
+    iErr=MPI_Type_vector(nCells,1,nCompsMem,nativeType,&memView);
+    if (iErr)
+      {
+      sqErrorMacro(pCerr(),"MPI_Type_vector failed.");
+      }
     }
-  MPI_Type_commit(&memView);
+  iErr=MPI_Type_commit(&memView);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_commit failed.");
+    }
 
   // Read
   MPI_Status status;
@@ -256,7 +313,7 @@ int ReadDataArray(
   if (iErr!=MPI_SUCCESS)
     {
     MPI_Error_string(iErr,eStr,&eStrLen);
-    sqErrorMacro(cerr,
+    sqErrorMacro(pCerr(),
         << "Error reading file: " << fileName << endl
         << eStr);
     return 0;
@@ -300,33 +357,57 @@ int ReadDataArray(
   // file view
   MPI_Datatype nativeType=DataTraits<T>::Type();
   MPI_Datatype fileView;
-  MPI_Type_create_subarray(3,
+  iErr=MPI_Type_create_subarray(3,
       domainDims,
       decompDims,
       decompStart,
       MPI_ORDER_FORTRAN,
       nativeType,
       &fileView);
-  MPI_Type_commit(&fileView);
-  MPI_File_set_view(
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_create_subarray failed.");
+    }
+  iErr=MPI_Type_commit(&fileView);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_commit failed.");
+    }
+  iErr=MPI_File_set_view(
       file,
       0,
       nativeType,
       fileView,
       "native",
       hints);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_File_set_view failed.");
+    }
 
   // memory view.
   MPI_Datatype memView;
   if (nCompsMem==1)
     {
-    MPI_Type_contiguous(nCells,nativeType,&memView);
+    iErr=MPI_Type_contiguous(nCells,nativeType,&memView);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_contiguous failed.");
+    }
     }
   else
     {
-    MPI_Type_vector(nCells,1,nCompsMem,nativeType,&memView);
+    iErr=MPI_Type_vector(nCells,1,nCompsMem,nativeType,&memView);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_vector failed.");
+    }
     }
   MPI_Type_commit(&memView);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_commit failed.");
+    }
 
   // Read
   MPI_Status status;
@@ -336,7 +417,7 @@ int ReadDataArray(
   if (iErr!=MPI_SUCCESS)
     {
     MPI_Error_string(iErr,eStr,&eStrLen);
-    sqErrorMacro(cerr,
+    sqErrorMacro(pCerr(),
         << "Error reading file." << endl
         << eStr);
     return 0;
@@ -363,7 +444,7 @@ int ReadDataArray(
   char eStr[256]={'\0'};
 
   MPI_Datatype nativeType=DataTraits<T>::Type();
-  MPI_File_set_view(
+  iErr=MPI_File_set_view(
       file,
       0,
       nativeType,
@@ -376,8 +457,9 @@ int ReadDataArray(
   if (iErr!=MPI_SUCCESS)
     {
     MPI_Error_string(iErr,eStr,&eStrLen);
-    cerr << "Error reading file." << endl;
-    cerr << eStr << endl;
+    sqErrorMacro(pCerr(),
+        << "Error reading file." << endl
+        << eStr);
     return 0;
     }
 
