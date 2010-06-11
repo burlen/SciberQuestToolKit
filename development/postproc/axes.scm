@@ -8,17 +8,54 @@
 ;
 ; Adds Axes to a plot
 ;
-; Todo: make the ylabel 90degree orientation
+; Todo: 
+;       1. make the ylabel 90degree orientation....DONE
+;       2. Create the brush........................DONE
+;       3. Make the fonts of the axes offset correcly
+;          so that they don't intersect the axes...
 ;
+;       4. 
 
-( define (xaxis-offset )
 
+;
+; Temporary function that gets around a limitation of (my)
+; gimp that was preventing using the script-fu variety 
+; of this code.
+(define (sciber-make-brush-rectangular name width height spacing )
+  (let* ((img (car (gimp-image-new width height GRAY)))
+         (drawable (car (gimp-layer-new img
+                                        width height GRAY-IMAGE
+                                        "MakeBrush" 100 NORMAL-MODE)))
 
+         (filename (string-append gimp-directory
+                                  "/brushes/r"
+                                  (number->string width)
+                                  "x"
+                                  (number->string height)
+                                  ".gbr")))
+    (gimp-context-push)
+    (gimp-image-undo-disable img)
+    (gimp-image-add-layer img drawable 0)
+    (gimp-context-set-background '(255 255 255))
+    (gimp-drawable-fill drawable BACKGROUND-FILL)
+    (gimp-rect-select img 0 0 width height CHANNEL-OP-REPLACE FALSE 0)
+    (gimp-context-set-background '(0 0 0))
+    (gimp-edit-fill drawable BACKGROUND-FILL)
+    (file-gbr-save 1 img drawable filename "" spacing name)
+    (gimp-image-delete img)
+
+    (gimp-context-pop)
+
+    (gimp-brushes-refresh)
+    (gimp-context-set-brush name)
+   );let
 );define
 
-
-
-( define (sciber-axes inFile outFile x0 x1 y0 y1 nx ny xLabel yLabel title xOffset yOffset fontSize fontType )
+;
+; plugin::name= sciber-axes
+; plugin::desc= 
+;
+( define (sciber-axes inFile outFile x0 x1 y0 y1 nx ny xLabel yLabel title fontSize fontType )
   (let* (
          (frameIm (car (gimp-file-load RUN-NONINTERACTIVE inFile inFile)))
          (frameDw (car (gimp-image-get-active-layer frameIm)))
@@ -47,16 +84,13 @@
     (set! originalWidth (car (gimp-image-height  frameIm )))
     (set! originalHeight (car (gimp-image-width  frameIm )))
 ;    (gimp-message (string-append "Original width: " (number->string originalWidth )))
-
 ;    (gimp-message (string-append "Original Height is : " (number->string imhc )))
-    
     (set! frameDw (car (gimp-image-get-active-layer frameIm )))
 
     (plug-in-autocrop RUN-NONINTERACTIVE frameIm frameDw)
 
     (set! imhc (car (gimp-drawable-height frameDw)))
     (set! imwc (car (gimp-drawable-width frameDw)))
-
                                         ; resize
     (gimp-context-set-background '(255 255 255))
     (gimp-context-set-foreground '(  0   0   0))
@@ -134,14 +168,24 @@
     ;
     ; Xlabel
     ;
-    (set! xLabelYPosition (- imwc (/ bm 4 )))
+    (set! xLabelYPosition (- imhc (/ bm 4 )))
     (set! xLabelXPosition (/ imwc 2 ))
+
+;    (gimp-message (string-append "Putting in label at x= " 
+;                                 (number->string xLabelXPosition )
+;                                 "  y="
+;                                 (number->string xLabelYPosition ) )
+;     )
+
     (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw xLabelXPosition xLabelYPosition xLabel 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
+
+
+
 
     ;
     ; Yaxis
     ;
-    (set! delta   (floor (/ (- imwc (+ tm bm )) (- ny 1 ))))
+    (set! delta   (floor (/ (- imhc (+ tm bm )) (- ny 1 ))))
     (set! increment (/ (- (string->number y1) (string->number y0 )) (- ny 1 )))
     (set! counter ny )
     (set! yInitial (+ yInitial tm ))
@@ -149,6 +193,11 @@
     (set! yAxisXValue (floor (- xInitial yAxisOffset )))
 
 ;    (gimp-message (string-append "Yinitial value is : " (number->string yPosition )))
+
+;    (gimp-message (string-append "Delta: " (number->string delta ) " "
+;                                 "Counter : " (number->string counter )
+;                  )
+;     )
 
     (while (> counter 0 )
 ;           (set! yPosition (+ (- yInitial ( * ( - ny counter)  delta ))) 7 )
@@ -166,7 +215,7 @@
 
      );while
 
-;           (gimp-message (string-append "Initial Y is : " (number->string yPosition )))
+;    (gimp-message (string-append "Final Y is : " (number->string yPosition )))
 ;           (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw (floor (- xInitial yAxisOffset ))   yPosition (number->string displayNumber) 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
 
 
@@ -174,22 +223,34 @@
     ; Ylabel
     ;
     (set! yLabelYPosition (/ imhc 2 ))
-    (set! yLabelXPosition (/ lm 2 ))
+    (set! yLabelXPosition (- (floor (/ lm 3 )) (* 2 fpx) ))
 ;(gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw yLabelXPosition yLabelYPosition yLabel 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
     (set! PI_2 (/ 3.14159 2 ))
+
+;    (gimp-message (string-append "Putting in label at x= " 
+;                                 (number->string yLabelXPosition )
+;                                 "  y="
+;                                 (number->string yLabelYPosition ) )
+;     )
 
 
     (set! yLabelObj (car (gimp-text-fontname frameIm frameDw yLabelXPosition yLabelYPosition yLabel 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
     (set! textWidth  (car (gimp-drawable-width yLabelObj )))
     (set! textHeight (car (gimp-drawable-height yLabelObj )))
 
+    ;
+    ; Need to position the text to a better location
+    ;
+    (gimp-drawable-transform-rotate-default yLabelObj (* -1 PI_2 )  1 ( / textWidth 2 ) (/ textHeight 2 ) 0 0)
+    (gimp-floating-sel-anchor yLabelObj )
+
 
     ; 
-    ; Draw the axes lines
-    ;
+    ; DRAW THE AXES LINES
     ; 1.Change paint brush to small 
-
-    
+    ; This is temporary until its possible to use the 
+    ; Built in brushes
+    (sciber-make-brush-rectangular  "AxisBrush" 2.0 2.0 0.0 )
 
     (set! curLayer  )
     (set! points (cons-array 4 'double))
@@ -198,8 +259,6 @@
     (aset points 2 (- imwc (+ lm )))
     (aset points 3 (- imhc bm ))
     (gimp-palette-set-foreground '(0 0 0 ))
-    ;(gimp-paintbrush-default 52 4 points )
-;    (gimp-paintbrush-default frameDw  4 points )
     (gimp-pencil frameDw 4 points )
     
     (aset points 0 xInitial )
@@ -208,15 +267,6 @@
     (aset points 3 tm )
     (gimp-paintbrush-default frameDw  4 points )
 
-
-    ;
-    ; Need to position the text to a better location
-    ;
-    (gimp-drawable-transform-rotate-default yLabelObj (* -1 PI_2 )  1 ( / textWidth 2 ) (/ textHeight 2 ) 0 0)
-
-    (gimp-floating-sel-anchor yLabelObj )
-
-
     ;
     ; Title
     ;
@@ -224,16 +274,16 @@
 ;    (set! yTitle tm )
     (set! xTitle (- imcx (* (/ (string-length title) 2.0) fpx)))
 ;    (set! yTitle (- (/ tm 2.0) (/ fpx 2.0))  )
-    (set! ytitle 0 )
+    (set! yTitle 0 )
     (set! fpTitle  (* 2 fpx ) )
 ;    (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw  xTitle  yTitle title 0 TRUE fpTitle PIXELS "Nimbus Mono L Bold Oblique")))
-    (gimp-message (string-append "Adding title at: x=" 
-                                 (number->string xTitle ) 
-                                 " y=" 
-                                 (number->string yTitle )
-                                 " and font= " 
-                                 (number->string fpx ))
-    );message
+;    (gimp-message (string-append "Adding title at: x=" 
+;                                 (number->string xTitle ) 
+;                                 " y=" 
+;                                 (number->string yTitle )
+;                                 " and font= " 
+;                                 (number->string fpx ))
+;    );message
     
     (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw xTitle yTitle title 0 TRUE fpTitle PIXELS "Nimbus Mono L Bold Oblique")))
            
@@ -263,12 +313,9 @@
                     SF-VALUE "Xoffset for the yaxis tick marks" "10"
                     SF-VALUE "Yoffset for the xaxis tick marks" "10"
                     SF-VALUE "Font Size for Label as a %" "15"
-                    SF-STRING "Fond Type"  "San"
+                    SF-STRING "Font Type"  "San"
                     )
 (script-fu-menu-register "sciber-crop" "<Toolbox>/Xtns/Script-Fu/SciberQuest" )
-
-
-
 
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -297,5 +344,4 @@
 );define
 
 
-
-(sciber-axes  "/home/jdamon/TestCase1.png" "/home/jdamon/foo2.png" "2" "10" "0" "10" 5 15  "xlabel" "ylabel" "NEW TITLE" 12 13  0.23 "San" )
+;(sciber-axes  "/home/jdamon/TestCase1.png" "/home/jdamon/foo2.png" "2" "10" "0" "10" 5 15  "xlabel" "ylabel" "NEW TITLE" 12 13  0.23 "San" )
