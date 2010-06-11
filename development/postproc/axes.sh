@@ -6,7 +6,7 @@
 
 echo "$0"
 
-if [ $# != 15 ] ; then
+if [ $# != 13 ] ; then
   echo "Usage: $0 inFile outFile x0 x1 y0 y1 nx ny xLabel yLabel title xOffset yOffset fontSize fontType"
   exit 1 
 fi

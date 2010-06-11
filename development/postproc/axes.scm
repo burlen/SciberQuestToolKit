@@ -120,13 +120,12 @@
     (set! imwc (car (gimp-image-width  frameIm )))
     (set! imhc (car (gimp-image-height frameIm )))
 
-
-    (gimp-message (string-append "Imhc: " 
-                                 (number->string imhc)
-                                 " " 
-                                 " Tm " 
-                                 (number->string tm ))
-    )
+;    (gimp-message (string-append "Imhc: " 
+;                                 (number->string imhc)
+;                                 " " 
+;                                 " Tm " 
+;                                 (number->string tm ))
+;    )
                                  
 
 ;    (set! yInitial  (- imhc (+ tm bm) ))
@@ -143,41 +142,47 @@
     (set! increment (/ (- (string->number x1) (string->number x0 )) (- nx 1 )))
     (set! counter 0 )
     (set! xPosition xInitial )
-    (gimp-message (string-append "New width: " (number->string imwc )
-                                 " "
-                                 "Delta: " (number->string delta )
-                                 " "
-                                 "Width: " (number->string (- imwc lm rm ))
-                                 " "
-                                 "Increment :" (number->string increment )
-                                 " "
-                                 "xInitial: " (number->string xInitial )
-                  );string-append
-     );
-;    (gimp-message (string-append "Increment : " (number->string increment )))
-;    (gimp-message (string-append "xInitial  : " (number->string xInitial )))
-;    (gimp-message (string-append "The new height of the image is : " (number->string imhc) ))
-    (gimp-message (string-append "yinitial: "
-                                 (number->string yInitial )
-                  )
-    )
+;    (gimp-message (string-append "New width: " (number->string imwc )
+;                                 " "
+;                                 "Delta: " (number->string delta )
+;                                 " "
+;                                 "Width: " (number->string (- imwc lm rm ))
+;                                 " "
+;                                 "Increment :" (number->string increment )
+;                                 " "
+;                                 "xInitial: " (number->string xInitial )
+;                  );string-append
+;     );
+;    (gimp-message (string-append "yinitial: "
+;                                 (number->string yInitial )
+;                  )
+;    )
+
+    ; 
+    ; Setup the Paint brush to draw the small lines
+    ; 1.Change paint brush to small 
+    ; This is temporary until its possible to use the 
+    ; Built in brushes
+    (sciber-make-brush-rectangular  "AxisBrush" 2.0 2.0 0.0 )
+
     ;
     ; XAxis
     ;
     (set! xAxisYValue (+ yInitial xAxisOffset))
-;    (set! xAxisYValue (+ xAxisYValue fpx ))
 ;    (gimp-message (string-append "Values " (number->string xAxisYValue)))
 ;    (gimp-message (string-append "Axis should be " (number->string lm )))
     (while (< counter nx )
            (set! xPosition (+ xInitial (* counter delta )))
+           (draw-line frameDw xPosition (- imhc bm ) xPosition (+ (- imhc bm ) 5 ) )
            (set! displayNumber  (+ (* counter increment ) (string->number x0 )))
-           (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw xPosition xAxisYValue (number->string displayNumber) 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
+;           (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw xPosition xAxisYValue (number->string displayNumber) 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
+
+           (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw (- xPosition (/ fpx 2)) xAxisYValue (number->string displayNumber) 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
+
            ;
            ; Draw the ticks
            (set! counter (+ 1 counter ))
      );while
-
-;    (gimp-message (string-append "Final X Position" (number->string xPosition )))
 
     ;
     ; Xlabel
@@ -193,7 +198,6 @@
 
     (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw xLabelXPosition xLabelYPosition xLabel 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
 
-
     ;
     ; Yaxis
     ;
@@ -204,17 +208,16 @@
     (set! yInitial (- imhc bm ))
     (set! yPosition yInitial )
     (set! yAxisXValue (floor (- xInitial yAxisOffset )))
-    (gimp-message (string-append "Yinitial value is : " (number->string yPosition )))
+;    (gimp-message (string-append "Yinitial value is : " (number->string yPosition )))
 
     (while (> counter 0 )
            (set! yPosition (- yInitial ( * ( - ny counter)  delta )))
+           (draw-line frameDw (- lm 5) yPosition lm yPosition )
            (set! yPosition (- yPosition (/ fpx 2 )))
 
            (set! displayNumber  (+ (* (- ny counter ) increment ) (string->number y0 )))
+           (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw yAxisXValue (- yPosition (/ fpx 2 )) (number->string displayNumber) 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
 
-;           (gimp-message (string-append "Adding Ylabel at : " (number->string yPosition )))
-
-           (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw yAxisXValue (- yPosition 20) (number->string displayNumber) 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
            (set! counter (- counter 1 ))
 
      );while
@@ -248,34 +251,13 @@
     ; size of widths and lengths
     (gimp-drawable-transform-rotate-default yLabelObj (* -1 PI_2 )  1 ( / textWidth 2 ) (/ textHeight 2 ) 0 0)
     (gimp-floating-sel-anchor yLabelObj )
-;    (gimp-message (string-append "LabelObj width: " 
-;                                 (number->string (car (gimp-drawable-height yLabelObj )))
-;                                 " length: " 
-;                                 (number->string (car (gimp-drawable-width yLabelObj )))
-;                  )
-;    )
 
-    ; 
-    ; DRAW THE AXES LINES
-    ; 1.Change paint brush to small 
-    ; This is temporary until its possible to use the 
-    ; Built in brushes
-    (sciber-make-brush-rectangular  "AxisBrush" 2.0 2.0 0.0 )
+;    (sciber-make-brush-rectangular  "AxisBrush" 2.0 2.0 0.0 )
 
     (set! curLayer  )
     (draw-line frameDw xInitial (- imhc bm ) (- imwc rm ) (- imhc bm ))
     (set! points (cons-array 4 'double))
-;    (aset points 0 xInitial )
-;    (aset points 1 (- imhc bm ))
-;    (aset points 2 (- imwc lm ))
-;    (aset points 3 (- imhc bm ))
     (gimp-palette-set-foreground '(0 0 0 ))
-;    (gimp-pencil frameDw 4 points )
-;    (aset points 0 xInitial )
-;    (aset points 1 yInitial )
-;    (aset points 2 xInitial )
-;    (aset points 3 tm )
-;    (gimp-paintbrush-default frameDw  4 points )
     (draw-line frameDw xInitial yInitial xInitial tm )
 
     ;
