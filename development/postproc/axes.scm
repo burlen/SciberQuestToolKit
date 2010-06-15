@@ -1,11 +1,3 @@
-;
-;   ____    _ __           ____               __    ____
-;  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
-; _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-;/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
-;
-;Copyright 2008 SciberQuest Inc.
-;
 ; Adds Axes to a plot
 ;
 ; Todo: 
@@ -15,8 +7,6 @@
 ;          so that they don't intersect the axes...
 ;
 ;       4. 
-
-
 ;
 ; Temporary function that gets around a limitation of (my)
 ; gimp that was preventing using the script-fu variety 
@@ -53,64 +43,142 @@
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 ; plugin::name= sciber-axes
-; plugin::desc= 
+; plugin::desc= Draws X/Y axis for a picture
 ;
 ; plugin::notes= 
 ;                1. The fontsize for the title is 2x the regular fontsize
+;                2. DEBUG as an argument allows the gimp-messages to be 
+;                   displayed which can be used for debugging the size
+;                   and location of the labels and axes.
+;
+; plugin::todo=
+;                1. Determine the font size by the justified font
+;                   selection
+;                    
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-( define (sciber-axes inFile outFile x0 x1 y0 y1 nx ny xLabel yLabel title fontSize fontType )
+( define (sciber-axes inFile outFile x0 x1 y0 y1 nx ny xLabel yLabel title fontSize fontType . DEBUG )
   (let* (
          (frameIm (car (gimp-file-load RUN-NONINTERACTIVE inFile inFile)))
          (frameDw (car (gimp-image-get-active-layer frameIm)))
          (imwc (car (gimp-image-width frameIm)))
          (imhc (car (gimp-image-height frameIm)))
-         (fpx (* imhc fontSize ))
+         (oImageWidth (car (gimp-image-width frameIm)))
+         (oImageHeight (car (gimp-image-height frameIm)))
+         (fpx (floor (* imhc fontSize )))
          (lm 50 )
          (bm 50 ) 
          (rm 50 ) 
          (tm 50 )
          (th 50 )
          (tw 50 )
+         (foo 0 )
+         (PI_2 (/ 3.14159 2 ))
          (fpTitle  (* 2 fpx ))
-         
+         (yPadding  15 )
+         (yAxisPadding 10 )
+         nImageX nImageY 
          xTitle  yTitle
          yInitial xInitial
+         yLabelObj xLabelObj
+;         xLabelObj yLabelObj
          xAxisOffset yAxisOffset
+         yLabelOffset
          delta
          increment counter
          xPosition  yPosition
          displayNumber
          delta increment 
+         maxwidth tmpObj
          )
-
     (set! originalWidth (car (gimp-image-height  frameIm )))
     (set! originalHeight (car (gimp-image-width  frameIm )))
-;    (gimp-message (string-append "Original width: " (number->string originalWidth )))
-;    (gimp-message (string-append "Original Height is : " (number->string imhc )))
-    (set! frameDw (car (gimp-image-get-active-layer frameIm )))
-
+;    (gimp-message (string-append "Original width: " (number->string oImageWidth )))
+;    (gimp-message (string-append "Original Height is : " (number->string oImageHeight )))
     (plug-in-autocrop RUN-NONINTERACTIVE frameIm frameDw)
+    ;
+    ; Determine the size of the fonts in 
+    ; the margin
 
+    (set! increment (/ (- (string->number y1) (string->number y0 )) (- ny 1 )))
+    (set! yLabelYPosition (/ imhc 2 ))
+    (set! yLabelXPosition (- (floor (/ lm 3 )) (* 2 fpx) ))
+    (set! yInitial imhc )
+    (set! yPosition (- yInitial ( * ( - ny counter)  delta )))
+    (set! yPosition (- yPosition (/ fpx 2 )))
+    (set! displayNumber  (+ (* (- ny counter ) increment ) (string->number y0 )))
+
+    (set! yLabelObj (car (gimp-text-fontname frameIm -1 0 yPosition (number->string displayNumber ) 0 TRUE fpx PIXELS fontType )))
+    (set! textWidth  (car (gimp-drawable-width yLabelObj )))
+    (set! textHeight (car (gimp-drawable-height yLabelObj )))
+    (set! yLabelOffset textWidth )
+
+;    (gimp-message (string-append "FIX THIS  New Width " 
+;                                 (number->string (car (gimp-drawable-width yLabelObj )))
+;                                 " , "
+;                                 (number->string (car (gimp-drawable-height yLabelObj )))
+;                                 "  fpx="
+;                                 (number->string fpx )
+;                  )
+;    )
+
+    
     (set! fs  0.25) 
-    (set! lm (ceiling (* fpx     (+ fs 2.0))))
+
+;    (set! lm (car (gimp-drawable-width yLabelObj )))
+;    (set! lm (ceiling (+ (car (gimp-drawable-width yLabelObj ))) fpx ))
+;    (gimp-message (string-append "Original width " 
+;                                 (number->string (car (gimp-drawable-width yLabelObj )))
+;                                 " fpx " 
+;                                 (number->string fpx )
+;                   )
+;    )
+
+    (set! lm ( + textWidth fpx yPadding yAxisPadding ))
+
+;    (gimp-message (string-append "Lm= "
+;                                 (number->string lm )))
+
     (set! tm (ceiling (* fpTitle (+ fs 1.2))))
     (set! bm (ceiling (* fpx     (+ fs 4 ))))
 
-
-    (set! imhc (car (gimp-drawable-height frameDw)))
-    (set! imwc (car (gimp-drawable-width frameDw)))
                                         ; resize
     (gimp-context-set-background '(255 255 255))
     (gimp-context-set-foreground '(  0   0   0))
 
+
+;    (gimp-message "Removing temp labelobj")
+    (gimp-image-remove-layer frameIm yLabelObj )
+
     ; resize the image
-;    (gimp-message (string-append "Resizing to "  (number->string (+ imwc lm rm))))
-    (gimp-image-resize frameIm (+ imwc lm rm) (+ imhc tm bm) lm tm)
-    (gimp-layer-resize frameDw (+ imwc lm rm) (+ imhc tm bm) lm tm)
+;    (gimp-message (string-append "Resizing to imwc="  
+;                                 (number->string imwc )
+;                                 " lm=" 
+;                                 (number->string lm )
+;                                 " rm=" 
+;                                 (number->string rm )
+;                                 " imhc="
+;                                 (number->string imhc )
+;                  )
+;    );gimp-message
+
+    (gimp-image-resize frameIm (+ oImageWidth lm rm) (+ imhc tm bm) lm tm)
+    (gimp-layer-resize frameDw (+ oImageWidth lm rm) (+ imhc tm bm) lm tm)
 
 
     (set! imcx (+ lm (/ imwc 2)))
     (set! imcy (+ tm (/ imhc 2)))
+    (set! nImageX (+ lm (/ oImageWidth 2 )))
+    (set! nImageY (+ tm (/ oImageHeight 2 )))
+
+;    (gimp-message (string-append "Image Marks: "
+;                                 (number->string lm )
+;                                 " , " 
+;                                 (number->string imwc )
+;                                 " , " 
+;                                 (number->string rm )
+;                  )
+;    )
+                                 
 
 
     (set! newWidth  (gimp-image-width frameIm ))
@@ -119,14 +187,6 @@
     
     (set! imwc (car (gimp-image-width  frameIm )))
     (set! imhc (car (gimp-image-height frameIm )))
-
-;    (gimp-message (string-append "Imhc: " 
-;                                 (number->string imhc)
-;                                 " " 
-;                                 " Tm " 
-;                                 (number->string tm ))
-;    )
-                                 
 
 ;    (set! yInitial  (- imhc (+ tm bm) ))
     (set! yInitial ( - imhc bm ))
@@ -157,7 +217,6 @@
 ;                                 (number->string yInitial )
 ;                  )
 ;    )
-
     ; 
     ; Setup the Paint brush to draw the small lines
     ; 1.Change paint brush to small 
@@ -169,8 +228,7 @@
     ; XAxis
     ;
     (set! xAxisYValue (+ yInitial xAxisOffset))
-;    (gimp-message (string-append "Values " (number->string xAxisYValue)))
-;    (gimp-message (string-append "Axis should be " (number->string lm )))
+
     (while (< counter nx )
            (set! xPosition (+ xInitial (* counter delta )))
            (draw-line frameDw xPosition (- imhc bm ) xPosition (+ (- imhc bm ) 5 ) )
@@ -187,16 +245,50 @@
     ;
     ; Xlabel
     ;
-;    (set! xLabelYPosition (- imhc (/ bm 2 )))
-    (set! xLabelYPosition (- imhc (+ (/ bm 2 ) (/ fpx 2 ))))
-    (set! xLabelXPosition (/ imwc 2 ))
-;    (gimp-message (string-append "Putting in label at x= " 
-;                                 (number->string xLabelXPosition )
-;                                 "  y="
-;                                 (number->string xLabelYPosition ) )
+;    (gimp-message (string-append "Half way point: " 
+;                                 (number->string (ceiling (/ imwc 2 )))
+;                  )                                
+;    )
+
+    (set! xLabelYPosition (ceiling (- imhc (+ (/ bm 2 ) (/ fpx 2 )))))
+    (set! xLabelXPosition (ceiling (/ imwc 2 )))
+
+    (set! xLabelObj (car (gimp-text-fontname frameIm frameDw xLabelXPosition xLabelYPosition xLabel 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
+
+    (set! newPosition (gimp-drawable-mask-bounds xLabelObj ))
+
+    (set! textWidth  (car (gimp-drawable-width xLabelObj )))
+    (set! textHeight (car (gimp-drawable-height xLabelObj )))
+    ;
+    ;Reposition the xlabel
+    ; 
+    ; Drawable in the middle of the screen
+
+;    (gimp-message (string-append "Using Lm of "
+;                                 (number->string lm )))
+;    (gimp-message (string-append "Image width: " 
+;                                 (number->string imwc )
+;                                 "  textWidth: "
+;                                 (number->string textWidth )
+;                                 )
 ;     )
 
-    (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw xLabelXPosition xLabelYPosition xLabel 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
+    (gimp-layer-set-offsets xLabelObj (+ lm (/ (- oImageWidth textWidth ) 2 ))   xLabelYPosition  )
+
+    (set! newPosition (gimp-drawable-mask-bounds xLabelObj ))
+
+;    (gimp-message (string-append "After, xlabel: TopLeft  " 
+;                                 (number->string (nth  1 newPosition))
+;                                 ", "
+;                                 (number->string (nth 2  newPosition ))
+;                                 " botton right "
+;                                 (number->string (nth 3 newPosition ))
+;                                 ", "
+;                                 (number->string (nth 4 newPosition ))
+;                                 )
+;    )
+    (gimp-floating-sel-anchor xLabelObj )
+
 
     ;
     ; Yaxis
@@ -204,11 +296,9 @@
     (set! delta   (floor (/ (- imhc (+ tm bm )) (- ny 1 ))))
     (set! increment (/ (- (string->number y1) (string->number y0 )) (- ny 1 )))
     (set! counter ny )
-;    (set! yInitial (+ yInitial tm ))
     (set! yInitial (- imhc bm ))
     (set! yPosition yInitial )
     (set! yAxisXValue (floor (- xInitial yAxisOffset )))
-;    (gimp-message (string-append "Yinitial value is : " (number->string yPosition )))
 
     (while (> counter 0 )
            (set! yPosition (- yInitial ( * ( - ny counter)  delta )))
@@ -216,24 +306,27 @@
            (set! yPosition (- yPosition (/ fpx 2 )))
 
            (set! displayNumber  (+ (* (- ny counter ) increment ) (string->number y0 )))
-           (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw yAxisXValue (- yPosition (/ fpx 2 )) (number->string displayNumber) 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
+           (set! yLabelObj (car (gimp-text-fontname frameIm frameDw yAxisXValue (- yPosition (/ fpx 2 )) (number->string displayNumber) 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
+           (gimp-layer-set-offsets yLabelObj (+ fpx yPadding ) ( - yPosition (/ fpx 2 )))
+
+           (gimp-floating-sel-anchor yLabelObj )
+
+;           (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw yAxisXValue (- yPosition (/ fpx 2 )) (number->string displayNumber) 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
 
            (set! counter (- counter 1 ))
 
      );while
 
+
+
 ;    (gimp-message (string-append "Final Y is : " (number->string yPosition )))
 ;           (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw (floor (- xInitial yAxisOffset ))   yPosition (number->string displayNumber) 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
 
-
     ;
-    ; Ylabel
+    ; Ylabel for the Yaxis
     ;
     (set! yLabelYPosition (/ imhc 2 ))
     (set! yLabelXPosition (- (floor (/ lm 3 )) (* 2 fpx) ))
-;(gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw yLabelXPosition yLabelYPosition yLabel 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
-    (set! PI_2 (/ 3.14159 2 ))
-
 ;    (gimp-message (string-append "Putting in label at x= " 
 ;                                 (number->string yLabelXPosition )
 ;                                 "  y="
@@ -244,12 +337,27 @@
     (set! yLabelObj (car (gimp-text-fontname frameIm frameDw yLabelXPosition yLabelYPosition yLabel 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
     (set! textWidth  (car (gimp-drawable-width yLabelObj )))
     (set! textHeight (car (gimp-drawable-height yLabelObj )))
-
     ;
     ; Need to position the text to a better location
     ; Positioning seems to be difficult in terms of figuring out the 
     ; size of widths and lengths
+
     (gimp-drawable-transform-rotate-default yLabelObj (* -1 PI_2 )  1 ( / textWidth 2 ) (/ textHeight 2 ) 0 0)
+;    (gimp-layer-set-offsets yLabelObj yLabelOffset (- imhc (+ (/ oImageHeight 2 ) bm ))   xLabelYPosition  )
+;    (gimp-layer-set-offsets yLabelObj (- lm fpx ) (+ oImageHeight tm )   xLabelYPosition  )
+;    (gimp-layer-set-offsets yLabelObj (- lm fpx ) (+ (/ (- oImageHeight textWidth )  2)  tm )   xLabelYPosition  )
+    (gimp-layer-set-offsets yLabelObj 0  (+ (/ (- oImageHeight textWidth )  2)  tm )   xLabelYPosition  )
+
+
+;    (gimp-message (string-append 
+;                   "Width of rotated text is " 
+;                  (number->string textWidth )
+;                  ))
+    
+
+
+    ; Now position the yLabel halfway into the
+    
     (gimp-floating-sel-anchor yLabelObj )
 
 ;    (sciber-make-brush-rectangular  "AxisBrush" 2.0 2.0 0.0 )
@@ -263,11 +371,15 @@
     ;
     ; Title
     ;
+;    (gimp-message (string-append "AGAIN imcx="
+;                                 (number->string imcx )
+;    ))                                 
+    
     (set! xTitle (- imcx (* (/ (string-length title) 2.0) fpx)))
-;    (set! yTitle (- (/ tm 2.0) (/ fpx 2.0))  )
+
     (set! yTitle 0 )
     (set! fpTitle  (* 2 fpx ) )
-; (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw  xTitle  yTitle title 0 TRUE fpTitle PIXELS "Nimbus Mono L Bold Oblique")))
+
 ; (gimp-message (string-append "Adding title at: x=" 
 ;                                 (number->string xTitle ) 
 ;                                 " y=" 
