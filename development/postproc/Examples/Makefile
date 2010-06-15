@@ -5,8 +5,11 @@ test:
 	./run_axes.sh
 	./run_crop.sh
 	./run_annotate.sh
+	run_axes.sh
+	run_axes2.sh
+	run_axes3.sh
+	run_axes4.sh
+	run_axes5.sh
 
 clean:
-	if [ -f out1.png ] ; then rm out1.png ; fi 
-	if [ -f out2.png ] ; then rm out2.png ; fi
-	if [ -f out3.png ] ; then rm out3.png ; fi
+	rm out*.png
