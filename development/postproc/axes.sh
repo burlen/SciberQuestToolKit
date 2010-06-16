@@ -11,4 +11,4 @@ if [ $# != 13 ] ; then
   exit 1 
 fi
 
-gimp  --batch-interpreter plug_in_script_fu_eval -i -b "(sciber-axes  \"$1\" \"$2\" \"$3\" \"$4\" \"$5\" \"$6\" $7 $8  \"$9\" \"${10}\" \"${11}\" ${12} \"${13}\"  )"  -b '(gimp-quit 0)'
+gimp  -i -b "(sciber-axes  \"$1\" \"$2\" \"$3\" \"$4\" \"$5\" \"$6\" $7 $8  \"$9\" \"${10}\" \"${11}\" ${12} \"${13}\"  )"  -b '(gimp-quit 0)'
