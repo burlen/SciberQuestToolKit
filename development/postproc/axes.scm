@@ -56,7 +56,7 @@
 ;                   selection
 ;                    
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-( define (sciber-axes inFile outFile x0 x1 y0 y1 nx ny xLabel yLabel title fontSize fontType . DEBUG )
+( define (sciber-axes inFile outFile x0 x1 y0 y1 nx ny xLabel yLabel title fontSize fontType  )
   (let* (
          (frameIm (car (gimp-file-load RUN-NONINTERACTIVE inFile inFile)))
          (frameDw (car (gimp-image-get-active-layer frameIm)))
@@ -76,22 +76,48 @@
          (fpTitle  (* 2 fpx ))
          (yPadding  15 )
          (yAxisPadding 10 )
-         nImageX nImageY 
-         xTitle  yTitle
-         yInitial xInitial
-         yLabelObj xLabelObj
-;         xLabelObj yLabelObj
-         xAxisOffset yAxisOffset
-         yLabelOffset
-         delta
-         increment counter
-         xPosition  yPosition
-         displayNumber
-         delta increment 
-         maxwidth tmpObj
+         (increment 0 )
+         (yLabelYPosition 0)
+         (yLabelXPosition 0)
+         (xLabelYPosition 0)
+         (xLabelXPosition 0)
+         (yInitial 0 )
+         (xInitial 0 )
+         (counter 0 )
+         (delta 0 )
+         (xPosition ) ( yPosition 0 )
+         (displayNumber 0 )
+         (yLabelObj #f )
+         (xLabelObj #f )
+         (textWidth 0 )
+         (textHeight 0 )
+         (nImageX 0 )
+         (nImageY 0 )
+         (xTitle "" )
+         (yTitle "" )
+         (yInitial 0 )
+         (xInitial 0 )
+         (xAxisOffset 0 )
+         (yAxisOffset 0 )
+         (yAxisYValue 0 )
+         (yAxisXValue 0 )
+         (xAxisXValue 0 )
+         (xAxisYValue 0 )
+         (yLabelOffset 0 )
+         (maxwidth 0 )
+         (tmpObj #f )
+         (fs 0 )
+         (imcx 0 )
+         (imcy 0 )
+         (xAxisDelta 0 )
+         (yAxisDelta 0 )
+         (points 0 )
          )
-    (set! originalWidth (car (gimp-image-height  frameIm )))
-    (set! originalHeight (car (gimp-image-width  frameIm )))
+  
+
+        
+;    (set! originalWidth (car (gimp-image-height  frameIm )))
+;    (set! originalHeight (car (gimp-image-width  frameIm )))
 ;    (gimp-message (string-append "Original width: " (number->string oImageWidth )))
 ;    (gimp-message (string-append "Original Height is : " (number->string oImageHeight )))
     (plug-in-autocrop RUN-NONINTERACTIVE frameIm frameDw)
@@ -151,7 +177,7 @@
 
     ; resize the image
 ;    (gimp-message (string-append "Resizing to imwc="  
-;                                 (number->string imwc )
+;;                                 (number->string imwc )
 ;                                 " lm=" 
 ;                                 (number->string lm )
 ;                                 " rm=" 
@@ -180,9 +206,8 @@
 ;    )
                                  
 
-
-    (set! newWidth  (gimp-image-width frameIm ))
-    (set! newHeight (gimp-image-width frameIm ))
+;    (set! newWidth  (gimp-image-width frameIm ))
+;    (set! newHeight (gimp-image-width frameIm ))
     
     
     (set! imwc (car (gimp-image-width  frameIm )))
@@ -224,6 +249,8 @@
     ; Built in brushes
     (sciber-make-brush-rectangular  "AxisBrush" 2.0 2.0 0.0 )
 
+
+
     ;
     ; XAxis
     ;
@@ -233,7 +260,6 @@
            (set! xPosition (+ xInitial (* counter delta )))
            (draw-line frameDw xPosition (- imhc bm ) xPosition (+ (- imhc bm ) 5 ) )
            (set! displayNumber  (+ (* counter increment ) (string->number x0 )))
-;           (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw xPosition xAxisYValue (number->string displayNumber) 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
 
            (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw (- xPosition (/ fpx 2)) xAxisYValue (number->string displayNumber) 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
 
@@ -255,7 +281,6 @@
 
     (set! xLabelObj (car (gimp-text-fontname frameIm frameDw xLabelXPosition xLabelYPosition xLabel 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
 
-    (set! newPosition (gimp-drawable-mask-bounds xLabelObj ))
 
     (set! textWidth  (car (gimp-drawable-width xLabelObj )))
     (set! textHeight (car (gimp-drawable-height xLabelObj )))
@@ -273,20 +298,12 @@
 ;                                 )
 ;     )
 
+
+
     (gimp-layer-set-offsets xLabelObj (+ lm (/ (- oImageWidth textWidth ) 2 ))   xLabelYPosition  )
 
-    (set! newPosition (gimp-drawable-mask-bounds xLabelObj ))
 
-;    (gimp-message (string-append "After, xlabel: TopLeft  " 
-;                                 (number->string (nth  1 newPosition))
-;                                 ", "
-;                                 (number->string (nth 2  newPosition ))
-;                                 " botton right "
-;                                 (number->string (nth 3 newPosition ))
-;                                 ", "
-;                                 (number->string (nth 4 newPosition ))
-;                                 )
-;    )
+
     (gimp-floating-sel-anchor xLabelObj )
 
 
@@ -318,7 +335,6 @@
      );while
 
 
-
 ;    (gimp-message (string-append "Final Y is : " (number->string yPosition )))
 ;           (gimp-floating-sel-anchor (car (gimp-text-fontname frameIm frameDw (floor (- xInitial yAxisOffset ))   yPosition (number->string displayNumber) 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
 
@@ -337,6 +353,7 @@
     (set! yLabelObj (car (gimp-text-fontname frameIm frameDw yLabelXPosition yLabelYPosition yLabel 0 TRUE fpx PIXELS "Nimbus Mono L Bold Oblique")))
     (set! textWidth  (car (gimp-drawable-width yLabelObj )))
     (set! textHeight (car (gimp-drawable-height yLabelObj )))
+
     ;
     ; Need to position the text to a better location
     ; Positioning seems to be difficult in terms of figuring out the 
@@ -346,7 +363,25 @@
 ;    (gimp-layer-set-offsets yLabelObj yLabelOffset (- imhc (+ (/ oImageHeight 2 ) bm ))   xLabelYPosition  )
 ;    (gimp-layer-set-offsets yLabelObj (- lm fpx ) (+ oImageHeight tm )   xLabelYPosition  )
 ;    (gimp-layer-set-offsets yLabelObj (- lm fpx ) (+ (/ (- oImageHeight textWidth )  2)  tm )   xLabelYPosition  )
-    (gimp-layer-set-offsets yLabelObj 0  (+ (/ (- oImageHeight textWidth )  2)  tm )   xLabelYPosition  )
+
+
+
+;    (gimp-message (string-append "Values: "
+;                  "xposition: " 
+;                  (number->string 0)
+;                  "Yposition: "
+;;                  (number->string (+ (/ (- oImageHeight textWidth )  2)  tm ))
+;                  (number->string (+ (/ (- oImageHeight textWidth )  2)  tm ))
+;                  "Xlabelposition: "
+;                  (number->string xLabelYPosition)
+;                  )
+;                  )
+
+    
+;    (gimp-layer-set-offsets yLabelObj  0 (+ (/ (- oImageHeight textWidth )  2)  tm )   xLabelYPosition  )
+
+    (gimp-layer-set-offsets yLabelObj  0 (+ (/ (- oImageHeight textWidth )  2)  tm )  )
+
 
 
 ;    (gimp-message (string-append 
@@ -362,7 +397,7 @@
 
 ;    (sciber-make-brush-rectangular  "AxisBrush" 2.0 2.0 0.0 )
 
-    (set! curLayer  )
+
     (draw-line frameDw xInitial (- imhc bm ) (- imwc rm ) (- imhc bm ))
     (set! points (cons-array 4 'double))
     (gimp-palette-set-foreground '(0 0 0 ))
@@ -406,19 +441,23 @@
                     "Jimi Damon"
                     "2010-06-08"
                     ""
-                    SF-STRING "InputFile" "0"
-                    SF-STRING "Output File" "0"
+;inFile outFile x0 x1 y0 y1 nx ny xLabel yLabel title fontSize fontType . DEBUG
+                    SF-STRING "InputFile" "SciberExample.png"
+                    SF-STRING "Output File" "out.png"
                     SF-STRING "xInitial (x0) as a string" "0"
                     SF-STRING "xFinal   (xF) as a string" "10"
                     SF-STRING "yInitial (y0) as a string" "0"
-                    SF-STRING "yFinal   (yF) as a string" "0"
+                    SF-STRING "yFinal   (yF) as a string" "10"
+                    SF-VALUE "Number of X ticks (nx)" "5"
+                    SF-VALUE "Number of Y ticks (ny)" "5"
+                    SF-STRING "Xlabel " "XLabel"
+                    SF-STRING "Ylabel " "YLabel"
                     SF-STRING "Tile" "TITLE"
-                    SF-VALUE "Xoffset for the yaxis tick marks" "10"
-                    SF-VALUE "Yoffset for the xaxis tick marks" "10"
-                    SF-VALUE "Font Size for Label as a %" "15"
+                    SF-VALUE "Font Size for Label as a %" "0.05"
                     SF-STRING "Font Type"  "San"
+;                    SF-VALUE  "DEBUG ? default nil" "0" 
                     )
-(script-fu-menu-register "sciber-crop" "<Toolbox>/Xtns/Script-Fu/SciberQuest" )
+(script-fu-menu-register "sciber-axes" "<Toolbox>/Xtns/Script-Fu/SciberQuest" )
 
 
 ;=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -434,9 +473,8 @@
 
 
 (define (draw-line layer x0 y0 x1 y1 )
-  (let* ((points)
+  (let* ((points (cons-array 4 'double))
          )
-    (set! points (cons-array 4 'double))
     (aset points 0 x0 )
     (aset points 1 y0 )
     (aset points 2 x1 )
