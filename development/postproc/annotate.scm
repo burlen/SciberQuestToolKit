@@ -11,12 +11,12 @@
   (let* ((image (car (gimp-file-load RUN-NONINTERACTIVE inFile inFile )))
          (drawable (car (gimp-image-get-active-layer image)))
          (fontSizePixel (* fontSizePercent (car (gimp-image-height image))))
-         text-float
+         (textFloat 0 )
          )
-    (set! text-float (car (gimp-text-fontname image drawable
+    (set! textFloat (car (gimp-text-fontname image drawable
                                               x y label 0 1 fontSizePixel 0
                                               fonttype )))
-    (gimp-floating-sel-anchor text-float)
+    (gimp-floating-sel-anchor textFloat)
     (gimp-displays-flush)
     (gimp-file-save RUN-NONINTERACTIVE image drawable outFile outFile )
   );let
