@@ -16,7 +16,11 @@ fi
 #xcoord=$5
 #ycoord=$6
 
-gimp  --batch-interpreter plug_in_script_fu_eval -i -b "(sciber-annotate \"$1\" \"$2\" \"$3\"  $4 $5 $6 \"$7\" )" -b '(gimp-quit 0)' 
+#
+#gimp -i -b "(sciber-crop \"$1\" \"$2\" )" -b '(gimp-quit 0)'
+
+
+gimp -i -b "(sciber-annotate \"$1\" \"$2\" \"$3\"  $4 $5 $6 \"$7\" )" -b '(gimp-quit 0)' 
 
 
 
