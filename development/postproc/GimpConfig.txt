@@ -1,0 +1,60 @@
+cmake_minimum_required(VERSION 2.4)
+
+
+get_target_property( EXE_LOC Foo LOCATION )
+
+set(GIMP_INSTALL_DIRECTORY )
+
+set (PROJECT_SOURCE_DIR  SRC )
+set (ECHO echo )
+set (INSTALL_DIR  ${CMAKE_INSTALL_PREFIX}/postproc )
+
+set (GIMP_FILES  annotate.scm  crop.scm axes.scm )
+set (CMD_FILES )
+set (WHOAMI_COMMAND whoami )
+
+
+set (GIMP_COMMAND gimp -v )
+set (DIR . )
+
+
+EXECUTE_PROCESS(COMMAND ${GIMP_COMMAND}
+      WORKING_DIRECTORY ${DIR}
+      OUTPUT_VARIABLE GIMP_VERSION
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+EXECUTE_PROCESS(COMMAND ${WHOAMI_COMMAND}
+     WORKING_DIRECTORY ${DIR}
+     OUTPUT_VARIABLE  USERID
+     OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+     
+
+STRING(REGEX REPLACE "^(.*\n)?[gG][iI][mM][pP] +[Vv][Ee][rR][sS][Ii][oO][Nn] +([0-9]+\\.[0-9]+).*"
+        "\\2" FOO_VERSION "${GIMP_VERSION}"
+)
+
+set (GIMP_INSTALL_DIRECTORY "/home/${USERID}/.gimp-${FOO_VERSION}/scripts")
+
+#message ("Your install directory is ${GIMP_INSTALL_DIRECTORY}")
+#message ("You are ${USERID}" )
+
+foreach (GMPFILE ${CMD_FILES} )
+	install ( FILES ${GMPFILE} 
+		  DESTINATION ${CMAKE_INSTALL_PREFIX}/DST 
+	)	
+endforeach (GMPFILE)
+
+foreach (GMPFILE ${GIMP_FILES} )
+	install ( FILES ${GMPFILE} 
+		  DESTINATION  ${GIMP_INSTALL_DIRECTORY}
+	)	
+endforeach (GMPFILE)
+
+
+
+##add_custom_target( FooJar ALL
+##                   ${ECHO} "HELLO"
+##)
+
