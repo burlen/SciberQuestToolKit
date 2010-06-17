@@ -77,7 +77,7 @@ set(_SOURCES
   WorkQueue.cxx
   )
 
-SET_SOURCE_FILES_PROPERTIES(
+set_source_files_properties(
   vtkSQOOCReader.cxx
   ABSTRACT
   )
