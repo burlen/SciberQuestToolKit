@@ -187,10 +187,10 @@ int TerminationCondition::ApplyPeriodicBC(double p0[3], double p1[3])
       {
       double t=0.0;
       double x[3]={0.0};
-      double p[3]={0.0};
+      double r[3]={0.0};
       int c=0;
       int hitSurface
-        = this->PeriodicBCFaces[i]->IntersectWithLine(p0,p1,1E-6,t,x,p,c);
+        = this->PeriodicBCFaces[i]->IntersectWithLine(p0,p1,1E-6,t,x,r,c);
       if (hitSurface)
         {
         // replace input with the location of the intersection

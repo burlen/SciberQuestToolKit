@@ -165,7 +165,9 @@ int vtkSQFieldTracer::FillInputPortInformation(int port, vtkInformation *info)
 }
 
 //----------------------------------------------------------------------------
-int vtkSQFieldTracer::FillOutputPortInformation(int port, vtkInformation *info)
+int vtkSQFieldTracer::FillOutputPortInformation(
+      int /*port*/,
+      vtkInformation *info)
 {
   #if vtkSQFieldTracerDEBUG>1
   cerr << "===============================vtkSQFieldTracer::FillOutputPortInformation" << endl;
@@ -329,7 +331,7 @@ void vtkSQFieldTracer::SetIntegratorType(int type)
 
 //----------------------------------------------------------------------------
 int vtkSQFieldTracer::RequestDataObject(
-                vtkInformation *info,
+                vtkInformation *,
                 vtkInformationVector** inInfos,
                 vtkInformationVector* outInfos)
 {
@@ -647,8 +649,7 @@ int vtkSQFieldTracer::RequestData(
     this->IntegrateDynamic(
           this->WorldRank,
           this->WorldSize,
-          source,
-          out,
+          source->GetNumberOfCells(),
           fieldName,
           oocr.GetPointer(),
           oocrCache,
@@ -662,14 +663,12 @@ int vtkSQFieldTracer::RequestData(
     // This assumes that seed source is distrubuted such that each 
     // process has a unique portion of the work.
     this->IntegrateStatic(
-          source,
-          out,
+          source->GetNumberOfCells(),
           fieldName,
           oocr.GetPointer(),
-          oocrCache,traceData);
+          oocrCache,
+          traceData);
     }
-
-  out->ComputeBounds();
 
   #if defined vtkSQFieldTracerTIME
   if ( (this->WorldRank==0) || (!this->UseDynamicScheduler) )
@@ -705,8 +704,7 @@ int vtkSQFieldTracer::RequestData(
 //-----------------------------------------------------------------------------
 inline
 int vtkSQFieldTracer::IntegrateStatic(
-      vtkDataSet *source,
-      vtkDataSet *out,
+      int nCells,
       const char *fieldName,
       vtkSQOOCReader *oocr,
       vtkDataSet *&oocrCache,
@@ -715,7 +713,7 @@ int vtkSQFieldTracer::IntegrateStatic(
   // do all local ids in a single pass.
   CellIdBlock sourceIds;
   sourceIds.first()=0;
-  sourceIds.size()=source->GetNumberOfCells();
+  sourceIds.size()=nCells;
 
   return
     this->IntegrateBlock(
@@ -730,15 +728,12 @@ int vtkSQFieldTracer::IntegrateStatic(
 int vtkSQFieldTracer::IntegrateDynamic(
       int procId,
       int nProcs,
-      vtkDataSet *source,
-      vtkDataSet *out,
+      int nCells,
       const char *fieldName,
       vtkSQOOCReader *oocr,
       vtkDataSet *&oocrCache,
       FieldTraceData *traceData)
 {
-  const int nCells=source->GetNumberOfCells();
-
   const int masterProcId=(nProcs>1?1:0); // NOTE: proc 0 is busy with PV overhead.
   const int BLOCK_REQ=2222;
   // Master process distributes the work and integrates

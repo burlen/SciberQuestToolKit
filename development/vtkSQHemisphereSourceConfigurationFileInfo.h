@@ -36,7 +36,8 @@ public:
     FileIdentifier("SQHemisphereSourceSourceConfiguration"),
     FileDescription("SciberQuest HemisphereSource Source configuration"),
     FileExtension(".sqhsc")
-      { }
+       {}
+  virtual ~vtkSQHemisphereSourceConfigurationFileInfo(){}
 
   virtual void PrintSelf(ostream &os, vtkIndent indent)
     {

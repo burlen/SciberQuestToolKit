@@ -39,7 +39,7 @@ static const vtkSQProcessMonitor *_ProcMonInstance=0;
 void backtrace_handler(
       int sigNo,
       siginfo_t *sigInfo,
-      void *sigContext)
+      void */*sigContext*/)
 {
   cerr << "[" << _ProcMonInstance->WorldRank << "] ";
 

@@ -58,13 +58,13 @@ using std::endl;
 
 //-----------------------------------------------------------------------------
 pqSQHemisphereSource::pqSQHemisphereSource(
-      pqProxy* proxy,
-      QWidget* widget)
+      pqProxy* l_proxy,
+      QWidget* l_parent)
              :
-      pqNamedObjectPanel(proxy, widget)
+      pqNamedObjectPanel(l_proxy,l_parent)
 {
   #if defined pqSQHemisphereSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::pqSQHemisphereSource" << endl;
+  cerr << ":::::::::::::::::::::::::::::::pqSQHemisphereSource::pqSQHemisphereSource" << endl;
   #endif
 
   // Construct Qt form.
@@ -129,7 +129,7 @@ pqSQHemisphereSource::pqSQHemisphereSource(
 pqSQHemisphereSource::~pqSQHemisphereSource()
 {
   #if defined pqSQHemisphereSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::~pqSQHemisphereSource" << endl;
+  cerr << ":::::::::::::::::::::::::::::::pqSQHemisphereSource::~pqSQHemisphereSource" << endl;
   #endif
 
   delete this->Form;
@@ -261,7 +261,7 @@ void pqSQHemisphereSource::loadConfiguration()
 void pqSQHemisphereSource::saveConfiguration()
 {
   #if defined pqSQHemisphereSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::saveConfiguration" << endl;
+  cerr << ":::::::::::::::::::::::::::::::pqSQHemisphereSource::saveConfiguration" << endl;
   #endif
 
   vtkSQHemisphereSourceConfigurationWriter *writer=vtkSQHemisphereSourceConfigurationWriter::New();
@@ -292,7 +292,7 @@ void pqSQHemisphereSource::saveConfiguration()
 void pqSQHemisphereSource::UpdateInformationEvent()
 {
   #if defined pqSQHemisphereSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::UpdateInformationEvent" << endl;
+  cerr << ":::::::::::::::::::::::::::::::pqSQHemisphereSource::UpdateInformationEvent" << endl;
   #endif
 
   this->PullServerConfig();
@@ -302,7 +302,7 @@ void pqSQHemisphereSource::UpdateInformationEvent()
 void pqSQHemisphereSource::PullServerConfig()
 {
   #if defined pqSQHemisphereSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::PullServerConfig" << endl;
+  cerr << ":::::::::::::::::::::::::::::::pqSQHemisphereSource::PullServerConfig" << endl;
   #endif
 
   vtkSMProxy* pProxy=this->referenceProxy()->getProxy();
@@ -341,7 +341,7 @@ void pqSQHemisphereSource::PullServerConfig()
 void pqSQHemisphereSource::PushServerConfig()
 {
   #if defined pqSQHemisphereSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::PushServerConfig" << endl;
+  cerr << ":::::::::::::::::::::::::::::::pqSQHemisphereSource::PushServerConfig" << endl;
   #endif
   vtkSMProxy* pProxy=this->referenceProxy()->getProxy();
 
@@ -384,7 +384,7 @@ void pqSQHemisphereSource::PushServerConfig()
 void pqSQHemisphereSource::accept()
 {
   #if defined pqSQHemisphereSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::accept" << endl;
+  cerr << ":::::::::::::::::::::::::::::::pqSQHemisphereSource::accept" << endl;
   #endif
 
   this->PushServerConfig();
@@ -398,7 +398,7 @@ void pqSQHemisphereSource::accept()
 void pqSQHemisphereSource::reset()
 {
   #if defined pqSQHemisphereSourceDEBUG
-  cerr << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::reset" << endl;
+  cerr << ":::::::::::::::::::::::::::::::pqSQHemisphereSource::reset" << endl;
   #endif
 
   this->PullServerConfig();

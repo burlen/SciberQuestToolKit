@@ -50,7 +50,9 @@ vtkSQRandomSeedPoints::~vtkSQRandomSeedPoints()
 {}
 
 //----------------------------------------------------------------------------
-int vtkSQRandomSeedPoints::FillInputPortInformation(int port,vtkInformation *info)
+int vtkSQRandomSeedPoints::FillInputPortInformation(
+      int /*port*/,
+      vtkInformation *info)
 {
   // The input is optional,if present it will be used 
   // for bounds.
@@ -62,7 +64,7 @@ int vtkSQRandomSeedPoints::FillInputPortInformation(int port,vtkInformation *inf
 //----------------------------------------------------------------------------
 int vtkSQRandomSeedPoints::RequestInformation(
     vtkInformation */*req*/,
-    vtkInformationVector **inInfos,
+    vtkInformationVector **/*inInfos*/,
     vtkInformationVector *outInfos)
 {
   // tell the excutive that we are handling our own paralelization.

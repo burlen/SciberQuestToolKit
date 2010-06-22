@@ -14,9 +14,13 @@ Copyright 2008 SciberQuest Inc.
 using std::cerr;
 using std::endl;
 
+// disable shadow variable warnings for eigen
+// #pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
 #include<Eigen/Core>
 #include<Eigen/QR>
 using namespace Eigen;
+// #pragma GCC diagnostic pop
 
 #include "Tuple.hxx"
 
@@ -153,9 +157,9 @@ bool Find(int *I, T *V, T *val)
         int q=k*ninj+j*ni+i;
         int hit=0;
 
-        for (int q=0; q<nComp; ++q)
+        for (int p=0; p<nComp; ++p)
           {
-          if (V[q]==val[q])
+          if (V[q+p]==val[p])
             {
             ++hit;
             }
@@ -192,14 +196,14 @@ bool HasNans(int *I, T *V, T *val)
       for (int i=0; i<I[0]; ++i)
         {
         int q=k*ninj+j*ni+i;
-        for (int q=0; q<nComp; ++q)
+        for (int p=0; p<nComp; ++p)
           {
-          if (isnan(V[q]))
+          if (isnan(V[q+p]))
             {
             has=true;
             cerr
               << __LINE__ << " ERROR NAN. "
-              << "I+" << q <<"=" << Tuple<int>(i,j,k)
+              << "I+" << q+p <<"=" << Tuple<int>(i,j,k)
               << endl;
             }
           }

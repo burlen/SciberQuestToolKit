@@ -44,9 +44,9 @@ enum {
 
 //-----------------------------------------------------------------------------
 pqSQProcessMonitor::pqSQProcessMonitor(
-        pqProxy* proxy,
-        QWidget* widget)
-  : pqNamedObjectPanel(proxy, widget)
+        pqProxy* l_proxy,
+        QWidget* l_parent)
+  : pqNamedObjectPanel(l_proxy, l_parent)
 {
   #if defined pqSQProcessMonitorDEBUG
   cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::pqSQProcessMonitor" << endl;
@@ -471,46 +471,46 @@ void pqSQProcessMonitor::accept()
   pqNamedObjectPanel::accept();
 
 
-  vtkSMProxy* proxy=this->referenceProxy()->getProxy();
+  vtkSMProxy* l_proxy=this->referenceProxy()->getProxy();
 
   vtkSMIntVectorProperty *prop=0;
 
-  prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableBacktraceHandler"));
+  prop=dynamic_cast<vtkSMIntVectorProperty *>(l_proxy->GetProperty("EnableBacktraceHandler"));
   prop->SetElement(0,this->Form->btSignalHandler->isChecked());
-  //proxy->UpdateProperty("EnableBacktraceHandler");
+  //l_proxy->UpdateProperty("EnableBacktraceHandler");
 
 
   bool disableFPE=this->Form->fpeDisableAll->isChecked();
   if (disableFPE)
     {
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_ALL"));
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(l_proxy->GetProperty("EnableFE_ALL"));
     prop->SetElement(0,0);
     prop->Modified();
     }
   else
     {
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_DIVBYZERO"));
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(l_proxy->GetProperty("EnableFE_DIVBYZERO"));
     prop->SetElement(0,this->Form->fpeTrapDivByZero->isChecked());
     prop->Modified(); // force push
 
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_INEXACT"));
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(l_proxy->GetProperty("EnableFE_INEXACT"));
     prop->SetElement(0,this->Form->fpeTrapInexact->isChecked());
     prop->Modified();
 
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_INVALID"));
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(l_proxy->GetProperty("EnableFE_INVALID"));
     prop->SetElement(0,this->Form->fpeTrapInvalid->isChecked());
     prop->Modified();
 
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_OVERFLOW"));
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(l_proxy->GetProperty("EnableFE_OVERFLOW"));
     prop->SetElement(0,this->Form->fpeTrapOverflow->isChecked());
     prop->Modified();
 
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(proxy->GetProperty("EnableFE_UNDERFLOW"));
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(l_proxy->GetProperty("EnableFE_UNDERFLOW"));
     prop->SetElement(0,this->Form->fpeTrapUnderflow->isChecked());
     prop->Modified();
     }
 
-  proxy->UpdateVTKObjects();
+  l_proxy->UpdateVTKObjects();
 }
 
 

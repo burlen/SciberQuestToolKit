@@ -32,7 +32,7 @@ public:
   virtual int GetRefCount(){ return this->N; }
   virtual void SetRefCount(int rc){ this->N=rc; }
 
-  virtual void Print(ostream &os){}
+  virtual void Print(ostream &){}
   virtual void PrintRefCount(ostream &os){ os << "RefCount=" << this->N; }
 
 private:

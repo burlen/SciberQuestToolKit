@@ -77,7 +77,9 @@ vtkSQHemisphereSource::~vtkSQHemisphereSource()
 }
 
 //----------------------------------------------------------------------------
-int vtkSQHemisphereSource::FillInputPortInformation(int port,vtkInformation *info)
+int vtkSQHemisphereSource::FillInputPortInformation(
+      int /*port*/,
+      vtkInformation *info)
 {
   #ifdef vtkSQHemisphereSourceDEBUG
   cerr << "===============================FillInputPortInformation" << endl;
@@ -91,7 +93,7 @@ int vtkSQHemisphereSource::FillInputPortInformation(int port,vtkInformation *inf
 
 //----------------------------------------------------------------------------
 int vtkSQHemisphereSource::RequestInformation(
-      vtkInformation* req,
+      vtkInformation* /*req*/,
       vtkInformationVector** inInfos,
       vtkInformationVector* outInfos)
 {
@@ -141,8 +143,8 @@ int vtkSQHemisphereSource::RequestInformation(
 
 //----------------------------------------------------------------------------
 int vtkSQHemisphereSource::RequestData(
-      vtkInformation *req,
-      vtkInformationVector **inInfos,
+      vtkInformation */*req*/,
+      vtkInformationVector **/*inInfos*/,
       vtkInformationVector *outInfos)
 {
   #ifdef vtkSQHemisphereSourceDEBUG

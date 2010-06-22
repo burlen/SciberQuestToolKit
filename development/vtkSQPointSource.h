@@ -60,7 +60,7 @@ public:
 
 
 protected:
-  vtkSQPointSource(vtkIdType numPts=10);
+  vtkSQPointSource();
   ~vtkSQPointSource() {};
 
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);

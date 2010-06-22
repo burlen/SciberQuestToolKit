@@ -59,18 +59,18 @@ using std::istringstream;
 
 //-----------------------------------------------------------------------------
 pqSQPlaneSource::pqSQPlaneSource(
-      pqProxy* proxy,
+      pqProxy* l_proxy,
       QWidget* widget)
              :
-      pqNamedObjectPanel(proxy, widget)
+      pqNamedObjectPanel(l_proxy, widget)
 {
   #if defined pqSQPlaneSourceDEBUG
   cerr << ":::::::::::::::::::::::::::::::pqSQPlaneSource" << endl;
   #endif
 
-  this->dims[0]=this->dims[1]=1.0;
-  this->dx[0]=this->dx[1]=1.0;
-  this->nx[0]=this->nx[1]=1;
+  this->Dims[0]=this->Dims[1]=1.0;
+  this->Dx[0]=this->Dx[1]=1.0;
+  this->Nx[0]=this->Nx[1]=1;
   this->N[0]=this->N[1]=this->N[2]=0.0;
 
   // Construct Qt form.
@@ -90,8 +90,8 @@ pqSQPlaneSource::pqSQPlaneSource(
   this->Form->dx->setValidator(new QDoubleValidator(this->Form->dx));
   this->Form->dy->setValidator(new QDoubleValidator(this->Form->dy));
 
-  this->SetSpacing(this->dx);
-  this->SetResolution(this->nx);
+  this->SetSpacing(this->Dx);
+  this->SetResolution(this->Nx);
   this->SetNormal(this->N);
 
   //   vtkSMProxy* pProxy=this->referenceProxy()->getProxy();
@@ -628,21 +628,21 @@ void pqSQPlaneSource::DimensionsModified()
   double p2[3];
   this->GetPoint2(p2);
 
-  double x,y,z,dim;
-  x=p1[0]-o[0];
-  y=p1[1]-o[1];
-  z=p1[2]-o[2];
-  dim=sqrt(x*x+y*y+z*z);
-  this->dims[0]=dim;
+  double l_x,l_y,l_z,dim;
+  l_x=p1[0]-o[0];
+  l_y=p1[1]-o[1];
+  l_z=p1[2]-o[2];
+  dim=sqrt(l_x*l_x+l_y*l_y+l_z*l_z);
+  this->Dims[0]=dim;
 
-  x=p2[0]-o[0];
-  y=p2[1]-o[1];
-  z=p2[2]-o[2];
-  dim=sqrt(x*x+y*y+z*z);
-  this->dims[1]=dim;
+  l_x=p2[0]-o[0];
+  l_y=p2[1]-o[1];
+  l_z=p2[2]-o[2];
+  dim=sqrt(l_x*l_x+l_y*l_y+l_z*l_z);
+  this->Dims[1]=dim;
 
-  this->Form->dim_x->setText(QString("%1").arg(this->dims[0]));
-  this->Form->dim_y->setText(QString("%1").arg(this->dims[1]));
+  this->Form->dim_x->setText(QString("%1").arg(this->Dims[0]));
+  this->Form->dim_y->setText(QString("%1").arg(this->Dims[1]));
 
   // recompute resolution based on the current grid spacing
   // settings.
@@ -659,29 +659,29 @@ void pqSQPlaneSource::SpacingModified()
   #endif
 
   // retreive the requested spacing.
-  this->GetSpacing(this->dx);
+  this->GetSpacing(this->Dx);
 
   // enforce uniform pixel aspect ratio
   if (this->Form->aspectLock->isChecked())
     {
-    this->dx[1]=this->dx[0];
-    this->Form->dy->setText(QString("%1").arg(this->dx[0]));
+    this->Dx[1]=this->Dx[0];
+    this->Form->dy->setText(QString("%1").arg(this->Dx[0]));
     }
 
   // update the grid resolution to match the requested grid spacing
   // as closely as possible.
-  this->nx[0]=ceil(this->dims[0]/this->dx[0]);
-  this->nx[1]=ceil(this->dims[1]/this->dx[1]);
-  this->SetResolution(nx);
+  this->Nx[0]=ceil(this->Dims[0]/this->Dx[0]);
+  this->Nx[1]=ceil(this->Dims[1]/this->Dx[1]);
+  this->SetResolution(this->Nx);
 
   // compute the new number of cells.
-  int nCells=this->nx[0]*this->nx[1];
+  int nCells=this->Nx[0]*this->Nx[1];
   this->Form->nCells->setText(QString("%1").arg(nCells));
 
   // update the spacing to match the actual spacing that will be used.
-  this->dx[0]=this->dims[0]/this->nx[0];
-  this->dx[1]=this->dims[1]/this->nx[1];
-  this->SetSpacing(this->dx);
+  this->Dx[0]=this->Dims[0]/this->Nx[0];
+  this->Dx[1]=this->Dims[1]/this->Nx[1];
+  this->SetSpacing(this->Dx);
 }
 
 //-----------------------------------------------------------------------------
@@ -692,24 +692,24 @@ void pqSQPlaneSource::ResolutionModified()
   #endif
 
   // retreive the requested resolution.
-  this->GetResolution(this->nx);
+  this->GetResolution(this->Nx);
 
   // enforce a uniform pixel aspect ratio
   if (this->Form->aspectLock->isChecked())
     {
-    this->nx[1]=(this->dims[0]>1E-6?this->nx[0]*dims[1]/dims[0]:1);
-    this->nx[1]=(this->nx[1]<1?1:this->nx[1]);
-    this->SetResolution(this->nx);
+    this->Nx[1]=(this->Dims[0]>1E-6?this->Nx[0]*this->Dims[1]/this->Dims[0]:1);
+    this->Nx[1]=(this->Nx[1]<1?1:this->Nx[1]);
+    this->SetResolution(this->Nx);
     }
 
   // compute the new spacing
-  this->dx[0]=this->dims[0]/this->nx[0];
-  this->dx[1]=this->dims[1]/this->nx[1];
+  this->Dx[0]=this->Dims[0]/this->Nx[0];
+  this->Dx[1]=this->Dims[1]/this->Nx[1];
 
-  this->SetSpacing(this->dx);
+  this->SetSpacing(this->Dx);
 
   // compute the new number of cells.
-  int nCells=this->nx[0]*this->nx[1];
+  int nCells=this->Nx[0]*this->Nx[1];
   this->Form->nCells->setText(QString("%1").arg(nCells));
 }
 
@@ -748,12 +748,12 @@ void pqSQPlaneSource::SnapViewToNormal()
   // compute the camera center, 2 polane diagonals along its normal from
   // its center.
   double diag
-    = sqrt(this->dims[0]*this->dims[0]+this->dims[1]*this->dims[1]);
+    = sqrt(this->Dims[0]*this->Dims[0]+this->Dims[1]*this->Dims[1]);
 
-  double pos[3];
-  pos[0]=cen[0]+this->N[0]*2.0*diag;
-  pos[1]=cen[1]+this->N[1]*2.0*diag;
-  pos[2]=cen[2]+this->N[2]*2.0*diag;
+  double l_pos[3];
+  l_pos[0]=cen[0]+this->N[0]*2.0*diag;
+  l_pos[1]=cen[1]+this->N[1]*2.0*diag;
+  l_pos[2]=cen[2]+this->N[2]*2.0*diag;
 
   // compute the camera up from one of the planes axis.
   double up[3];
@@ -775,32 +775,32 @@ void pqSQPlaneSource::SnapViewToNormal()
   up[2]/=mup;
 
 
-  pqRenderView *view=dynamic_cast<pqRenderView*>(this->view());
-  if (!view)
+  pqRenderView *l_view=dynamic_cast<pqRenderView*>(this->view());
+  if (!l_view)
     {
     sqErrorMacro(qDebug(),"Failed to get the current view.");
     return;
     }
 
-  vtkSMRenderViewProxy *proxy=view->getRenderViewProxy();
+  vtkSMRenderViewProxy *l_proxy=l_view->getRenderViewProxy();
 
   vtkSMDoubleVectorProperty *prop;
 
-  prop=dynamic_cast<vtkSMDoubleVectorProperty*>(proxy->GetProperty("CameraPosition"));
-  prop->SetElements(pos);
+  prop=dynamic_cast<vtkSMDoubleVectorProperty*>(l_proxy->GetProperty("CameraPosition"));
+  prop->SetElements(l_pos);
 
-  prop=dynamic_cast<vtkSMDoubleVectorProperty*>(proxy->GetProperty("CameraFocalPoint"));
+  prop=dynamic_cast<vtkSMDoubleVectorProperty*>(l_proxy->GetProperty("CameraFocalPoint"));
   prop->SetElements(cen);
 
-  prop=dynamic_cast<vtkSMDoubleVectorProperty*>(proxy->GetProperty("CameraViewUp"));
+  prop=dynamic_cast<vtkSMDoubleVectorProperty*>(l_proxy->GetProperty("CameraViewUp"));
   prop->SetElements(up);
 
-  prop=dynamic_cast<vtkSMDoubleVectorProperty*>(proxy->GetProperty("CenterOfRotation"));
+  prop=dynamic_cast<vtkSMDoubleVectorProperty*>(l_proxy->GetProperty("CenterOfRotation"));
   prop->SetElements(cen);
 
-  proxy->UpdateVTKObjects();
+  l_proxy->UpdateVTKObjects();
 
-  view->render();
+  l_view->render();
 }
 
 //-----------------------------------------------------------------------------

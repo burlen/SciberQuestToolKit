@@ -39,6 +39,7 @@ public:
   BOVMetaData();
   BOVMetaData(const BOVMetaData &other){ *this=other; }
   BOVMetaData &operator=(const BOVMetaData &other);
+  virtual ~BOVMetaData(){}
 
   /**
   Virtual copy constructor. Create a new object and copy this into it. 
@@ -211,7 +212,7 @@ public:
   Implemantion's chance to add any specialized key,value pairs
   it needs into the pipeline information.
   */
-  virtual void PushPipelineInformation(vtkInformation *pinfo){}
+  virtual void PushPipelineInformation(vtkInformation *){}
 
   /**
   Serialize the object into a byte stream  Returns the

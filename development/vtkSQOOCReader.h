@@ -56,7 +56,7 @@ public:
 
   // Description:
   // Set the communicator to open the file on. optional.
-  virtual void SetCommunicator(MPI_Comm comm) {}
+  virtual void SetCommunicator(MPI_Comm) {}
 
   /// \section IO \@{
   /**

@@ -146,8 +146,8 @@ void CartesianDecomp::SetFileExtent(const CartesianExtent &ext)
 //-----------------------------------------------------------------------------
 void CartesianDecomp::SetOrigin(double x0, double y0, double z0)
 {
-  double X0[3]={x0,y0,z0};
-  this->SetOrigin(X0);
+  double X0_l[3]={x0,y0,z0};
+  this->SetOrigin(X0_l);
 }
 
 //-----------------------------------------------------------------------------

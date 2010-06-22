@@ -231,7 +231,9 @@ double *vtkSQSeedPointLatice::GetKBounds()
 }
 
 //----------------------------------------------------------------------------
-int vtkSQSeedPointLatice::FillInputPortInformation(int port,vtkInformation *info)
+int vtkSQSeedPointLatice::FillInputPortInformation(
+      int /*port*/,
+      vtkInformation *info)
 {
   #ifdef vtkSQSeedPointLaticeDEBUG
     cerr << "===============================vtkSQSeedPointLatice::FillInputPortInformation" << endl;
@@ -248,7 +250,7 @@ int vtkSQSeedPointLatice::FillInputPortInformation(int port,vtkInformation *info
 //----------------------------------------------------------------------------
 int vtkSQSeedPointLatice::RequestInformation(
     vtkInformation */*req*/,
-    vtkInformationVector **inInfos,
+    vtkInformationVector **/*inInfos*/,
     vtkInformationVector *outInfos)
 {
   #ifdef vtkSQSeedPointLaticeDEBUG

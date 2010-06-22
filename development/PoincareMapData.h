@@ -82,7 +82,7 @@ public:
   /**
   No legend is used for poincare map.
   */
-  virtual void PrintLegend(int reduce){}
+  virtual void PrintLegend(int){}
 
 
 private:

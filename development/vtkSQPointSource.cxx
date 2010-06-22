@@ -39,7 +39,7 @@ Copyright 2008 SciberQuest Inc.
 vtkStandardNewMacro(vtkSQPointSource);
 
 //----------------------------------------------------------------------------
-vtkSQPointSource::vtkSQPointSource(vtkIdType numPts)
+vtkSQPointSource::vtkSQPointSource()
 {
   this->NumberOfPoints=1;
 

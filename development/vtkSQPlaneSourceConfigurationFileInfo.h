@@ -30,7 +30,8 @@ public:
     FileIdentifier("SQPlaneSourceConfiguration"),
     FileDescription("SciberQuest plane source configuration"),
     FileExtension(".sqpsc")
-      { }
+       {}
+  virtual ~vtkSQPlaneSourceConfigurationFileInfo(){}
 
   virtual void PrintSelf(ostream &os, vtkIndent indent)
     {

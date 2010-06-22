@@ -451,7 +451,7 @@ const char* vtkSQBOVReader::GetPointArrayName(int idx)
 
 //-----------------------------------------------------------------------------
 int vtkSQBOVReader::RequestInformation(
-  vtkInformation* req,
+  vtkInformation*,
   vtkInformationVector**,
   vtkInformationVector* outInfos)
 {

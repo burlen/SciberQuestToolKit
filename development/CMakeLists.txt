@@ -119,14 +119,6 @@ ADD_PARAVIEW_OBJECT_PANEL(
 set(_IFACES ${_IFACES} ${IFACES})
 set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
-QT4_WRAP_CPP( MOC_SRCS pqSQFieldTracer.h )
-ADD_PARAVIEW_OBJECT_PANEL(
-  IFACES IFACE_SRCS
-  CLASS_NAME pqSQFieldTracer
-  XML_NAME vtkSQFieldTracer XML_GROUP filters)
-set(_IFACES ${_IFACES} ${IFACES})
-set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
-
 QT4_WRAP_CPP(MOC_SRCS pqSQBOVMetaReader.h)
 ADD_PARAVIEW_OBJECT_PANEL(
   IFACES IFACE_SRCS
@@ -155,7 +147,6 @@ set (_SOURCES
   ${UI_SRCS}
   ${_IFACE_SRCS}
   pqSQBOVMetaReader.cxx
-  pqSQFieldTracer.cxx
   pqSQHemisphereSource.cxx
   pqSQPlaneSource.cxx
   )

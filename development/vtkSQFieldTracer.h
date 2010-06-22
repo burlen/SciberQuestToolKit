@@ -164,22 +164,12 @@ protected:
 private:
   //BTX
   // Description:
-  // Helper calls the right integration scheduler.
-  int Integrate(
-      vtkDataSet *source,
-      vtkDataSet *out,
-      const char *fieldName,
-      vtkSQOOCReader *oocr,
-      FieldTraceData *topoMap);
-
-  // Description:
   // Integrate over all local cells. This assumes that each process has a unique
   // subset of the work (i.e. seed source cells are statically distributed),
   // The cache should initially  be null and after the caller should delete the
   // cache.
   int IntegrateStatic(
-      vtkDataSet *source,
-      vtkDataSet *out,
+      int nCells,
       const char *fieldName,
       vtkSQOOCReader *oocr,
       vtkDataSet *&oocrCache,
@@ -194,8 +184,7 @@ private:
   int IntegrateDynamic(
       int procId,
       int nProcs,
-      vtkDataSet *source,
-      vtkDataSet *out,
+      int nCells,
       const char *fieldName,
       vtkSQOOCReader *oocr,
       vtkDataSet *&oocrCache,

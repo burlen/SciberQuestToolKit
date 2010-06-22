@@ -114,9 +114,9 @@ protected slots:
 
 private:
   double N[3];
-  double dims[2];
-  double dx[2];
-  int nx[2];
+  double Dims[2];
+  double Dx[2];
+  int Nx[2];
 
 private:
   pqSQPlaneSourceForm *Form;
