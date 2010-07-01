@@ -352,7 +352,7 @@ void CartesianBounds::ShrinkScaledEpsilon()
     double eps=((i%2)==0?1.0E-15:-1.0E-15);
     if (this->Data[i]>1.0)
         {
-        int s=log10(this->Data[i]);
+        int s=(int)log10(this->Data[i]);
         eps*=pow(10.0,s);
         }
     this->Data[i]=this->Data[i]+eps;

@@ -37,6 +37,7 @@ set(SM_SOURCES
   vtkSQRandomSeedPoints.cxx
   vtkSQSeedPointLatice.cxx
   vtkSQSphereSource.cxx
+  vtkSQVolumetricSource.cxx
   vtkSQVortexFilter.cxx
   )
 

@@ -574,7 +574,6 @@ void vtkSQBOVReader::SetMPIFileHints()
       break;
     case HINT_ENABLED:
       MPI_Info_set(hints,"romio_cb_read","enable");
-      MPI_Info_set(hints,"romio_no_indep_rw","true");
       break;
     default:
       vtkErrorMacro("Invalid value for UseCollectiveIO.");
@@ -587,6 +586,23 @@ void vtkSQBOVReader::SetMPIFileHints()
     os << this->NumberOfIONodes;
     MPI_Info_set(hints,"cb_nodes",const_cast<char *>(os.str().c_str()));
     }
+
+  switch (this->UseDeferredOpen)
+    {
+    case HINT_DEFAULT:
+      // do nothing, it's up to implementation.
+      break;
+    case HINT_DISABLED:
+      MPI_Info_set(hints,"romio_no_indep_rw","false");
+      break;
+    case HINT_ENABLED:
+      MPI_Info_set(hints,"romio_no_indep_rw","true");
+      break;
+    default:
+      vtkErrorMacro("Invalid value for UseDeferredOpen.");
+      break;
+    }
+
 
   if (this->CollectBufferSize>0)
     {

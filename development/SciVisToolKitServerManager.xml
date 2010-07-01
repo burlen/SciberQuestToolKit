@@ -147,7 +147,7 @@ Copyright 2008 SciberQuest Inc.
         lable="Collective IO"
         command="SetUseCollectiveIO"
         number_of_elements="1"
-        default_values="1" >
+        default_values="2" >
       <EnumerationDomain name="enum">
         <Entry value="0" text="automatic"/>
         <Entry value="1" text="disabled"/>
@@ -177,9 +177,9 @@ Copyright 2008 SciberQuest Inc.
         default_values="2147483647" >
       <EnumerationDomain name="enum">
         <Entry value="0"          text="default"/>
-        <Entry value="536870911"  text=" 512 MB"/>
-        <Entry value="1073741823" text=" 1.0 GB"/>
-        <Entry value="1610612735" text=" 1.5 GB"/>
+        <Entry value="536870912"  text=" 512 MB"/>
+        <Entry value="1073741824" text=" 1.0 GB"/>
+        <Entry value="1610612736" text=" 1.5 GB"/>
         <Entry value="2147483647" text=" 2.0 GB"/>
       </EnumerationDomain>
       <Documentation>
@@ -188,18 +188,34 @@ Copyright 2008 SciberQuest Inc.
     </IntVectorProperty>
 
     <IntVectorProperty
-        name="UseDataSieving"
-        lable="Data Sieving"
-        command="SetUseDataSieving"
+        name="UseDeferredOpen"
+        lable="Deferred Open"
+        command="SetUseDefferedOpen"
         number_of_elements="1"
-        default_values="2" >
+        default_values="0" >
       <EnumerationDomain name="enum">
         <Entry value="0" text="automatic"/>
         <Entry value="1" text="disabled"/>
         <Entry value="2" text="enabled"/>
       </EnumerationDomain>
       <Documentation>
-        Turn on/off MPI-IO collective buffering.
+        Turn on/off MPI-IO deferred.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="UseDataSieving"
+        lable="Data Sieving"
+        command="SetUseDataSieving"
+        number_of_elements="1"
+        default_values="0" >
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="automatic"/>
+        <Entry value="1" text="disabled"/>
+        <Entry value="2" text="enabled"/>
+      </EnumerationDomain>
+      <Documentation>
+        Turn on/off MPI-IO data sieving.
       </Documentation>
     </IntVectorProperty>
 
@@ -208,13 +224,15 @@ Copyright 2008 SciberQuest Inc.
         lable="Sieve Buffer Size"
         command="SetSieveBufferSize"
         number_of_elements="1"
-        default_values="2147483647" >
+        default_values="0" >
       <EnumerationDomain name="enum">
-        <Entry value="0"          text="default"/>
-        <Entry value="536870911"  text=" 512 MB"/>
-        <Entry value="1073741823" text=" 1.0 GB"/>
-        <Entry value="1610612735" text=" 1.5 GB"/>
-        <Entry value="2147483647" text=" 2.0 GB"/>
+        <Entry value="0"        text="default"/>
+        <Entry value="1048576"  text="1 MB"/>
+        <Entry value="2097152"  text="2 MB"/>
+        <Entry value="4194304"  text="4 MB"/>
+        <Entry value="8388608"  text="8 MB"/>
+        <Entry value="16777216" text="16 MB"/>
+        <Entry value="33554432" text="32 MB"/>
       </EnumerationDomain>
       <Documentation>
         Set the size of the buffer for sieving. Set to 0 to use the implementation default.
@@ -517,18 +535,34 @@ Copyright 2008 SciberQuest Inc.
     </IntVectorProperty>
 
     <IntVectorProperty
-        name="UseDataSieving"
-        lable="Data Sieving"
-        command="SetUseDataSieving"
+        name="UseDeferredOpen"
+        lable="Deferred Open"
+        command="SetUseDefferedOpen"
         number_of_elements="1"
-        default_values="2" >
+        default_values="0" >
       <EnumerationDomain name="enum">
         <Entry value="0" text="automatic"/>
         <Entry value="1" text="disabled"/>
         <Entry value="2" text="enabled"/>
       </EnumerationDomain>
       <Documentation>
-        Turn on/off MPI-IO collective buffering.
+        Turn on/off MPI-IO deferred.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="UseDataSieving"
+        lable="Data Sieving"
+        command="SetUseDataSieving"
+        number_of_elements="1"
+        default_values="0" >
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="automatic"/>
+        <Entry value="1" text="disabled"/>
+        <Entry value="2" text="enabled"/>
+      </EnumerationDomain>
+      <Documentation>
+        Turn on/off MPI-IO data sieving.
       </Documentation>
     </IntVectorProperty>
 
@@ -537,13 +571,15 @@ Copyright 2008 SciberQuest Inc.
         lable="Sieve Buffer Size"
         command="SetSieveBufferSize"
         number_of_elements="1"
-        default_values="2147483647" >
+        default_values="0" >
       <EnumerationDomain name="enum">
-        <Entry value="0"          text="default"/>
-        <Entry value="536870911"  text=" 512 MB"/>
-        <Entry value="1073741823" text=" 1.0 GB"/>
-        <Entry value="1610612735" text=" 1.5 GB"/>
-        <Entry value="2147483647" text=" 2.0 GB"/>
+        <Entry value="0"        text="default"/>
+        <Entry value="1048576"  text="1 MB"/>
+        <Entry value="2097152"  text="2 MB"/>
+        <Entry value="4194304"  text="4 MB"/>
+        <Entry value="8388608"  text="8 MB"/>
+        <Entry value="16777216" text="16 MB"/>
+        <Entry value="33554432" text="32 MB"/>
       </EnumerationDomain>
       <Documentation>
         Set the size of the buffer for sieving. Set to 0 to use the implementation default.
@@ -571,7 +607,6 @@ Copyright 2008 SciberQuest Inc.
   </SourceProxy>
 
 </ProxyGroup>
-
 
 <!--
 *******************************************************************************
@@ -782,6 +817,87 @@ Copyright 2008 SciberQuest Inc.
       </IntVectorProperty>
    <!-- End Plane -->
    </SourceProxy>
+
+  <!-- ==================================================================== -->
+  <SourceProxy 
+      name="vtkSQVolumetricSource"
+      class="vtkSQVolumetricSource"
+      label="SQ Volume Source">
+    <Documentation
+      long_help="Long Documentation"
+      short_help="Short Documentation">
+      Generates a hexahedron composed of hexahedral cells of the requested number.
+    </Documentation>
+
+    <DoubleVectorProperty
+        name="Origin"
+        command="SetOrigin"
+        number_of_elements="3"
+        animateable="1"
+        default_values="0.0 0.0 0.0">
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        This property specifies the coordinate of the origin (one corner) of the hexaderon.
+      </Documentation>
+    </DoubleVectorProperty>
+    <!--
+    information_property="OriginInfo"
+    <DoubleVectorProperty name="OriginInfo"
+      command="GetOrigin"
+      information_only="1"
+      number_of_elements="3"
+      default_values="0.0 0.0 0.0">
+      <SimpleDoubleInformationHelper />
+    </DoubleVectorProperty>-->
+
+    <DoubleVectorProperty
+        name="Point1"
+        command="SetPoint1"
+        number_of_elements="3"
+        animateable="1"
+        default_values="1.0 0.0 0.0" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        This property specifies the coordinate a second corner of the hexaderon.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="Point2"
+        command="SetPoint2"
+        number_of_elements="3"
+        animateable="1"
+        default_values="0.0 1.0 0.0" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        This property specifies the coordinate a third corner of the hexaderon.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="Point3"
+        command="SetPoint3"
+        number_of_elements="3"
+        animateable="1"
+        default_values="0.0 0.0 1.0" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        This property specifies the coordinate a fourth corner of the hexaderon.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <!-- Resolution -->
+     <IntVectorProperty
+        name="Resolution"
+        label="Resolution"
+        command="SetNCells"
+        number_of_elements="3"
+        default_values="1 1 1">
+     </IntVectorProperty>
+
+  <!-- End vtkSQSeedPointLatice -->
+  </SourceProxy>
+
 
    <!-- ==================================================================== -->
    <SourceProxy 

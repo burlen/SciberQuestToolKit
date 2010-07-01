@@ -89,7 +89,7 @@ void UnstructuredFieldTopologyMap::SetOutput(vtkDataSet *o)
   vtkUnstructuredGrid *out=dynamic_cast<vtkUnstructuredGrid*>(o);
   if (out==0)
     {
-    cerr << "Error: Out must be polydata. " << o->GetClassName() << endl;
+    cerr << "Error: Out must be unstructured grid. " << o->GetClassName() << endl;
     return;
     }
 
@@ -161,6 +161,8 @@ int UnstructuredFieldTopologyMap::InsertCells(CellIdBlock *SourceIds)
     // copy its type.
     *pOutTypes=pSourceTypes[sourceCellId];
     ++pOutTypes;
+
+    #pragma message("TODO-Verify use of write pointer is correct.")
 
     // Get location to write new cell.
     vtkIdType *pOutCells=this->OutCells->WritePointer(nCellIds,nPtIds+1);

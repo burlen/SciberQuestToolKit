@@ -33,9 +33,7 @@ using std::cerr;
     }
 
 
-//#define DO_PRAGMA(x) _Pragma(#x)
-
+#define DO_PRAGMA(x) _Pragma(#x)
 #define sqTODOMacro(x)\
-  _Pragma(message ("TODO - " #x))
-
+  DO_PRAGMA(message("TODO - "#x))
 #endif

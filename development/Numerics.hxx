@@ -24,6 +24,96 @@ using namespace Eigen;
 
 #include "Tuple.hxx"
 
+//*****************************************************************************
+inline
+void indexToIJK(int idx, int nx, int nxy, int &i, int &j, int &k)
+{
+  // convert a flat array index into a i,j,k three space tuple.
+  k=idx/nxy;
+  j=(idx-k*nxy)/nx;
+  i=idx-k*nxy-j*nx;
+}
+
+//*****************************************************************************
+template <typename T>
+void linspace(T lo, T hi, int n, T *data)
+{
+  // generate n equally spaced points on the segment [lo hi] on real line
+  // R^1.
+
+  if (n==1)
+    {
+    data[0]=(hi+lo)/2.0;
+    return;
+    }
+
+  T delta=(hi-lo)/(n-1);
+
+  for (int i=0; i<n; ++i)
+    {
+    data[i]=lo+i*delta;
+    }
+}
+
+//*****************************************************************************
+template <typename Ti, typename To>
+void linspace(Ti X0[3], Ti X1[3], int n, To *X)
+{
+  // generate n equally spaced points on the line segment [X0 X1] in R^3.
+
+  if (n==1)
+    {
+    X[0]=(X1[0]+X0[0])/2.0;
+    X[1]=(X1[1]+X0[1])/2.0;
+    X[2]=(X1[2]+X0[2])/2.0;
+    return;
+    }
+
+  Ti dX[3]={
+    (X1[0]-X0[0])/(n-1),
+    (X1[1]-X0[1])/(n-1),
+    (X1[2]-X0[2])/(n-1)
+    };
+
+  for (int i=0; i<n; ++i)
+    {
+    X[0]=X0[0]+i*dX[0];
+    X[1]=X0[1]+i*dX[1];
+    X[2]=X0[2]+i*dX[2];
+    X+=3;
+    }
+}
+
+
+//*****************************************************************************
+template <typename T>
+void logspace(T lo, T hi, int n, T p, T *data)
+{
+  // generate n log spaced points inbetween lo and hi on
+  // the real line (R^1). The variation in the spacing is
+  // symetric about the mid point of the [lo hi] range.
+
+  int mid=n/2;
+  int nlo=mid;
+  int nhi=n-mid;
+  T s=hi-lo;
+
+  T rhi=pow(10.0,p);
+
+  linspace<T>(1.0,0.99*rhi,nlo,data);
+  linspace<T>(1.0,rhi,nhi,data+nlo);
+
+  int i=0;
+  for (; i<nlo; ++i)
+    {
+    data[i]=lo+s*(0.5*log10(data[i])/p);
+    }
+  for (; i<n; ++i)
+    {
+    data[i]=lo+s*(1.0-log10(data[i])/(2.0*p));
+    }
+}
+
 //=============================================================================
 template <typename T>
 class CentralStencil

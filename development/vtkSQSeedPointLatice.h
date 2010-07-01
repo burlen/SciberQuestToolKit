@@ -6,13 +6,11 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-// .NAME vtkSQSeedPointLatice - create a random cloud of points
+// .NAME vtkSQSeedPointLatice - create a set of points on a cartesian latice
 // .SECTION Description
-// vtkSQSeedPointLatice is a source object that creates a user-specified number 
-// of points within a specified radius about a specified center point. 
-// By default location of the points is random within the sphere. It is
-// also possible to generate random points only on the surface of the
-// sphere.
+// Create a set of points on a cartesian latice, Latice spacing can be linear
+// or non-linear. The nonlinearity has the affect of making the seed points 
+// more dense in the center of the dataset.
 
 
 #ifndef __vtkSQSeedPointLatice_h

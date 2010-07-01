@@ -116,6 +116,7 @@ public:
   //BTX
   enum
     {
+    HINT_DEFAULT=0,
     HINT_AUTOMATIC=0,
     HINT_DISABLED=1,
     HINT_ENABLED=2
@@ -129,14 +130,17 @@ public:
   vtkSetMacro(NumberOfIONodes,int);
   vtkGetMacro(NumberOfIONodes,int);
 
-  vtkSetMacro(CollectBufferSize,long);
-  vtkGetMacro(CollectBufferSize,long);
+  vtkSetMacro(CollectBufferSize,int);
+  vtkGetMacro(CollectBufferSize,int);
+
+  vtkSetMacro(UseDeferredOpen,int);
+  vtkGetMacro(UseDeferredOpen,int);
 
   vtkSetMacro(UseDataSieving,int);
   vtkGetMacro(UseDataSieving,int);
 
-  vtkSetMacro(SieveBufferSize,long);
-  vtkGetMacro(SieveBufferSize,long);
+  vtkSetMacro(SieveBufferSize,int);
+  vtkGetMacro(SieveBufferSize,int);
 
   // Description:
   // Activate a meta read where no arrays are read.
@@ -183,6 +187,7 @@ private:
   int UseCollectiveIO;     // Turn on/off collective IO
   int NumberOfIONodes;     // Number of aggregator for CIO
   int CollectBufferSize;   // Gather buffer size (if small IO is staged).
+  int UseDeferredOpen;     // Turn on/off deffered open (only agg.'s open)
   int UseDataSieving;      // Turn on/off data sieving
   int SieveBufferSize;     // Sieve size.
 };

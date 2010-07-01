@@ -17,6 +17,7 @@ Copyright 2008 SciberQuest Inc.
     <Proxy group="filters" name="vtkSQRandomSeedPoints"/>
     <Proxy group="filters" name="vtkSQSeedPointLatice"/>
     <Proxy group="sources" name="vtkSQSphereSource"/>
+    <Proxy group="sources" name="vtkSQVolumetricSource"/>
   </Category>
 
 </ParaViewSources>
