@@ -114,6 +114,7 @@ vtkSQBOVReader::vtkSQBOVReader()
   this->UseCollectiveIO=HINT_ENABLED;
   this->NumberOfIONodes=0;
   this->CollectBufferSize=0;
+  this->UseDeferredOpen=HINT_DEFAULT;
   this->UseDataSieving=HINT_AUTOMATIC;
   this->SieveBufferSize=0;
   this->WorldRank=0;
@@ -126,9 +127,12 @@ vtkSQBOVReader::vtkSQBOVReader()
     vtkErrorMacro("MPI has not been initialized. Restart ParaView using mpiexec.");
     }
 
-  vtkMultiProcessController *con=vtkMultiProcessController::GetGlobalController();
-  this->WorldRank=con->GetLocalProcessId();
-  this->WorldSize=con->GetNumberOfProcesses();
+  // vtkMultiProcessController *con=vtkMultiProcessController::GetGlobalController();
+  // this->WorldRank=con->GetLocalProcessId();
+  // this->WorldSize=con->GetNumberOfProcesses();
+
+  MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
+  MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
 
   this->HostName[0]='\0';
   #if defined vtkSQBOVReaderDEBUG
@@ -183,6 +187,7 @@ void vtkSQBOVReader::Clear()
   this->UseCollectiveIO=HINT_ENABLED;
   this->NumberOfIONodes=0;
   this->CollectBufferSize=0;
+  this->UseDeferredOpen=HINT_DEFAULT;
   this->UseDataSieving=HINT_AUTOMATIC;
   this->SieveBufferSize=0;
   this->Reader->Close();

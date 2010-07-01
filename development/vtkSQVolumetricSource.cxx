@@ -256,7 +256,7 @@ int vtkSQVolumetricSource::RequestData(
     int i,j,k;
     indexToIJK(cid,ncx,ncxy,i,j,k);
 
-    // point indices in correct order.
+    // point indices in VTK order.
     int I[24]={
         i  ,j  ,k  ,
         i+1,j  ,k  ,
@@ -277,7 +277,7 @@ int vtkSQVolumetricSource::RequestData(
       {
       // avoid duplicates by keeping a record of which
       // point ids have been used. The global index is
-      // used as a key.
+      // used as a key, the local index is stored.
       vtkIdType gpid=pI[0]+pI[1]*npx+pI[2]*npxy;
 
       MapElement elem(gpid,lpid);

@@ -190,7 +190,7 @@ Copyright 2008 SciberQuest Inc.
     <IntVectorProperty
         name="UseDeferredOpen"
         lable="Deferred Open"
-        command="SetUseDefferedOpen"
+        command="SetUseDeferredOpen"
         number_of_elements="1"
         default_values="0" >
       <EnumerationDomain name="enum">
@@ -537,7 +537,7 @@ Copyright 2008 SciberQuest Inc.
     <IntVectorProperty
         name="UseDeferredOpen"
         lable="Deferred Open"
-        command="SetUseDefferedOpen"
+        command="SetUseDeferredOpen"
         number_of_elements="1"
         default_values="0" >
       <EnumerationDomain name="enum">
@@ -1875,7 +1875,6 @@ Copyright 2008 SciberQuest Inc.
       </Documentation>
     </DoubleVectorProperty>
 
-    <!--
     <IntVectorProperty
         name="ForwardOnly"
         label="Disable reverse integrate"
@@ -1884,7 +1883,6 @@ Copyright 2008 SciberQuest Inc.
         default_values="0">
       <BooleanDomain name="bool"/>
     </IntVectorProperty>
-    -->
 
     <!-- Colormap/Legened control -->
     <IntVectorProperty 
@@ -1962,6 +1960,7 @@ Copyright 2008 SciberQuest Inc.
 
     <Hints>
       <Property name="Mode" show="0"/>
+      <Property name="ForwardOnly" show="0"/>
     </Hints>
 
   <!-- End Topology Mapper -->

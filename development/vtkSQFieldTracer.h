@@ -69,7 +69,14 @@ public:
   // PV gets confused if you try to change Mode later.
   vtkSetMacro(Mode,int);
   vtkGetMacro(Mode,int);
-
+  //BTX
+  enum
+    {
+    MODE_STREAM=1,
+    MODE_TOPOLOGY=2,
+    MODE_POINCARE=3
+    };
+  //ETX
 
   // Description:
   // If set then only forward traces is carried out.
@@ -81,6 +88,15 @@ public:
   // Set integrator type. RK2=1, RK4=2, RK45=3
   void SetIntegratorType(int type);
   int GetIntegratorType(){ return this->IntegratorType; }
+  //BTX
+  enum
+    {
+    INTEGRATOR_NONE=0,
+    INTEGRATOR_RK2=1,
+    INTEGRATOR_RK4=2,
+    INTEGRATOR_RK45=3
+    };
+  //ETX
 
   // Description:
   // Specify a uniform integration step unit for MinimumIntegrationStep, 
@@ -254,15 +270,6 @@ private:
   vtkIdType MaxNumberOfSteps;
   double MaxLineLength;
   double NullThreshold;
-  //BTX
-  enum
-    {
-    INTEGRATOR_NONE=0,
-    INTEGRATOR_RK2=1,
-    INTEGRATOR_RK4=2,
-    INTEGRATOR_RK45=3
-    };
-  //ETX
   int IntegratorType;
   vtkInitialValueProblemSolver* Integrator;
 
@@ -272,15 +279,7 @@ private:
   int UseCommWorld;
   TerminationCondition *TermCon;
 
-  //BTX
   // Output controls
-  enum
-    {
-    MODE_STREAM=1,
-    MODE_TOPOLOGY=2,
-    MODE_POINCARE=3
-    };
-  //ETX
   int Mode;
   int SqueezeColorMap;
 

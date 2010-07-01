@@ -42,6 +42,7 @@ public:
     SourceTypes(0),
     OutPts(0),
     OutCells(0),
+    OutTypes(0),
     OutLocs(0)
       {  }
 

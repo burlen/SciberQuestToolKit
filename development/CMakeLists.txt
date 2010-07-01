@@ -175,13 +175,13 @@ add_paraview_plugin(
 
 install(TARGETS SciVisToolKit DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-target_link_libraries(SciVisToolKit)
+#target_link_libraries(SciVisToolKit)
 
-# gentp -- command line utility
+# command line utilities
 if (UNIX)
-set(BUILD_GENTP OFF CACHE BOOL "Build gentp the utility to generate temperature and pressure arrays.")
-  if (BUILD_GENTP)
-    message(STATUS "-- Including gentp.")
+set(BUILD_SVTK_UTILITIES OFF CACHE BOOL "Build SciVisToolKit utilities.")
+  if (BUILD_SVTK_UTILITIES)
+    message(STATUS "Building SciVisToolKit utilities.")
     include(FindMPI)
     if (NOT MPI_FOUND)
       message(SEND_ERROR "MPI is required for the gentp utility.")
@@ -190,13 +190,28 @@ set(BUILD_GENTP OFF CACHE BOOL "Build gentp the utility to generate temperature 
     add_executable(gentp gentp.cpp FsUtils.cxx)
     target_link_libraries(gentp ${MPI_LIBRARIES})
     install(TARGETS gentp DESTINATION ${CMAKE_INSTALL_PREFIX})
-  endif (BUILD_GENTP)
+  endif (BUILD_SVTK_UTILITIES)
 endif (UNIX)
+
+# testing
+set(BUILD_SVTK_TESTING OFF CACHE BOOL "Build project tests.")
+if (BUILD_SVTK_TESTING)
+  message(STATUS "Including SciVisToolKit tests.")
+  include(FindMPI)
+  if (NOT MPI_FOUND)
+    message(SEND_ERROR "MPI is required for the gentp utility.")
+  endif(NOT MPI_FOUND)
+  add_definitions("-DMPICH_IGNORE_CXX_SEEK")
+  add_executable(TestFieldTopologyMapper TestFieldTopologyMapper.cpp)
+  target_link_libraries(TestFieldTopologyMapper SciVisToolKit)
+  target_link_libraries(TestFieldTopologyMapper ${MPI_LIBRARIES})
+  install(TARGETS TestFieldTopologyMapper DESTINATION ${CMAKE_INSTALL_PREFIX})
+endif (BUILD_SVTK_TESTING)
 
 # instrument -- command line utility
 set(BUILD_INSTRUMENT OFF CACHE BOOL "Build intrumentation utility to intrument cxx classes.")
 if (BUILD_INSTRUMENT)
-  message(STATUS "-- Including InstrumentClass.")
+  message(STATUS "Including InstrumentClass.")
   add_executable(instrumentClass InstrumentClass.cpp FsUtils.cxx)
   install(TARGETS instrumentClass DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif (BUILD_INSTRUMENT)

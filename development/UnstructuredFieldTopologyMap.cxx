@@ -96,17 +96,15 @@ void UnstructuredFieldTopologyMap::SetOutput(vtkDataSet *o)
   vtkPoints *opts=vtkPoints::New();
   out->SetPoints(opts);
   opts->Delete();
+
   this->OutPts=dynamic_cast<vtkFloatArray*>(opts->GetData());
   this->OutPts->Register(0);
 
-  this->OutCells=out->GetCells();
-  this->OutCells->Register(0);
+  this->OutCells=vtkCellArray::New();
+  this->OutTypes=vtkUnsignedCharArray::New();
+  this->OutLocs=vtkIdTypeArray::New();
 
-  this->OutTypes=out->GetCellTypesArray();
-  this->OutTypes->Register(0);
-
-  this->OutLocs=out->GetCellLocationsArray();
-  this->OutLocs->Register(0);
+  out->SetCells(this->OutTypes,this->OutLocs,this->OutCells);
 }
 
 //-----------------------------------------------------------------------------
@@ -115,7 +113,7 @@ int UnstructuredFieldTopologyMap::InsertCells(CellIdBlock *SourceIds)
   vtkIdType startCellId=SourceIds->first();
   vtkIdType nCellsLocal=SourceIds->size();
 
-  // Cells are sequentially acccessed (not random) so explicitly skip all cells
+  // Cells are sequentially acccessed so explicitly skip all cells
   // we aren't interested in.
   this->SourceCells->InitTraversal();
   for (vtkIdType i=0; i<startCellId; ++i)
@@ -125,28 +123,37 @@ int UnstructuredFieldTopologyMap::InsertCells(CellIdBlock *SourceIds)
     this->SourceCells->GetNextCell(n,ptIds);
     }
 
+  // input points
   float *pSourcePts=this->SourcePts->GetPointer(0);
   unsigned char *pSourceTypes=this->SourceTypes->GetPointer(0);
 
-  ///vtkIdTypeArray *OutCellPtIds=this->OutCells->GetData();
+  // output points
+  vtkIdType nOutPts=this->OutPts->GetNumberOfTuples();
 
+  // output cells
+  vtkIdTypeArray *outCells=this->OutCells->GetData();
+  vtkIdType nCellIds=outCells->GetNumberOfTuples();
+  vtkIdType nOutCells=this->OutCells->GetNumberOfCells();
+  this->OutCells->SetNumberOfCells(nOutCells+nCellsLocal);
+
+  // output cell types
   vtkIdType endOfTypes=this->OutTypes->GetNumberOfTuples();
   unsigned char *pOutTypes=this->OutTypes->WritePointer(endOfTypes,nCellsLocal);
 
+  // output cell locations
   vtkIdType endOfLocs=this->OutLocs->GetNumberOfTuples();
   vtkIdType *pOutLocs=this->OutLocs->WritePointer(endOfLocs,nCellsLocal);
 
-  vtkIdType nCellIds=this->OutCells->GetNumberOfCells();
-  vtkIdType nOutPts=this->OutPts->GetNumberOfTuples();
-
-  vtkIdType sourceCellId=startCellId;
-
+  // field lines
   int lId=this->Lines.size();
   this->Lines.resize(lId+nCellsLocal,0);
 
-  // For each cell asigned to us we'll get its center (this is the seed point)
-  // and build corresponding cell in the output, The output only will have
-  // the cells assigned to this process.
+  vtkIdType sourceCellId=startCellId;
+
+  // For each cell asigned to us we'll get its center to use as a
+  // seed point and copy the cell into the output, The output only
+  // will have the cells assigned to this process, while the input
+  // may have all of the cells.
   for (vtkIdType i=0; i<nCellsLocal; ++i)
     {
     // get the cell that belong to us.
@@ -162,12 +169,12 @@ int UnstructuredFieldTopologyMap::InsertCells(CellIdBlock *SourceIds)
     *pOutTypes=pSourceTypes[sourceCellId];
     ++pOutTypes;
 
-    #pragma message("TODO-Verify use of write pointer is correct.")
-
     // Get location to write new cell.
-    vtkIdType *pOutCells=this->OutCells->WritePointer(nCellIds,nPtIds+1);
+    vtkIdType *pOutCells=outCells->WritePointer(nCellIds,nPtIds+1);
+
     // update next cell write location.
     nCellIds+=nPtIds+1;
+
     // number of points in this cell
     *pOutCells=nPtIds;
     ++pOutCells;
