@@ -14,13 +14,14 @@ Copyright 2008 SciberQuest Inc.
 using std::cerr;
 using std::endl;
 
-// disable shadow variable warnings for eigen
-// #pragma GCC diagnostic push
+// disable gcc shadow variable warnings for eigen
+#if not defined __INTEL_COMPILER && defined __GNUG__
 #pragma GCC diagnostic ignored "-Wshadow"
+#endif
+
 #include<Eigen/Core>
 #include<Eigen/QR>
 using namespace Eigen;
-// #pragma GCC diagnostic pop
 
 #include "Tuple.hxx"
 

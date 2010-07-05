@@ -11,7 +11,9 @@ Copyright 2008 SciberQuest Inc.
 #define __MPIRawArrayIO_hxx
 
 // disbale warning about passing string literals.
+#if not defined __INTEL_COMPILER && defined __GNUG__
 #pragma GCC diagnostic ignored "-Wwrite-strings"
+#endif
 
 #include <mpi.h>
 
