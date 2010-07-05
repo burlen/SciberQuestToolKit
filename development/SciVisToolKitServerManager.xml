@@ -2704,6 +2704,48 @@ Copyright 2008 SciberQuest Inc.
 
   <!-- ==================================================================== -->
   <SourceProxy 
+    name="vtkSQRandomCells"
+    class="vtkSQRandomCells"
+    label="SQ Random Cells">
+    <Documentation
+      long_help="Long Documentation"
+      short_help="Short Documentation">
+      Passes randomly selected cells from the input to output.
+    </Documentation>
+
+    <InputProperty
+      name="Input"
+      command="SetInputConnection"
+      optional="1">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkPolyData"/>
+      </DataTypeDomain>
+    </InputProperty>
+
+
+    <!-- Resolution -->
+     <IntVectorProperty
+        name="Sample Size"
+        label="Sample Size"
+        command="SetSampleSize"
+        number_of_elements="1"
+        default_values="1">
+     </IntVectorProperty>
+
+
+    <Hints>
+      <Visibility replace_input="0" />
+    </Hints>
+
+  <!-- End vtkSQSeedPointLatice -->
+  </SourceProxy>
+
+  <!-- ==================================================================== -->
+  <SourceProxy 
     name="vtkSQRandomSeedPoints" 
     class="vtkSQRandomSeedPoints"
     label="SQ Random Seed Points">

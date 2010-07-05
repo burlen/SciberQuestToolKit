@@ -6,32 +6,12 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef WorkQueue_h
-#define WorkQueue_h
+#ifndef __WorkQueue_h
+#define __WorkQueue_h
 
+#include "CellIdBlock.h"
 #include "minmax.h"
-#include <iostream>
-using std::ostream;
 
-/// A block of adjecent indexes into a collection of cells.
-class CellIdBlock
-{
-public:
-  CellIdBlock()
-    {
-    this->clear();
-    }
-  void clear(){ m_data[0]=m_data[1]=0; }
-  int &first(){ return m_data[0]; }
-  int &size(){ return m_data[1]; }
-  int last(){ return m_data[0]+m_data[1]; }
-  int *data(){ return m_data; }
-  int dataSize(){ return 2; }
-private:
-  int m_data[2];
-private:
-  friend ostream &operator<<(ostream &os, const CellIdBlock &b);
-};
 
 /// Partitions a contiguous set of indices on demand.
 class WorkQueue

@@ -34,6 +34,7 @@ set(SM_SOURCES
   vtkSQLineSource.cxx
   vtkSQPlaneSource.cxx
   vtkSQPointSource.cxx
+  vtkSQRandomCells.cxx
   vtkSQRandomSeedPoints.cxx
   vtkSQSeedPointLatice.cxx
   vtkSQSphereSource.cxx
@@ -54,6 +55,7 @@ set(_SOURCES
   CartesianDataBlockIODescriptor.cxx
   CartesianDataBlockIODescriptorIterator.cxx
   CartesianExtent.cxx
+  CellIdBlock.cxx
   FieldLine.cxx
   FieldTraceData.cxx
   FsUtils.cxx
@@ -75,7 +77,6 @@ set(_SOURCES
   vtkSQHemisphereSourceConfigurationReader.cxx
   vtkSQPlaneSourceConfigurationWriter.cxx
   vtkSQPlaneSourceConfigurationReader.cxx
-  WorkQueue.cxx
   )
 
 set_source_files_properties(
