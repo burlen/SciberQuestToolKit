@@ -686,6 +686,8 @@ void pqSQPlaneSource::SpacingModified()
       {
       this->Nx[1]=ceil(this->Nx[0]*this->Dims[1]/this->Dims[0]);
       }
+
+    this->SetResolution(this->Nx);
     }
 
   // compute the new number of cells.
