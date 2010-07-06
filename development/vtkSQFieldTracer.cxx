@@ -1024,11 +1024,13 @@ void vtkSQFieldTracer::IntegrateOne(
           this->MaxError,
           error);
       interp->SetNormalizeVector(false);
+      #if vtkSQFieldTracerDEBUG>2
       if (iErr)
         {
         vtkErrorMacro("Integrator error " << iErr << ".");
         break;
         }
+      #endif
 
       #if vtkSQFieldTracerDEBUG>2
       cerr << (stepSign<0?"<":">");
