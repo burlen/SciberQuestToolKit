@@ -658,21 +658,35 @@ void pqSQPlaneSource::SpacingModified()
   cerr << ":::::::::::::::::::::::::::::::SpacingModified" << endl;
   #endif
 
-  // retreive the requested spacing.
-  this->GetSpacing(this->Dx);
-
-  // enforce uniform pixel aspect ratio
-  if (this->Form->aspectLock->isChecked())
+  if (this->Form->spacingLock->isChecked())
     {
-    this->Dx[1]=this->Dx[0];
-    this->Form->dy->setText(QString("%1").arg(this->Dx[0]));
-    }
+    // retreive the requested spacing.
+    this->GetSpacing(this->Dx);
 
-  // update the grid resolution to match the requested grid spacing
-  // as closely as possible.
-  this->Nx[0]=ceil(this->Dims[0]/this->Dx[0]);
-  this->Nx[1]=ceil(this->Dims[1]/this->Dx[1]);
-  this->SetResolution(this->Nx);
+    // enforce uniform pixel aspect ratio
+    if (this->Form->aspectLock->isChecked())
+      {
+      this->Dx[1]=this->Dx[0];
+      this->Form->dy->setText(QString("%1").arg(this->Dx[0]));
+      }
+
+    // update the grid resolution to match the requested grid spacing
+    // as closely as possible.
+    this->Nx[0]=ceil(this->Dims[0]/this->Dx[0]);
+    this->Nx[1]=ceil(this->Dims[1]/this->Dx[1]);
+    this->SetResolution(this->Nx);
+    }
+  else
+    {
+    // update the spacing to match the requested resolution as closely
+    // as possible.
+    this->GetResolution(this->Nx);
+
+    if (this->Form->aspectLock->isChecked())
+      {
+      this->Nx[1]=ceil(this->Nx[0]*this->Dims[1]/this->Dims[0]);
+      }
+    }
 
   // compute the new number of cells.
   int nCells=this->Nx[0]*this->Nx[1];

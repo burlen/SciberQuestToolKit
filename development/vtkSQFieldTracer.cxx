@@ -1027,8 +1027,11 @@ void vtkSQFieldTracer::IntegrateOne(
       #if vtkSQFieldTracerDEBUG>2
       if (iErr)
         {
+        // 1=out of bounds, 2=uninitialized, 3=unexepcted val.
+        // it's not an error to get out of bounds during topology
+        // mode, that case is dealt with below.
         vtkErrorMacro("Integrator error " << iErr << ".");
-        break;
+        //break;
         }
       #endif
 
