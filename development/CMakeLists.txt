@@ -38,7 +38,7 @@ set(SM_SOURCES
   vtkSQRandomSeedPoints.cxx
   vtkSQSeedPointLatice.cxx
   vtkSQSphereSource.cxx
-  vtkSQVolumetricSource.cxx
+  vtkSQVolumeSource.cxx
   vtkSQVortexFilter.cxx
   )
 
@@ -77,6 +77,8 @@ set(_SOURCES
   vtkSQHemisphereSourceConfigurationReader.cxx
   vtkSQPlaneSourceConfigurationWriter.cxx
   vtkSQPlaneSourceConfigurationReader.cxx
+  vtkSQVolumeSourceConfigurationWriter.cxx
+  vtkSQVolumeSourceConfigurationReader.cxx
   )
 
 set_source_files_properties(
@@ -130,6 +132,16 @@ ADD_PARAVIEW_OBJECT_PANEL(
 set(_IFACES ${_IFACES} ${IFACES})
 set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
+QT4_WRAP_CPP(MOC_SRCS pqSQVolumeSource.h)
+QT4_WRAP_UI(UI_SRCS pqSQVolumeSourceForm.ui)
+ADD_PARAVIEW_OBJECT_PANEL(
+  IFACES IFACE_SRCS
+  CLASS_NAME pqSQVolumeSource
+  XML_NAME vtkSQVolumeSource
+  XML_GROUP sources)
+set(_IFACES ${_IFACES} ${IFACES})
+set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+
 if (NOT WIN32)
   message(STATUS "Building process monitor ui.")
   QT4_WRAP_CPP(MOC_SRCS pqSQProcessMonitor.h)
@@ -151,6 +163,7 @@ set (_SOURCES
   pqSQBOVMetaReader.cxx
   pqSQHemisphereSource.cxx
   pqSQPlaneSource.cxx
+  pqSQVolumeSource.cxx
   )
 
 if (NOT WIN32)

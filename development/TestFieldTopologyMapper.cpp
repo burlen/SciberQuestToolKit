@@ -3,7 +3,7 @@
 #include "vtkPlaneSource.h"
 #include "vtkSQBOVReader.h"
 #include "vtkSQFieldTracer.h"
-#include "vtkSQVolumetricSource.h"
+#include "vtkSQVolumeSource.h"
 #include "vtkDataSetSurfaceFilter.h"
 #include "vtkPointData.h"
 #include "vtkCellData.h"
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 
     case VOLUME:
       {
-      vtkSQVolumetricSource *v=vtkSQVolumetricSource::New();
+      vtkSQVolumeSource *v=vtkSQVolumeSource::New();
       v->SetOrigin(1.0,3.0,0.25);
       v->SetPoint1(6.0,3.0,0.25);
       v->SetPoint2(1.0,4.0,0.25);

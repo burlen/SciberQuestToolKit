@@ -9,7 +9,7 @@ Copyright 2008 SciberQuest Inc.
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkSQVolumetricSource.cxx,v $
+  Module:    $RCSfile: vtkSQVolumeSource.cxx,v $
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -20,7 +20,7 @@ Copyright 2008 SciberQuest Inc.
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkSQVolumetricSource.h"
+#include "vtkSQVolumeSource.h"
  
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
@@ -45,16 +45,16 @@ using std::pair;
 typedef pair<map<vtkIdType,vtkIdType>::iterator,bool> MapInsert;
 typedef pair<vtkIdType,vtkIdType> MapElement;
 
-// #define vtkSQVolumetricSourceDEBUG
+// #define vtkSQVolumeSourceDEBUG
 
-vtkCxxRevisionMacro(vtkSQVolumetricSource, "$Revision: 0.0 $");
-vtkStandardNewMacro(vtkSQVolumetricSource);
+vtkCxxRevisionMacro(vtkSQVolumeSource, "$Revision: 0.0 $");
+vtkStandardNewMacro(vtkSQVolumeSource);
 
 //----------------------------------------------------------------------------
-vtkSQVolumetricSource::vtkSQVolumetricSource()
+vtkSQVolumeSource::vtkSQVolumeSource()
 {
-  #ifdef vtkSQVolumetricSourceDEBUG
-  cerr << "===============================vtkSQVolumetricSource::vtkSQVolumetricSource" << endl;
+  #ifdef vtkSQVolumeSourceDEBUG
+  cerr << "===============================vtkSQVolumeSource::vtkSQVolumeSource" << endl;
   #endif
 
   this->NCells[0]=
@@ -82,20 +82,20 @@ vtkSQVolumetricSource::vtkSQVolumetricSource()
 }
 
 //----------------------------------------------------------------------------
-vtkSQVolumetricSource::~vtkSQVolumetricSource()
+vtkSQVolumeSource::~vtkSQVolumeSource()
 {
-  #ifdef vtkSQVolumetricSourceDEBUG
-  cerr << "===============================vtkSQVolumetricSource::~vtkSQVolumetricSource" << endl;
+  #ifdef vtkSQVolumeSourceDEBUG
+  cerr << "===============================vtkSQVolumeSource::~vtkSQVolumeSource" << endl;
   #endif
 }
 
 // //----------------------------------------------------------------------------
-// int vtkSQVolumetricSource::FillInputPortInformation(
+// int vtkSQVolumeSource::FillInputPortInformation(
 //       int /*port*/,
 //       vtkInformation *info)
 // {
-//   #ifdef vtkSQVolumetricSourceDEBUG
-//   cerr << "===============================vtkSQVolumetricSource::FillInputPortInformation" << endl;
+//   #ifdef vtkSQVolumeSourceDEBUG
+//   cerr << "===============================vtkSQVolumeSource::FillInputPortInformation" << endl;
 //   #endif
 // 
 //   // The input is optional,if present it will be used 
@@ -107,13 +107,13 @@ vtkSQVolumetricSource::~vtkSQVolumetricSource()
 // }
 
 //----------------------------------------------------------------------------
-int vtkSQVolumetricSource::RequestInformation(
+int vtkSQVolumeSource::RequestInformation(
     vtkInformation */*req*/,
     vtkInformationVector **/*inInfos*/,
     vtkInformationVector *outInfos)
 {
-  #ifdef vtkSQVolumetricSourceDEBUG
-  cerr << "===============================vtkSQVolumetricSource::RequestInformation" << endl;
+  #ifdef vtkSQVolumeSourceDEBUG
+  cerr << "===============================vtkSQVolumeSource::RequestInformation" << endl;
   #endif
 
   // tell the excutive that we are handling our own paralelization.
@@ -126,13 +126,13 @@ int vtkSQVolumetricSource::RequestInformation(
 }
 
 //----------------------------------------------------------------------------
-int vtkSQVolumetricSource::RequestData(
+int vtkSQVolumeSource::RequestData(
     vtkInformation */*req*/,
     vtkInformationVector **inInfos,
     vtkInformationVector *outInfos)
 {
-  #ifdef vtkSQVolumetricSourceDEBUG
-  cerr << "===============================vtkSQVolumetricSource::RequestData" << endl;
+  #ifdef vtkSQVolumeSourceDEBUG
+  cerr << "===============================vtkSQVolumeSource::RequestData" << endl;
   #endif
 
 
@@ -337,7 +337,7 @@ int vtkSQVolumetricSource::RequestData(
   locs->Delete();
   cells->Delete();
 
-  #ifdef vtkSQVolumetricSourceDEBUG
+  #ifdef vtkSQVolumeSourceDEBUG
   int rank=vtkMultiProcessController::GetGlobalController()->GetLocalProcessId();
   cerr
     << "pieceNo = " << pieceNo << endl
@@ -354,10 +354,10 @@ int vtkSQVolumetricSource::RequestData(
 }
 
 //----------------------------------------------------------------------------
-void vtkSQVolumetricSource::PrintSelf(ostream& os, vtkIndent indent)
+void vtkSQVolumeSource::PrintSelf(ostream& os, vtkIndent indent)
 {
-  #ifdef vtkSQVolumetricSourceDEBUG
-  cerr << "===============================vtkSQVolumetricSource::PrintSelf" << endl;
+  #ifdef vtkSQVolumeSourceDEBUG
+  cerr << "===============================vtkSQVolumeSource::PrintSelf" << endl;
   #endif
 
   this->Superclass::PrintSelf(os,indent);

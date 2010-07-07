@@ -6,21 +6,21 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-// .NAME vtkSQVolumetricSource -Create volume of hexahedral cells.
+// .NAME vtkSQVolumeSource -Create volume of hexahedral cells.
 // .SECTION Description
 // Creates a volume composed of hexahedra cells on a latice.
 // This is the 3D counterpart to the plane source.
 
-#ifndef __vtkSQVolumetricSource_h
-#define __vtkSQVolumetricSource_h
+#ifndef __vtkSQVolumeSource_h
+#define __vtkSQVolumeSource_h
 
 #include "vtkUnstructuredGridAlgorithm.h"
 
-class VTK_EXPORT vtkSQVolumetricSource : public vtkUnstructuredGridAlgorithm
+class VTK_EXPORT vtkSQVolumeSource : public vtkUnstructuredGridAlgorithm
 {
 public:
-  static vtkSQVolumetricSource *New();
-  vtkTypeRevisionMacro(vtkSQVolumetricSource,vtkUnstructuredGridAlgorithm);
+  static vtkSQVolumeSource *New();
+  vtkTypeRevisionMacro(vtkSQVolumeSource,vtkUnstructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
@@ -48,8 +48,8 @@ protected:
   int RequestData(vtkInformation *req, vtkInformationVector **input, vtkInformationVector *output);
   int RequestInformation(vtkInformation *req, vtkInformationVector **input, vtkInformationVector *output);
 
-  vtkSQVolumetricSource();
-  ~vtkSQVolumetricSource();
+  vtkSQVolumeSource();
+  ~vtkSQVolumeSource();
 
 private:
   double Origin[3];
@@ -59,8 +59,8 @@ private:
   int NCells[3];
 
 private:
-  vtkSQVolumetricSource(const vtkSQVolumetricSource&);  // Not implemented.
-  void operator=(const vtkSQVolumetricSource&);  // Not implemented.
+  vtkSQVolumeSource(const vtkSQVolumeSource&);  // Not implemented.
+  void operator=(const vtkSQVolumeSource&);  // Not implemented.
 };
 
 #endif

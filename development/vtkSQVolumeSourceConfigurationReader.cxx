@@ -6,34 +6,36 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#include "vtkSQPlaneSourceConfigurationReader.h"
-#include "vtkSQPlaneSourceConfigurationFileInfo.h"
+#include "vtkSQVolumeSourceConfigurationReader.h"
+#include "vtkSQVolumeSourceConfigurationFileInfo.h"
 
 #include "vtkObjectFactory.h"
 #include "vtkSMProxy.h"
+#include "vtkSMRenderViewProxy.h"
 
-vtkCxxRevisionMacro(vtkSQPlaneSourceConfigurationReader,"$Revision: 1.0$");
-vtkStandardNewMacro(vtkSQPlaneSourceConfigurationReader);
+
+vtkCxxRevisionMacro(vtkSQVolumeSourceConfigurationReader,"$Revision: 1.0$");
+vtkStandardNewMacro(vtkSQVolumeSourceConfigurationReader);
 
 //-----------------------------------------------------------------------------
-vtkSQPlaneSourceConfigurationReader::vtkSQPlaneSourceConfigurationReader()
+vtkSQVolumeSourceConfigurationReader::vtkSQVolumeSourceConfigurationReader()
 {
   // Valid camera configuration can come from a various
   // proxy types, eg RenderView,IceTRenderView and so on.
   this->SetValidateProxyType(0);
 
-  vtkSQPlaneSourceConfigurationFileInfo info;
+  vtkSQVolumeSourceConfigurationFileInfo info;
   this->SetFileIdentifier(info.FileIdentifier);
   this->SetFileDescription(info.FileDescription);
   this->SetFileExtension(info.FileExtension);
 }
 
 //-----------------------------------------------------------------------------
-vtkSQPlaneSourceConfigurationReader::~vtkSQPlaneSourceConfigurationReader()
+vtkSQVolumeSourceConfigurationReader::~vtkSQVolumeSourceConfigurationReader()
 {}
 
 //-----------------------------------------------------------------------------
-int vtkSQPlaneSourceConfigurationReader::ReadConfiguration(const char *filename)
+int vtkSQVolumeSourceConfigurationReader::ReadConfiguration(const char *filename)
 {
   int ok=this->Superclass::ReadConfiguration(filename);
   if (!ok)
@@ -47,7 +49,7 @@ int vtkSQPlaneSourceConfigurationReader::ReadConfiguration(const char *filename)
 }
 
 //-----------------------------------------------------------------------------
-int vtkSQPlaneSourceConfigurationReader::ReadConfiguration(vtkPVXMLElement *x)
+int vtkSQVolumeSourceConfigurationReader::ReadConfiguration(vtkPVXMLElement *x)
 {
   int ok=this->Superclass::ReadConfiguration(x);
   if (!ok)
@@ -61,7 +63,7 @@ int vtkSQPlaneSourceConfigurationReader::ReadConfiguration(vtkPVXMLElement *x)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQPlaneSourceConfigurationReader::PrintSelf(ostream& os, vtkIndent indent)
+void vtkSQVolumeSourceConfigurationReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
 }

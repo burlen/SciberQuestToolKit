@@ -820,8 +820,8 @@ Copyright 2008 SciberQuest Inc.
 
   <!-- ==================================================================== -->
   <SourceProxy 
-      name="vtkSQVolumetricSource"
-      class="vtkSQVolumetricSource"
+      name="vtkSQVolumeSource"
+      class="vtkSQVolumeSource"
       label="SQ Volume Source">
     <Documentation
       long_help="Long Documentation"
@@ -2735,7 +2735,6 @@ Copyright 2008 SciberQuest Inc.
         number_of_elements="1"
         default_values="1">
      </IntVectorProperty>
-
 
     <Hints>
       <Visibility replace_input="0" />

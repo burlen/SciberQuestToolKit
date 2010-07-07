@@ -6,26 +6,27 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#include "vtkSQPlaneSourceConfigurationWriter.h"
-#include "vtkSQPlaneSourceConfigurationFileInfo.h"
+#include "vtkSQVolumeSourceConfigurationWriter.h"
+#include "vtkSQVolumeSourceConfigurationFileInfo.h"
 
 #include "vtkObjectFactory.h"
 #include "vtkStringList.h"
 #include "vtkSMNamedPropertyIterator.h"
 
-vtkCxxRevisionMacro(vtkSQPlaneSourceConfigurationWriter,"$Revision: 1.0$");
-vtkStandardNewMacro(vtkSQPlaneSourceConfigurationWriter);
+
+vtkCxxRevisionMacro(vtkSQVolumeSourceConfigurationWriter,"$Revision: 1.0$");
+vtkStandardNewMacro(vtkSQVolumeSourceConfigurationWriter);
 
 //-----------------------------------------------------------------------------
-vtkSQPlaneSourceConfigurationWriter::vtkSQPlaneSourceConfigurationWriter()
+vtkSQVolumeSourceConfigurationWriter::vtkSQVolumeSourceConfigurationWriter()
 {
   vtkStringList *propNames=vtkStringList::New();
   propNames->AddString("Name");
   propNames->AddString("Origin");
   propNames->AddString("Point1");
   propNames->AddString("Point2");
-  propNames->AddString("XResolution");
-  propNames->AddString("YResolution");
+  propNames->AddString("Point3");
+  propNames->AddString("Resolution");
 
   vtkSMNamedPropertyIterator *propIt=vtkSMNamedPropertyIterator::New();
   propIt->SetPropertyNames(propNames);
@@ -33,18 +34,18 @@ vtkSQPlaneSourceConfigurationWriter::vtkSQPlaneSourceConfigurationWriter()
   this->SetPropertyIterator(propIt);
   propIt->Delete();
 
-  vtkSQPlaneSourceConfigurationFileInfo info;
+  vtkSQVolumeSourceConfigurationFileInfo info;
   this->SetFileIdentifier(info.FileIdentifier);
   this->SetFileDescription(info.FileDescription);
   this->SetFileExtension(info.FileExtension);
 }
 
 //-----------------------------------------------------------------------------
-vtkSQPlaneSourceConfigurationWriter::~vtkSQPlaneSourceConfigurationWriter()
+vtkSQVolumeSourceConfigurationWriter::~vtkSQVolumeSourceConfigurationWriter()
 {}
 
 //-----------------------------------------------------------------------------
-void vtkSQPlaneSourceConfigurationWriter::SetProxy(
+void vtkSQVolumeSourceConfigurationWriter::SetProxy(
       vtkSMProxy *proxy)
 {
   this->vtkSMProxyConfigurationWriter::SetProxy(proxy);
@@ -52,7 +53,7 @@ void vtkSQPlaneSourceConfigurationWriter::SetProxy(
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQPlaneSourceConfigurationWriter::PrintSelf(ostream& os, vtkIndent indent)
+void vtkSQVolumeSourceConfigurationWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
 }
