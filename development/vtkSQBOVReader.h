@@ -16,8 +16,8 @@ Copyright 2008 SciberQuest Inc.
 // .SECTION See Also
 // BOVReader
 
-#ifndef vtkSQBOVReader_h
-#define vtkSQBOVReader_h
+#ifndef __vtkSQBOVReader_h
+#define __vtkSQBOVReader_h
 
 #include "vtkImageAlgorithm.h"
 
@@ -153,8 +153,9 @@ public:
 
 protected:
   /// Pipeline internals.
-  int RequestData(vtkInformation *req,vtkInformationVector **inInfos,vtkInformationVector *outInfos);
-  int RequestInformation(vtkInformation *req,vtkInformationVector**inInfos,vtkInformationVector* outInfos);
+  // int RequestDataObject(vtkInformation*,vtkInformationVector**,vtkInformationVector*);
+  int RequestData(vtkInformation*,vtkInformationVector**,vtkInformationVector*);
+  int RequestInformation(vtkInformation*,vtkInformationVector**,vtkInformationVector*);
 
   vtkSQBOVReader();
   ~vtkSQBOVReader();

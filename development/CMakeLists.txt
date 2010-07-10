@@ -55,13 +55,15 @@ set(_SOURCES
   CartesianDataBlockIODescriptor.cxx
   CartesianDataBlockIODescriptorIterator.cxx
   CartesianExtent.cxx
-  CellIdBlock.cxx
+  CellCopier.cxx
+  IdBlock.cxx
   FieldLine.cxx
   FieldTraceData.cxx
   FsUtils.cxx
   GDAMetaData.cxx
   GDAMetaDataKeys.cxx
   IntersectionSet.cxx
+  PolyDataCellCopier.cxx
   PolyDataFieldTopologyMap.cxx
   PoincareMapData.cxx
   postream.cxx
@@ -70,6 +72,7 @@ set(_SOURCES
   StreamlineData.cxx
   TerminationCondition.cxx
   UnstructuredFieldTopologyMap.cxx
+  UnstructuredGridCellCopier.cxx
   vtkSQMetaDataKeys.cxx
   vtkSQOOCReader.cxx
   vtkSQOOCBOVReader.cxx

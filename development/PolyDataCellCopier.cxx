@@ -5,12 +5,14 @@
 /___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
 
 Copyright 2008 SciberQuest Inc.
+
 */
-#include "PolyDataFieldTopologyMap.h"
+#include "PolyDataCellCopier.h"
+
+#include "vtkPolyData.h"
 
 #include "SQMacros.h"
 #include "IdBlock.h"
-#include "WorkQueue.h"
 #include "FieldLine.h"
 #include "TerminationCondition.h"
 #include "vtkDataSet.h"
@@ -22,39 +24,35 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkIdTypeArray.h"
 
 //-----------------------------------------------------------------------------
-PolyDataFieldTopologyMap::~PolyDataFieldTopologyMap()
+PolyDataCellCopier::~PolyDataCellCopier()
 {
-  this->ClearSource();
-  this->ClearOut();
+  this->Clear();
 }
 
 //-----------------------------------------------------------------------------
-void PolyDataFieldTopologyMap::ClearSource()
+void PolyDataCellCopier::Clear()
 {
+  this->CellCopier::Clear();
+
   if (this->SourcePts){ this->SourcePts->Delete(); }
   if (this->SourceCells){ this->SourceCells->Delete(); }
-  this->SourcePts=0;
-  this->SourceCells=0;
-  this->IdMap.clear();
-  this->CellType=NONE;
-}
-
-//-----------------------------------------------------------------------------
-void PolyDataFieldTopologyMap::ClearOut()
-{
   if (this->OutPts){ this->OutPts->Delete(); }
   if (this->OutCells){ this->OutCells->Delete(); }
+
+  this->SourcePts=0;
+  this->SourceCells=0;
+  this->CellType=NONE;
   this->OutPts=0;
   this->OutCells=0;
-  this->IdMap.clear();
-  // this->CellType=NONE;
 }
 
 //-----------------------------------------------------------------------------
-void PolyDataFieldTopologyMap::SetSource(vtkDataSet *s)
+void PolyDataCellCopier::Initialize(vtkDataSet *s, vtkDataSet *o)
 {
-  this->ClearSource();
+  this->Clear();
+  this->CellCopier::Initialize(s,o);
 
+  // source
   vtkPolyData *source=dynamic_cast<vtkPolyData*>(s);
   if (source==0)
     {
@@ -76,6 +74,18 @@ void PolyDataFieldTopologyMap::SetSource(vtkDataSet *s)
     this->SourceCells=source->GetPolys();
     this->CellType=POLY;
     }
+ else
+  if (source->GetNumberOfStrips())
+    {
+    this->SourceCells=source->GetStrips();
+    this->CellType=STRIP;
+    }
+ else
+  if (source->GetNumberOfLines())
+    {
+    this->SourceCells=source->GetLines();
+    this->CellType=LINE;
+    }
   else
   if (source->GetNumberOfVerts())
     {
@@ -84,20 +94,13 @@ void PolyDataFieldTopologyMap::SetSource(vtkDataSet *s)
     }
   else
     {
-    sqErrorMacro(cerr,
-        "Error: Polydata doesn't have any supported cells.");
+    sqErrorMacro(cerr,"Error: Polydata doesn't have any supported cells.");
     return;
     }
   this->SourceCells->Register(0);
-}
 
-//-----------------------------------------------------------------------------
-void PolyDataFieldTopologyMap::SetOutput(vtkDataSet *o)
-{
-  this->FieldTraceData::SetOutput(o);
 
-  this->ClearOut();
-
+  // output
   vtkPolyData *out=dynamic_cast<vtkPolyData*>(o);
   if (out==0)
     {
@@ -118,6 +121,14 @@ void PolyDataFieldTopologyMap::SetOutput(vtkDataSet *o)
       out->SetPolys(this->OutCells);
       break;
 
+    case STRIP:
+      out->SetPolys(this->OutCells);
+      break;
+
+    case LINE:
+      out->SetPolys(this->OutCells);
+      break;
+
     case VERT:
       out->SetVerts(this->OutCells);
       break;
@@ -129,10 +140,13 @@ void PolyDataFieldTopologyMap::SetOutput(vtkDataSet *o)
 }
 
 //-----------------------------------------------------------------------------
-int PolyDataFieldTopologyMap::InsertCells(IdBlock *SourceIds)
+int PolyDataCellCopier::Copy(IdBlock &SourceIds)
 {
-  vtkIdType startCellId=SourceIds->first();
-  vtkIdType nCellsLocal=SourceIds->size();
+  // copy cell data
+  this->CopyCellData(SourceIds);
+
+  vtkIdType startCellId=SourceIds.first();
+  vtkIdType nCellsLocal=SourceIds.size();
 
   // Cells are sequentially acccessed (not random) so explicitly skip all cells
   // we aren't interested in.
@@ -153,10 +167,6 @@ int PolyDataFieldTopologyMap::InsertCells(IdBlock *SourceIds)
   vtkIdType insertLoc=outCells->GetNumberOfTuples();
 
   vtkIdType nOutPts=this->OutPts->GetNumberOfTuples();
-  vtkIdType polyId=startCellId;
-
-  int lId=this->Lines.size();
-  this->Lines.resize(lId+nCellsLocal,0);
 
   // For each cell asigned to us we'll get its center (this is the seed point)
   // and build corresponding cell in the output, The output only will have
@@ -185,41 +195,24 @@ int PolyDataFieldTopologyMap::InsertCells(IdBlock *SourceIds)
     for (vtkIdType j=0; j<nPtIds; ++j,++pOutCells)
       {
       vtkIdType idx=3*ptIds[j];
+      vtkIdType outId=nOutPts;
       // do we already have this point?
-      MapElement elem(ptIds[j],nOutPts);
-      MapInsert ret=this->IdMap.insert(elem);
-      if (ret.second==true)
+      if (this->GetUniquePointId(ptIds[j],outId))
         {
         // this point hasn't previsouly been coppied
-        // copy the point.
+        // copy the coordinates.
         pOutPts[0]=pSourcePts[idx  ];
         pOutPts[1]=pSourcePts[idx+1];
         pOutPts[2]=pSourcePts[idx+2];
         pOutPts+=3;
-
-        // insert the new point id.
-        *pOutCells=nOutPts;
         ++nOutPts;
+        // copy point data
+        this->CopyPointData(ptIds[j]);
         }
-      else
-        {
-        // this point has been coppied, do not add a duplicate.
-        // insert the other point id.
-        *pOutCells=(*ret.first).second;
-        }
-      // compute contribution to cell center.
-      seed[0]+=pSourcePts[idx  ];
-      seed[1]+=pSourcePts[idx+1];
-      seed[2]+=pSourcePts[idx+2];
+      // insert the point id into the new cell.
+      *pOutCells=outId;
+      ++pOutCells;
       }
-    // finsih the seed point computation (at cell center).
-    seed[0]/=nPtIds;
-    seed[1]/=nPtIds;
-    seed[2]/=nPtIds;
-
-    this->Lines[lId]=new FieldLine(seed,polyId);
-    ++polyId;
-    ++lId;
     }
   // correct the length of the point array, above we assumed 
   // that all points from each cell needed to be inserted

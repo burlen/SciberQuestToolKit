@@ -1340,7 +1340,7 @@ Copyright 2008 SciberQuest Inc.
         command="SetMaxLineLength"
         number_of_elements="1"
         default_values="1.0" >
-      <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="3">
+      <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="0.5">
         <RequiredProperties>
           <Property name="DatasetInput" function="Input"/>
         </RequiredProperties>
@@ -1583,7 +1583,7 @@ Copyright 2008 SciberQuest Inc.
         label="Max Number of Steps"
         command="SetMaxNumberOfSteps"
         number_of_elements="1"
-        default_values="100000000" >
+        default_values="1000" >
       <IntRangeDomain name="range"/>
       <Documentation>
         Maximum number of steps, beyond which integration is terminated.
@@ -1596,7 +1596,7 @@ Copyright 2008 SciberQuest Inc.
         command="SetMaxLineLength"
         number_of_elements="1"
         default_values="1.0" >
-      <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="3">
+      <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="0.5">
         <RequiredProperties>
           <Property name="DatasetInput" function="Input"/>
         </RequiredProperties>
@@ -1840,7 +1840,7 @@ Copyright 2008 SciberQuest Inc.
         label="Max Number of Steps"
         command="SetMaxNumberOfSteps"
         number_of_elements="1"
-        default_values="100000000" >
+        default_values="10000" >
       <IntRangeDomain name="range"/>
       <Documentation>
         Maximum number of steps, beyond which integration is terminated.
@@ -2703,7 +2703,7 @@ Copyright 2008 SciberQuest Inc.
   </SourceProxy>
 
   <!-- ==================================================================== -->
-  <SourceProxy 
+  <SourceProxy
     name="vtkSQRandomCells"
     class="vtkSQRandomCells"
     label="SQ Random Cells">
@@ -2722,19 +2722,31 @@ Copyright 2008 SciberQuest Inc.
         <Group name="filters"/>
       </ProxyGroupDomain>
       <DataTypeDomain name="input_type">
-        <DataType value="vtkPolyData"/>
+        <DataType value="vtkDataSet"/>
       </DataTypeDomain>
     </InputProperty>
 
-
-    <!-- Resolution -->
-     <IntVectorProperty
+    <IntVectorProperty
         name="Sample Size"
         label="Sample Size"
         command="SetSampleSize"
         number_of_elements="1"
         default_values="1">
-     </IntVectorProperty>
+      <Documentation>
+         Set the number of randomly selected cells to pass through to the output.
+       </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="RNGSeed"
+        label="Random Number Generator Seed"
+        command="SetSeed"
+        number_of_elements="1"
+        default_values="-1">
+      <Documentation>
+        Set the seed to the random number generator. -1 means to use system time.
+      </Documentation>  
+    </IntVectorProperty>
 
     <Hints>
       <Visibility replace_input="0" />

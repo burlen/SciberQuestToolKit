@@ -7,8 +7,8 @@
 Copyright 2008 SciberQuest Inc.
 
 */
-#ifndef vtkFaceCentededDivergence_h
-#define vtkFaceCentededDivergence_h
+#ifndef __vtkSQVortexFilter_h
+#define __vtkSQVortexFilter_h
 
 #include "vtkDataSetAlgorithm.h"
 
@@ -79,6 +79,3 @@ private:
 };
 
 #endif
-
-
-

@@ -456,6 +456,37 @@ const char* vtkSQBOVReader::GetPointArrayName(int idx)
   return this->Reader->GetMetaData()->GetArrayName(idx);
 }
 
+
+// //----------------------------------------------------------------------------
+// int vtkSQBOVReader::RequestDataObject(
+//       vtkInformation* /*req*/,
+//       vtkInformationVector** /*inputVector*/,
+//       vtkInformationVector* outputVector)
+// {
+//   #if defined vtkSQBOVReaderDEBUG
+//   pCerr() << "===============================RequestDataObject" << endl;
+//   #endif
+// 
+//   vtkInformation* info=outputVector->GetInformationObject(0);
+// 
+//   vtkDataObject *dataset=this->Reader->GetDataSet()
+// 
+//   info->Set(vtkDataObject::DATA_TYPE_NAME(),this->Reader->GetDataSetType());
+//   info->Set(vtkDataObject::DATA_OBJECT(),dataset);
+//   info->Set(vtkDataObject::DATA_EXTENT_TYPE(),this->Reader->GetExtentType());
+//   dataset->SetPipelineInformation(info);
+//   dataset->Delete();
+// 
+//   cerr << "datasetType=" << info->Get(vtkDataObject::DATA_TYPE_NAME()) << endl;
+//   cerr << "dataset=" << info->Get(vtkDataObject::DATA_OBJECT()) << endl;
+// 
+// 
+//   // TODO delete data
+// 
+//   return 1;
+// }
+
+
 //-----------------------------------------------------------------------------
 int vtkSQBOVReader::RequestInformation(
   vtkInformation*,

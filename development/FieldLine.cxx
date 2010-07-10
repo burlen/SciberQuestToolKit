@@ -8,7 +8,6 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "FieldLine.h"
 
-
 //-----------------------------------------------------------------------------
 const FieldLine &FieldLine::operator=(const FieldLine &other)
 {
@@ -65,32 +64,3 @@ vtkIdType FieldLine::CopyPoints(float *pts)
 
   return nPtsBwd+nPtsFwd;
 }
-
-// //-----------------------------------------------------------------------------
-// vtkIdType FieldLine::CopyPoints(float *pts)
-// {
-//   // Copy all points that were inserted during the backward
-//   // trace.
-//   vtkIdType nPtsBwd=this->BwdTrace->GetNumberOfTuples();
-//   float *pbtr=this->BwdTrace->GetPointer(0);
-//   for (vtkIdType i=0; i<nPtsBwd; ++i,pts+=3,pbtr+=3)
-//     {
-//     pts[0]=pbtr[0];
-//     pts[1]=pbtr[1];
-//     pts[2]=pbtr[2];
-//     }
-// 
-//   // Copy all points that were inserted during the forward
-//   // trace.
-//   vtkIdType nPtsFwd=this->FwdTrace->GetNumberOfTuples();
-//   float *pftr=this->FwdTrace->GetPointer(0);
-//   for (vtkIdType i=0; i<nPtsFwd; ++i,pts+=3,pftr+=3)
-//     {
-//     pts[0]=pftr[0];
-//     pts[1]=pftr[1];
-//     pts[2]=pftr[2];
-//     }
-// 
-//   return nPtsBwd+nPtsFwd;
-// }
-

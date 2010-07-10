@@ -140,7 +140,7 @@ void StreamlineData::SetOutput(vtkDataSet *o)
 }
 
 //-----------------------------------------------------------------------------
-int StreamlineData::InsertCells(CellIdBlock *SourceIds)
+int StreamlineData::InsertCells(IdBlock *SourceIds)
 {
   vtkIdType startId=SourceIds->first();
   vtkIdType endId=SourceIds->last();

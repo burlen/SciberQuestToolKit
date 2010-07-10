@@ -33,28 +33,28 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkUnsignedCharArray.h"
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
+#include "vtkUnstructuredGrid.h"
 #include "vtkType.h"
 #include "vtkCellType.h"
 
+#include "CellCopier.h"
+#include "PolyDataCellCopier.h"
+#include "UnstructuredGridCellCopier.h"
 #include "SQMacros.h"
-#include "CellIdBlock.h"
+#include "IdBlock.h"
 #include "Numerics.hxx"
 #include "Tuple.hxx"
 
 #include <set>
 using std::set;
-#include <map>
-using std::map;
 using std::pair;
+
+typedef pair<set<unsigned long long>::iterator,bool> SetInsert;
 
 #include <cstdlib>
 #include <ctime>
 
 #include <mpi.h>
-
-typedef pair<set<int>::iterator,bool> SetInsert;
-typedef pair<map<vtkIdType,vtkIdType>::iterator,bool> MapInsert;
-typedef pair<vtkIdType,vtkIdType> MapElement;
 
 // #define vtkSQRandomCellsDEBUG
 
@@ -63,7 +63,7 @@ vtkStandardNewMacro(vtkSQRandomCells);
 
 
 //*****************************************************************************
-int findProcByCellId(int cellId, CellIdBlock *bins, int s, int e)
+int findProcByCellId(unsigned long long cellId, IdBlock *bins, int s, int e)
 {
   // binary search for rank who owns the given cell id.
 
@@ -96,90 +96,6 @@ int findProcByCellId(int cellId, CellIdBlock *bins, int s, int e)
   return -1;
 }
 
-//*****************************************************************************
-int copyCell(
-      vtkIdType cellId,
-      vtkCellArray *sourceCells,
-      vtkFloatArray *sourcePts,
-      vtkCellArray *outCells,
-      vtkFloatArray *outPts,
-      map<vtkIdType,vtkIdType> &idMap)
-{
-
-  // Cells are sequentially acccessed (not random) so explicitly skip all cells
-  // we aren't interested in.
-  sourceCells->InitTraversal();
-  for (vtkIdType i=0; i<cellId; ++i)
-    {
-    vtkIdType n;
-    vtkIdType *ptIds;
-    sourceCells->GetNextCell(n,ptIds);
-    }
-
-  // update the cell count before we forget (does not allocate).
-  outCells->SetNumberOfCells(outCells->GetNumberOfCells()+1);
-
-  float *pSourcePts=sourcePts->GetPointer(0);
-
-  vtkIdType insertLoc=outCells->GetData()->GetNumberOfTuples();
-
-  vtkIdType nOutCellPts=outPts->GetNumberOfTuples();
-
-  // Get the cell that belong to us.
-  vtkIdType nPtIds=0;
-  vtkIdType *ptIds=0;
-  sourceCells->GetNextCell(nPtIds,ptIds);
-
-  // Get location to write new cell.
-  vtkIdType *pOutCells
-    = outCells->GetData()->WritePointer(insertLoc,nPtIds+1);
-
-  // update next cell write location.
-  insertLoc+=nPtIds+1;
-  // number of points in this cell
-  *pOutCells=nPtIds;
-  ++pOutCells;
-
-  // Get location to write new point. assumes we need to copy all
-  // but this is wrong as there will be many duplicates. ignored.
-  float *pOutPts=outPts->WritePointer(3*nOutCellPts,3*nPtIds);
-
-  // transfer from input to output (only what we own)
-  for (vtkIdType j=0; j<nPtIds; ++j,++pOutCells)
-    {
-    vtkIdType idx=3*ptIds[j];
-    // do we already have this point?
-    MapElement elem(ptIds[j],nOutCellPts);
-    MapInsert ret=idMap.insert(elem);
-    if (ret.second==true)
-      {
-      // this point hasn't previsouly been coppied
-      // copy the point.
-      pOutPts[0]=pSourcePts[idx  ];
-      pOutPts[1]=pSourcePts[idx+1];
-      pOutPts[2]=pSourcePts[idx+2];
-      pOutPts+=3;
-
-      // insert the new point id.
-      *pOutCells=nOutCellPts;
-      ++nOutCellPts;
-      }
-    else
-      {
-      // this point has been coppied, do not add a duplicate.
-      // insert the other point id.
-      *pOutCells=(*ret.first).second;
-      }
-    }
-
-  // correct the length of the point array, above we assumed 
-  // that all points from each cell needed to be inserted
-  // and allocated that much space.
-  outPts->SetNumberOfTuples(nOutCellPts);
-
-  return 1;
-}
-
 //----------------------------------------------------------------------------
 vtkSQRandomCells::vtkSQRandomCells()
 {
@@ -188,9 +104,17 @@ vtkSQRandomCells::vtkSQRandomCells()
   #endif
 
   this->SampleSize=0;
+  this->Seed=-1;
 
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
+
+  int mpiOk=0;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    vtkErrorMacro("MPI has not been initialized. Restart ParaView using mpiexec.");
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -231,9 +155,10 @@ int vtkSQRandomCells::RequestData(
   #endif
 
   vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
+  vtkDataSet *source
+    = dynamic_cast<vtkDataSet*>(inInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  vtkPolyData *source
-    = dynamic_cast<vtkPolyData*>(inInfo->Get(vtkDataObject::DATA_OBJECT()));
+  // sanity -- empty input
   if (source==NULL)
     {
     vtkErrorMacro("Empty input.");
@@ -241,9 +166,10 @@ int vtkSQRandomCells::RequestData(
     }
 
   vtkInformation *outInfo=outInfos->GetInformationObject(0);
+  vtkDataSet *output
+    = dynamic_cast<vtkDataSet*>(outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  vtkPolyData *output
-    = dynamic_cast<vtkPolyData*>(outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  // sasnity -- empty output
   if (output==NULL)
     {
     vtkErrorMacro("Empty output.");
@@ -258,11 +184,23 @@ int vtkSQRandomCells::RequestData(
     return 1;
     }
 
-  // paralelize by piece information.
-  int pieceNo
-    = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
-  int nPieces
-    = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+  // create the cell coppier.
+  CellCopier *copier;
+  if (dynamic_cast<vtkPolyData*>(source))
+    {
+    copier=new PolyDataCellCopier;
+    }
+  else
+  if (dynamic_cast<vtkUnstructuredGrid*>(source))
+    {
+    copier=new UnstructuredGridCellCopier;
+    }
+  else
+    {
+    vtkErrorMacro("Unsupported dataset type " << source->GetClassName() << ".");
+    return 1;
+    }
+  copier->Initialize(source,output);
 
   int worldSize=1;
   MPI_Comm_size(MPI_COMM_WORLD,&worldSize);
@@ -270,22 +208,13 @@ int vtkSQRandomCells::RequestData(
   int worldRank=0;
   MPI_Comm_rank(MPI_COMM_WORLD,&worldRank);
 
-  // sanity - the requst cannot be fullfilled (not necessarilly an error)
-  if (pieceNo>=nPieces)
-    {
-    output->Initialize();
-    // return 1;
-    // even though no work for this rank, he will participate in
-    // collective communication.
-    }
-
   // count of the cells we own.
-  int nLocalCells=source->GetNumberOfCells();
+  unsigned long long nLocalCells=source->GetNumberOfCells();
 
   // number and local cell ids of cells which we own which
   // are to be passed through to the output.
-  int nCellsToPass=0;
-  vector<int> cellsToPass;
+  unsigned long long nCellsToPass=0;
+  vector<unsigned long long> cellsToPass;
 
   const int masterRank=(worldSize==1?0:1);
 
@@ -293,20 +222,20 @@ int vtkSQRandomCells::RequestData(
   if (worldRank==masterRank)
     {
     // get counts of all cells.
-    int nRemoteCells[worldSize];
+    unsigned long long nRemoteCells[worldSize];
     MPI_Gather(
         &nLocalCells,
         1,
-        MPI_INT,
+        MPI_UNSIGNED_LONG_LONG,
         &nRemoteCells[0],
         1,
-        MPI_INT,
+        MPI_UNSIGNED_LONG_LONG,
         masterRank,
         MPI_COMM_WORLD);
 
     // construct the cell id block owned by each process.
-    int nCellsTotal=0;
-    CellIdBlock remoteCellIds[worldSize];
+    unsigned long long nCellsTotal=0;
+    IdBlock remoteCellIds[worldSize];
     for (int i=0; i<worldSize; ++i)
       {
       remoteCellIds[i].first()=nCellsTotal;
@@ -316,21 +245,25 @@ int vtkSQRandomCells::RequestData(
 
     // select cells to pass through. assigned to the process who
     // owns them.
-    int nAssigned[worldSize];
+    unsigned long long nAssigned[worldSize];
     for (int i=0; i<worldSize; ++i)
       {
-      nAssigned[i]=0;
+      nAssigned[i]=0ll;
       }
-    vector<int> assignments[worldSize];
-    ///srand(time(0));
-    set<int> usedCellIds;
+    vector<unsigned long long> assignments[worldSize];
+
+    // seed the number generator.
+    int seed=(this->Seed<0?time(0):this->Seed);
+    srand(seed);
+
+    set<unsigned long long> usedCellIds;
     SetInsert ok;
     for (int i=0; i<this->SampleSize; ++i)
       {
-      int cellId=0;
+      unsigned long long cellId=0;
       do
         {
-        cellId=(int)((double)nCellsTotal*(double)rand()/(double)RAND_MAX);
+        cellId=(unsigned long long)((double)nCellsTotal*(double)rand()/(double)RAND_MAX);
         ok=usedCellIds.insert(cellId);
         }
       while (!ok.second);
@@ -349,8 +282,8 @@ int vtkSQRandomCells::RequestData(
         cellsToPass=assignments[i];
         continue;
         }
-      MPI_Send(&nAssigned[i],1,MPI_INT,i,0,MPI_COMM_WORLD);
-      MPI_Send(&((assignments[i])[0]),nAssigned[i],MPI_INT,i,1,MPI_COMM_WORLD);
+      MPI_Send(&nAssigned[i],1,MPI_UNSIGNED_LONG_LONG,i,0,MPI_COMM_WORLD);
+      MPI_Send(&((assignments[i])[0]),nAssigned[i],MPI_UNSIGNED_LONG_LONG,i,1,MPI_COMM_WORLD);
       }
     }
   else
@@ -359,10 +292,10 @@ int vtkSQRandomCells::RequestData(
     MPI_Gather(
         &nLocalCells,
         1,
-        MPI_INT,
+        MPI_UNSIGNED_LONG_LONG,
         0,
         0,
-        MPI_INT,
+        MPI_UNSIGNED_LONG_LONG,
         masterRank,
         MPI_COMM_WORLD);
 
@@ -371,7 +304,7 @@ int vtkSQRandomCells::RequestData(
     MPI_Recv(
           &nCellsToPass,
           1,
-          MPI_INT,
+          MPI_UNSIGNED_LONG_LONG,
           masterRank,
           0,
           MPI_COMM_WORLD,
@@ -381,54 +314,21 @@ int vtkSQRandomCells::RequestData(
     MPI_Recv(
           &cellsToPass[0],
           nCellsToPass,
-          MPI_INT,
+          MPI_UNSIGNED_LONG_LONG,
           masterRank,
           1,
           MPI_COMM_WORLD,
           &stat);
     }
 
-  // OK to stop here, no further collective communications.
-  if (nCellsToPass<1)
-    {
-    return 1;
-    }
-
-  vtkCellArray *sourceCells=source->GetPolys();
-  if (sourceCells==NULL)
-    {
-    sqErrorMacro(cerr,"Source does not conatin polygonal cells.");
-    return 0;
-    }
-
-  vtkFloatArray *sourcePts
-    = dynamic_cast<vtkFloatArray*>(source->GetPoints()->GetData());
-  if (sourcePts==NULL)
-    {
-    sqErrorMacro(cerr,"Source does not contain single precision points.");
-    return 0;
-    }
-
-  vtkCellArray *outCells=vtkCellArray::New();
-  output->SetPolys(outCells);
-  outCells->Delete();
-
-  vtkPoints *points=vtkPoints::New();
-  output->SetPoints(points);
-  points->Delete();
-  vtkFloatArray *outPts
-    = dynamic_cast<vtkFloatArray*>(points->GetData());
-
-  map<vtkIdType,vtkIdType> usedPts;
+  // copy cells, assoictaed points and data attributes to the output.
   for (int i=0; i<nCellsToPass; ++i)
     {
-    int ok=copyCell(cellsToPass[i],sourceCells,sourcePts,outCells,outPts,usedPts);
-    if (!ok)
-      {
-      vtkErrorMacro("faild to copy cell " << cellsToPass[i] << ".");
-      return 1;
-      }
+    copier->Copy(cellsToPass[i]);
     }
+
+  delete copier;
+
 
   return 1;
 }

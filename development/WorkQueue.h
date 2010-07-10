@@ -9,7 +9,7 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __WorkQueue_h
 #define __WorkQueue_h
 
-#include "CellIdBlock.h"
+#include "IdBlock.h"
 #include "minmax.h"
 
 
@@ -23,7 +23,7 @@ public:
     m_end(size)
      { }
 
-  int GetBlock(CellIdBlock &b, int size)
+  int GetBlock(IdBlock &b, int size)
     {
     if (m_at==m_end)
       {

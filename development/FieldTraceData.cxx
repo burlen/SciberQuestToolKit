@@ -8,7 +8,6 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "FieldTraceData.h"
 
-#include "WorkQueue.h"
 #include "TerminationCondition.h"
 #include "vtkDataSet.h"
 #include "vtkCellData.h"

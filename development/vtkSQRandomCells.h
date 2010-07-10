@@ -14,19 +14,25 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __vtkSQRandomCells_h
 #define __vtkSQRandomCells_h
 
-#include "vtkPolyDataAlgorithm.h"
+#include "vtkDataSetAlgorithm.h"
 
-class VTK_EXPORT vtkSQRandomCells : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkSQRandomCells : public vtkDataSetAlgorithm
 {
 public:
   static vtkSQRandomCells *New();
-  vtkTypeRevisionMacro(vtkSQRandomCells,vtkPolyDataAlgorithm);
+  vtkTypeRevisionMacro(vtkSQRandomCells,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
   // Set the number of cells to select.
   vtkSetMacro(SampleSize,int);
   vtkGetMacro(SampleSize,int);
+
+  // Description:
+  // Set the reandom number generator seed. The default is -1
+  // which causes the system clock to be used.
+  vtkSetMacro(Seed,int);
+  vtkGetMacro(Seed,int);
 
 protected:
   /// Pipeline internals.
@@ -39,6 +45,7 @@ protected:
 
 private:
   int SampleSize;
+  int Seed;
 
 private:
   vtkSQRandomCells(const vtkSQRandomCells&);  // Not implemented.

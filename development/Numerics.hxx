@@ -327,9 +327,9 @@ void Magnitude(int *I, T *V, T *mV)
 
 //*****************************************************************************
 template <typename T>
-void FaceDiv(int *I, double *dX, T *V, T *mV, T *div)
+void DivergenceFace(int *I, double *dX, T *V, T *mV, T *div)
 {
-  // *hi variables are numbe of cells in the out cell centered
+  // *hi variables are number of cells in the out cell centered
   // array. The in array is a point centered array of face data
   // with the last face left off.
   const int pihi=I[0]+1;
@@ -365,6 +365,65 @@ void FaceDiv(int *I, double *dX, T *V, T *mV, T *div)
       }
     }
 }
+
+//*****************************************************************************
+template <typename T>
+void Divergence(int input[6], int output[6], double dX[3], T *V, T *div)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int ninj=ni*nj;
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _ninj=_ni*_nj;
+
+  // stencil deltas
+  const double dx[3]={dX[0]*2.0,dX[1]*2.0,dX[2]*2.0};
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        // output array indices
+        const int _i=p-output[0];
+        const int _j=q-output[2];
+        const int _k=r-output[4];
+        // index into output array;
+        const int pi=_k*_ninj+_j*_ni+_i;
+
+        // input array indices
+        const int i=p-input[0];
+        const int j=q-input[2];
+        const int k=r-input[4];
+        // stencil into the input array
+        const int vi=3*(k*ninj+j*ni+i);
+        const int vilo=3*(k*ninj+j*ni+(i-1));
+        const int vihi=3*(k*ninj+j*ni+(i+1));
+        const int vjlo=3*(k*ninj+(j-1)*ni+i);
+        const int vjhi=3*(k*ninj+(j+1)*ni+i);
+        const int vklo=3*((k-1)*ninj+j*ni+i);
+        const int vkhi=3*((k+1)*ninj+j*ni+i);
+
+        // |V|
+        double mv=sqrt(V[vi]*V[vi]+V[vi+1]*V[vi+1]+V[vi+2]*V[vi+2]);
+
+        //        __   ->
+        //  div = \/ . V / |V|
+        div[pi]
+          =((V[vihi  ]-V[vilo  ])/dx[0]
+           +(V[vjhi+1]-V[vjlo+1])/dx[1]
+           +(V[vkhi+2]-V[vklo+2])/dx[2])/mv;
+        }
+      }
+    }
+}
+
 
 // input  -> patch input array is defined on
 // output -> patch outpu array is defined on

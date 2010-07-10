@@ -328,7 +328,7 @@ int vtkSQVolumeSource::RequestData(
     }
 
   // correct possible over-estimation.
-  X->SetNumberOfTuples(lpid);
+  X->Resize(lpid);
 
   // transfer
   output->SetCells(types,locs,cells);

@@ -15,7 +15,7 @@ Copyright 2008 SciberQuest Inc.
 #include <vector>
 using std::vector;
 
-class CellIdBlock;
+class IdBlock;
 class FieldLine;
 class vtkDataSet;
 class vtkIntArray;
@@ -47,18 +47,18 @@ public:
   compute seed points (centred on cells of input). Copy the cells
   on which we operate into the output.
   */
-  virtual int InsertCells(CellIdBlock *SourceIds)=0;
+  virtual int InsertCells(IdBlock *SourceIds)=0;
 
   /**
   Get a specific field line.
   */
-  FieldLine *GetFieldLine(int i){ return this->Lines[i]; }
+  FieldLine *GetFieldLine(unsigned long long i){ return this->Lines[i]; }
 
   /**
   Free resources holding the trace geometry. This can be quite large.
   Other data is retained.
   */
-  void ClearTrace(int i)
+  void ClearTrace(unsigned long long i)
     {
     this->Lines[i]->DeleteTrace();
     }

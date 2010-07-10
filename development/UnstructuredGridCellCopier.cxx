@@ -5,8 +5,11 @@
 /___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
 
 Copyright 2008 SciberQuest Inc.
+
 */
-#include "UnstructuredFieldTopologyMap.h"
+#include "UnstructuredGridCellCopier.h"
+
+#include "vtkUnstructuredGrid.h"
 
 #include "IdBlock.h"
 #include "FieldLine.h"
@@ -20,54 +23,52 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkIdTypeArray.h"
 
 //-----------------------------------------------------------------------------
-UnstructuredFieldTopologyMap::~UnstructuredFieldTopologyMap()
+UnstructuredGridCellCopier::~UnstructuredGridCellCopier()
 {
-  this->ClearSource();
-  this->ClearOut();
+  this->Clear();
 }
 
 //-----------------------------------------------------------------------------
-void UnstructuredFieldTopologyMap::ClearSource()
+void UnstructuredGridCellCopier::Clear()
 {
+  this->CellCopier::Clear();
+
   if (this->SourcePts){ this->SourcePts->Delete(); }
   if (this->SourceCells){ this->SourceCells->Delete(); }
   if (this->SourceTypes){ this->SourceTypes->Delete(); }
-  this->SourcePts=0;
-  this->SourceCells=0;
-  this->SourceTypes=0;
-  this->IdMap.clear();
-}
-
-//-----------------------------------------------------------------------------
-void UnstructuredFieldTopologyMap::ClearOut()
-{
   if (this->OutPts){ this->OutPts->Delete(); }
   if (this->OutCells){ this->OutCells->Delete(); }
   if (this->OutTypes){ this->OutTypes->Delete(); }
   if (this->OutLocs){ this->OutLocs->Delete(); }
+
+  this->SourcePts=0;
+  this->SourceCells=0;
+  this->SourceTypes=0;
   this->OutPts=0;
   this->OutCells=0;
   this->OutTypes=0;
   this->OutLocs=0;
-  this->IdMap.clear();
 }
 
 //-----------------------------------------------------------------------------
-void UnstructuredFieldTopologyMap::SetSource(vtkDataSet *s)
+void UnstructuredGridCellCopier::Initialize(vtkDataSet *s, vtkDataSet *o)
 {
-  this->ClearSource();
+  this->Clear();
+  this->CellCopier::Initialize(s,o);
 
+  // source
   vtkUnstructuredGrid *source=dynamic_cast<vtkUnstructuredGrid*>(s);
   if (source==0)
     {
-    cerr << "Error: Source must be unstructured. " << s->GetClassName() << endl;
+    sqErrorMacro(cerr,
+       "Error: Source must be unstructured. " << s->GetClassName());
     return;
     }
 
   this->SourcePts=dynamic_cast<vtkFloatArray*>(source->GetPoints()->GetData());
   if (this->SourcePts==0)
     {
-    cerr << "Error: Points are not float precision." << endl;
+    sqErrorMacro(cerr,"Error: Points are not float precision.");
     return;
     }
   this->SourcePts->Register(0);
@@ -77,19 +78,13 @@ void UnstructuredFieldTopologyMap::SetSource(vtkDataSet *s)
 
   this->SourceTypes=source->GetCellTypesArray();
   this->SourceTypes->Register(0);
-}
 
-//-----------------------------------------------------------------------------
-void UnstructuredFieldTopologyMap::SetOutput(vtkDataSet *o)
-{
-  this->FieldTraceData::SetOutput(o);
-
-  this->ClearOut();
-
+  // output
   vtkUnstructuredGrid *out=dynamic_cast<vtkUnstructuredGrid*>(o);
   if (out==0)
     {
-    cerr << "Error: Out must be unstructured grid. " << o->GetClassName() << endl;
+    sqErrorMacro(cerr,
+      "Error: Out must be unstructured grid. " << o->GetClassName());
     return;
     }
 
@@ -108,10 +103,14 @@ void UnstructuredFieldTopologyMap::SetOutput(vtkDataSet *o)
 }
 
 //-----------------------------------------------------------------------------
-int UnstructuredFieldTopologyMap::InsertCells(IdBlock *SourceIds)
+int UnstructuredGridCellCopier::Copy(IdBlock &SourceIds)
 {
-  vtkIdType startCellId=SourceIds->first();
-  vtkIdType nCellsLocal=SourceIds->size();
+  // copy cell data
+  this->CopyCellData(SourceIds);
+
+  // copy cell geometry and point data
+  vtkIdType startCellId=SourceIds.first();
+  vtkIdType nCellsLocal=SourceIds.size();
 
   // Cells are sequentially acccessed so explicitly skip all cells
   // we aren't interested in.
@@ -125,7 +124,10 @@ int UnstructuredFieldTopologyMap::InsertCells(IdBlock *SourceIds)
 
   // input points
   float *pSourcePts=this->SourcePts->GetPointer(0);
-  unsigned char *pSourceTypes=this->SourceTypes->GetPointer(0);
+
+  // input types
+  unsigned char *pSourceTypes
+    = this->SourceTypes->GetPointer(startCellId);
 
   // output points
   vtkIdType nOutPts=this->OutPts->GetNumberOfTuples();
@@ -144,16 +146,7 @@ int UnstructuredFieldTopologyMap::InsertCells(IdBlock *SourceIds)
   vtkIdType endOfLocs=this->OutLocs->GetNumberOfTuples();
   vtkIdType *pOutLocs=this->OutLocs->WritePointer(endOfLocs,nCellsLocal);
 
-  // field lines
-  int lId=this->Lines.size();
-  this->Lines.resize(lId+nCellsLocal,0);
-
-  vtkIdType sourceCellId=startCellId;
-
-  // For each cell asigned to us we'll get its center to use as a
-  // seed point and copy the cell into the output, The output only
-  // will have the cells assigned to this process, while the input
-  // may have all of the cells.
+  // For each cell asigned
   for (vtkIdType i=0; i<nCellsLocal; ++i)
     {
     // get the cell that belong to us.
@@ -166,8 +159,9 @@ int UnstructuredFieldTopologyMap::InsertCells(IdBlock *SourceIds)
     ++pOutLocs;
 
     // copy its type.
-    *pOutTypes=pSourceTypes[sourceCellId];
+    *pOutTypes=*pSourceTypes;
     ++pOutTypes;
+    ++pSourceTypes;
 
     // Get location to write new cell.
     vtkIdType *pOutCells=outCells->WritePointer(nCellIds,nPtIds+1);
@@ -182,16 +176,14 @@ int UnstructuredFieldTopologyMap::InsertCells(IdBlock *SourceIds)
     // Get location to write new point. assumes we need to copy all
     // but this is wrong as there will be many duplicates. ignored.
     float *pOutPts=this->OutPts->WritePointer(3*nOutPts,3*nPtIds);
-    // the  point we will use the center of the cell
-    double seed[3]={0.0};
+
     // transfer from input to output (only what we own)
     for (vtkIdType j=0; j<nPtIds; ++j)
       {
       vtkIdType idx=3*ptIds[j];
+      vtkIdType outId=nOutPts;
       // do we already have this point?
-      MapElement elem(ptIds[j],nOutPts);
-      MapInsert ret=this->IdMap.insert(elem);
-      if (ret.second==true)
+      if (this->GetUniquePointId(ptIds[j],outId))
         {
         // this point hasn't previsouly been coppied
         // copy the point.
@@ -199,32 +191,14 @@ int UnstructuredFieldTopologyMap::InsertCells(IdBlock *SourceIds)
         pOutPts[1]=pSourcePts[idx+1];
         pOutPts[2]=pSourcePts[idx+2];
         pOutPts+=3;
-
-        // insert the new point id.
-        *pOutCells=nOutPts;
         ++nOutPts;
+        // copy point data
+        this->CopyPointData(ptIds[j]);
         }
-      else
-        {
-        // this point has been coppied, do not add a duplicate.
-        // insert the other point id.
-        *pOutCells=(*ret.first).second;
-        }
+      // insert the point id into the new cell.
+      *pOutCells=outId;
       ++pOutCells;
-
-      // compute contribution to cell center.
-      seed[0]+=pSourcePts[idx  ];
-      seed[1]+=pSourcePts[idx+1];
-      seed[2]+=pSourcePts[idx+2];
       }
-    // finsih the seed point computation (at cell center).
-    seed[0]/=nPtIds;
-    seed[1]/=nPtIds;
-    seed[2]/=nPtIds;
-
-    this->Lines[lId]=new FieldLine(seed,sourceCellId);
-    ++sourceCellId;
-    ++lId;
     }
 
   // correct the length of the point array, above we assumed 

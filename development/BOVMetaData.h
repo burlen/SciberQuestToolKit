@@ -124,6 +124,11 @@ public:
   const double *GetSpacing() const { return this->Spacing; }
   /// \@}
 
+  /**
+  Return a string naming the vtk dataset that is to be used to
+  hold the data.
+  */
+  virtual const char *GetDataSetType(){ return "vtkImageData"; }
 
   /// \Section ArrayModifiers \@{
   /**

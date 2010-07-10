@@ -191,6 +191,12 @@ void pqSQBOVMetaReader::UpdateDecompDims()
   int nCells[3];
   this->Subset.Size(nCells);
 
+  // sanity - prevent log(0)
+  if (nCells[0]<1 || nCells[1]<1 || nCells[2]<1)
+    {
+    return;
+    }
+
   unsigned long int nBlocks=1;
 
   for (int q=0; q<3; ++q)

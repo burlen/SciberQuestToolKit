@@ -50,6 +50,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkSQMetaDataKeys.h"
 #include "FieldLine.h"
 #include "TerminationCondition.h"
+#include "IdBlock.h"
 #include "WorkQueue.h"
 #include "FieldTraceData.h"
 #include "PolyDataFieldTopologyMap.h"
@@ -711,7 +712,7 @@ int vtkSQFieldTracer::IntegrateStatic(
       FieldTraceData *traceData)
 {
   // do all local ids in a single pass.
-  CellIdBlock sourceIds;
+  IdBlock sourceIds;
   sourceIds.first()=0;
   sourceIds.size()=nCells;
 
@@ -765,11 +766,17 @@ int vtkSQFieldTracer::IntegrateDynamic(
           int otherProc=stat.MPI_SOURCE;
           MPI_Recv(&buf,1,MPI_INT,otherProc,BLOCK_REQ,MPI_COMM_WORLD,&stat);
           // get a block of work.
-          CellIdBlock sourceIds;
+          IdBlock sourceIds;
           moreWork=Q.GetBlock(sourceIds,workerBlockSize);
           // send the work. If there is no more, send zero sized block
           // this closes all workers.
-          MPI_Send(sourceIds.data(),sourceIds.dataSize(),MPI_INT,otherProc,BLOCK_REQ,MPI_COMM_WORLD);
+          MPI_Send(
+              sourceIds.data(),
+              sourceIds.dataSize(),
+              MPI_UNSIGNED_LONG_LONG,
+              otherProc,
+              BLOCK_REQ,
+              MPI_COMM_WORLD);
           if (!moreWork)
             {
             --nActiveWorkers;
@@ -788,7 +795,7 @@ int vtkSQFieldTracer::IntegrateDynamic(
 
       // now that all the worker that need work have it. Do a small amount
       // of work while the others are busy.
-      CellIdBlock sourceIds;
+      IdBlock sourceIds;
       moreWork=Q.GetBlock(sourceIds,masterBlockSize);
       if (moreWork)
         {
@@ -819,8 +826,15 @@ int vtkSQFieldTracer::IntegrateDynamic(
       // get a block of seed cell ids to process.
       MPI_Send(&procId,1,MPI_INT,masterProcId,BLOCK_REQ,MPI_COMM_WORLD);
       MPI_Status stat;
-      CellIdBlock sourceIds;
-      MPI_Recv(sourceIds.data(),sourceIds.dataSize(),MPI_INT,masterProcId,BLOCK_REQ,MPI_COMM_WORLD,&stat);
+      IdBlock sourceIds;
+      MPI_Recv(
+          sourceIds.data(),
+          sourceIds.dataSize(),
+          MPI_UNSIGNED_LONG_LONG,
+          masterProcId,
+          BLOCK_REQ,
+          MPI_COMM_WORLD,
+          &stat);
 
       #if vtkSQFieldTracerDEBUG>1
       cerr << "Slave " << procId << " received " << sourceIds << endl;
@@ -846,7 +860,7 @@ int vtkSQFieldTracer::IntegrateDynamic(
 
 //-----------------------------------------------------------------------------
 int vtkSQFieldTracer::IntegrateBlock(
-      CellIdBlock *sourceIds,
+      IdBlock *sourceIds,
       FieldTraceData *traceData,
       const char *fieldName,
       vtkSQOOCReader *oocr,

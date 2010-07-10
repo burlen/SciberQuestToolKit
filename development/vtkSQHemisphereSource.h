@@ -27,7 +27,7 @@ class vtkInitialValueProblemSolver;
 class vtkPointSet;
 //BTX
 class FieldLine;
-class CellIdBlock;
+class IdBlock;
 class FieldTopologyMap;
 class TerminationCondition;
 //ETX

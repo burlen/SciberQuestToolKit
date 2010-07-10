@@ -21,8 +21,8 @@ class FieldLine
 public:
 
   FieldLine();
-  FieldLine(float p[3], int seedId=0);
-  FieldLine(double p[3], int seedId=0);
+  FieldLine(float p[3], unsigned long long seedId=0);
+  FieldLine(double p[3], unsigned long long seedId=0);
   FieldLine(const FieldLine &other) { *this=other; }
   ~FieldLine() { this->DeleteTrace(); }
 
@@ -39,10 +39,10 @@ public:
   // Description:
   // Set seed point for coming trace and clear out internal data
   // structures.
-  void Initialize(double p[3], int seedId);
+  void Initialize(double p[3], unsigned long long seedId);
   // Description:
   // Get seed point and it's id.
-  int GetSeedId() const { return this->SeedId; }
+  unsigned long long GetSeedId() const { return this->SeedId; }
   double *GetSeedPoint() { return this->Seed; }
   // const double *GetSeedPoint() const{ return this->Seed; }
   void GetSeedPoint(double p[3]) const;
@@ -83,7 +83,7 @@ private:
   vtkFloatArray *FwdTrace;    // streamline trace along V
   vtkFloatArray *BwdTrace;    // streamline trace along -V
   double Seed[3];             // seed point
-  int SeedId;                 // cell id in origniating dataset
+  unsigned long long SeedId;  // cell id in origniating dataset
   int FwdTerminator;          // code indicating how fwd trace ended
   int BwdTerminator;          // code indicating how bwd trace ended
 };
@@ -105,7 +105,7 @@ FieldLine::FieldLine()
 
 //-----------------------------------------------------------------------------
 inline
-FieldLine::FieldLine(double p[3], int seedId)
+FieldLine::FieldLine(double p[3], unsigned long long seedId)
     :
   FwdTrace(0),
   BwdTrace(0),
@@ -120,7 +120,7 @@ FieldLine::FieldLine(double p[3], int seedId)
 
 //-----------------------------------------------------------------------------
 inline
-FieldLine::FieldLine(float p[3], int seedId)
+FieldLine::FieldLine(float p[3], unsigned long long seedId)
     :
   FwdTrace(0),
   BwdTrace(0),
@@ -158,7 +158,7 @@ void FieldLine::DeleteTrace()
 
 //-----------------------------------------------------------------------------
 inline
-void FieldLine::Initialize(double p[3], int seedId)
+void FieldLine::Initialize(double p[3], unsigned long long seedId)
 {
   this->Seed[0]=p[0];
   this->Seed[1]=p[1];

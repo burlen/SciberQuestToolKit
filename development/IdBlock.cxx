@@ -7,9 +7,9 @@
 Copyright 2008 SciberQuest Inc.
 */
 
-#include "CellIdBlock.h"
+#include "IdBlock.h"
 
-ostream &operator<<(ostream &os, const CellIdBlock &b)
+ostream &operator<<(ostream &os, const IdBlock &b)
 {
   os << "(" << b.m_data[0] << ", " << b.m_data[1] << ")";
   return os;

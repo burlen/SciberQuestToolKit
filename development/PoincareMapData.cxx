@@ -145,7 +145,7 @@ void PoincareMapData::SetOutput(vtkDataSet *o)
 }
 
 //-----------------------------------------------------------------------------
-int PoincareMapData::InsertCells(CellIdBlock *SourceIds)
+int PoincareMapData::InsertCells(IdBlock *SourceIds)
 {
   vtkIdType startId=SourceIds->first();
   vtkIdType endId=SourceIds->last();

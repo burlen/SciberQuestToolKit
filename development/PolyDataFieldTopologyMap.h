@@ -18,7 +18,7 @@ using std::vector;
 using std::map;
 using std::pair;
 
-class CellIdBlock;
+class IdBlock;
 class FieldLine;
 class vtkDataSet;
 class vtkFloatArray;
@@ -57,7 +57,7 @@ public:
   // Description:
   // Convert a list of seed cells (sourceIds) to FieldLine
   // structures and build the output (if any).
-  virtual int InsertCells(CellIdBlock *SourceIds);
+  virtual int InsertCells(IdBlock *SourceIds);
 
 
 private:
@@ -75,7 +75,13 @@ private:
   vtkFloatArray *OutPts;
   vtkCellArray *OutCells;
 
-  enum {NONE=0,POLY=1,VERT=2};
+  enum {
+    NONE=0,
+    POLY=1,
+    VERT=2,
+    STRIP=3,
+    LINE=4
+    };
   int CellType;
 };
 

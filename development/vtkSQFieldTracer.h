@@ -29,8 +29,8 @@ class vtkMultiProcessController;
 class vtkInitialValueProblemSolver;
 class vtkPointSet;
 //BTX
+class IdBlock;
 class FieldLine;
-class CellIdBlock;
 class FieldTraceData;
 class TerminationCondition;
 //ETX
@@ -209,7 +209,7 @@ private:
   // Description:
   // Integrate field lines seeded from a block of consecutive cell ids.
   int IntegrateBlock(
-        CellIdBlock *sourceIds,
+        IdBlock *sourceIds,
         FieldTraceData *topoMap,
         const char *fieldName,
         vtkSQOOCReader *oocr,
