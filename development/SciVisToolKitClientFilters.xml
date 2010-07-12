@@ -15,10 +15,11 @@ Copyright 2008 SciberQuest Inc.
     <Proxy group="filters" name="vtkSQHemisphereSource"/>
     <Proxy group="filters" name="vtkSQPoincareMapper"/>
     <Proxy group="filters" name="vtkSQPoincareMapperRK45"/>
-    <Proxy group="filters" name="vtkSQVortexFilter"/>
     <Proxy group="filters" name="vtkSQRandomSeedPoints"/>
     <Proxy group="filters" name="vtkSQRandomCells"/>
     <Proxy group="filters" name="vtkSQSeedPointLatice"/>
+    <Proxy group="filters" name="vtkSQSurfaceVectors"/>
+    <Proxy group="filters" name="vtkSQVortexFilter"/>
   </Category>
 
 </ParaViewFilters>

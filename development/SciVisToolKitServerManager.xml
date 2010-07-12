@@ -255,6 +255,7 @@ Copyright 2008 SciberQuest Inc.
     <Hints>
       <Property name="MetaRead" show="0"/>
       <ReaderFactory extensions="bov" file_description="Brick-Of-Values files." />
+      <View type="RenderView"/>
     </Hints>
   </SourceProxy>
 
@@ -2594,6 +2595,32 @@ Copyright 2008 SciberQuest Inc.
      </IntVectorProperty>
 
   <!-- End vtkSQVortexFilter -->
+  </SourceProxy>
+
+  <!-- ==================================================================== -->
+  <SourceProxy 
+      name="vtkSQSurfaceVectors" 
+      class="vtkSQSurfaceVectors"
+      label="SQ Surface Vectors">
+    <Documentation
+      long_help="Long Documentation"
+      short_help="Short Documentation">
+      Compute project vector fields onto a surface and surface normal.
+    </Documentation>
+
+    <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+    </InputProperty>
+
+  <!-- End vtkSQSurfaceVectors -->
   </SourceProxy>
 
   <!-- ==================================================================== -->

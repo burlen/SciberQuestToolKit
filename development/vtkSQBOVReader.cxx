@@ -768,6 +768,10 @@ int vtkSQBOVReader::RequestData(
   // subset extent from a node based extent to a cell based
   // one.
   subset.NodeToCell(); // dual grid
+  if (subset[5]<subset[4])
+    {
+    subset[5]=subset[4];
+    }
 
   // Get the values for origin and spacing from our previous computation
   // in RequestInformation. For a meta-read these are pseudo values.
@@ -804,6 +808,14 @@ int vtkSQBOVReader::RequestData(
     {
     // Meta read.
     ok=this->Reader->ReadMetaTimeStep(stepId,idds,this);
+    if (!ok)
+      {
+      vtkErrorMacro(
+        << "Read failed." << endl
+        << *this->Reader->GetMetaData());
+      idds->Initialize();
+      return 1;
+      }
 
     // Make a domain decomposition of the requested subset.
     double *subsetX0=this->Reader->GetMetaData()->GetOrigin();
@@ -811,6 +823,11 @@ int vtkSQBOVReader::RequestData(
 
     CartesianExtent fileExt=this->Reader->GetMetaData()->GetDomain();
     fileExt.NodeToCell(); // dual grid
+
+    if (fileExt[5]<fileExt[4])
+      {
+      fileExt[5]=fileExt[4];
+      }
 
     CartesianDecomp *ddecomp=CartesianDecomp::New();
     ddecomp->SetFileExtent(fileExt);
@@ -821,7 +838,13 @@ int vtkSQBOVReader::RequestData(
     ddecomp->SetDecompDims(this->DecompDims);
     ddecomp->SetPeriodicBC(this->PeriodicBC);
     ddecomp->SetNumberOfGhostCells(this->NGhosts);
-    ddecomp->DecomposeDomain();
+    ok=ddecomp->DecomposeDomain();
+    if (!ok)
+      {
+      vtkErrorMacro("Failed to decompose domain.");
+      idds->Initialize();
+      return 1;
+      }
 
     // Pass the reader into the pipeline, actual read takes
     // place later intiated by downstream filter.
@@ -857,24 +880,22 @@ int vtkSQBOVReader::RequestData(
     this->Reader->GetMetaData()->SetDecomp(decomp);
 
     BOVTimeStepImage *stepImg=this->Reader->OpenTimeStep(stepId);
-
     ok=this->Reader->ReadTimeStep(stepImg,idds,this);
-
     this->Reader->CloseTimeStep(stepImg);
+    if (!ok)
+      {
+      vtkErrorMacro(
+        << "Read failed." << endl
+        << *this->Reader->GetMetaData());
+      idds->Initialize();
+      return 1;
+      }
 
     // pass the bounds
     double subsetBounds[6];
     subset.GetBounds(X0,dX,subsetBounds);
 
     info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
-    }
-  if (!ok)
-    {
-    vtkErrorMacro(
-      << "Read failed." << endl
-      << *this->Reader->GetMetaData());
-    idds->Initialize();
-    return 1;
     }
 
   // Give implementation classes a chance to push specialized

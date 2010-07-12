@@ -33,28 +33,6 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQSurfaceVectors *New();
 
-  // Description:
-  // This mode determines whether this filter projects vectors to
-  // be perpendicular to surface or parallel to surface. It defaults
-  // to parallel.
-  vtkSetMacro(Mode,int);
-  vtkGetMacro(Mode,int);
-  //BTX
-  enum {
-    MODE_PARALLEL=0,
-    MODE_PERP
-    };
-  //ETX
-
-  // Description:
-  // Project vectors onto the surface.
-  void SetModeToParallel(){ this->SetMode(MODE_PARALLEL); }
-
-  // Description:
-  // Project vectors onto the surface normal.
-  void SetModeToPerpendicular(){ this->SetMode(MODE_PERP);}
-
-
 protected:
   vtkSQSurfaceVectors();
   ~vtkSQSurfaceVectors();
@@ -62,10 +40,6 @@ protected:
   // Usual data generation method
   virtual int RequestData(vtkInformation *,vtkInformationVector **,vtkInformationVector *);
   //virtual int RequestUpdateExtent(vtkInformation*,vtkInformationVector**,vtkInformationVector*);
-
-
-private:
-  int ConstraintMode;
 
 private:
   vtkSQSurfaceVectors(const vtkSQSurfaceVectors&);  // Not implemented.

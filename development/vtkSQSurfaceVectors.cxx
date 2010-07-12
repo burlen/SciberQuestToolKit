@@ -14,17 +14,24 @@
 =========================================================================*/
 #include "vtkSQSurfaceVectors.h"
 
-#include "vtkCellType.h"
-#include "vtkDataSet.h"
-#include "vtkDoubleArray.h"
-#include "vtkIdList.h"
+
+#include "vtkObjectFactory.h"
+#include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
-#include "vtkObjectFactory.h"
+
+#include "vtkDataSet.h"
 #include "vtkPointData.h"
-#include "vtkPolygon.h"
-#include "vtkStreamingDemandDrivenPipeline.h"
-#include "vtkTriangle.h"
+#include "vtkDoubleArray.h"
+#include "vtkIdList.h"
+#include "vtkCellType.h"
+
+#include <vector>
+using std::vector;
+
+#include <sstream>
+using std::ostringstream;
+
 
 //*****************************************************************************
 template<typename T>
@@ -42,8 +49,11 @@ void AccumulateNormal(T p1[3], T p2[3], T p3[3], T n[3])
       p3[2]-p1[2]
       };
 
-  T v3[3];
-  vtkMath::Cross(v1,v2,v3);
+  T v3[3]={
+    v1[1]*v2[2]-v2[1]*v1[2],
+    v2[0]*v1[2]-v1[0]*v2[2],
+    v1[0]*v2[1]-v2[0]*v1[1]
+    };
 
   n[0]+=v3[0];
   n[1]+=v3[1];
@@ -56,7 +66,6 @@ vtkStandardNewMacro(vtkSQSurfaceVectors);
 //-----------------------------------------------------------------------------
 vtkSQSurfaceVectors::vtkSQSurfaceVectors()
 {
-  this->ConstraintMode = MODE_PARALLEL;
 }
 
 //-----------------------------------------------------------------------------
@@ -131,6 +140,10 @@ int vtkSQSurfaceVectors::RequestData(
       }
     }
 
+  double prog=0.0;
+  double progInc=1.0/nPoints;
+  double progRep=0.1;
+
   vtkIdList* cIds = vtkIdList::New();
   vtkIdList* ptIds = vtkIdList::New();
 
@@ -138,16 +151,28 @@ int vtkSQSurfaceVectors::RequestData(
   int nVectors=vectors.size();
   for (int i=0; i<nVectors; ++i)
     {
+    // progress
+    prog+=progInc;
+    if (prog>=progRep)
+      {
+      this->UpdateProgress(prog);
+      progRep+=0.1;
+      }
+
+    ostringstream os;
+
     vtkDataArray *proj=vectors[i]->NewInstance();
     proj->SetNumberOfComponents(3);
     proj->SetNumberOfTuples(nPoints);
-    proj->SetName(vectors[i]->GetName());
+    os << vectors[i]->GetName() << "_par";
+    proj->SetName(os.str().c_str());
     output->GetPointData()->AddArray(proj);
     proj->Delete();
 
-    vtkDoubleArray *perp=vtkDoubleArray::New();
+    vtkDataArray *perp=vectors[i]->NewInstance();
+    perp->SetNumberOfComponents(3);
     perp->SetNumberOfTuples(nPoints);
-    osstringstream os;
+    os.str("");
     os << vectors[i]->GetName() << "_perp";
     perp->SetName(os.str().c_str());
     output->GetPointData()->AddArray(perp);
@@ -162,7 +187,8 @@ int vtkSQSurfaceVectors::RequestData(
       double n[3]={0.0};
       for (int j=0; j<nCIds; ++j)
         {
-        switch (input->GetCellType(cIds->GetId(j)))
+        vtkIdType cid=cIds->GetId(j);
+        switch (input->GetCellType(cid))
           {
           case VTK_PIXEL:
           case VTK_POLYGON:
@@ -170,53 +196,55 @@ int vtkSQSurfaceVectors::RequestData(
           case VTK_QUAD:
             {
             input->GetCellPoints(cid,ptIds);
+
+            double p1[3],p2[3],p3[3];
             input->GetPoint(ptIds->GetId(0),p1);
             input->GetPoint(ptIds->GetId(1),p2);
             input->GetPoint(ptIds->GetId(2),p3);
 
-            AccumulateNormal(p1,p2,p3,n);
+            AccumulateNormal<double>(p1,p2,p3,n);
             }
             break;
 
           default:
-            vtkErrorMacro("Unsuported cell type " << cellType << ".");
+            vtkErrorMacro(
+              << "Unsuported cell type "
+              << input->GetCellType(cid) 
+              << ".");
             return 1;
             break;
           }
         }
-      //normal[0]/=nCids;
-      //normal[1]/=nCids;
-      //normal[2]/=nCids;
-      vtkMath::Normalize(n);
+      //n[0]/=nCids;
+      //n[1]/=nCids;
+      //n[2]/=nCids;
+
+      double m=sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2]);
+      n[0]/=m;
+      n[1]/=m;
+      n[2]/=m;
 
       double v[3];
-      inVectors->GetTuple(pid,v);
+      vectors[i]->GetTuple(pid,v);
 
-      double v_perp=vtkMath::Dot(n,v);
-      perp->InsertValue(pid,v_perp);
+      // v.n
+      double v_perp=n[0]*v[0]+n[1]*v[1]+n[2]*v[2];
 
-      switch (this->ConstraintMode)
-        {
-        case MODE_PARALLEL:
-          // remove perp component
-          v[0]=v[0]-(n[0]*v_perp);
-          v[1]=v[1]-(n[1]*v_perp);
-          v[2]=v[2]-(n[2]*v_perp);
+      // perpendicular component
+      v[0]=n[0]*v_perp;
+      v[1]=n[1]*v_perp;
+      v[2]=n[2]*v_perp;
+      perp->InsertTuple(pid,v);
 
-        case MDOE_PERP:
-          // remove parallel components
-          v[0]=n[0]*v_perp;
-          v[1]=n[1]*v_perp;
-          v[2]=n[2]*v_perp;
-
-        default:
-          vtkErrorMacro("Bad ConstraintMode.");
-          return 1;
-        }
+      // parallel component
+      vectors[i]->GetTuple(pid,v);
+      v[0]=v[0]-(n[0]*v_perp);
+      v[1]=v[1]-(n[1]*v_perp);
+      v[2]=v[2]-(n[2]*v_perp);
       proj->InsertTuple(pid,v);
       }
     }
-  cellIds->Delete();
+  cIds->Delete();
   ptIds->Delete();
 
   return 1;
@@ -226,6 +254,5 @@ int vtkSQSurfaceVectors::RequestData(
 void vtkSQSurfaceVectors::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
-  os << indent << "ConstraintMode:" << this->ConstraintMode << endl;
 }
 

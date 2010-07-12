@@ -313,9 +313,9 @@ int CartesianDecomp::DecomposeDomain()
   int nCells[3];
   this->Extent.Size(nCells);
 
-  if ( this->DecompDims[0]>=nCells[0]
-    || this->DecompDims[1]>=nCells[1]
-    || this->DecompDims[2]>=nCells[2] )
+  if ( this->DecompDims[0]>nCells[0]
+    || this->DecompDims[1]>nCells[1]
+    || this->DecompDims[2]>nCells[2] )
     {
     sqErrorMacro(cerr,
       << "Too many blocks "
