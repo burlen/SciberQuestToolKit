@@ -16,7 +16,7 @@ int main(int argc, char **argv)
     {
     cerr
       << "Usage:" << endl
-      << argv[0] << "nx ny nz /out/file/name" << endl
+      << argv[0] << " nx ny nz /out/file/name" << endl
       << endl;
     return 1;
     }

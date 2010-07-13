@@ -6,8 +6,8 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef __postream_h
-#define __postream_h
+#ifndef __pOstream_h
+#define __pOstream_h
 
 #include <iostream>
 using std::ostream;
