@@ -205,9 +205,14 @@ set(BUILD_SVTK_UTILITIES OFF CACHE BOOL "Build SciVisToolKit utilities.")
       message(SEND_ERROR "MPI is required for the gentp utility.")
     endif(NOT MPI_FOUND)
     add_definitions("-DMPICH_IGNORE_CXX_SEEK")
+
     add_executable(gentp gentp.cpp FsUtils.cxx)
     target_link_libraries(gentp ${MPI_LIBRARIES})
     install(TARGETS gentp DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+    add_executable(genzero genzero.cpp)
+    install(TARGETS genzero DESTINATION ${CMAKE_INSTALL_PREFIX})
+
   endif (BUILD_SVTK_UTILITIES)
 endif (UNIX)
 

@@ -206,6 +206,29 @@ int GDAMetaData::OpenDataset(const char *fileName)
     this->AddVector("vi");
     ++nArrays;
     }
+  // 2d vector projections 
+  if (Represented(path,"bpx_")
+    && Represented(path,"bpy_")
+    && Represented(path,"bpz_"))
+    {
+    this->AddVector("bp");
+    ++nArrays;
+    }
+  if (Represented(path,"epx_")
+    && Represented(path,"epy_")
+    && Represented(path,"epz_"))
+    {
+    this->AddVector("ep");
+    ++nArrays;
+    }
+  if (Represented(path,"vipx_")
+    && Represented(path,"vipy_")
+    && Represented(path,"vipz_"))
+    {
+    this->AddVector("vip");
+    ++nArrays;
+    }
+
   // We had to find at least one brick, otherwise we have problems.
   // As long as there is at least one brick, generate the series ids.
   if (nArrays)
