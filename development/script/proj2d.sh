@@ -13,9 +13,10 @@ cd $DATA_PATH
 
 BX=`ls bx_[0-9]*.gda`
 
-for bxf in "$BX"
+for f in `ls bx_[0-9]*.gda` 
 do
-  STEP=`echo $bxf | cut -d_ -f2 | cut -d. -f1`
+  STEP=`echo $f | cut -d_ -f2 | cut -d. -f1`
+  echo -n "processing $STEP..."
   ln -s bx_$STEP.gda  bpx_$STEP.gda
   ln -s by_$STEP.gda  bpy_$STEP.gda
   ln -s zeros.gda     bpz_$STEP.gda
@@ -25,4 +26,5 @@ do
   ln -s vix_$STEP.gda vipx_$STEP.gda
   ln -s viy_$STEP.gda vipy_$STEP.gda
   ln -s zeros.gda     vipz_$STEP.gda
+  echo "OK."
 done

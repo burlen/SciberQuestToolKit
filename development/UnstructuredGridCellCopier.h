@@ -56,6 +56,7 @@ public:
   and cell data from iniput to output.
   */
   virtual int Copy(IdBlock &block);
+  using CellCopier::Copy;
 
 protected:
   vtkFloatArray *SourcePts;
