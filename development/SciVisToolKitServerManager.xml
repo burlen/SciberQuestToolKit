@@ -1572,7 +1572,7 @@ Copyright 2008 SciberQuest Inc.
         label="Max Error"
         command="SetMaxError"
         number_of_elements="1"
-        default_values="1.0e-4">
+        default_values="1.0e-3">
       <DoubleRangeDomain name="range"/>
       <Documentation>
         Error bound for adaptive step size integration.
@@ -1829,7 +1829,7 @@ Copyright 2008 SciberQuest Inc.
         label="Max Error"
         command="SetMaxError"
         number_of_elements="1"
-        default_values="1.0e-4">
+        default_values="1.0e-3">
       <DoubleRangeDomain name="range"/>
       <Documentation>
         Error bound for adaptive step size integration.
@@ -2769,7 +2769,7 @@ Copyright 2008 SciberQuest Inc.
         label="Random Number Generator Seed"
         command="SetSeed"
         number_of_elements="1"
-        default_values="-1">
+        default_values="0">
       <Documentation>
         Set the seed to the random number generator. -1 means to use system time.
       </Documentation>  

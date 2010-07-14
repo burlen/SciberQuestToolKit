@@ -58,7 +58,12 @@ public:
   virtual int Copy(IdBlock &block);
   using CellCopier::Copy;
 
-protected:
+
+private:
+  void ClearSource();
+  void ClearOutput();
+
+private:
   vtkFloatArray *SourcePts;
   vtkCellArray *SourceCells;
   vtkUnsignedCharArray *SourceTypes;

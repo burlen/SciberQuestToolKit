@@ -26,7 +26,8 @@ Copyright 2008 SciberQuest Inc.
 //-----------------------------------------------------------------------------
 PolyDataCellCopier::~PolyDataCellCopier()
 {
-  this->Clear();
+  this->ClearSource();
+  this->ClearOutput();
 }
 
 //-----------------------------------------------------------------------------
@@ -34,14 +35,25 @@ void PolyDataCellCopier::Clear()
 {
   this->CellCopier::Clear();
 
+  this->ClearSource();
+  this->ClearOutput();
+}
+
+//-----------------------------------------------------------------------------
+void PolyDataCellCopier::ClearSource()
+{
   if (this->SourcePts){ this->SourcePts->Delete(); }
   if (this->SourceCells){ this->SourceCells->Delete(); }
-  if (this->OutPts){ this->OutPts->Delete(); }
-  if (this->OutCells){ this->OutCells->Delete(); }
-
   this->SourcePts=0;
   this->SourceCells=0;
   this->CellType=NONE;
+}
+
+//-----------------------------------------------------------------------------
+void PolyDataCellCopier::ClearOutput()
+{
+  if (this->OutPts){ this->OutPts->Delete(); }
+  if (this->OutCells){ this->OutCells->Delete(); }
   this->OutPts=0;
   this->OutCells=0;
 }
@@ -49,8 +61,10 @@ void PolyDataCellCopier::Clear()
 //-----------------------------------------------------------------------------
 void PolyDataCellCopier::Initialize(vtkDataSet *s, vtkDataSet *o)
 {
-  this->Clear();
   this->CellCopier::Initialize(s,o);
+
+  this->ClearSource();
+  this->ClearOutput();
 
   // source
   vtkPolyData *source=dynamic_cast<vtkPolyData*>(s);

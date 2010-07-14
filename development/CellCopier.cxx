@@ -73,12 +73,15 @@ void CellCopier::ClearDataCopier()
     {
     delete this->CellDataCopier[i];
     }
-  this->CellDataCopier.size();
+  this->CellDataCopier.clear();
 }
 
 //-----------------------------------------------------------------------------
 void CellCopier::Initialize(vtkDataSet *in, vtkDataSet *out)
 {
+  this->ClearDataCopier();
+  this->ClearPointIdMap();
+
   int n;
   vtkPointData *pdIn=in->GetPointData();
   vtkPointData *pdOut=out->GetPointData();

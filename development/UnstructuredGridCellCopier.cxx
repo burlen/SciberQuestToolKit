@@ -25,25 +25,36 @@ Copyright 2008 SciberQuest Inc.
 //-----------------------------------------------------------------------------
 UnstructuredGridCellCopier::~UnstructuredGridCellCopier()
 {
-  this->Clear();
+  this->ClearSource();
+  this->ClearOutput();
 }
 
 //-----------------------------------------------------------------------------
 void UnstructuredGridCellCopier::Clear()
 {
   this->CellCopier::Clear();
+  this->ClearSource();
+  this->ClearOutput();
+}
 
+//-----------------------------------------------------------------------------
+void UnstructuredGridCellCopier::ClearSource()
+{
   if (this->SourcePts){ this->SourcePts->Delete(); }
   if (this->SourceCells){ this->SourceCells->Delete(); }
   if (this->SourceTypes){ this->SourceTypes->Delete(); }
+  this->SourcePts=0;
+  this->SourceCells=0;
+  this->SourceTypes=0;
+}
+
+//-----------------------------------------------------------------------------
+void UnstructuredGridCellCopier::ClearOutput()
+{
   if (this->OutPts){ this->OutPts->Delete(); }
   if (this->OutCells){ this->OutCells->Delete(); }
   if (this->OutTypes){ this->OutTypes->Delete(); }
   if (this->OutLocs){ this->OutLocs->Delete(); }
-
-  this->SourcePts=0;
-  this->SourceCells=0;
-  this->SourceTypes=0;
   this->OutPts=0;
   this->OutCells=0;
   this->OutTypes=0;
@@ -53,8 +64,10 @@ void UnstructuredGridCellCopier::Clear()
 //-----------------------------------------------------------------------------
 void UnstructuredGridCellCopier::Initialize(vtkDataSet *s, vtkDataSet *o)
 {
-  this->Clear();
   this->CellCopier::Initialize(s,o);
+
+  this->ClearSource();
+  this->ClearOutput();
 
   // source
   vtkUnstructuredGrid *source=dynamic_cast<vtkUnstructuredGrid*>(s);
