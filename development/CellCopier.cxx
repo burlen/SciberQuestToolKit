@@ -116,6 +116,7 @@ int CellCopier::CopyPointData(IdBlock &block)
     {
     this->PointDataCopier[i]->Copy(block);
     }
+  return 1;
 }
 
 //-----------------------------------------------------------------------------
@@ -126,6 +127,7 @@ int CellCopier::CopyCellData(IdBlock &block)
     {
     this->CellDataCopier[i]->Copy(block);
     }
+  return 1;
 }
 
 //-----------------------------------------------------------------------------
@@ -136,6 +138,7 @@ int CellCopier::CopyPointData(vtkIdType id)
     {
     this->PointDataCopier[i]->Copy(id);
     }
+  return 1;
 }
 
 //-----------------------------------------------------------------------------
@@ -146,6 +149,7 @@ int CellCopier::CopyCellData(vtkIdType id)
     {
     this->CellDataCopier[i]->Copy(id);
     }
+  return 1;
 }
 
 //-----------------------------------------------------------------------------
@@ -160,3 +164,4 @@ bool CellCopier::GetUniquePointId(vtkIdType inputId, vtkIdType &outputId)
   // true if insert succeded
   return ret.second;
 }
+
