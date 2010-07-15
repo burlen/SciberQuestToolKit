@@ -136,6 +136,15 @@ ADD_PARAVIEW_OBJECT_PANEL(
 set(_IFACES ${_IFACES} ${IFACES})
 set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
+QT4_WRAP_CPP(MOC_SRCS pqSQFieldTracer.h)
+ADD_PARAVIEW_OBJECT_PANEL(
+  IFACES IFACE_SRCS
+  CLASS_NAME pqSQFieldTracer
+  XML_NAME vtkSQFieldTracer vtkSQFieldTracerRK45 vtkSQFieldTopologyMapper
+  XML_GROUP filters)
+set(_IFACES ${_IFACES} ${IFACES})
+set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+
 QT4_WRAP_CPP(MOC_SRCS pqSQVolumeSource.h)
 QT4_WRAP_UI(UI_SRCS pqSQVolumeSourceForm.ui)
 ADD_PARAVIEW_OBJECT_PANEL(
@@ -165,6 +174,7 @@ set (_SOURCES
   ${UI_SRCS}
   ${_IFACE_SRCS}
   pqSQBOVMetaReader.cxx
+  pqSQFieldTracer.cxx
   pqSQHemisphereSource.cxx
   pqSQPlaneSource.cxx
   pqSQVolumeSource.cxx

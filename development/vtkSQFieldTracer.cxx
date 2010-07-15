@@ -1190,7 +1190,7 @@ void vtkSQFieldTracer::IntegrateOne(
     if (this->IntegratorType==INTEGRATOR_RK45)
       {
       pCerr()
-        << "[" << this->WorldRank << "] rk-4-5 step sizes "
+        << "rk-4-5 step sizes "
         << minStepTaken << ", " << maxStepTaken <<  "."
         << endl;
       }
