@@ -21,7 +21,6 @@ vtkStandardNewMacro(vtkSQVolumeSourceConfigurationWriter);
 vtkSQVolumeSourceConfigurationWriter::vtkSQVolumeSourceConfigurationWriter()
 {
   vtkStringList *propNames=vtkStringList::New();
-  propNames->AddString("Name");
   propNames->AddString("Origin");
   propNames->AddString("Point1");
   propNames->AddString("Point2");
