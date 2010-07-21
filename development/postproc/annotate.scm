@@ -6,34 +6,73 @@
 ;
 ;Copyright 2008 SciberQuest Inc.
 ;
-;
-(define (sciber-annotate inFile outFile label fontSizePercent x y fonttype )
-  (let* ((image (car (gimp-file-load RUN-NONINTERACTIVE inFile inFile )))
-         (drawable (car (gimp-image-get-active-layer image)))
-         (fontSizePixel (* fontSizePercent (car (gimp-image-height image))))
-         (textFloat 0 )
-         )
-    (set! textFloat (car (gimp-text-fontname image drawable
-                                              x y label 0 1 fontSizePixel 0
-                                              fonttype )))
-    (gimp-floating-sel-anchor textFloat)
-    (gimp-displays-flush)
-    (gimp-file-save RUN-NONINTERACTIVE image drawable outFile outFile )
-  );let
-);define
 
-(script-fu-register "sciber-annotate" 
-                    "Annotate"
-                    "Annotates an image with text of a custom font, size and position"
-                    "Jimi Damon <jdamon@gmail.com>"
-                    "Jimi Damon"
-                    "2010-06-08"
-                    ""
-                    SF-STRING "InputFile" "0"
-                    SF-STRING "Output File" "0"
-                    SF-STRING "Label" "TEST"
-                    SF-VALUE  "fontSize" "0.10"
-                    SF-VALUE  "xCoord"   "0"
-                    SF-VALUE  "yCoord"   "0"
-                    SF-STRING  "fontType"  "Sans")
-(script-fu-menu-register "sciber-annotate" "<Toolbox>/Xtns/Script-Fu/SciberQuest" )
+(define 
+  (annotate inFile outFile text)
+    (let* 
+      (
+      (imw  0)    ; image width
+      (imh  0)    ; image ht
+      (fpx  0)    ; font size px
+      (lm   0)    ; left margin
+      (rm   0)    ; right margin
+      (tm   0)    ; top margin
+      (bm   0)    ; bottom margin
+      (fs   0)    ; font spacer
+      (tl   0)    ; text layer
+      (tw   0)    ; text width
+      (th   0)    ; text height
+      (x    0)    ; text position
+      (y    0)    ; text position
+      (im   0)    ; image
+      (dw   0)    ; drawable
+      )
+
+      ; load the original
+      (set! im (car (gimp-file-load RUN-NONINTERACTIVE inFile inFile)))
+      (set! dw (car (gimp-image-get-active-layer im)))
+    
+
+      (set! imw (car (gimp-drawable-width dw)))
+      (set! imh (car (gimp-drawable-height dw)))
+
+      (set! fpx 25)
+
+      (set! lm (* fpx 1))
+      (set! rm (* fpx 0))
+      (set! tm (* fpx 1))
+      (set! bm (* fpx 1))
+
+      (set! tw (* (string-length text) fpx))
+      (set! th fpx)
+
+      ; lower right position
+      (set! x (- imw (+ rm tw)))
+      (set! y (- imh (+ bm th)))
+
+      ; add annotation
+      (gimp-context-set-background '(  0   0   0))
+      (gimp-context-set-foreground '(255 255 255))
+
+      (gimp-floating-sel-to-layer 
+        (car 
+          (gimp-text-fontname 
+              im
+              dw
+              x
+              y
+              text
+              0
+              TRUE
+              fpx
+              PIXELS
+              "Nimbus Mono L Bold Oblique")))
+      
+      ; save the annotated image
+      (gimp-image-merge-visible-layers im  CLIP-TO-IMAGE)
+      (set! dw (car (gimp-image-get-active-layer im)))
+      (gimp-file-save RUN-NONINTERACTIVE im dw outFile outFile)
+      (gimp-image-delete im)
+   )
+)
+

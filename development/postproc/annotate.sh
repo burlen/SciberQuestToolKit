@@ -1,5 +1,51 @@
 #!/bin/bash
-#
+
+INPUT=$1
+shift 1
+
+OUTPUT=$1
+shift 1
+
+TEXT=$1
+shift 1
+
+
+if [[ -z "$INPUT" || -z "$OUTPUT" || -z "$TEXT" ]]
+then
+  echo "Error: $0 /path/to/input /path/to/output text" 1>&2
+  exit
+fi
+
+
+gimp -i -b "(annotate \"$INPUT\" \"$OUTPUT\" \"$TEXT\")" -b "(gimp-quit 0)" 
+
+exit
+
+eval `echo "gimp -i -b '(sub3-run2-nmm \"$f\" \"$ff\" \"sub3/$n\")' -b '(gimp-quit 0)'"`
+
+
+
+for f in `ls ../*.png`; 
+do 
+  ff=`echo $f | cut -d/ -f2`;
+  n=`echo $f | cut -d. -f4`; 
+  echo -ne "$n $f -> $ff\n"
+  
+done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # crop.sh InFile OutFile Text FontSize X Y 
 #
 # 1. Check if the fonttype is not defined, if so
