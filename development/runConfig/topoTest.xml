@@ -18,7 +18,7 @@
       origin="750 708 0"
       point1="1024 708 0"
       point2="750 1340 0"
-      resolution="2 2"/>
+      resolution="10 20"/>
 
   <vtkSQFieldTracer
       integrator_type="3"

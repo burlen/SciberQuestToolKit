@@ -439,6 +439,9 @@ int main(int argc, char **argv)
   w->SetDataModeToBinary();
   w->SetCompressorTypeToNone();
   w->AddInputConnection(0,ftm->GetOutputPort(0));
+  w->SetNumberOfPieces(worldSize);
+  w->SetStartPiece(worldRank);
+  w->SetEndPiece(worldRank);
   w->UpdateInformation();
   //const char *ext=w->GetDefaultFileExtension();
   ftm->Delete();
@@ -488,7 +491,7 @@ int main(int argc, char **argv)
 
     pvds
       << "<?xml version=\"1.0\"?>" << endl
-      << "<VTKFile type=\"collection\">" << endl
+      << "<VTKFile type=\"Collection\">" << endl
       << "<Collection>" << endl;
     }
 
@@ -517,7 +520,7 @@ int main(int argc, char **argv)
         << "<DataSet "
         << "timestep=\"" << time << "\" "
         << "group=\"\" part=\"0\" "
-        << "\" file=\"" << fn.c_str() << "\""
+        << "file=\"" << fn.c_str() << "\""
         << "/>"
         << endl;
       }
