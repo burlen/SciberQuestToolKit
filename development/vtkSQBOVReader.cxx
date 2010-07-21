@@ -108,6 +108,7 @@ vtkSQBOVReader::vtkSQBOVReader()
   this->PeriodicBC[0]=
   this->PeriodicBC[1]=
   this->PeriodicBC[2]=0;
+  this->NGhosts=1;
   this->DecompDims[0]=
   this->DecompDims[1]=
   this->DecompDims[2]=1;
@@ -186,6 +187,15 @@ void vtkSQBOVReader::Clear()
   this->JSubsetRange[1]=0;
   this->KSubsetRange[0]=1;
   this->KSubsetRange[1]=0;
+  this->PeriodicBC[0]=
+  this->PeriodicBC[1]=
+  this->PeriodicBC[2]=0;
+  this->NGhosts=1;
+  this->DecompDims[0]=
+  this->DecompDims[1]=
+  this->DecompDims[2]=1;
+  this->BlockCacheSize=10;
+  this->ClearCachedBlocks=1;
   this->UseCollectiveIO=HINT_ENABLED;
   this->NumberOfIONodes=0;
   this->CollectBufferSize=0;
@@ -793,9 +803,9 @@ int vtkSQBOVReader::RequestData(
 
   #if defined vtkSQBOVReaderDEBUG
   pCerr()
-    << "nBytes=" 
+    << "nBytes="
     << this->Reader->GetMetaData()->GetSubset().Size()*sizeof(float) << " "
-    << "subset=" << Tuple<int>(decomp,6)
+    << "decomp=" << Tuple<int>(decomp,6)
     << endl;
   #endif
 

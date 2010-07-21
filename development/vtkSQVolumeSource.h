@@ -39,8 +39,8 @@ public:
 
   // Description:
   // Set the latice resolution in the given direction.
-  vtkSetVector3Macro(NCells,int);
-  vtkGetVector3Macro(NCells,int);
+  vtkSetVector3Macro(Resolution,int);
+  vtkGetVector3Macro(Resolution,int);
 
 protected:
   /// Pipeline internals.
@@ -56,7 +56,7 @@ private:
   double Point1[3];
   double Point2[3];
   double Point3[3];
-  int NCells[3];
+  int Resolution[3];
 
 private:
   vtkSQVolumeSource(const vtkSQVolumeSource&);  // Not implemented.

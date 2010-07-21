@@ -891,7 +891,7 @@ Copyright 2008 SciberQuest Inc.
      <IntVectorProperty
         name="Resolution"
         label="Resolution"
-        command="SetNCells"
+        command="SetResolution"
         number_of_elements="3"
         default_values="1 1 1">
      </IntVectorProperty>

@@ -28,24 +28,27 @@ CartesianDataBlockIODescriptor::CartesianDataBlockIODescriptor(
   // called out in that direction.
   CartesianExtent &memExt=this->MemExtent;
   memExt.Set(blockExt);
-  memExt.Grow(nGhosts);
-
-  for (int q=0; q<3; ++q)
+  if (nGhosts>0)
     {
-    int qq=2*q;
+    memExt.Grow(nGhosts);
 
-    // on low side periodic boundary in q direction
-    if (!periodic[q] && (blockExt[qq]==fileExt[qq]))
+    for (int q=0; q<3; ++q)
       {
-      // strip the ghost cells
-      memExt.GrowLow(q,-nGhosts);
-      }
+      int qq=2*q;
 
-    // on high side periodic boundary in q direction
-    if (!periodic[q] && (blockExt[qq+1]==fileExt[qq+1]))
-      {
-      // strip the ghost cells
-      memExt.GrowHigh(q,-nGhosts);
+      // on low side non-periodic boundary in q direction
+      if (!periodic[q] && (blockExt[qq]==fileExt[qq]))
+        {
+        // strip the ghost cells
+        memExt.GrowLow(q,-nGhosts);
+        }
+
+      // on high side non-periodic boundary in q direction
+      if (!periodic[q] && (blockExt[qq+1]==fileExt[qq+1]))
+        {
+        // strip the ghost cells
+        memExt.GrowHigh(q,-nGhosts);
+        }
       }
     }
 
@@ -82,7 +85,7 @@ CartesianDataBlockIODescriptor::CartesianDataBlockIODescriptor(
           int regSize[3];
           memRegion.Size(regSize);
           cerr
-            << "    " 
+            << "    "
             << fileRegion << " -> " << memRegion
             << " n=" << Tuple<int>(regSize,3) << endl;
           #endif

@@ -1,4 +1,16 @@
+/*
+   ____    _ __           ____               __    ____
+  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
+ _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
 
+Copyright 2008 SciberQuest Inc.
+*/
+#include "vtkMultiProcessController.h"
+#include "vtkMPIController.h"
+#include "vtkStreamingDemandDrivenPipeline.h"
+#include "vtkAppendPolyData.h"
+#include "vtkProcessIdScalars.h"
 #include "vtkSphereSource.h"
 #include "vtkPlaneSource.h"
 #include "vtkSQBOVReader.h"
@@ -22,7 +34,17 @@ using std::cerr;
 
 int main(int argc, char **argv)
 {
-  MPI_Init(&argc,&argv);
+  ///MPI_Init(&argc,&argv);
+  vtkMPIController* controller=vtkMPIController::New();
+  controller->Initialize(&argc,&argv,0);
+  int worldRank=controller->GetLocalProcessId();
+  int worldSize=controller->GetNumberOfProcesses();
+
+  vtkMultiProcessController::SetGlobalController(controller);
+
+  // vtkStreamingDemandDrivenPipeline* exec = vtkStreamingDemandDrivenPipeline::New();
+  // vtkAlgorithm::SetDefaultExecutivePrototype(exec);
+  // exec->Delete();
 
   if (argc<2)
     {
@@ -43,6 +65,7 @@ int main(int argc, char **argv)
 
   // ooc reader
   vtkSQBOVReader *r=vtkSQBOVReader::New();
+  //r->SetExtent
   r->SetMetaRead(1);
   r->SetFileName(argv[1]);
   r->SetPointArrayStatus("vi",1);
@@ -95,7 +118,7 @@ int main(int argc, char **argv)
       v->SetPoint1(6.0,3.0,0.25);
       v->SetPoint2(1.0,4.0,0.25);
       v->SetPoint3(1.0,3.0,4.75);
-      v->SetNCells(60,12,60);
+      v->SetResolution(60,12,60);
       sp=v;
       }
       break;
@@ -129,49 +152,121 @@ int main(int argc, char **argv)
   s3->Delete();
   s4->Delete();
 
-  ftm->Update();
-  vtkDataSet *map=ftm->GetOutput();
-  map->GetCellData()->SetActiveScalars("IntersectColor");
-
-  vtkDataSetSurfaceFilter *surf=vtkDataSetSurfaceFilter::New();
-  surf->SetInputConnection(0,ftm->GetOutputPort(0));
+  vtkProcessIdScalars *pid=vtkProcessIdScalars::New();
+  pid->SetInputConnection(0,ftm->GetOutputPort(0));
   ftm->Delete();
 
-  vtkPolyDataMapper *pdm=vtkPolyDataMapper::New();
-  pdm->SetInputConnection(0,surf->GetOutputPort(0));
-  pdm->SetColorModeToMapScalars();
-  pdm->SetScalarModeToUseCellData();
-  pdm->SetScalarRange(map->GetCellData()->GetArray("IntersectColor")->GetRange());
+  vtkDataSetSurfaceFilter *surf=vtkDataSetSurfaceFilter::New();
+  surf->SetInputConnection(0,pid->GetOutputPort(0));
+  pid->Delete();
+
+  // initialize for domain decomposition
+  vtkStreamingDemandDrivenPipeline* exec
+    = dynamic_cast<vtkStreamingDemandDrivenPipeline*>(surf->GetExecutive());
+
+  vtkInformation *info=exec->GetOutputInformation(0);
+
+  exec->SetUpdateNumberOfPieces(info,worldSize);
+  exec->SetUpdatePiece(info,worldRank);
+
+  // execute the distributed pipeline
+  surf->Update();
+
+
+  // Serial rendering. rank 0 gathers and renders the data in a new
+  // pipeline. Other ranks send the output oof their pipelines.
+  const int renderRank=0;
+  const int tag=101;
+  if (worldRank!=renderRank)
+    {
+    controller->Send(surf->GetOutput(),renderRank,tag);
+    }
+  else
+    {
+    // gather.
+    vtkAppendPolyData *apd=vtkAppendPolyData::New();
+    apd->AddInput(surf->GetOutput());
+    for (int i=0; i<worldSize; ++i)
+      {
+      if (i==renderRank)
+        {
+        continue;
+        }
+      vtkPolyData* pd = vtkPolyData::New();
+      controller->Receive(pd,vtkMultiProcessController::ANY_SOURCE,tag);
+      apd->AddInput(pd);
+      pd->Delete();
+      }
+
+    apd->GetOutput()->Update();
+
+    vtkPolyData *map=vtkPolyData::New();
+    map->ShallowCopy(apd->GetOutput());
+    map->GetCellData()->SetActiveScalars("IntersectColor");
+
+    vtkPolyDataMapper *pdm;
+    pdm=vtkPolyDataMapper::New();
+    pdm->SetInput(map);
+    pdm->SetColorModeToMapScalars();
+    pdm->SetScalarModeToUseCellData();
+    pdm->SetScalarRange(map->GetCellData()->GetArray("IntersectColor")->GetRange());
+    map->Delete();
+
+    vtkActor *act;
+    act=vtkActor::New();
+    act->SetMapper(pdm);
+    act->AddPosition(-3.5,0.0,0.0);
+    pdm->Delete();
+
+    vtkPolyData *decomp=vtkPolyData::New();
+    decomp->ShallowCopy(apd->GetOutput());
+    decomp->GetPointData()->SetActiveScalars("ProcessId");
+    apd->Delete();
+
+    vtkRenderer *ren=vtkRenderer::New();
+    ren->AddActor(act);
+    act->Delete();
+
+    pdm=vtkPolyDataMapper::New();
+    pdm->SetInput(decomp);
+    pdm->SetColorModeToMapScalars();
+    pdm->SetScalarModeToUsePointData();
+    pdm->SetScalarRange(decomp->GetPointData()->GetArray("ProcessId")->GetRange());
+    decomp->Delete();
+
+    act=vtkActor::New();
+    act->SetMapper(pdm);
+    act->AddPosition(3.5,0.0,0.0);
+    pdm->Delete();
+
+    ren->AddActor(act);
+    act->Delete();
+
+    vtkCamera *cam=ren->GetActiveCamera();
+    cam->SetFocalPoint(3.5,3.5,3.5);
+    cam->SetPosition(3.5,15.0,3.5);
+    cam->ComputeViewPlaneNormal();
+    cam->SetViewUp(0.0,0.0,1.0);
+    cam->OrthogonalizeViewUp();
+    ren->ResetCamera();
+
+    vtkRenderWindow *rwin=vtkRenderWindow::New();
+    rwin->AddRenderer(ren);
+    ren->Delete();
+
+    vtkRenderWindowInteractor *rwi=vtkRenderWindowInteractor::New();
+    rwi->SetRenderWindow(rwin);
+    rwin->Delete();
+    rwin->Render();
+    rwi->Start();
+    rwi->Delete();
+    }
   surf->Delete();
 
-  vtkActor *act=vtkActor::New();
-  act->SetMapper(pdm);
-  pdm->Delete();
-
-  vtkRenderer *ren=vtkRenderer::New();
-  ren->AddActor(act);
-  act->Delete();
-
-  vtkCamera *cam=ren->GetActiveCamera();
-  cam->SetFocalPoint(3.5,3.5,3.5);
-  cam->SetPosition(3.5,15.0,3.5);
-  cam->ComputeViewPlaneNormal();
-  cam->SetViewUp(0.0,0.0,1.0);
-  cam->OrthogonalizeViewUp();
-  ren->ResetCamera();
-
-  vtkRenderWindow *rwin=vtkRenderWindow::New();
-  rwin->AddRenderer(ren);
-  ren->Delete();
-
-  vtkRenderWindowInteractor *rwi=vtkRenderWindowInteractor::New();
-  rwi->SetRenderWindow(rwin);
-  rwin->Delete();
-  rwin->Render();
-  rwi->Start();
-  rwi->Delete();
-
-  MPI_Finalize();
+  ///MPI_Finalize();
+  controller->Finalize();
+  controller->Delete();
+  //vtkAlgorithm::SetDefaultExecutivePrototype(0);
 
   return 0;
 }

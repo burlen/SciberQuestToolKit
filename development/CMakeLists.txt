@@ -223,6 +223,9 @@ set(BUILD_SVTK_UTILITIES OFF CACHE BOOL "Build SciVisToolKit utilities.")
     add_executable(genzero genzero.cpp)
     install(TARGETS genzero DESTINATION ${CMAKE_INSTALL_PREFIX})
 
+    add_executable(MagnetosphereTopoBatch MagnetosphereTopoBatch.cpp)
+    target_link_libraries(MagnetosphereTopoBatch ${MPI_LIBRARIES} SciVisToolKit)
+
   endif (BUILD_SVTK_UTILITIES)
 endif (UNIX)
 
@@ -236,8 +239,7 @@ if (BUILD_SVTK_TESTING)
   endif(NOT MPI_FOUND)
   add_definitions("-DMPICH_IGNORE_CXX_SEEK")
   add_executable(TestFieldTopologyMapper TestFieldTopologyMapper.cpp)
-  target_link_libraries(TestFieldTopologyMapper SciVisToolKit)
-  target_link_libraries(TestFieldTopologyMapper ${MPI_LIBRARIES})
+  target_link_libraries(TestFieldTopologyMapper SciVisToolKit ${MPI_LIBRARIES})
   install(TARGETS TestFieldTopologyMapper DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif (BUILD_SVTK_TESTING)
 

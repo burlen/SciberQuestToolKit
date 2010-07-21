@@ -311,9 +311,11 @@ bool HasNans(int *I, T *V, T *val)
 template <typename T>
 void Magnitude(int *I, T *V, T *mV)
 {
-  for (int k=0; k<I[2]; ++k) {
-    for (int j=0; j<I[1]; ++j) {
-      for (int i=0; i<I[0]; ++i) 
+  for (int k=0; k<I[2]; ++k)
+    {
+    for (int j=0; j<I[1]; ++j)
+      {
+      for (int i=0; i<I[0]; ++i)
         {
         const int p  = k*I[0]*I[1]+j*I[0]+i;
         const int vi = 3*p;
@@ -490,6 +492,64 @@ void Rotation(int *input, int *output, double *dX, T *V, T *W)
 // output -> patch outpu array is defined on
 // dX     -> grid spacing triple
 // V      -> vector field
+// W_xy   -> vector curl taking variation in z constant
+//*****************************************************************************
+template <typename T>
+void RotationXY(int *input, int *output, double *dX, T *V, T *W)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int ninj=ni*nj;
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _ninj=_ni*_nj;
+
+  // stencil deltas
+  const double dx[3]={dX[0]*2.0,dX[1]*2.0,dX[2]*2.0};
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        // output array indices
+        const int _i=p-output[0];
+        const int _j=q-output[2];
+        const int _k=r-output[4];
+        // index into output array;
+        const int pi=_k*_ninj+_j*_ni+_i;
+        const int vi=3*pi;
+        const int vj=vi+1;
+        const int vk=vi+2;
+
+        // input array indices
+        const int i=p-input[0];
+        const int j=q-input[2];
+        const int k=r-input[4];
+        // stencil into the input array
+        const int vilo=3*(k*ninj+j*ni+(i-1));
+        const int vihi=3*(k*ninj+j*ni+(i+1));
+        const int vjlo=3*(k*ninj+(j-1)*ni+i);
+        const int vjhi=3*(k*ninj+(j+1)*ni+i);
+        //      __   ->
+        //  w = \/ x V
+        W[vi]= (V[vjhi+2]-V[vjlo+2])/dx[1];
+        W[vj]=-(V[vihi+2]-V[vilo+2])/dx[0];
+        W[vk]= (V[vihi+1]-V[vilo+1])/dx[0]-(V[vjhi]-V[vjlo])/dx[1];
+        }
+      }
+    }
+}
+
+// input  -> patch input array is defined on
+// output -> patch outpu array is defined on
+// dX     -> grid spacing triple
+// V      -> vector field
 // H      -> helicity
 //*****************************************************************************
 template <typename T>
@@ -542,9 +602,74 @@ void Helicity(int *input, int *output, double *dX, T *V, T *H)
         const double w[3]={
               (V[vjhi+2]-V[vjlo+2])/dx[1]-(V[vkhi+1]-V[vklo+1])/dx[2],
               (V[vkhi  ]-V[vklo  ])/dx[2]-(V[vihi+2]-V[vilo+2])/dx[0],
-              (V[vihi+1]-V[vilo+1])/dx[0]-(V[vjhi  ]-V[vjlo  ])/dx[1]};
+              (V[vihi+1]-V[vilo+1])/dx[0]-(V[vjhi  ]-V[vjlo  ])/dx[1]
+              };
         //        ->  ->
-        // H_n =  V . w
+        // H =  V . w
+        H[pi]=(V[vi]*w[0]+V[vj]*w[1]+V[vk]*w[2]);
+        }
+      }
+    }
+}
+
+// input  -> patch input array is defined on
+// output -> patch outpu array is defined on
+// dX     -> grid spacing triple
+// V      -> vector field
+// H_xy   -> helicity taking variation in z constant
+//*****************************************************************************
+template <typename T>
+void HelicityXY(int *input, int *output, double *dX, T *V, T *H)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int ninj=ni*nj;
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _ninj=_ni*_nj;
+
+  // stencil deltas
+  const double dx[3]={dX[0]*2.0,dX[1]*2.0,dX[2]*2.0};
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        // output array indices
+        const int _i=p-output[0];
+        const int _j=q-output[2];
+        const int _k=r-output[4];
+        // index into output array;
+        const int pi=_k*_ninj+_j*_ni+_i;
+        const int vi=3*pi;
+        const int vj=vi+1;
+        const int vk=vi+2;
+
+        // input array indices
+        const int i=p-input[0];
+        const int j=q-input[2];
+        const int k=r-input[4];
+        // stencil
+        const int vilo=3*(k*ninj+j*ni+(i-1));
+        const int vihi=3*(k*ninj+j*ni+(i+1));
+        const int vjlo=3*(k*ninj+(j-1)*ni+i);
+        const int vjhi=3*(k*ninj+(j+1)*ni+i);
+
+        //      __   ->
+        //  w = \/ x V
+        const double w[3]={
+               (V[vjhi+2]-V[vjlo+2])/dx[1],
+              -(V[vihi+2]-V[vilo+2])/dx[0],
+               (V[vihi+1]-V[vilo+1])/dx[0]-(V[vjhi]-V[vjlo])/dx[1]
+              };
+        //        ->  ->
+        // H =  V . w
         H[pi]=(V[vi]*w[0]+V[vj]*w[1]+V[vk]*w[2]);
         }
       }
@@ -559,6 +684,89 @@ void Helicity(int *input, int *output, double *dX, T *V, T *H)
 //*****************************************************************************
 template <typename T>
 void NormalizedHelicity(int *input, int *output, double *dX, T *V, T *H)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int ninj=ni*nj;
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _ninj=_ni*_nj;
+
+  // stencil deltas
+  const double dx[3]={dX[0]*2.0,dX[1]*2.0,dX[2]*2.0};
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        // output array indices
+        const int _i=p-output[0];
+        const int _j=q-output[2];
+        const int _k=r-output[4];
+        // index into output array;
+        const int pi=_k*_ninj+_j*_ni+_i;
+        const int vi=3*pi;
+        const int vj=vi+1;
+        const int vk=vi+2;
+
+        // input array indices
+        const int i=p-input[0];
+        const int j=q-input[2];
+        const int k=r-input[4];
+        // stencil
+        const int vilo=3*(k*ninj+j*ni+(i-1));
+        const int vihi=3*(k*ninj+j*ni+(i+1));
+        const int vjlo=3*(k*ninj+(j-1)*ni+i);
+        const int vjhi=3*(k*ninj+(j+1)*ni+i);
+        const int vklo=3*((k-1)*ninj+j*ni+i);
+        const int vkhi=3*((k+1)*ninj+j*ni+i);
+
+        //  ->
+        // |V|
+        const double modV
+          = sqrt(V[vi]*V[vi]+V[vj]*V[vj]+V[vk]*V[vk]);
+
+        //      __   ->
+        //  w = \/ x V
+        const double w[3]={
+              (V[vjhi+2]-V[vjlo+2])/dx[1]-(V[vkhi+1]-V[vklo+1])/dx[2],
+              (V[vkhi  ]-V[vklo  ])/dx[2]-(V[vihi+2]-V[vilo+2])/dx[0],
+              (V[vihi+1]-V[vilo+1])/dx[0]-(V[vjhi  ]-V[vjlo  ])/dx[1]};
+
+        const double modW=sqrt(w[0]*w[0]+w[1]*w[1]+w[2]*w[2]);
+
+        //         ->  ->     -> ->
+        // H_n = ( V . w ) / |V||w|
+        H[pi]=(V[vi]*w[0]+V[vj]*w[1]+V[vk]*w[2])/(modV*modW);
+        // Cosine of the angle between v and w. Angle between v and w is small
+        // near vortex, H_n = +-1.
+
+        // cerr
+        //   << "H=" << H[pi] << " "
+        //   << "modV= " << modV << " "
+        //   << "modW=" << modW << " "
+        //   << "w=" << Tuple<double>((double *)w,3) << " "
+        //   << "V=" << Tuple<T>(&V[vi],3)
+        //   << endl;
+        }
+      }
+    }
+}
+
+// input  -> patch input array is defined on
+// output -> patch outpu array is defined on
+// dX     -> grid spacing triple
+// V      -> vector field
+// H      -> normalized helicity(out)
+//*****************************************************************************
+template <typename T>
+void NormalizedHelicityXY(int *input, int *output, double *dX, T *V, T *H)
 {
   // input array bounds.
   const int ni=input[1]-input[0]+1;

@@ -79,8 +79,10 @@ public:
   // Description:
   // Set the number of x-y subdivisions in the plane.
   void SetResolution(const int xR, const int yR);
+  void SetResolution(int res[2]) {
+    this->SetResolution(res[0],res[1]); }
   void GetResolution(int& xR,int& yR) {
-    xR=this->XResolution; yR=this->YResolution;};
+    xR=this->XResolution; yR=this->YResolution; }
 
   // Description:
   // Specify a point defining the origin of the plane.

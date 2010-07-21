@@ -194,6 +194,8 @@ int vtkSQPlaneSource::RequestData(
   output->SetPolys(newPolys);
   newPolys->Delete();
 
+  // output->Print(cerr);
+
   return 1;
 }
 

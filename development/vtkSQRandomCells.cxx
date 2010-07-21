@@ -322,7 +322,7 @@ int vtkSQRandomCells::RequestData(
     }
 
   // copy cells, assoictaed points and data attributes to the output.
-  for (int i=0; i<nCellsToPass; ++i)
+  for (unsigned long long i=0; i<nCellsToPass; ++i)
     {
     copier->Copy(cellsToPass[i]);
     }

@@ -203,8 +203,6 @@ int PolyDataCellCopier::Copy(IdBlock &SourceIds)
     // Get location to write new point. assumes we need to copy all
     // but this is wrong as there will be many duplicates. ignored.
     float *pOutPts=this->OutPts->WritePointer(3*nOutPts,3*nPtIds);
-    // the  point we will use the center of the cell
-    double seed[3]={0.0};
     // transfer from input to output (only what we own)
     for (vtkIdType j=0; j<nPtIds; ++j,++pOutCells)
       {

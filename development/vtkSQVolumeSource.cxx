@@ -57,9 +57,9 @@ vtkSQVolumeSource::vtkSQVolumeSource()
   cerr << "===============================vtkSQVolumeSource::vtkSQVolumeSource" << endl;
   #endif
 
-  this->NCells[0]=
-  this->NCells[1]=
-  this->NCells[2]=1;
+  this->Resolution[0]=
+  this->Resolution[1]=
+  this->Resolution[2]=1;
 
   this->Origin[0]=
   this->Origin[1]=
@@ -160,29 +160,28 @@ int vtkSQVolumeSource::RequestData(
     }
 
   // sanity - user set invalid number of cells
-  if ( (this->NCells[0]<1)
-    || (this->NCells[1]<1)
-    || (this->NCells[2]<1) )
+  if ( (this->Resolution[0]<1)
+    || (this->Resolution[1]<1)
+    || (this->Resolution[2]<1) )
     {
     vtkErrorMacro("Number of cells must be greater than 0.");
     return 1;
     }
 
   int nPoints[3]={
-      this->NCells[0]+1,
-      this->NCells[1]+1,
-      this->NCells[2]+1
+      this->Resolution[0]+1,
+      this->Resolution[1]+1,
+      this->Resolution[2]+1
       };
 
   // constants used in flat index
-  const int ncx=this->NCells[0];
-  const int ncxy=this->NCells[0]*this->NCells[1];
+  const int ncx=this->Resolution[0];
+  const int ncxy=this->Resolution[0]*this->Resolution[1];
   const int npx=nPoints[0];
   const int npxy=nPoints[0]*nPoints[1];
 
   // domain decomposition on cells.
-  int nCellsTotal=this->NCells[0]*this->NCells[1]*this->NCells[2];
-  int nPointsTotal=nPoints[0]*nPoints[1]*nPoints[2];
+  int nCellsTotal=this->Resolution[0]*this->Resolution[1]*this->Resolution[2];
   int pieceSize=nCellsTotal/nPieces;
   int nLarge=nCellsTotal%nPieces;
   int nCellsLocal=pieceSize+(pieceNo<nLarge?1:0);
@@ -236,7 +235,6 @@ int vtkSQVolumeSource::RequestData(
 
   // to prevent duplicate insertion of points
   map<vtkIdType,vtkIdType> usedPointIds;
-  vtkIdType nPts=0;
 
   // generate the point set
   for (int cid=startId; cid<endId; ++cid)
@@ -346,7 +344,7 @@ int vtkSQVolumeSource::RequestData(
     << "nCellsLocal  = " << nCellsLocal << endl
     << "startId = " << startId << endl
     << "endId   = " << endId << endl
-    << "NCells=" << Tuple<int>(this->NCells,3) << endl
+    << "Resolution=" << Tuple<int>(this->Resolution,3) << endl
     << "nPoints=" << Tuple<int>(nPoints,3) << endl;
   #endif
 
