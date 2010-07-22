@@ -143,8 +143,6 @@ int main(int argc, char **argv)
   ftm->AddInputConnection(2,s4->GetOutputPort(0));
   ftm->SetInputArrayToProcess(0,0,0,vtkDataObject::FIELD_ASSOCIATION_POINTS,"vi");
 
-  #pragma message("TODO -- Set update extent properly. Valgrind reports many errors.")
-
   r->Delete();
   sp->Delete();
   s1->Delete();
