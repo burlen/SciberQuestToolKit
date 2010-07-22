@@ -2,23 +2,24 @@
 <MagnetosphereTopologyBatch>
 
   <vtkSQBOVReader
-      bov_file_name="/opt/Data/SciVis/2D/fte-vortex/run2-2D.bov"
-      start_time="267000"
-      end_time="267000"
-      vectors="bp"
-      decomp_dims="10 10 1"
-      block_cache_size="1000"/>
+      bov_file_name="/opt/Data/SciVis/un6b/un6b.bov"
+      start_time="50000"
+      end_time="50000"
+      vectors="b"
+      decomp_dims="10 10 10"
+      block_cache_size="1001"/>
 
   <vtkSQHemisphereSource
-      center="1024 1024 0"
-      radius="24"
+      center="255.5 255.5 255.5"
+      radius="10"
       resolution="32"/>
 
-  <vtkSQPlaneSource
-      origin="750 708 0"
-      point1="1024 708 0"
-      point2="750 1340 0"
-      resolution="10 20"/>
+  <vtkSQVolumeSource
+      origin="170 220 245"
+      point1="195 220 245"
+      point2="170 290 245"
+      point3="170 220 265"
+      resolution="10 20 5"/>
 
   <vtkSQFieldTracer
       integrator_type="3"
@@ -33,6 +34,6 @@
       worker_block_size="256"/>
 
   <vtkXMLPDataSetWriter
-      out_file_base="./topoTest"/>
+      out_file_base="./test-small-3d"/>
 
 </MagnetosphereTopologyBatch>
