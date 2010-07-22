@@ -481,15 +481,24 @@
   <tabstop>p2_x</tabstop>
   <tabstop>p2_y</tabstop>
   <tabstop>p2_z</tabstop>
+  <tabstop>dx</tabstop>
+  <tabstop>dy</tabstop>
   <tabstop>res_x</tabstop>
   <tabstop>res_y</tabstop>
   <tabstop>aspectLock</tabstop>
+  <tabstop>spacingLock</tabstop>
+  <tabstop>coordStatus</tabstop>
+  <tabstop>n_x</tabstop>
+  <tabstop>n_y</tabstop>
+  <tabstop>n_z</tabstop>
   <tabstop>nCells</tabstop>
   <tabstop>dim_x</tabstop>
   <tabstop>dim_y</tabstop>
-  <tabstop>dx</tabstop>
-  <tabstop>dy</tabstop>
+  <tabstop>snap</tabstop>
+  <tabstop>viewUp1</tabstop>
+  <tabstop>viewUp2</tabstop>
   <tabstop>restore</tabstop>
+  <tabstop>save</tabstop>
  </tabstops>
  <resources/>
  <connections>
