@@ -175,7 +175,6 @@ int IndexOf(double value, double *values, int first, int last)
 //-----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
-  ///MPI_Init(&argc,&argv);
   vtkMPIController* controller=vtkMPIController::New();
   controller->Initialize(&argc,&argv,0);
   int worldRank=controller->GetLocalProcessId();
@@ -186,9 +185,6 @@ int main(int argc, char **argv)
   vtkCompositeDataPipeline* cexec=vtkCompositeDataPipeline::New();
   vtkAlgorithm::SetDefaultExecutivePrototype(cexec);
   cexec->Delete();
-
-
-  //controller->Delete();
 
   if (argc<2)
     {
@@ -436,7 +432,9 @@ int main(int argc, char **argv)
   GetRequiredAttribute(elem,"out_file_base",&outFileBase);
 
   vtkXMLPDataSetWriter *w=vtkXMLPDataSetWriter::New();
-  w->SetDataModeToBinary();
+  //w->SetDataModeToBinary();
+  w->SetDataModeToAppended();
+  w->SetEncodeAppendedData(0);
   w->SetCompressorTypeToNone();
   w->AddInputConnection(0,ftm->GetOutputPort(0));
   w->SetNumberOfPieces(worldSize);
@@ -538,7 +536,6 @@ int main(int argc, char **argv)
   w->Delete();
   parser->Delete();
 
-  ///MPI_Finalize();
   controller->Finalize();
   controller->Delete();
   vtkAlgorithm::SetDefaultExecutivePrototype(0);
