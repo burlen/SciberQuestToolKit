@@ -26,12 +26,9 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkSQVolumeSource.h"
 #include "vtkSQHemisphereSource.h"
 
-
-
 //#include "vtkPointData.h"
 //#include "vtkCellData.h"
 //#include "vtkPolyData.h"
-
 
 #include <sstream>
 using std::istringstream;
@@ -493,6 +490,7 @@ int main(int argc, char **argv)
       << "<Collection>" << endl;
     }
 
+  /// execute
   // run the pipeline for each time step, write the
   // result to disk.
   for (int idx=startTimeIdx,q=0; idx<=endTimeIdx; ++idx,++q)
