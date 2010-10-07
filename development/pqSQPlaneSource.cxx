@@ -26,10 +26,16 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkSMIntVectorProperty.h"
 #include "vtkSMDoubleVectorProperty.h"
 #include "vtkSMPropertyHelper.h"
+#include "vtkPVXMLParser.h"
 #include "vtkMath.h"
 
 // #include "vtkEventQtSlotConnect.h"
 
+#include <QMenu>
+#include <QAction>
+#include <QContextMenuEvent>
+#include <QClipboard>
+#include <QApplication>
 #include <QString>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -258,6 +264,76 @@ pqSQPlaneSource::~pqSQPlaneSource()
   /*
   this->VTKConnect->Delete();
   this->VTKConnect=0;*/
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::contextMenuEvent(QContextMenuEvent *event)
+{
+  QMenu context(this);
+
+  QAction *copyAct=new QAction(tr("Copy UI State"),&context);
+  connect(copyAct, SIGNAL(triggered()), this, SLOT(CopyConfiguration()));
+  context.addAction(copyAct);
+
+  QAction *pasteAct=new QAction(tr("Paste UI State"),&context);
+  connect(pasteAct, SIGNAL(triggered()), this, SLOT(PasteConfiguration()));
+  context.addAction(pasteAct);
+
+  context.exec(event->globalPos());
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::CopyConfiguration()
+{
+  // grab the current configuration.
+  ostringstream os;
+
+  vtkSQPlaneSourceConfigurationWriter *writer
+    = vtkSQPlaneSourceConfigurationWriter::New();
+
+  writer->SetProxy(this->proxy());
+  writer->WriteConfiguration(os);
+
+  // place it on the clipboard.
+  QClipboard *clipboard=QApplication::clipboard();
+  clipboard->setText(os.str().c_str());
+
+  writer->Delete();
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::PasteConfiguration()
+{
+  QClipboard *clipboard=QApplication::clipboard();
+  QString config=clipboard->text();
+
+  if (!config.isEmpty())
+    {
+    vtkSmartPointer<vtkPVXMLParser> parser=vtkSmartPointer<vtkPVXMLParser>::New();
+    parser->InitializeParser();
+    parser->ParseChunk(config.toAscii().data(),static_cast<unsigned int>(config.size()));
+    parser->CleanupParser();
+
+    vtkPVXMLElement *xmlStream=parser->GetRootElement();
+    if (!xmlStream)
+      {
+      sqErrorMacro(qDebug(),"Invalid SQPlaneSource configuration  pasted.");
+      return;
+      }
+
+    vtkSmartPointer<vtkSQPlaneSourceConfigurationReader> reader
+      = vtkSmartPointer<vtkSQPlaneSourceConfigurationReader>::New();
+
+    reader->SetProxy(this->proxy());
+    int ok=reader->ReadConfiguration(xmlStream);
+    if (!ok)
+      {
+      sqErrorMacro(qDebug(),"Invalid SQPlaneSource configuration  hierarchy.");
+      return;
+      }
+
+    this->PullServerConfig();
+    }
 }
 
 //-----------------------------------------------------------------------------

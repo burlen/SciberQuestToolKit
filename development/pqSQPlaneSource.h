@@ -23,6 +23,7 @@ using Ui::pqSQPlaneSourceForm;
 class pqProxy;
 class vtkEventQtSlotConnect;
 class QWidget;
+class QContextMenuEvent;
 
 class pqSQPlaneSource : public pqNamedObjectPanel
 {
@@ -50,6 +51,8 @@ public:
 
   void GetNormal(double *n);
   void SetNormal(double *n);
+
+  void contextMenuEvent(QContextMenuEvent *event);
 
 protected slots:
   // Description:
@@ -111,6 +114,11 @@ protected slots:
   // Description:
   // Pull config from proxy
   virtual void reset();
+
+  // Description:
+  // Copy/Paste the UI state to the clip board
+  void CopyConfiguration();
+  void PasteConfiguration();
 
 private:
   double N[3];
