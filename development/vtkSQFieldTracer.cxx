@@ -788,7 +788,9 @@ int vtkSQFieldTracer::IntegrateDynamic(
 
           if (workerStartUp>0)
             {
-            --workerStartUp;
+            //--workerStartUp;
+            // commenting prevents master from integrating
+            // which is better during poincare map mode.
             }
           }
         }
