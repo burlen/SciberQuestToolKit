@@ -515,8 +515,12 @@ int vtkSQBOVReader::RequestInformation(
 
   vtkInformation *info=outInfos->GetInformationObject(0);
 
-  double X0[3]={0.0,0.0,0.0};
-  double dX[3]={1.0,1.0,1.0};
+  double X0[3];//={0.0,0.0,0.0};
+  this->Reader->GetMetaData()->GetOrigin(X0);
+
+  double dX[3];//={1.0,1.0,1.0};
+  this->Reader->GetMetaData()->GetSpacing(dX);
+
   int wholeExtent[6]={0,1,0,1,0,1};
 
   // The two modes to run the reader are Meta mode and Actual mode.

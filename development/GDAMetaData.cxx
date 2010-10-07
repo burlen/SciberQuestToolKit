@@ -98,10 +98,26 @@ int GDAMetaData::OpenDataset(const char *fileName)
   CartesianExtent domain(0,nx-1,0,ny-1,0,nz-1);
   this->SetDomain(domain);
 
-  double X0[3]={0.0,0.0,0.0};
+  double x0,y0,z0;
+  if ( ParseValue(metaData,0,"x0=",x0)==string::npos
+    || ParseValue(metaData,0,"y0=",y0)==string::npos
+    || ParseValue(metaData,0,"z0=",z0)==string::npos )
+    {
+    // if no origin provided assume 0,0,0
+    x0=y0=z0=0.0;
+    }
+  double X0[3]={x0,y0,z0};
   this->SetOrigin(X0);
 
-  double dX[3]={1.0,1.0,1.0};
+  double dx,dy,dz;
+  if ( ParseValue(metaData,0,"dx=",dx)==string::npos
+    || ParseValue(metaData,0,"dy=",dy)==string::npos
+    || ParseValue(metaData,0,"dz=",dz)==string::npos )
+    {
+    // if no spacing is provided assume 1,1,1
+    dx=dy=dz=1.0;
+    }
+  double dX[3]={dx,dy,dz};
   this->SetSpacing(dX);
 
   // TODO
