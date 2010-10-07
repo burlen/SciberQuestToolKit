@@ -26,12 +26,28 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkRenderWindow.h"
 #include "vtkRenderWindowInteractor.h"
 #include "vtkCamera.h"
+#include "vtkPolyDataWriter.h"
 
 #include <iostream>
 using std::cerr;
 
+#include <string>
+using std::string;
+
 #include <mpi.h>
 
+/**
+TestFieldTopologyMapper
+
+Input:
+  /path/to/SmallVector.bovm
+  Seed source type, 1=plane, 2=volume
+
+Output:
+  Left: process id scalars showing the domain decomposition of the topograph.
+  Right: topograph.
+
+*/
 int main(int argc, char **argv)
 {
   ///MPI_Init(&argc,&argv);
@@ -48,13 +64,15 @@ int main(int argc, char **argv)
 
   if (argc<2)
     {
-    cerr << "Error: No file name at $1." << endl;
+    cerr << "Error: Provide the path to SmallVector.bovm in $1." << endl;
     return 1;
     }
+  string testData(argv[1]);
+  testData+="/SmallVector.bovm";
 
   if (argc<3)
     {
-    cerr << "Error: No seed selection (1,2) at $2." << endl;
+    cerr << "Error: Make a seed selection (1=plane,2=volume) at $2." << endl;
     return 1;
     }
   int seedSelection=atoi(argv[2]);
@@ -67,7 +85,7 @@ int main(int argc, char **argv)
   vtkSQBOVReader *r=vtkSQBOVReader::New();
   //r->SetExtent
   r->SetMetaRead(1);
-  r->SetFileName(argv[1]);
+  r->SetFileName(testData.c_str());
   r->SetPointArrayStatus("vi",1);
 
   // terminator
@@ -90,7 +108,7 @@ int main(int argc, char **argv)
   s3->SetPhiResolution(32);
 
   vtkSphereSource *s4=vtkSphereSource::New();
-  s4->SetCenter(3.5,1.5,5.0);
+  s4->SetCenter(3.5,1.45,5.1);
   s4->SetRadius(0.25);
   s4->SetThetaResolution(32);
   s4->SetPhiResolution(32);
@@ -133,8 +151,17 @@ int main(int argc, char **argv)
   vtkSQFieldTracer *ftm=vtkSQFieldTracer::New();
   ftm->SetMode(vtkSQFieldTracer::MODE_TOPOLOGY);
   ftm->SetIntegratorType(vtkSQFieldTracer::INTEGRATOR_RK45);
-  ftm->SetUseDynamicScheduler(1);
+  ftm->SetMinStep(1.0e-8);
+  ftm->SetMaxStep(0.1);
+  ftm->SetMaxError(0.001);
+  ftm->SetMaxNumberOfSteps(10000);
+  ftm->SetMaxLineLength(70);
+  ftm->SetNullThreshold(0.001);
   ftm->SetSqueezeColorMap(1);
+  ftm->SetForwardOnly(0);
+  ftm->SetUseDynamicScheduler(1);
+  ftm->SetMasterBlockSize(16);
+  ftm->SetWorkerBlockSize(512);
   ftm->AddInputConnection(0,r->GetOutputPort(0));
   ftm->AddInputConnection(1,sp->GetOutputPort(0));
   ftm->AddInputConnection(2,s1->GetOutputPort(0));
@@ -172,7 +199,7 @@ int main(int argc, char **argv)
 
 
   // Serial rendering. rank 0 gathers and renders the data in a new
-  // pipeline. Other ranks send the output oof their pipelines.
+  // pipeline. Other ranks send the output of their pipelines.
   const int renderRank=0;
   const int tag=101;
   if (worldRank!=renderRank)
@@ -201,6 +228,12 @@ int main(int argc, char **argv)
     vtkPolyData *map=vtkPolyData::New();
     map->ShallowCopy(apd->GetOutput());
     map->GetCellData()->SetActiveScalars("IntersectColor");
+
+    vtkPolyDataWriter *w=vtkPolyDataWriter::New();
+    w->SetInput(apd->GetOutput());
+    w->SetFileName("TestFieldTopologyMapper.vtk");
+    w->Write();
+    w->Delete();
 
     vtkPolyDataMapper *pdm;
     pdm=vtkPolyDataMapper::New();
