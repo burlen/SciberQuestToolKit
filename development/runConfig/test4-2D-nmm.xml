@@ -2,7 +2,7 @@
 <MagnetosphereTopologyBatch>
 
   <vtkSQBOVReader
-      bov_file_name="/scratch/01237/bloring/test4.bovm"
+      bov_file_name="/scratch/01237/bloring/test4/test4.bovm"
       start_time="0"
       end_time="136500"
       vectors="b"
@@ -18,7 +18,7 @@
       origin="140 401.5 255.5"
       point1="210 401.5 255.5"
       point2="140 621.5 255.5"
-      resolution="200 600"/>
+      resolution="700 2200"/>
 
   <vtkSQFieldTracer
       integrator_type="3"
@@ -33,6 +33,6 @@
       worker_block_size="256"/>
 
   <vtkXMLPDataSetWriter
-      out_file_base="./scratch/01237/bloring/test4/test4-topo-2D-nmm"/>
+      out_file_base="/scratch/01237/bloring/test4/topo-2d/nmm"/>
 
 </MagnetosphereTopologyBatch>
