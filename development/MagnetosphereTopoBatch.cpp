@@ -183,31 +183,46 @@ int main(int argc, char **argv)
   vtkAlgorithm::SetDefaultExecutivePrototype(cexec);
   cexec->Delete();
 
-  if (argc<2)
+  if (argc<4)
     {
     if (worldRank==0)
       {
-      sqErrorMacro(cerr,"$2 must contain the path to a configuration file.");
+      cerr
+        << "Error: Command tail." << endl
+        << " 1) /path/to/runConfig.xml" << endl
+        << " 2) startTime" << endl
+        << " 3) endTime" << endl
+        << endl;
       }
     return SQ_EXIT_ERROR;
     }
 
-  // distribute the configuration file name.
+  // distribute the configuration file name and time range
   int configNameLen=0;
   char *configName=0;
+  double startTime=-1.0;
+  double endTime=-1.0;
+
   if (worldRank==0)
     {
     configNameLen=strlen(argv[1]);
-    controller->Broadcast(&configNameLen,1,0);
     char *configName=(char *)malloc(configNameLen);
     strncpy(configName,argv[1],configNameLen);
+    controller->Broadcast(&configNameLen,1,0);
     controller->Broadcast(configName,configNameLen,0);
+
+    startTime=atof(argv[2]);
+    endTime=atof(argv[3]);
+    controller->Broadcast(&startTime,1,0);
+    controller->Broadcast(&endTime,1,0);
     }
   else
     {
     controller->Broadcast(&configNameLen,1,0);
     char *configName=(char *)malloc(configNameLen);
     controller->Broadcast(configName,configNameLen,0);
+    controller->Broadcast(&startTime,1,0);
+    controller->Broadcast(&endTime,1,0);
     }
 
   // read the configuration file.
@@ -246,11 +261,11 @@ int main(int argc, char **argv)
   const char *bovFileName;
   GetRequiredAttribute(elem,"bov_file_name",&bovFileName);
 
-  double startTime;
-  GetRequiredAttribute<double,1>(elem,"start_time",&startTime);
-
-  double endTime;
-  GetRequiredAttribute<double,1>(elem,"end_time",&endTime);
+  // double startTime;
+  // GetRequiredAttribute<double,1>(elem,"start_time",&startTime);
+  //
+  // double endTime;
+  // GetRequiredAttribute<double,1>(elem,"end_time",&endTime);
 
   const char *vectors;
   GetRequiredAttribute(elem,"vectors",&vectors);
