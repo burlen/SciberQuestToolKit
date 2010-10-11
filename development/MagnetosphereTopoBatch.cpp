@@ -101,6 +101,7 @@ int main(int argc, char **argv)
         << " 3) endTime" << endl
         << endl;
       }
+    vtkAlgorithm::SetDefaultExecutivePrototype(0);
     return SQ_EXIT_ERROR;
     }
 
@@ -112,8 +113,8 @@ int main(int argc, char **argv)
 
   if (worldRank==0)
     {
-    configNameLen=strlen(argv[1]);
-    char *configName=(char *)malloc(configNameLen);
+    configNameLen=strlen(argv[1])+1;
+    configName=(char *)malloc(configNameLen);
     strncpy(configName,argv[1],configNameLen);
     controller->Broadcast(&configNameLen,1,0);
     controller->Broadcast(configName,configNameLen,0);
@@ -126,7 +127,7 @@ int main(int argc, char **argv)
   else
     {
     controller->Broadcast(&configNameLen,1,0);
-    char *configName=(char *)malloc(configNameLen);
+    configName=(char *)malloc(configNameLen);
     controller->Broadcast(configName,configNameLen,0);
     controller->Broadcast(&startTime,1,0);
     controller->Broadcast(&endTime,1,0);

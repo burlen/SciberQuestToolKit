@@ -3,8 +3,6 @@
 
   <vtkSQBOVReader
       bov_file_name="/opt/Data/SciVis/2D/fte-vortex/run2-2D.bov"
-      start_time="267000"
-      end_time="286000"
       vectors="bp"
       decomp_dims="10 10 1"
       block_cache_size="1000"/>

@@ -99,8 +99,8 @@ int main(int argc, char **argv)
         << " 2) startTime" << endl
         << " 3) endTime" << endl
         << endl;
+      return SQ_EXIT_ERROR;
       }
-    return SQ_EXIT_ERROR;
     }
   else
     {
@@ -165,6 +165,7 @@ int main(int argc, char **argv)
   // querry available times from the reader.
   int nTimes=r->GetNumberOfTimeSteps();
   vector<double> times(nTimes);
+  r->GetTimeSteps(&times[0]);
   r->Delete();
 
   int startTimeIdx=IndexOf(startTime,&times[0],0,nTimes-1);
