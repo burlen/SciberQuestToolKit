@@ -3,8 +3,6 @@
 
   <vtkSQBOVReader
       bov_file_name="/scratch/01237/bloring/test4/test4.bovm"
-      start_time="0"
-      end_time="136500"
       vectors="b"
       decomp_dims="5 10 5"
       block_cache_size="250"/>
@@ -28,7 +26,7 @@
       max_number_steps="100000"
       max_arc_length="50000"
       null_threshold="1e-3"
-      dynamic_scheduler="1"
+      dynamic_scheduler="0"
       master_block_size="16"
       worker_block_size="256"/>
 

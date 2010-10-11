@@ -447,6 +447,16 @@ int main(int argc, char **argv)
     return SQ_EXIT_ERROR;
     }
 
+  if (worldRank==0)
+    {
+    pCerr()
+      << "Selected " 
+      << startTime << ":" << startTimeIdx 
+      << " to "
+      << endTime << ":" << endTimeIdx
+      << endl; 
+    }
+
   /// execute
   // run the pipeline for each time step, write the
   // result to disk.
