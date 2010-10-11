@@ -366,6 +366,23 @@ void vtkSQBOVReader::SetKSubset(int klo, int khi)
 }
 
 //-----------------------------------------------------------------------------
+int vtkSQBOVReader::GetNumberOfTimeSteps()
+{
+  return this->Reader->GetMetaData()->GetNumberOfTimeSteps();
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQBOVReader::GetTimeSteps(double *times)
+{
+  int n=this->Reader->GetMetaData()->GetNumberOfTimeSteps();
+
+  for (int i=0; i<n; ++i)
+    {
+    times[i]=this->Reader->GetMetaData()->GetTimeStep(i);
+    }
+}
+
+//-----------------------------------------------------------------------------
 void vtkSQBOVReader::SetPeriodicBC(int *flags)
 {
   if ( (this->PeriodicBC[0]==flags[0])

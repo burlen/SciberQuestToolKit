@@ -70,6 +70,11 @@ public:
   vtkGetVector2Macro(KSubsetRange,int);
 
   // Description:
+  // Time domain discovery interface.
+  int GetNumberOfTimeSteps();
+  void GetTimeSteps(double *times);
+
+  // Description:
   // Mark a coordinate direction as periodic. When periodic boundaries
   // are specified out of core reads will load ghost cells.
   void SetPeriodicBC(int *flags);

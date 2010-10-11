@@ -12,11 +12,11 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkCompositeDataPipeline.h"
 #include "vtkInformation.h"
 #include "vtkInformationDoubleVectorKey.h"
+#include "vtkSmartPointer.h"
 
 #include "vtkPVXMLElement.h"
 #include "vtkPVXMLParser.h"
 #include "vtkXMLPDataSetWriter.h"
-
 
 #include "SQMacros.h"
 #include "postream.h"
@@ -25,13 +25,9 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkSQPlaneSource.h"
 #include "vtkSQVolumeSource.h"
 #include "vtkSQHemisphereSource.h"
-
-//#include "vtkPointData.h"
-//#include "vtkCellData.h"
-//#include "vtkPolyData.h"
+#include "XMLUtils.h"
 
 #include <sstream>
-using std::istringstream;
 using std::ostringstream;
 #include <iostream>
 using std::cerr;
@@ -49,103 +45,13 @@ using std::string;
 #define SQ_EXIT_ERROR 1
 #define SQ_EXIT_SUCCESS 0
 
-
 //*****************************************************************************
-template<typename T>
-T GetRequiredAttribute(vtkPVXMLElement *elem, const char *attName)
+void PVTK_Exit(vtkMPIController* controller, int code)
 {
-  const char *attValue=elem->GetAttribute(attName);
-  if (attValue==NULL)
-    {
-    sqErrorMacro(pCerr(),"No attribute named " << attName);
-    exit(SQ_EXIT_ERROR);
-    }
-  T val;
-  istringstream is(attValue);
-  is >> val;
-  return val;
-}
-
-//*****************************************************************************
-void GetRequiredAttribute(
-      vtkPVXMLElement *elem,
-      const char *attName,
-      const char **attValue)
-{
-  *attValue=elem->GetAttribute(attName);
-  if (*attValue==NULL)
-    {
-    sqErrorMacro(pCerr(),"No attribute named " << attName);
-    exit(SQ_EXIT_ERROR);
-    }
-}
-
-//*****************************************************************************
-template<typename T, int N>
-void GetRequiredAttribute(
-      vtkPVXMLElement *elem,
-      const char *attName,
-      T *attValue)
-{
-  const char *attValueStr=elem->GetAttribute(attName);
-  if (attValueStr==NULL)
-    {
-    sqErrorMacro(pCerr(),"No attribute named " << attName << ".");
-    exit(SQ_EXIT_ERROR);
-    }
-
-  T *pAttValue=attValue;
-  istringstream is(attValueStr);
-  for (int i=0; i<N; ++i)
-    {
-    if (!is.good())
-      {
-      sqErrorMacro(pCerr(),"Wrong number of values in " << attName <<".");
-      exit(SQ_EXIT_ERROR);
-      }
-    is >> *pAttValue;
-    ++pAttValue;
-    }
-}
-
-// //*****************************************************************************
-// template <>
-// const char *GetRequiredAttribute<char *,1>(
-//       vtkPVXMLElement *elem,
-//       const char *attName,
-//       char **attValue)
-// {
-//   *attValue=elem->GetAttribute(attName);
-//   if (*attValue==NULL)
-//     {
-//     sqErrorMacro(pCerr(),"No attribute named " << attName);
-//     exit(SQ_EXIT_ERROR);
-//     }
-// }
-
-
-//*****************************************************************************
-vtkPVXMLElement *GetRequiredElement(
-      vtkPVXMLElement *root,
-      const char *name)
-{
-  vtkPVXMLElement *elem=root->FindNestedElementByName(name);
-  if (elem==0)
-    {
-    sqErrorMacro(pCerr(),"No element named " << name << ".");
-    exit(SQ_EXIT_ERROR);
-    }
-  return elem;
-}
-
-
-//*****************************************************************************
-vtkPVXMLElement *GetOptionalElement(
-      vtkPVXMLElement *root,
-      const char *name)
-{
-  vtkPVXMLElement *elem=root->FindNestedElementByName(name);
-  return elem;
+  controller->Finalize();
+  controller->Delete();
+  vtkAlgorithm::SetDefaultExecutivePrototype(0);
+  exit(code);
 }
 
 //*****************************************************************************
@@ -172,7 +78,8 @@ int IndexOf(double value, double *values, int first, int last)
 //-----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
-  vtkMPIController* controller=vtkMPIController::New();
+  vtkSmartPointer<vtkMPIController> controller=vtkSmartPointer<vtkMPIController>::New();
+
   controller->Initialize(&argc,&argv,0);
   int worldRank=controller->GetLocalProcessId();
   int worldSize=controller->GetNumberOfProcesses();
@@ -187,7 +94,7 @@ int main(int argc, char **argv)
     {
     if (worldRank==0)
       {
-      cerr
+      pCerr()
         << "Error: Command tail." << endl
         << " 1) /path/to/runConfig.xml" << endl
         << " 2) startTime" << endl
@@ -226,8 +133,9 @@ int main(int argc, char **argv)
     }
 
   // read the configuration file.
-  vtkPVXMLParser *parser=vtkPVXMLParser::New();
-  parser->SetFileName(argv[1]);
+  int iErr=0;
+  vtkSmartPointer<vtkPVXMLParser> parser=vtkSmartPointer<vtkPVXMLParser>::New();
+  parser->SetFileName(configName);
   if (parser->Parse()==0)
     {
     sqErrorMacro(pCerr(),"Invalid XML in file " << configName << ".");
@@ -247,7 +155,8 @@ int main(int argc, char **argv)
   if (foundType==0 || foundType!=requiredType)
     {
     sqErrorMacro(pCerr(),
-        << "This is not a valid " << requiredType
+        << "This is not a valid "
+        << requiredType
         << " XML hierarchy.");
     return SQ_EXIT_ERROR;
     }
@@ -257,9 +166,14 @@ int main(int argc, char **argv)
 
   // reader
   elem=GetRequiredElement(root,"vtkSQBOVReader");
+  if (elem==0)
+    {
+    return SQ_EXIT_ERROR;
+    }
 
+  iErr=0;
   const char *bovFileName;
-  GetRequiredAttribute(elem,"bov_file_name",&bovFileName);
+  iErr+=GetRequiredAttribute(elem,"bov_file_name",&bovFileName);
 
   // double startTime;
   // GetRequiredAttribute<double,1>(elem,"start_time",&startTime);
@@ -268,13 +182,19 @@ int main(int argc, char **argv)
   // GetRequiredAttribute<double,1>(elem,"end_time",&endTime);
 
   const char *vectors;
-  GetRequiredAttribute(elem,"vectors",&vectors);
+  iErr+=GetRequiredAttribute(elem,"vectors",&vectors);
 
   int decompDims[3];
-  GetRequiredAttribute<int,3>(elem,"decomp_dims",decompDims);
+  iErr+=GetRequiredAttribute<int,3>(elem,"decomp_dims",decompDims);
 
   int blockCacheSize;
-  GetRequiredAttribute<int,1>(elem,"block_cache_size",&blockCacheSize);
+  iErr+=GetRequiredAttribute<int,1>(elem,"block_cache_size",&blockCacheSize);
+
+  if (iErr!=0)
+    {
+    sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
+    return SQ_EXIT_ERROR;
+    }
 
   vtkSQBOVReader *r=vtkSQBOVReader::New();
   r->SetMetaRead(1);
@@ -286,16 +206,27 @@ int main(int argc, char **argv)
   r->SetBlockCacheSize(blockCacheSize);
 
   // earth terminator surfaces
+  iErr=0;
   elem=GetRequiredElement(root,"vtkSQHemisphereSource");
+  if (elem==0)
+    {
+    return SQ_EXIT_ERROR;
+    }
 
   double hemiCenter[3];
-  GetRequiredAttribute<double,3>(elem,"center",hemiCenter);
+  iErr+=GetRequiredAttribute<double,3>(elem,"center",hemiCenter);
 
   double hemiRadius;
-  GetRequiredAttribute<double,1>(elem,"radius",&hemiRadius);
+  iErr+=GetRequiredAttribute<double,1>(elem,"radius",&hemiRadius);
 
   int hemiResolution;
-  GetRequiredAttribute<int,1>(elem,"resolution",&hemiResolution);
+  iErr+=GetRequiredAttribute<int,1>(elem,"resolution",&hemiResolution);
+
+  if (iErr!=0)
+    {
+    sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
+    return SQ_EXIT_ERROR;
+    }
 
   vtkSQHemisphereSource *hs=vtkSQHemisphereSource::New();
   hs->SetCenter(hemiCenter);
@@ -303,6 +234,7 @@ int main(int argc, char **argv)
   hs->SetResolution(hemiResolution);
 
   // seed source
+  iErr=0;
   vtkAlgorithm *ss;
   const char *outFileExt;
   if ((elem=GetOptionalElement(root,"vtkSQPlaneSource"))!=NULL)
@@ -311,16 +243,22 @@ int main(int argc, char **argv)
     outFileExt=".pvtp";
 
     double origin[3];
-    GetRequiredAttribute<double,3>(elem,"origin",origin);
+    iErr+=GetRequiredAttribute<double,3>(elem,"origin",origin);
 
     double point1[3];
-    GetRequiredAttribute<double,3>(elem,"point1",point1);
+    iErr+=GetRequiredAttribute<double,3>(elem,"point1",point1);
 
     double point2[3];
-    GetRequiredAttribute<double,3>(elem,"point2",point2);
+    iErr+=GetRequiredAttribute<double,3>(elem,"point2",point2);
 
     int resolution[2];
-    GetRequiredAttribute<int,2>(elem,"resolution",resolution);
+    iErr+=GetRequiredAttribute<int,2>(elem,"resolution",resolution);
+
+    if (iErr!=0)
+      {
+      sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
+      return SQ_EXIT_ERROR;
+      }
 
     vtkSQPlaneSource *ps=vtkSQPlaneSource::New();
     ps->SetOrigin(origin);
@@ -336,19 +274,25 @@ int main(int argc, char **argv)
     outFileExt=".pvtu";
 
     double origin[3];
-    GetRequiredAttribute<double,3>(elem,"origin",origin);
+    iErr+=GetRequiredAttribute<double,3>(elem,"origin",origin);
 
     double point1[3];
-    GetRequiredAttribute<double,3>(elem,"point1",point1);
+    iErr+=GetRequiredAttribute<double,3>(elem,"point1",point1);
 
     double point2[3];
-    GetRequiredAttribute<double,3>(elem,"point2",point2);
+    iErr+=GetRequiredAttribute<double,3>(elem,"point2",point2);
 
     double point3[3];
-    GetRequiredAttribute<double,3>(elem,"point3",point3);
+    iErr+=GetRequiredAttribute<double,3>(elem,"point3",point3);
 
     int resolution[3];
-    GetRequiredAttribute<int,3>(elem,"resolution",resolution);
+    iErr+=GetRequiredAttribute<int,3>(elem,"resolution",resolution);
+
+    if (iErr!=0)
+      {
+      sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
+      return SQ_EXIT_ERROR;
+      }
 
     vtkSQVolumeSource *vs=vtkSQVolumeSource::New();
     vs->SetOrigin(origin);
@@ -365,16 +309,21 @@ int main(int argc, char **argv)
     }
 
   // field topology mapper
+  iErr=0;
   elem=GetRequiredElement(root,"vtkSQFieldTracer");
+  if (elem==0)
+    {
+    return SQ_EXIT_ERROR;
+    }
 
   int integratorType;
-  GetRequiredAttribute<int,1>(elem,"integrator_type",&integratorType);
+  iErr+=GetRequiredAttribute<int,1>(elem,"integrator_type",&integratorType);
 
   double maxStepSize;
-  GetRequiredAttribute<double,1>(elem,"max_step_size",&maxStepSize);
+  iErr+=GetRequiredAttribute<double,1>(elem,"max_step_size",&maxStepSize);
 
   double maxArcLength;
-  GetRequiredAttribute<double,1>(elem,"max_arc_length",&maxArcLength);
+  iErr+=GetRequiredAttribute<double,1>(elem,"max_arc_length",&maxArcLength);
 
   double minStepSize;
   int maxNumberSteps;
@@ -400,6 +349,12 @@ int main(int argc, char **argv)
     GetRequiredAttribute<int,1>(elem,"worker_block_size",&workerBlockSize);
     }
 
+  if (iErr!=0)
+    {
+    sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
+    return SQ_EXIT_ERROR;
+    }
+
   vtkSQFieldTracer *ftm=vtkSQFieldTracer::New();
   ftm->SetMode(vtkSQFieldTracer::MODE_TOPOLOGY);
   ftm->SetIntegratorType(integratorType);
@@ -423,9 +378,6 @@ int main(int argc, char **argv)
   ftm->AddTerminatorInputConnection(hs->GetOutputPort(0));
   ftm->AddTerminatorInputConnection(hs->GetOutputPort(1));
   ftm->AddSeedPointInputConnection(ss->GetOutputPort(0));
-//   ftm->AddInputConnection(0,r->GetOutputPort(0));
-//   ftm->AddInputConnection(1,hs->GetOutputPort(0));
-//   ftm->AddInputConnection(2,ss->GetOutputPort(0));
   ftm->SetInputArrayToProcess(
         0,
         0,
@@ -438,10 +390,21 @@ int main(int argc, char **argv)
   ss->Delete();
 
   // writer.
+  iErr=0;
   elem=GetRequiredElement(root,"vtkXMLPDataSetWriter");
+  if (elem==0)
+    {
+    return SQ_EXIT_ERROR;
+    }
 
   const char *outFileBase;
-  GetRequiredAttribute(elem,"out_file_base",&outFileBase);
+  iErr+=GetRequiredAttribute(elem,"out_file_base",&outFileBase);
+
+  if (iErr!=0)
+    {
+    sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
+    return SQ_EXIT_ERROR;
+    }
 
   vtkXMLPDataSetWriter *w=vtkXMLPDataSetWriter::New();
   //w->SetDataModeToBinary();
@@ -484,27 +447,6 @@ int main(int argc, char **argv)
     return SQ_EXIT_ERROR;
     }
 
-  // pvd file stream
-  ofstream pvds;
-  if (worldRank==0)
-    {
-    string pvdFileName;
-    pvdFileName+=outFileBase;
-    pvdFileName+=".pvd";
-
-    pvds.open(pvdFileName.c_str());
-    if (!pvds.good())
-      {
-      sqErrorMacro(pCerr(),"Failed to open " << pvdFileName << ".");
-      return SQ_EXIT_ERROR;
-      }
-
-    pvds
-      << "<?xml version=\"1.0\"?>" << endl
-      << "<VTKFile type=\"Collection\">" << endl
-      << "<Collection>" << endl;
-    }
-
   /// execute
   // run the pipeline for each time step, write the
   // result to disk.
@@ -524,33 +466,10 @@ int main(int argc, char **argv)
 
     w->SetFileName(fn.c_str());
     w->Write();
-
-    if (worldRank==0)
-      {
-      pvds
-        << "<DataSet "
-        << "timestep=\"" << time << "\" "
-        << "group=\"\" part=\"0\" "
-        << "file=\"" << fn.c_str() << "\""
-        << "/>"
-        << endl;
-      }
     }
-
-  if (worldRank==0)
-    {
-    pvds
-      << "</Collection>" << endl
-      << "</VTKFile>" << endl
-      << endl;
-    pvds.close();
-    }
-
   w->Delete();
-  parser->Delete();
 
   controller->Finalize();
-  controller->Delete();
   vtkAlgorithm::SetDefaultExecutivePrototype(0);
 
   return SQ_EXIT_SUCCESS;

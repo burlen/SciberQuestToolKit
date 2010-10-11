@@ -223,9 +223,13 @@ set(BUILD_SVTK_UTILITIES OFF CACHE BOOL "Build SciVisToolKit utilities.")
     add_executable(genzero genzero.cpp)
     install(TARGETS genzero DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-    add_executable(MagnetosphereTopoBatch MagnetosphereTopoBatch.cpp)
+    add_executable(MagnetosphereTopoBatch MagnetosphereTopoBatch.cpp XMLUtils.cxx)
     target_link_libraries(MagnetosphereTopoBatch ${MPI_LIBRARIES} SciVisToolKit)
     install(TARGETS MagnetosphereTopoBatch DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+    add_executable(MagnetosphereTopoBatchPVD MagnetosphereTopoBatchPVD.cpp XMLUtils.cxx)
+    target_link_libraries(MagnetosphereTopoBatchPVD ${MPI_LIBRARIES} SciVisToolKit)
+    install(TARGETS MagnetosphereTopoBatchPVD DESTINATION ${CMAKE_INSTALL_PREFIX})
 
   endif (BUILD_SVTK_UTILITIES)
 endif (UNIX)

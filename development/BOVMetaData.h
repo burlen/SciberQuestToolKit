@@ -201,7 +201,7 @@ public:
   size_t GetNumberOfTimeSteps() const { return this->TimeSteps.size(); }
 
   /**
-  Return the requested time step id, if a metadat file has been
+  Return the requested time step id, if a metadata file has been
   successfully opened.
   */
   int GetTimeStep(size_t i) const { return this->TimeSteps[i]; }
