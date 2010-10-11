@@ -145,8 +145,7 @@ int InitMagneticIslands(
       float b_g,
       float theta,
       float eps,
-      float x_s,
-      int n_isl)
+      float x_s)
 {
   int ni=domain[1]-domain[0]+1;
   int nj=domain[3]-domain[2]+1;
@@ -181,58 +180,97 @@ int InitMagneticIslands(
   return 0;
 }
 
+
+//*****************************************************************************
+float IslandCenterZ(float y, float k_y, float k_z, int i)
+{
+  if (k_z<1E-4)
+    {
+    return i*M_PI;
+    }
+  return (i*M_PI-y*k_y)/k_z;
+}
+
+//*****************************************************************************
+float IslandCenterY(float z, float k_y, float k_z, int i)
+{
+  if (k_y<1E-4)
+    {
+    return i*M_PI;
+    }
+  return (i*M_PI-z*k_z)/k_y;
+}
+
 //-----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
-  if (argc<8)
+  if (argc<7)
     {
     cerr
       << "Error:" << endl
       << "usage: " << argv[0] << endl
       << "  1) nx" << endl
-      << "  2) k" << endl
-      << "  3) theta" << endl
+      << "2-3) n,m" << endl
       << "  4) B_g" << endl
       << "  5) eps" << endl
-      << "  6) N" << endl
-      << "  7) /path/to/dataset" << endl
-      << "  8) stepNo" << endl
+      << "  6) /path/to/dataset" << endl
+      << "  7) stepNo" << endl
       << endl;
     return 1;
     }
 
   int nx=atoi(argv[1]);
-  float k=atof(argv[2]);
-  float theta=atof(argv[3])*M_PI/180.0;
+  int n_k=atoi(argv[2]);
+  int m_k=atoi(argv[3]);
   float b_g=atof(argv[4]);
   float eps=atof(argv[5]);
-  int n_i=atoi(argv[6]);
-  char *path=argv[7];
+  char *path=argv[6];
   int stepNo=0;
-  if (argc>8)
+  if (argc>7)
     {
-    stepNo=atoi(argv[8]);
+    stepNo=atoi(argv[7]);
+    }
+
+  const int n_i=1;            // number of islands
+  float L_x=2*M_PI;           // box length
+  float L_y=2*M_PI*n_i;       // box width
+  float L_z=2*M_PI*n_i;       // box height
+  float k_y=2*M_PI*n_k/L_y;   // 
+  float k_z=2*M_PI*m_k/L_z;   // 
+  float theta=atan(k_y/k_z);  // phase angle
+
+  float k=0.5;
+  // float k;
+  // if ((theta==0.0) || (fmod(theta,M_PI)<1.0e-4))
+  //   {
+  //   k=k_z/cos(theta);
+  //   }
+  // else
+  //   {
+  //   k=k_y/sin(theta);
+  //   }
+
+  float x_s=-atanh(tan(theta)*b_g); // singular surface location
+  if (isnan(x_s))
+    {
+    cerr << "Error: invlaid singular surface location." << endl;
+    return 1;
     }
 
   int ny,nz;
   ny=nz=n_i*nx;
-
   int domain[6]={0,nx-1,0,ny-1,0,nz-1};
-  float X0[3]={-M_PI,-M_PI*n_i,-M_PI*n_i};
-  float dX[3]={
-    2.0*M_PI/(nx-1),
-    2.0*M_PI*n_i/(ny-1),
-    2.0*M_PI*n_i/(nz-1)};
-
-  float k_y=k*sin(theta);
-  float k_z=k*cos(theta);
-  float x_s=-atanh(tan(theta)*b_g);
+  float X0[3]={-M_PI,0.0,0.0};
+  float dX[3]={L_x/(nx-1),L_y/(ny-1),L_z/(nz-1)};
 
   ostringstream comment;
   comment
     << "# Magnetic Islands " << endl
     << "# nX  = " << Tuple<float>(nx,ny,nz) << endl
-    << "# theta = " << theta << endl
+    << "# L   = " << Tuple<float>(L_x,L_y,L_z) << endl
+    << "# n   = " << n_k << endl
+    << "# m   = " << m_k << endl
+    << "# theta = " << theta*180.0/M_PI << endl
     << "# k   = " << k << endl
     << "# k_y = " << k_y << endl
     << "# k_z = " << k_z << endl
@@ -259,8 +297,7 @@ int main(int argc, char **argv)
         b_g,
         theta,
         eps,
-        x_s,
-        n_i);
+        x_s);
 
   // check for numerical problems.
   HasNans(domain,domain,b_x,b_y,b_z);
@@ -302,7 +339,7 @@ int main(int argc, char **argv)
     << comment.str()
     << endl
     << "nx=" << nx    << ", ny=" << ny    << ", nz=" << nz    << endl
-    << "x0=" << X0[0] << ", y0=" << X0[1] << ", z0=" << X0[2] << endl
+    << "x0=" << X0[0] << ", y0=" << X0[1]-L_y/2.0 << ", z0=" << X0[2]-L_y/2.0 << endl
     << "dx=" << dX[0] << ", dy=" << dX[1] << ", dz=" << dX[2] << endl
     << endl;
   os.close();
