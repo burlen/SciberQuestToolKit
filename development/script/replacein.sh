@@ -24,7 +24,7 @@ fi
 
 echo "Replace $1 with $2"
  
-for f in `grep "$1" ./ -rInl --exclude-dir=.svn`;
+for f in `grep "$1" ./ -rInl --exclude-dir=.svn --exclude=\*~`;
 do
   echo -n "in $f (y,a,n,q)?";
 

@@ -6,18 +6,18 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef __vtkSQOnDemandVolumeSource_h
-#define __vtkSQOnDemandVolumeSource_h
+#ifndef __vtkSQVolumeSourceCellGenerator_h
+#define __vtkSQVolumeSourceCellGenerator_h
 
 /// Plane sources that provide data on demand
 /**
 */
-class vtkSQOnDemandVolumeSource : public vtkSQOnDemandSource
+class vtkSQVolumeSourceCellGenerator : public vtkSQCellGenerator
 {
 public:
   static vtkSQPlaneSource *New();
   void PrintSelf(ostream& os, vtkIndent indent);
-  vtkTypeRevisionMacro(vtkSQOnDemandVolumeSource, vtkObject);
+  vtkTypeRevisionMacro(vtkSQVolumeSourceCellGenerator, vtkObject);
 
   /**
   Return the total number of cells available.

@@ -67,6 +67,19 @@ public:
   static vtkSQPlaneSource *New();
 
   // Description:
+  // Mode controls how data is generated. Demand mode generates
+  // minimal pseudo dataset and places an object in the pipeline
+  // that can be accessed downstream and generate data as needed.
+  //BTX
+  enum {
+    MODE_IMMEDIATE=0,
+    MODE_DEMAND=1,
+    };
+  //ETX
+  vtkSetMacro(ImmediateMode,int);
+  vtkGetMacro(ImmediateMode,int);
+
+  // Description:
   // Specify the resolution of the plane along the first axes.
   vtkSetMacro(XResolution,int);
   vtkGetMacro(XResolution,int);
@@ -135,10 +148,12 @@ protected:
   virtual ~vtkSQPlaneSource();
 
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
+  int RequestInformation(vtkInformation *,vtkInformationVector **,vtkInformationVector *outInfos);
 
   int UpdatePlane(double v1[3], double v2[3]);
 
 private:
+  int ImmediateMode;
   int XResolution;
   int YResolution;
   double Origin[3];

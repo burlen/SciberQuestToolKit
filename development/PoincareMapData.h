@@ -24,6 +24,7 @@ class vtkFloatArray;
 class vtkCellArray;
 class vtkUnsignedCharArray;
 class vtkIdTypeArray;
+class vtkSQCellGenerator;
 
 /// Interface to the topology map.
 /**
@@ -47,9 +48,19 @@ public:
   virtual ~PoincareMapData();
 
   /**
-  Set the datast to be used as the seed source.
+  Set the dataset to be used as the seed source. Use either
+  a dataset or a cell generator. The dataset explicitly contains
+  all geometry that will be accessed. 
   */
   virtual void SetSource(vtkDataSet *s);
+
+  /**
+  Set the cell generator to be used as the seed source. Use either
+  a dataset or a cell generator. The cell generator implicitly contains
+  all geometry that will be accessed, generating only what is needed
+  on demand.
+  */
+  virtual void SetSource(vtkSQCellGenerator *s);
 
   /**
   Copy the IntersectColor and SourceId array into the output.

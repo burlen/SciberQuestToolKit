@@ -8,9 +8,11 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "PoincareMapData.h"
 
+#include "postream.h"
 #include "WorkQueue.h"
 #include "FieldLine.h"
 #include "TerminationCondition.h"
+#include "vtkSQCellGenerator.h"
 
 #include "vtkDataSet.h"
 #include "vtkPoints.h"
@@ -46,6 +48,12 @@ void PoincareMapData::ClearOut()
   this->OutPts=0;
   this->OutCells=0;
   this->SourceId=0;
+}
+
+//-----------------------------------------------------------------------------
+void PoincareMapData::SetSource(vtkSQCellGenerator *sourceGen)
+{
+  sqErrorMacro(pCerr(),"Cell generator source is not supported."); 
 }
 
 //-----------------------------------------------------------------------------

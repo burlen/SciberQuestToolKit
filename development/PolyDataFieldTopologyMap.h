@@ -25,6 +25,7 @@ class vtkFloatArray;
 class vtkCellArray;
 class vtkUnsignedCharArray;
 class vtkIdTypeArray;
+class vtkSQCellGenerator;
 
 /// Interface to the topology map.
 /**
@@ -37,18 +38,28 @@ class PolyDataFieldTopologyMap : public FieldTraceData
 public:
   PolyDataFieldTopologyMap()
         :
+    SourceGen(0),
     SourcePts(0),
     SourceCells(0),
     OutPts(0),
     OutCells(0),
-    CellType(NONE)
+    CellType(0)
       {  }
 
   virtual ~PolyDataFieldTopologyMap();
 
   // Description:
-  // Set the datast to be used as the seed source.
+  // Set the dataset to be used as the seed source. Use either
+  // a dataset or a cell generator. The dataset explicitly contains
+  // all geometry that will be accessed.
   virtual void SetSource(vtkDataSet *s);
+
+  // Description:
+  // Set the cell generator to be used as the seed source. Use either
+  // a dataset or a cell generator. The cell generator implicitly contains
+  // all geometry that will be accessed, generating only what is needed
+  // on demand.
+  virtual void SetSource(vtkSQCellGenerator *s);
 
   // Description:
   // Copy the IntersectColor and SourceId array into the output.
@@ -63,11 +74,15 @@ public:
 private:
   void ClearSource();
   void ClearOut();
+  int InsertCellsFromGenerator(IdBlock *SourceIds);
+  int InsertCellsFromDataset(IdBlock *SourceIds);
 
 private:
   typedef pair<map<vtkIdType,vtkIdType>::iterator,bool> MapInsert;
   typedef pair<vtkIdType,vtkIdType> MapElement;
   map<vtkIdType,vtkIdType> IdMap;
+
+  vtkSQCellGenerator *SourceGen;
 
   vtkFloatArray *SourcePts;
   vtkCellArray *SourceCells;
@@ -75,13 +90,13 @@ private:
   vtkFloatArray *OutPts;
   vtkCellArray *OutCells;
 
-  enum {
-    NONE=0,
-    POLY=1,
-    VERT=2,
-    STRIP=3,
-    LINE=4
-    };
+  // enum {
+  //   NONE=0,
+  //   POLY=1,
+  //   VERT=2,
+  //   STRIP=3,
+  //   LINE=4
+  //   };
   int CellType;
 };
 

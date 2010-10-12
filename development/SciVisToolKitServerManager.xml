@@ -816,6 +816,17 @@ Copyright 2008 SciberQuest Inc.
           This property specifies the number of divisions along the Y axis of the parallelogram.
         </Documentation>
       </IntVectorProperty>
+
+      <IntVectorProperty
+         name="ImmediateMode"
+         command="SetImmediateMode"
+         number_of_elements="1"
+         default_values="1" >
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Switch between immediate and demand mode.
+        </Documentation>
+      </IntVectorProperty>
    <!-- End Plane -->
    </SourceProxy>
 

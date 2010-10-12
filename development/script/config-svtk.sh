@@ -80,7 +80,7 @@ case $CONFIG in
     ;;
 
   * )
-    echo "Error: invalid config name $1."
+    echo "Error: invalid config name $CONFIG."
     ;;
 esac
 

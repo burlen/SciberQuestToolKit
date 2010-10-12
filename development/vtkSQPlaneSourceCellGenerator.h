@@ -6,18 +6,23 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef __vtkSQOnDemandPlaneSource_h
-#define __vtkSQOnDemandPlaneSource_h
+#ifndef __vtkSQPlaneSourceCellGenerator_h
+#define __vtkSQPlaneSourceCellGenerator_h
 
-/// Plane sources that provide data on demand
+#include "vtkSQCellGenerator.h"
+#include "vtkCellType.h"
+
+/// A plane source that provide data on demand
 /**
+Given a cell id the source provides corresponding
+cell points and indexes (globally unique ids).
 */
-class vtkSQOnDemandPlaneSource : public vtkSQOnDemandSource
+class vtkSQPlaneSourceCellGenerator : public vtkSQCellGenerator
 {
 public:
-  static vtkSQPlaneSource *New();
+  static vtkSQPlaneSourceCellGenerator *New();
   void PrintSelf(ostream& os, vtkIndent indent);
-  vtkTypeRevisionMacro(vtkSQOnDemandPlaneSource, vtkObject);
+  vtkTypeRevisionMacro(vtkSQPlaneSourceCellGenerator, vtkObject);
 
   /**
   Return the total number of cells available.
@@ -28,6 +33,11 @@ public:
     }
 
   /**
+  Return the cell type of the cell at id. 
+  */
+  virtual int GetCellType(vtkIdType id){ return VTK_POLYGON; }
+
+  /**
   Return the number of points required for the named
   cell. For homogeneous datasets its always the same.
   */
@@ -35,10 +45,19 @@ public:
 
   /**
   Copy the points from a cell into the provided buffer,
-  buffer is expected to be large enought to hold all of the
-  points. Return is zero if no error occured.
+  buffer is expected to be large enough. Return the number
+  of points coppied.
   */
   virtual int GetCellPoints(vtkIdType cid, float *pts);
+
+  /**
+  Copy the point's indexes into the provided bufffer,
+  buffer is expected to be large enough. Return the 
+  number of points coppied. The index is unique across
+  all processes but is not the same as the point id
+  in a VTK dataset.
+  */
+  virtual int GetCellPointIndexes(vtkIdType cid, vtkIdType *idx);
 
   /**
   Set/Get plane cell resolution.
@@ -67,10 +86,8 @@ public:
   void ComputeDeltas();
 
 protected:
-  vtkOnDemandPlaneSource();
-  virtual ~vtkOnDemandPlaneSource();
-
-
+  vtkSQPlaneSourceCellGenerator();
+  virtual ~vtkSQPlaneSourceCellGenerator(){};
 
 private:
   int Resolution[2];

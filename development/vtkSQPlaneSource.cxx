@@ -14,6 +14,7 @@
 =========================================================================*/
 #include "vtkSQPlaneSource.h"
 
+#include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkCellArray.h"
 #include "vtkFloatArray.h"
 #include "vtkInformation.h"
@@ -26,8 +27,13 @@
 #include "vtkTransform.h"
 
 #include "vtkSQMetaDataKeys.h"
+#include "vtkSQPlaneSourceCellGenerator.h"
 
-vtkCxxRevisionMacro(vtkSQPlaneSource, "$Revision: 1.65 $");
+#include <map>
+using std::map;
+using std::pair;
+
+vtkCxxRevisionMacro(vtkSQPlaneSource,"$Revision: 1.0$");
 vtkStandardNewMacro(vtkSQPlaneSource);
 
 //-----------------------------------------------------------------------------
@@ -52,7 +58,6 @@ vtkSQPlaneSource::vtkSQPlaneSource()
   this->Center[0]=this->Center[1]=0.5;
 
   this->DescriptiveName=0;
-  this->SetDescriptiveName("blah");
 
   this->SetNumberOfInputPorts(0);
 }
@@ -61,7 +66,7 @@ vtkSQPlaneSource::vtkSQPlaneSource()
 vtkSQPlaneSource::~vtkSQPlaneSource()
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "===============================~vtkSQPlaneSource" << endl;
+  cerr << "===============================vtkSQPlaneSource::~vtkSQPlaneSource" << endl;
   #endif
   this->SetDescriptiveName(0);
 }
@@ -70,7 +75,7 @@ vtkSQPlaneSource::~vtkSQPlaneSource()
 void vtkSQPlaneSource::SetResolution(const int xR, const int yR)
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "===============================SetResolution" << endl;
+  cerr << "===============================vtkSQPlaneSource::SetResolution" << endl;
   #endif
   // Set the number of x-y subdivisions in the plane.
   if ( xR != this->XResolution || yR != this->YResolution )
@@ -85,17 +90,165 @@ void vtkSQPlaneSource::SetResolution(const int xR, const int yR)
     }
 }
 
-//-----------------------------------------------------------------------------
-int vtkSQPlaneSource::RequestData(
-  vtkInformation *vtkNotUsed(request),
-  vtkInformationVector **vtkNotUsed(inputVector),
-  vtkInformationVector *outputVector)
+//----------------------------------------------------------------------------
+int vtkSQPlaneSource::RequestInformation(
+    vtkInformation */*req*/,
+    vtkInformationVector **/*inInfos*/,
+    vtkInformationVector *outInfos)
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "===============================RequestData" << endl;
+    cerr << "===============================vtkSQPlaneSource::RequestInformation" << endl;
   #endif
+
+
+  // tell the excutive that we are handling our own decomposition.
+  vtkInformation *outInfo=outInfos->GetInformationObject(0);
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::MAXIMUM_NUMBER_OF_PIECES(),-1);
+
+  return 1;
+}
+
+//-----------------------------------------------------------------------------
+int vtkSQPlaneSource::RequestData(
+      vtkInformation *vtkNotUsed(request),
+      vtkInformationVector **vtkNotUsed(inputVector),
+      vtkInformationVector *outputVector)
+{
+  #ifdef vtkSQPlaneSourceDEBUG
+  cerr << "===============================vtkSQPlaneSource::RequestData" << endl;
+  #endif
+
   // get the info object
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
+
+  // get the ouptut
+  vtkPolyData *output
+    =dynamic_cast<vtkPolyData*>(outInfo->Get(vtkDataObject::DATA_OBJECT()));
+
+  // decompose by piece information.
+  int pieceNo
+    = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
+  int nPieces
+    = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+
+  // sanity - the requst cannot be fullfilled
+  if (pieceNo>=nPieces)
+    {
+    output->Initialize();
+    return 1;
+    }
+
+
+  // The default domain decomposition of one cell per process
+  // is used in demand mode. If immediate mode is on then these
+  // will be reset.
+  int nLocal=1;
+  int startId=pieceNo;
+  int endId=pieceNo+1;
+  int resolution[2]={1,nPieces};
+
+  if (!this->ImmediateMode)
+    {
+    // In demeand mode a pseduo dataset is generated here for
+    // display in PV, a demand plane source is inserted into
+    // the pipeline for down stream access to any of the plane's
+    // cell's
+    vtkSQPlaneSourceCellGenerator *source=vtkSQPlaneSourceCellGenerator::New();
+    source->SetOrigin(this->Origin);
+    source->SetPoint1(this->Point1);
+    source->SetPoint2(this->Point2);
+    source->SetResolution(this->XResolution,this->YResolution);
+
+    outInfo->Set(vtkSQCellGenerator::CELL_GENERATOR(),source);
+    source->Delete();
+    }
+  else
+    {
+    // Immediate mode domain decomposition
+    int nCells=this->XResolution*this->YResolution;
+    int pieceSize=nCells/nPieces;
+    int nLarge=nCells%nPieces;
+    nLocal=pieceSize+(pieceNo<nLarge?1:0);
+    startId=pieceSize*pieceNo+(pieceNo<nLarge?pieceNo:nLarge);
+    endId=startId+nLocal;
+
+    resolution[0]=this->XResolution;
+    resolution[1]=this->YResolution;
+    }
+
+  // Configure the output
+  vtkFloatArray *X=vtkFloatArray::New();
+  X->SetNumberOfComponents(3);
+  X->SetNumberOfTuples(12*nLocal); // bounded by
+  float *pX=X->GetPointer(0);
+
+  vtkPoints *pts=vtkPoints::New();
+  pts->SetData(X);
+  X->Delete();
+
+  output->SetPoints(pts);
+  pts->Delete();
+
+  vtkIdTypeArray *ia=vtkIdTypeArray::New();
+  ia->SetNumberOfComponents(1);
+  ia->SetNumberOfTuples(5*nLocal);
+  vtkIdType *pIa=ia->GetPointer(0);
+
+  vtkCellArray *polys=vtkCellArray::New();
+  polys->SetCells(nLocal,ia);
+  ia->Delete();
+
+  output->SetPolys(polys);
+  polys->Delete();
+
+  // cell generator
+  vtkSQPlaneSourceCellGenerator *source=vtkSQPlaneSourceCellGenerator::New();
+  source->SetOrigin(this->Origin);
+  source->SetPoint1(this->Point1);
+  source->SetPoint2(this->Point2);
+  source->SetResolution(resolution);
+
+  int ptId=0;
+  map<vtkIdType,vtkIdType> idMap;
+  pair<map<vtkIdType,vtkIdType>::iterator,bool> idMapInsert; 
+
+  for (int cid=startId; cid<endId; ++cid)
+    {
+    // get the grid indexes which are used as keys to
+    // insure a single insertion of each coordinate.
+    vtkIdType cpids[4];
+    source->GetCellPointIndexes(cid,cpids);
+
+    // get the poly's vertices coordinates
+    float cpts[12];
+    source->GetCellPoints(cid,cpts);
+
+    pIa[0]=4; // set number of verts for this cell
+    ++pIa;
+
+    for (int i=0; i<4; ++i)
+      {
+      // Attempt an insert of the new point's index
+      idMapInsert=idMap.insert(pair<vtkIdType,vtkIdType>(cpids[i],ptId));
+      if (idMapInsert.second)
+        {
+        // this is a new point id and point. Add the point.
+        int qq=3*i;
+        pX[0]=cpts[qq];
+        pX[1]=cpts[qq+1];
+        pX[2]=cpts[qq+2];
+        pX+=3;
+        ++ptId;
+        }
+
+      // convert the index to a local pt id, and add to the cell. 
+      pIa[0]=idMapInsert.first->second;
+      ++pIa;
+      }
+    }
+
+  // update point array
+  X->SetNumberOfTuples(ptId);
 
   // Set the descriptiove name (if used).
   if (this->DescriptiveName && strlen(this->DescriptiveName))
@@ -103,98 +256,100 @@ int vtkSQPlaneSource::RequestData(
     outInfo->Set(vtkSQMetaDataKeys::DESCRIPTIVE_NAME(),this->DescriptiveName);
     }
 
-  // get the ouptut
-  vtkPolyData *output = vtkPolyData::SafeDownCast(
-    outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  source->Delete();
 
-  double x[3], tc[2], v1[3], v2[3];
-  vtkIdType pts[4];
-  int i, j, ii;
-  int numPts;
-  int numPolys;
-  vtkPoints *newPoints; 
-  vtkFloatArray *newNormals;
-  vtkFloatArray *newTCoords;
-  vtkCellArray *newPolys;
+  //output->Print(cerr);
 
-  // Check input
-  for ( i=0; i < 3; i++ )
-    {
-    v1[i] = this->Point1[i] - this->Origin[i];
-    v2[i] = this->Point2[i] - this->Origin[i];
-    }
-  if ( !this->UpdatePlane(v1,v2) )
-    {
-    return 0;
-    }
 
-  // Set things up; allocate memory
-  //
-  numPts = (this->XResolution+1) * (this->YResolution+1);
-  numPolys = this->XResolution * this->YResolution;
 
-  newPoints = vtkPoints::New();
-  newPoints->Allocate(numPts);
-  newNormals = vtkFloatArray::New();
-  newNormals->SetNumberOfComponents(3);
-  newNormals->Allocate(3*numPts);
-  newTCoords = vtkFloatArray::New();
-  newTCoords->SetNumberOfComponents(2);
-  newTCoords->Allocate(2*numPts);
+  // double x[3], tc[2], v1[3], v2[3];
+  // vtkIdType pts[4];
+  // int i, j, ii;
+  // int numPts;
+  // int numPolys;
+  // vtkPoints *newPoints; 
+  // vtkFloatArray *newNormals;
+  // vtkFloatArray *newTCoords;
+  // vtkCellArray *newPolys;
+  // 
+  // // Check input
+  // for ( i=0; i < 3; i++ )
+  //   {
+  //   v1[i] = this->Point1[i] - this->Origin[i];
+  //   v2[i] = this->Point2[i] - this->Origin[i];
+  //   }
+  // if ( !this->UpdatePlane(v1,v2) )
+  //   {
+  //   return 0;
+  //   }
+  // 
+  // // Set things up; allocate memory
+  // //
+  // numPts = (this->XResolution+1) * (this->YResolution+1);
+  // numPolys = this->XResolution * this->YResolution;
+  // 
+  // newPoints = vtkPoints::New();
+  // newPoints->Allocate(numPts);
+  // newNormals = vtkFloatArray::New();
+  // newNormals->SetNumberOfComponents(3);
+  // newNormals->Allocate(3*numPts);
+  // newTCoords = vtkFloatArray::New();
+  // newTCoords->SetNumberOfComponents(2);
+  // newTCoords->Allocate(2*numPts);
+  // 
+  // newPolys = vtkCellArray::New();
+  // newPolys->Allocate(newPolys->EstimateSize(numPolys,4));
+  // 
+  // // Generate points and point data
+  // //
+  // for (numPts=0, i=0; i<(this->YResolution+1); i++)
+  //   {
+  //   tc[1] = static_cast<double>(i)/ this->YResolution;
+  //   for (j=0; j<(this->XResolution+1); j++)
+  //     {
+  //     tc[0] = static_cast<double>(j) / this->XResolution;
+  // 
+  //     for ( ii=0; ii < 3; ii++)
+  //       {
+  //       x[ii] = this->Origin[ii] + tc[0]*v1[ii] + tc[1]*v2[ii];
+  //       }
+  // 
+  //     newPoints->InsertPoint(numPts,x);
+  //     newTCoords->InsertTuple(numPts,tc);
+  //     newNormals->InsertTuple(numPts++,this->Normal);
+  //     }
+  //   }
+  // 
+  // // Generate polygon connectivity
+  // //
+  // for (i=0; i<this->YResolution; i++)
+  //   {
+  //   for (j=0; j<this->XResolution; j++)
+  //     {
+  //     pts[0] = j + i*(this->XResolution+1);
+  //     pts[1] = pts[0] + 1;
+  //     pts[2] = pts[0] + this->XResolution + 2;
+  //     pts[3] = pts[0] + this->XResolution + 1;
+  //     newPolys->InsertNextCell(4,pts);
+  //     }
+  //   }
+  // 
+  // // Update ourselves and release memory
+  // output->SetPoints(newPoints);
+  // newPoints->Delete();
+  // 
+  // newNormals->SetName("Normals");
+  // output->GetPointData()->SetNormals(newNormals);
+  // newNormals->Delete();
+  // 
+  // newTCoords->SetName("TextureCoordinates");
+  // output->GetPointData()->SetTCoords(newTCoords);
+  // newTCoords->Delete();
+  // 
+  // output->SetPolys(newPolys);
+  // newPolys->Delete();
 
-  newPolys = vtkCellArray::New();
-  newPolys->Allocate(newPolys->EstimateSize(numPolys,4));
 
-  // Generate points and point data
-  //
-  for (numPts=0, i=0; i<(this->YResolution+1); i++)
-    {
-    tc[1] = static_cast<double>(i)/ this->YResolution;
-    for (j=0; j<(this->XResolution+1); j++)
-      {
-      tc[0] = static_cast<double>(j) / this->XResolution;
-
-      for ( ii=0; ii < 3; ii++)
-        {
-        x[ii] = this->Origin[ii] + tc[0]*v1[ii] + tc[1]*v2[ii];
-        }
-
-      newPoints->InsertPoint(numPts,x);
-      newTCoords->InsertTuple(numPts,tc);
-      newNormals->InsertTuple(numPts++,this->Normal);
-      }
-    }
-
-  // Generate polygon connectivity
-  //
-  for (i=0; i<this->YResolution; i++)
-    {
-    for (j=0; j<this->XResolution; j++)
-      {
-      pts[0] = j + i*(this->XResolution+1);
-      pts[1] = pts[0] + 1;
-      pts[2] = pts[0] + this->XResolution + 2;
-      pts[3] = pts[0] + this->XResolution + 1;
-      newPolys->InsertNextCell(4,pts);
-      }
-    }
-
-  // Update ourselves and release memory
-  output->SetPoints(newPoints);
-  newPoints->Delete();
-
-  newNormals->SetName("Normals");
-  output->GetPointData()->SetNormals(newNormals);
-  newNormals->Delete();
-
-  newTCoords->SetName("TextureCoordinates");
-  output->GetPointData()->SetTCoords(newTCoords);
-  newTCoords->Delete();
-
-  output->SetPolys(newPolys);
-  newPolys->Delete();
-
-  // output->Print(cerr);
 
   return 1;
 }

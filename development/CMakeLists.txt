@@ -32,6 +32,8 @@ set(SM_SOURCES
   vtkSQFieldTracer.cxx
   vtkSQHemisphereSource.cxx
   vtkSQLineSource.cxx
+  vtkSQCellGenerator.cxx
+  vtkSQPlaneSourceCellGenerator.cxx
   vtkSQPlaneSource.cxx
   vtkSQPointSource.cxx
   vtkSQRandomCells.cxx
@@ -87,6 +89,7 @@ set(_SOURCES
 
 set_source_files_properties(
   vtkSQOOCReader.cxx
+  vtkSQCellGenerator.cxx
   ABSTRACT
   )
 

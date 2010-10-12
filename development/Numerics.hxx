@@ -27,6 +27,15 @@ using namespace Eigen;
 
 //*****************************************************************************
 inline
+void indexToIJ(int idx, int nx, int &i, int &j)
+{
+  // convert a flat array index into a i,j,k three space tuple.
+  j=idx/nx;
+  i=idx-j*nx;
+}
+
+//*****************************************************************************
+inline
 void indexToIJK(int idx, int nx, int nxy, int &i, int &j, int &k)
 {
   // convert a flat array index into a i,j,k three space tuple.

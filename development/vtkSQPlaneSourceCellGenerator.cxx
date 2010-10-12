@@ -6,10 +6,21 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#include "vtkSQOnDemandPlaneSource.h"
+#include "vtkSQPlaneSourceCellGenerator.h"
+
+#include "vtkObjectFactory.h"
+
+#include "Numerics.hxx"
+#include "Tuple.hxx"
 
 //-----------------------------------------------------------------------------
-vtkSQOnDemandPlaneSource::vtkSQOnDemandPlaneSource()
+vtkCxxRevisionMacro(vtkSQPlaneSourceCellGenerator,"$Revision: 1.0$");
+
+//-----------------------------------------------------------------------------
+vtkStandardNewMacro(vtkSQPlaneSourceCellGenerator);
+
+//-----------------------------------------------------------------------------
+vtkSQPlaneSourceCellGenerator::vtkSQPlaneSourceCellGenerator()
 {
   this->Resolution[0]=
   this->Resolution[1]=1;
@@ -35,9 +46,8 @@ vtkSQOnDemandPlaneSource::vtkSQOnDemandPlaneSource()
   this->Dy[2]=0.0;
 }
 
-
 //-----------------------------------------------------------------------------
-void vtkSQOnDemandPlaneSource::SetResolution(int *r)
+void vtkSQPlaneSourceCellGenerator::SetResolution(int *r)
 {
   this->Resolution[0]=r[0];
   this->Resolution[1]=r[1];
@@ -45,7 +55,7 @@ void vtkSQOnDemandPlaneSource::SetResolution(int *r)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQOnDemandPlaneSource::SetResolution(int r1, int r2)
+void vtkSQPlaneSourceCellGenerator::SetResolution(int r1, int r2)
 {
   this->Resolution[0]=r1;
   this->Resolution[1]=r2;
@@ -53,7 +63,7 @@ void vtkSQOnDemandPlaneSource::SetResolution(int r1, int r2)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQOnDemandPlaneSource::SetOrigin(int *x)
+void vtkSQPlaneSourceCellGenerator::SetOrigin(double *x)
 {
   this->Origin[0]=x[0];
   this->Origin[1]=x[1];
@@ -62,7 +72,7 @@ void vtkSQOnDemandPlaneSource::SetOrigin(int *x)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQOnDemandPlaneSource::SetOrigin(int x, int y, int z)
+void vtkSQPlaneSourceCellGenerator::SetOrigin(double x, double y, double z)
 {
   this->Origin[0]=x;
   this->Origin[1]=y;
@@ -71,7 +81,7 @@ void vtkSQOnDemandPlaneSource::SetOrigin(int x, int y, int z)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQOnDemandPlaneSource::SetPoint1(int *x)
+void vtkSQPlaneSourceCellGenerator::SetPoint1(double *x)
 {
   this->Point1[0]=x[0];
   this->Point1[1]=x[1];
@@ -80,7 +90,7 @@ void vtkSQOnDemandPlaneSource::SetPoint1(int *x)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQOnDemandPlaneSource::SetPoint1(int x, int y, int z)
+void vtkSQPlaneSourceCellGenerator::SetPoint1(double x, double y, double z)
 {
   this->Point1[0]=x;
   this->Point1[1]=y;
@@ -89,7 +99,7 @@ void vtkSQOnDemandPlaneSource::SetPoint1(int x, int y, int z)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQOnDemandPlaneSource::SetPoint2(int *x)
+void vtkSQPlaneSourceCellGenerator::SetPoint2(double *x)
 {
   this->Point2[0]=x[0];
   this->Point2[1]=x[1];
@@ -98,7 +108,7 @@ void vtkSQOnDemandPlaneSource::SetPoint2(int *x)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQOnDemandPlaneSource::SetPoint2(int x, int y, int z)
+void vtkSQPlaneSourceCellGenerator::SetPoint2(double x, double y, double z)
 {
   this->Point2[0]=x;
   this->Point2[1]=y;
@@ -107,14 +117,12 @@ void vtkSQOnDemandPlaneSource::SetPoint2(int x, int y, int z)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQOnDemandPlaneSource::ComputeDeltas()
+void vtkSQPlaneSourceCellGenerator::ComputeDeltas()
 {
   if (this->Resolution[0]<1 || this->Resolution[1]<1 )
     {
     vtkErrorMacro(
-      << "Invalid resolution ("
-      << this->Resolution[0] << ", "
-      << this->Resolution[1] << ").");
+      << "Invalid resolution " << Tuple<int>(this->Resolution,2) << ".");
     return;
     }
 
@@ -122,16 +130,42 @@ void vtkSQOnDemandPlaneSource::ComputeDeltas()
   this->Dx[1]=(this->Point1[1]-this->Origin[1])/this->Resolution[0];
   this->Dx[2]=(this->Point1[2]-this->Origin[2])/this->Resolution[0];
 
-  this->Dx[0]=(this->Point2[0]-this->Origin[0])/this->Resolution[1];
-  this->Dx[1]=(this->Point2[1]-this->Origin[1])/this->Resolution[1];
-  this->Dx[2]=(this->Point2[2]-this->Origin[2])/this->Resolution[1];
+  this->Dy[0]=(this->Point2[0]-this->Origin[0])/this->Resolution[1];
+  this->Dy[1]=(this->Point2[1]-this->Origin[1])/this->Resolution[1];
+  this->Dy[2]=(this->Point2[2]-this->Origin[2])/this->Resolution[1];
 }
 
 //-----------------------------------------------------------------------------
-int vtkSQOnDemandPlaneSource::GetCellPoints(vtkIdType cid, float *pts)
+int vtkSQPlaneSourceCellGenerator::GetCellPointIndexes(vtkIdType cid, vtkIdType *idx)
 {
   int i,j;
-  IndexToIJ(cid,this->Resolution[0],i,j);
+  indexToIJ(cid,this->Resolution[0],i,j);
+
+  int nx=this->Resolution[0]+1;
+
+  // offset relative to lower left cornern in delta units
+  int offset[12]={
+      0,0,0,
+      1,0,0,
+      1,1,0,
+      0,1,0
+      };
+
+  for (int q=0; q<4; ++q)
+    {
+    int qq=q*3;
+    idx[q]=(j+offset[qq+1])*nx+(i+offset[qq]);
+    }
+
+  return 4;
+}
+
+//-----------------------------------------------------------------------------
+int vtkSQPlaneSourceCellGenerator::GetCellPoints(vtkIdType cid, float *pts)
+{
+  // cell index (also lower left pt index)
+  int i,j;
+  indexToIJ(cid,this->Resolution[0],i,j);
 
   // lower left corner
   pts[0]=2.0*this->Origin[0]+i*this->Dx[0]+j*this->Dy[0];
@@ -139,7 +173,7 @@ int vtkSQOnDemandPlaneSource::GetCellPoints(vtkIdType cid, float *pts)
   pts[2]=2.0*this->Origin[2]+i*this->Dx[2]+j*this->Dy[2];
 
   // offset relative to lower left cornern in delta units
-  int offset[6]={
+  int offset[12]={
       0,0,0,
       1,0,0,
       1,1,0,
@@ -148,7 +182,7 @@ int vtkSQOnDemandPlaneSource::GetCellPoints(vtkIdType cid, float *pts)
 
   for (int q=1; q<4; ++q)
     {
-    qq=q*3;
+    int qq=q*3;
     pts[qq  ]=pts[0]+offset[qq]*this->Dx[0]+offset[qq+1]*this->Dy[0];
     pts[qq+1]=pts[1]+offset[qq]*this->Dx[1]+offset[qq+1]*this->Dy[1];
     pts[qq+2]=pts[2]+offset[qq]*this->Dx[2]+offset[qq+1]*this->Dy[2];
@@ -156,3 +190,11 @@ int vtkSQOnDemandPlaneSource::GetCellPoints(vtkIdType cid, float *pts)
 
   return 4;
 }
+
+
+//-----------------------------------------------------------------------------
+void vtkSQPlaneSourceCellGenerator::PrintSelf(ostream& os, vtkIndent indent)
+{
+
+}
+

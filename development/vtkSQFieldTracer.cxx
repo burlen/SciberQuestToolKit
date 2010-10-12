@@ -47,6 +47,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkMath.h"
 
 #include "vtkSQOOCReader.h"
+#include "vtkSQCellGenerator.h"
 #include "vtkSQMetaDataKeys.h"
 #include "FieldLine.h"
 #include "TerminationCondition.h"
@@ -555,6 +556,18 @@ int vtkSQFieldTracer::RequestData(
     }
 
   /// Map
+  // If the upstream source provides a cell generator we will use
+  // it, otherwise we will use the cells provided in the input dataset.
+  vtkSmartPointer<vtkSQCellGenerator> sourceGen;
+  sourceGen=dynamic_cast<vtkSQCellGenerator*>(info->Get(vtkSQCellGenerator::CELL_GENERATOR()));
+  if (sourceGen && (this->Mode!=MODE_TOPOLOGY))
+    {
+    vtkErrorMacro("Cell generators can only be used in topology mode.");
+    return 1;
+    }
+
+  if (sourceGen){ cerr << "Found cell generator" << endl; }
+
   // Configure the map.
   FieldTraceData *traceData=0;
 
@@ -571,7 +584,14 @@ int vtkSQFieldTracer::RequestData(
         && (outPd=dynamic_cast<vtkPolyData*>(out)))
         {
         traceData=new PolyDataFieldTopologyMap;
-        traceData->SetSource(sourcePd);
+        if (sourceGen)
+          {
+          traceData->SetSource(sourceGen);
+          }
+        else
+          {
+          traceData->SetSource(sourcePd);
+          }
         traceData->SetOutput(outPd);
         }
       else
@@ -579,7 +599,14 @@ int vtkSQFieldTracer::RequestData(
         && (outUg=dynamic_cast<vtkUnstructuredGrid*>(out)))
         {
         traceData=new UnstructuredFieldTopologyMap;
-        traceData->SetSource(sourceUg);
+        if (sourceGen)
+          {
+          traceData->SetSource(sourceGen);
+          }
+        else
+          {
+          traceData->SetSource(sourceUg);
+          }
         traceData->SetOutput(outUg);
         }
       }

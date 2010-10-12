@@ -8,6 +8,7 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "StreamlineData.h"
 
+#include "postream.h"
 #include "WorkQueue.h"
 #include "FieldLine.h"
 #include "TerminationCondition.h"
@@ -43,6 +44,12 @@ void StreamlineData::ClearOut()
   if (this->OutCells){ this->OutCells->Delete(); }
   this->OutPts=0;
   this->OutCells=0;
+}
+
+//-----------------------------------------------------------------------------
+void StreamlineData::SetSource(vtkSQCellGenerator *sourceGen)
+{
+  sqErrorMacro(pCerr(),"Cell generator source is not supported."); 
 }
 
 //-----------------------------------------------------------------------------

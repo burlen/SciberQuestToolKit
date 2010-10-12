@@ -6,19 +6,19 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#include "vtkSQMetaSource.h"
+#include "vtkSQCellGenerator.h"
 
 #include "vtkInformationKey.h"
 #include "vtkInformationObjectBaseKey.h"
 
 //-----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkSQMetaSource, "$Revision: 0.0 $");
+vtkCxxRevisionMacro(vtkSQCellGenerator, "$Revision: 0.0 $");
 
 //-----------------------------------------------------------------------------
-vtkInformationKeyMacro(vtkSQMetaSource,SOURCE,ObjectBase);
+vtkInformationKeyMacro(vtkSQCellGenerator,CELL_GENERATOR,ObjectBase);
 
 //-----------------------------------------------------------------------------
-void vtkSQMetaSource::PrintSelf(ostream& os, vtkIndent indent)
+void vtkSQCellGenerator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->vtkObject::PrintSelf(os,indent.GetNextIndent());
 }

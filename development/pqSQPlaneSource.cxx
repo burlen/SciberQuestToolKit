@@ -249,6 +249,11 @@ pqSQPlaneSource::pqSQPlaneSource(
       this->Form->dy,
       SIGNAL(textChanged(QString)),
       this, SLOT(setModified()));
+  //
+  QObject::connect(
+      this->Form->immediateMode,
+      SIGNAL(stateChanged(int)),
+      this, SLOT(setModified()));
 
   pqNamedObjectPanel::linkServerManagerProperties();
 }
@@ -271,11 +276,11 @@ void pqSQPlaneSource::contextMenuEvent(QContextMenuEvent *event)
 {
   QMenu context(this);
 
-  QAction *copyAct=new QAction(tr("Copy UI State"),&context);
+  QAction *copyAct=new QAction(tr("Copy Configuration"),&context);
   connect(copyAct, SIGNAL(triggered()), this, SLOT(CopyConfiguration()));
   context.addAction(copyAct);
 
-  QAction *pasteAct=new QAction(tr("Paste UI State"),&context);
+  QAction *pasteAct=new QAction(tr("Paste Configuration"),&context);
   connect(pasteAct, SIGNAL(triggered()), this, SLOT(PasteConfiguration()));
   context.addAction(pasteAct);
 
@@ -954,6 +959,12 @@ void pqSQPlaneSource::PullServerConfig()
   int res[2]={rxProp->GetElement(0),ryProp->GetElement(0)};
   this->SetResolution(res);
 
+  // Mode
+  vtkSMIntVectorProperty *modeProp
+    = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("ImmediateMode"));
+  pProxy->UpdatePropertyInformation(modeProp);
+  this->Form->immediateMode->setChecked(modeProp->GetElement(0));
+
   // update derived/computed values.
   this->DimensionsModified();
 }
@@ -1002,6 +1013,12 @@ void pqSQPlaneSource::PushServerConfig()
   vtkSMIntVectorProperty *ryProp
     = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("YResolution"));
   ryProp->SetElement(0,nx[1]);
+
+  // Mode
+  vtkSMIntVectorProperty *modeProp
+    = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("ImmediateMode"));
+  pProxy->UpdatePropertyInformation(modeProp);
+  modeProp->SetElement(0,this->Form->immediateMode->isChecked()?1:0);
 
   // Let proxy send updated values.
   pProxy->UpdateVTKObjects();

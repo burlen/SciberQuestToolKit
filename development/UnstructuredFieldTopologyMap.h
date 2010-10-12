@@ -25,6 +25,7 @@ class vtkFloatArray;
 class vtkCellArray;
 class vtkUnsignedCharArray;
 class vtkIdTypeArray;
+class vtkSQCellGenerator;
 
 /// Interface to the topology map.
 /**
@@ -37,6 +38,7 @@ class UnstructuredFieldTopologyMap : public FieldTraceData
 public:
   UnstructuredFieldTopologyMap()
         :
+    SourceGen(0),
     SourcePts(0),
     SourceCells(0),
     SourceTypes(0),
@@ -49,8 +51,17 @@ public:
   virtual ~UnstructuredFieldTopologyMap();
 
   // Description:
-  // Set the datast to be used as the seed source.
+  // Set the dataset to be used as the seed source. Use either
+  // a dataset or a cell generator. The dataset explicitly contains
+  // all geometry that will be accessed.
   virtual void SetSource(vtkDataSet *s);
+
+  // Description:
+  // Set the cell generator to be used as the seed source. Use either
+  // a dataset or a cell generator. The cell generator implicitly contains
+  // all geometry that will be accessed, generating only what is needed
+  // on demand.
+  virtual void SetSource(vtkSQCellGenerator *s);
 
   // Description:
   // Copy the IntersectColor and SourceId array into the output.
@@ -69,6 +80,8 @@ private:
   typedef pair<map<vtkIdType,vtkIdType>::iterator,bool> MapInsert;
   typedef pair<vtkIdType,vtkIdType> MapElement;
   map<vtkIdType,vtkIdType> IdMap;
+
+  vtkSQCellGenerator *SourceGen;
 
   vtkFloatArray *SourcePts;
   vtkCellArray *SourceCells;

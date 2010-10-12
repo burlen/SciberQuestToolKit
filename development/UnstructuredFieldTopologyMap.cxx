@@ -11,6 +11,7 @@ Copyright 2008 SciberQuest Inc.
 #include "IdBlock.h"
 #include "FieldLine.h"
 #include "TerminationCondition.h"
+#include "vtkSQCellGenerator.h"
 #include "vtkDataSet.h"
 #include "vtkPoints.h"
 #include "vtkUnstructuredGrid.h"
@@ -29,9 +30,11 @@ UnstructuredFieldTopologyMap::~UnstructuredFieldTopologyMap()
 //-----------------------------------------------------------------------------
 void UnstructuredFieldTopologyMap::ClearSource()
 {
+  if (this->SourceGen){ this->SourceGen->Delete(); }
   if (this->SourcePts){ this->SourcePts->Delete(); }
   if (this->SourceCells){ this->SourceCells->Delete(); }
   if (this->SourceTypes){ this->SourceTypes->Delete(); }
+  this->SourceGen=0;
   this->SourcePts=0;
   this->SourceCells=0;
   this->SourceTypes=0;
@@ -50,6 +53,15 @@ void UnstructuredFieldTopologyMap::ClearOut()
   this->OutTypes=0;
   this->OutLocs=0;
   this->IdMap.clear();
+}
+
+//-----------------------------------------------------------------------------
+void UnstructuredFieldTopologyMap::SetSource(vtkSQCellGenerator *sourceGen)
+{
+  if (this->SourceGen==sourceGen){ return; }
+  if (this->SourceGen){ this->SourceGen->Delete(); }
+  this->SourceGen=sourceGen;
+  if (this->SourceGen){ this->SourceGen->Register(0); }
 }
 
 //-----------------------------------------------------------------------------
