@@ -484,7 +484,7 @@ int vtkSQFieldTracer::RequestData(
   // Get the input on the first port. This should be the dummy dataset
   // produced by a meta-reader. The information object should have the
   // OOC Reader.
-  info = inputVector[0]->GetInformationObject(0);
+  info=inputVector[0]->GetInformationObject(0);
   if (!info->Has(vtkSQOOCReader::READER()))
     {
     vtkErrorMacro(
@@ -536,6 +536,16 @@ int vtkSQFieldTracer::RequestData(
   // TODO for now we consider a seed single source, but we should handle
   // multiple sources.
   info=inputVector[1]->GetInformationObject(0);
+
+  vtkSmartPointer<vtkSQCellGenerator> sourceGen=0;
+  if ((this->Mode==MODE_TOPOLOGY) && this->UseDynamicScheduler)
+    {
+    sourceGen
+    =dynamic_cast<vtkSQCellGenerator*>(info->Get(vtkSQCellGenerator::CELL_GENERATOR()));
+    }
+
+  if (sourceGen){ cerr << "Found cell generator" << endl; }
+
   vtkDataSet *source
     = dynamic_cast<vtkDataSet*>(info->Get(vtkDataObject::DATA_OBJECT()));
   if (source==0)
@@ -556,18 +566,6 @@ int vtkSQFieldTracer::RequestData(
     }
 
   /// Map
-  // If the upstream source provides a cell generator we will use
-  // it, otherwise we will use the cells provided in the input dataset.
-  vtkSmartPointer<vtkSQCellGenerator> sourceGen;
-  sourceGen=dynamic_cast<vtkSQCellGenerator*>(info->Get(vtkSQCellGenerator::CELL_GENERATOR()));
-  if (sourceGen && (this->Mode!=MODE_TOPOLOGY))
-    {
-    vtkErrorMacro("Cell generators can only be used in topology mode.");
-    return 1;
-    }
-
-  if (sourceGen){ cerr << "Found cell generator" << endl; }
-
   // Configure the map.
   FieldTraceData *traceData=0;
 
@@ -675,10 +673,11 @@ int vtkSQFieldTracer::RequestData(
     #endif
     // This requires all process to have all the seed source data
     // present.
+    int nSourceCells=sourceGen!=0?sourceGen->GetNumberOfCells():source->GetNumberOfCells();
     this->IntegrateDynamic(
           this->WorldRank,
           this->WorldSize,
-          source->GetNumberOfCells(),
+          nSourceCells,
           fieldName,
           oocr.GetPointer(),
           oocrCache,

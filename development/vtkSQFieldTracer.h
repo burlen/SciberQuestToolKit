@@ -182,8 +182,6 @@ private:
   // Description:
   // Integrate over all local cells. This assumes that each process has a unique
   // subset of the work (i.e. seed source cells are statically distributed),
-  // The cache should initially  be null and after the caller should delete the
-  // cache.
   int IntegrateStatic(
       int nCells,
       const char *fieldName,
@@ -195,8 +193,6 @@ private:
   // Distribute the work load according to a master-slave self scheduling scheme. All
   // seed cells must be present on all process, work is dished out by process 0 in 
   // contiguous blocks of cell ids.
-  // The ooc reader cache should initially  be null and after the caller should delete
-  // the cache.
   int IntegrateDynamic(
       int procId,
       int nProcs,

@@ -153,14 +153,14 @@ int vtkSQPlaneSource::RequestData(
     // display in PV, a demand plane source is inserted into
     // the pipeline for down stream access to any of the plane's
     // cell's
-    vtkSQPlaneSourceCellGenerator *source=vtkSQPlaneSourceCellGenerator::New();
-    source->SetOrigin(this->Origin);
-    source->SetPoint1(this->Point1);
-    source->SetPoint2(this->Point2);
-    source->SetResolution(this->XResolution,this->YResolution);
+    vtkSQPlaneSourceCellGenerator *gen=vtkSQPlaneSourceCellGenerator::New();
+    gen->SetOrigin(this->Origin);
+    gen->SetPoint1(this->Point1);
+    gen->SetPoint2(this->Point2);
+    gen->SetResolution(this->XResolution,this->YResolution);
 
-    outInfo->Set(vtkSQCellGenerator::CELL_GENERATOR(),source);
-    source->Delete();
+    outInfo->Set(vtkSQCellGenerator::CELL_GENERATOR(),gen);
+    gen->Delete();
     }
   else
     {

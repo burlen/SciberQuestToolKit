@@ -168,9 +168,9 @@ int vtkSQPlaneSourceCellGenerator::GetCellPoints(vtkIdType cid, float *pts)
   indexToIJ(cid,this->Resolution[0],i,j);
 
   // lower left corner
-  pts[0]=2.0*this->Origin[0]+i*this->Dx[0]+j*this->Dy[0];
-  pts[1]=2.0*this->Origin[1]+i*this->Dx[1]+j*this->Dy[1];
-  pts[2]=2.0*this->Origin[2]+i*this->Dx[2]+j*this->Dy[2];
+  pts[0]=this->Origin[0]+i*this->Dx[0]+j*this->Dy[0];
+  pts[1]=this->Origin[1]+i*this->Dx[1]+j*this->Dy[1];
+  pts[2]=this->Origin[2]+i*this->Dx[2]+j*this->Dy[2];
 
   // offset relative to lower left cornern in delta units
   int offset[12]={

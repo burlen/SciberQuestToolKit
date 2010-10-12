@@ -60,7 +60,12 @@ void PolyDataFieldTopologyMap::SetSource(vtkSQCellGenerator *sourceGen)
   if (this->SourceGen==sourceGen){ return; }
   if (this->SourceGen){ this->SourceGen->Delete(); }
   this->SourceGen=sourceGen;
-  if (this->SourceGen){ this->SourceGen->Register(0); }
+  this->CellType=0;
+  if (this->SourceGen)
+    {
+    this->SourceGen->Register(0);
+    this->CellType=this->SourceGen->GetCellType(0);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -156,7 +161,6 @@ int PolyDataFieldTopologyMap::InsertCellsFromGenerator(IdBlock *SourceIds)
 {
   vtkIdType startCellId=SourceIds->first();
   vtkIdType nCellsLocal=SourceIds->size();
-  vtkIdType endCellId=startCellId+nCellsLocal;
 
   // update the cell count before we forget (does not allocate).
   this->OutCells->SetNumberOfCells(OutCells->GetNumberOfCells()+nCellsLocal);
