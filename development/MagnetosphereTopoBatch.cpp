@@ -266,6 +266,7 @@ int main(int argc, char **argv)
     ps->SetPoint1(point1);
     ps->SetPoint2(point2);
     ps->SetResolution(resolution);
+    ps->SetImmediateMode(0);
     ss=ps;
     }
   else
