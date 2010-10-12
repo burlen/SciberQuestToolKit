@@ -17,8 +17,8 @@ class IdBlock
 {
 public:
   IdBlock(){ this->clear(); }
-  IdBlock(unsigned long long first){ m_data[0]=first; m_data[1]=1; }
-  IdBlock(unsigned long long first, unsigned long long n){ m_data[0]=first; m_data[1]=n; }
+  IdBlock(unsigned long long frst){ m_data[0]=frst; m_data[1]=1; }
+  IdBlock(unsigned long long frst, unsigned long long n){ m_data[0]=frst; m_data[1]=n; }
   void clear(){ m_data[0]=m_data[1]=0; }
   unsigned long long &first(){ return m_data[0]; }
   unsigned long long &size(){ return m_data[1]; }
