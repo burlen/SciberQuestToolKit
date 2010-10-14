@@ -42,8 +42,9 @@ vtkSQPlaneSource::vtkSQPlaneSource()
   #ifdef vtkSQPlaneSourceDEBUG
   cerr << "===============================vtkSQPlaneSource" << endl;
   #endif
-  // Construct plane perpendicular to z-axis, resolution 1x1, width and height
-  // 1.0, and centered at the origin.
+
+  this->ImmediateMode=1;
+
   this->XResolution=this->YResolution=1;
 
   this->Origin[0]=this->Origin[1]=this->Origin[2]

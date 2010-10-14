@@ -544,8 +544,6 @@ int vtkSQFieldTracer::RequestData(
     =dynamic_cast<vtkSQCellGenerator*>(info->Get(vtkSQCellGenerator::CELL_GENERATOR()));
     }
 
-  if (sourceGen){ cerr << "Found cell generator" << endl; }
-
   vtkDataSet *source
     = dynamic_cast<vtkDataSet*>(info->Get(vtkDataObject::DATA_OBJECT()));
   if (source==0)

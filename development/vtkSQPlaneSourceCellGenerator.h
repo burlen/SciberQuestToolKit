@@ -90,7 +90,7 @@ protected:
   virtual ~vtkSQPlaneSourceCellGenerator(){};
 
 private:
-  int Resolution[2];
+  int Resolution[3];
   double Origin[3];
   double Point1[3];
   double Point2[3];

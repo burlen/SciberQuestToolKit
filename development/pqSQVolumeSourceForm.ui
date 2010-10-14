@@ -6,14 +6,41 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>382</width>
-    <height>384</height>
+    <width>538</width>
+    <height>483</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_8">
+     <item>
+      <widget class="QCheckBox" name="immediateMode">
+       <property name="text">
+        <string>Immediate Mode</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_4">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
      <item row="0" column="0">
@@ -373,6 +400,11 @@
     </spacer>
    </item>
   </layout>
+  <zorder>line_2</zorder>
+  <zorder>line_3</zorder>
+  <zorder>line_4</zorder>
+  <zorder>layoutWidget</zorder>
+  <zorder>immediateMode</zorder>
  </widget>
  <tabstops>
   <tabstop>o_x</tabstop>

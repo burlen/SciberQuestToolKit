@@ -268,6 +268,11 @@ pqSQVolumeSource::pqSQVolumeSource(
       this->Form->dz,
       SIGNAL(textChanged(QString)),
       this, SLOT(setModified()));
+  //
+  QObject::connect(
+      this->Form->immediateMode,
+      SIGNAL(stateChanged(int)),
+      this, SLOT(setModified()));
 
   pqNamedObjectPanel::linkServerManagerProperties();
 }
@@ -691,6 +696,12 @@ void pqSQVolumeSource::PullServerConfig()
   int *res=resProp->GetElements();
   this->SetResolution(res);
 
+  // Mode
+  vtkSMIntVectorProperty *modeProp
+    = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("ImmediateMode"));
+  pProxy->UpdatePropertyInformation(modeProp);
+  this->Form->immediateMode->setChecked(modeProp->GetElement(0));
+
   // update derived/computed values.
   this->DimensionsModified();
 }
@@ -738,6 +749,12 @@ void pqSQVolumeSource::PushServerConfig()
   vtkSMIntVectorProperty *resProp
     = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("Resolution"));
   resProp->SetElements(res);
+
+  // Mode
+  vtkSMIntVectorProperty *modeProp
+    = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("ImmediateMode"));
+  pProxy->UpdatePropertyInformation(modeProp);
+  modeProp->SetElement(0,this->Form->immediateMode->isChecked()?1:0);
 
   // Let proxy send updated values.
   pProxy->UpdateVTKObjects();

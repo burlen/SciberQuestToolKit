@@ -75,6 +75,8 @@ public:
 private:
   void ClearSource();
   void ClearOut();
+  int InsertCellsFromGenerator(IdBlock *SourceIds);
+  int InsertCellsFromDataset(IdBlock *SourceIds);
 
 private:
   typedef pair<map<vtkIdType,vtkIdType>::iterator,bool> MapInsert;

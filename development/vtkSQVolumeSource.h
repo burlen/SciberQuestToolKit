@@ -42,6 +42,14 @@ public:
   vtkSetVector3Macro(Resolution,int);
   vtkGetVector3Macro(Resolution,int);
 
+  // Description:
+  // Toggle between immediate mode and demand mode. In immediate
+  // mode requested geometry is gernerated and placed in the output
+  // in demand mode a cell generator is placed in the pipeline and
+  // a single cell is placed in the output.
+  vtkSetMacro(ImmediateMode,int);
+  vtkGetMacro(ImmediateMode,int);
+
 protected:
   /// Pipeline internals.
   //int FillInputPortInformation(int port,vtkInformation *info);
@@ -52,6 +60,7 @@ protected:
   ~vtkSQVolumeSource();
 
 private:
+  int ImmediateMode;
   double Origin[3];
   double Point1[3];
   double Point2[3];

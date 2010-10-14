@@ -23,7 +23,8 @@ vtkStandardNewMacro(vtkSQPlaneSourceCellGenerator);
 vtkSQPlaneSourceCellGenerator::vtkSQPlaneSourceCellGenerator()
 {
   this->Resolution[0]=
-  this->Resolution[1]=1;
+  this->Resolution[1]=
+  this->Resolution[2]=1;
 
   this->Origin[0]=
   this->Origin[1]=
@@ -49,16 +50,18 @@ vtkSQPlaneSourceCellGenerator::vtkSQPlaneSourceCellGenerator()
 //-----------------------------------------------------------------------------
 void vtkSQPlaneSourceCellGenerator::SetResolution(int *r)
 {
-  this->Resolution[0]=r[0];
-  this->Resolution[1]=r[1];
+  this->Resolution[0]=r[0];   // ncx
+  this->Resolution[1]=r[1];   // ncy
+  this->Resolution[2]=r[0]+1; // npx
   this->ComputeDeltas();
 }
 
 //-----------------------------------------------------------------------------
 void vtkSQPlaneSourceCellGenerator::SetResolution(int r1, int r2)
 {
-  this->Resolution[0]=r1;
-  this->Resolution[1]=r2;
+  this->Resolution[0]=r1;    // ncx
+  this->Resolution[1]=r2;    // ncy
+  this->Resolution[2]=r1+1;  // npx
   this->ComputeDeltas();
 }
 
@@ -136,25 +139,25 @@ void vtkSQPlaneSourceCellGenerator::ComputeDeltas()
 }
 
 //-----------------------------------------------------------------------------
-int vtkSQPlaneSourceCellGenerator::GetCellPointIndexes(vtkIdType cid, vtkIdType *idx)
+int vtkSQPlaneSourceCellGenerator::GetCellPointIndexes(
+      vtkIdType cid,
+      vtkIdType *idx)
 {
   int i,j;
   indexToIJ(cid,this->Resolution[0],i,j);
 
-  int nx=this->Resolution[0]+1;
-
-  // offset relative to lower left cornern in delta units
-  int offset[12]={
-      0,0,0,
-      1,0,0,
-      1,1,0,
-      0,1,0
+  // vertex indices
+  int I[12]={
+      i  ,j  ,0,
+      i+1,j  ,0,
+      i+1,j+1,0,
+      i  ,j+1,0
       };
 
   for (int q=0; q<4; ++q)
     {
     int qq=q*3;
-    idx[q]=(j+offset[qq+1])*nx+(i+offset[qq]);
+    idx[q]=I[qq+1]*this->Resolution[2]+I[qq];
     }
 
   return 4;
@@ -167,25 +170,20 @@ int vtkSQPlaneSourceCellGenerator::GetCellPoints(vtkIdType cid, float *pts)
   int i,j;
   indexToIJ(cid,this->Resolution[0],i,j);
 
-  // lower left corner
-  pts[0]=this->Origin[0]+i*this->Dx[0]+j*this->Dy[0];
-  pts[1]=this->Origin[1]+i*this->Dx[1]+j*this->Dy[1];
-  pts[2]=this->Origin[2]+i*this->Dx[2]+j*this->Dy[2];
-
-  // offset relative to lower left cornern in delta units
-  int offset[12]={
-      0,0,0,
-      1,0,0,
-      1,1,0,
-      0,1,0
+  // vertex indices
+  int I[12]={
+      i  ,j  ,0,
+      i+1,j  ,0,
+      i+1,j+1,0,
+      i  ,j+1,0
       };
 
-  for (int q=1; q<4; ++q)
+  for (int q=0; q<4; ++q)
     {
     int qq=q*3;
-    pts[qq  ]=pts[0]+offset[qq]*this->Dx[0]+offset[qq+1]*this->Dy[0];
-    pts[qq+1]=pts[1]+offset[qq]*this->Dx[1]+offset[qq+1]*this->Dy[1];
-    pts[qq+2]=pts[2]+offset[qq]*this->Dx[2]+offset[qq+1]*this->Dy[2];
+    pts[qq  ]=this->Origin[0]+I[qq]*this->Dx[0]+I[qq+1]*this->Dy[0];
+    pts[qq+1]=this->Origin[1]+I[qq]*this->Dx[1]+I[qq+1]*this->Dy[1];
+    pts[qq+2]=this->Origin[2]+I[qq]*this->Dx[2]+I[qq+1]*this->Dy[2];
     }
 
   return 4;

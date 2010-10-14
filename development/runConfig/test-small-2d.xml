@@ -30,7 +30,4 @@
       master_block_size="16"
       worker_block_size="256"/>
 
-  <vtkXMLPDataSetWriter
-      out_file_base="./test-small-2d"/>
-
 </MagnetosphereTopologyBatch>

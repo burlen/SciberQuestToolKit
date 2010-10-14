@@ -827,6 +827,7 @@ Copyright 2008 SciberQuest Inc.
           Switch between immediate and demand mode.
         </Documentation>
       </IntVectorProperty>
+
    <!-- End Plane -->
    </SourceProxy>
 
@@ -907,7 +908,18 @@ Copyright 2008 SciberQuest Inc.
         default_values="1 1 1">
      </IntVectorProperty>
 
-  <!-- End vtkSQSeedPointLatice -->
+      <IntVectorProperty
+         name="ImmediateMode"
+         command="SetImmediateMode"
+         number_of_elements="1"
+         default_values="1" >
+        <BooleanDomain name="bool"/>
+        <Documentation>
+          Switch between immediate and demand mode.
+        </Documentation>
+      </IntVectorProperty>
+
+  <!-- End vtkSQVolumeSource -->
   </SourceProxy>
 
 

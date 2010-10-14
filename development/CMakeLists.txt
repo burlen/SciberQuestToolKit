@@ -34,6 +34,7 @@ set(SM_SOURCES
   vtkSQLineSource.cxx
   vtkSQCellGenerator.cxx
   vtkSQPlaneSourceCellGenerator.cxx
+  vtkSQVolumeSourceCellGenerator.cxx
   vtkSQPlaneSource.cxx
   vtkSQPointSource.cxx
   vtkSQRandomCells.cxx
