@@ -42,6 +42,10 @@ using std::string;
 
 #include <mpi.h>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
+
 #define SQ_EXIT_ERROR 1
 #define SQ_EXIT_SUCCESS 0
 
@@ -97,8 +101,10 @@ int main(int argc, char **argv)
       pCerr()
         << "Error: Command tail." << endl
         << " 1) /path/to/runConfig.xml" << endl
-        << " 2) startTime" << endl
-        << " 3) endTime" << endl
+        << " 2) /path/to/output/" << endl
+        << " 3) baseFileName" << endl
+        << " 4) startTime" << endl
+        << " 5) endTime" << endl
         << endl;
       }
     vtkAlgorithm::SetDefaultExecutivePrototype(0);
@@ -108,6 +114,13 @@ int main(int argc, char **argv)
   // distribute the configuration file name and time range
   int configNameLen=0;
   char *configName=0;
+
+  int baseNameLen=0;
+  char *baseName=0;
+
+  int outputPathLen=0;
+  char *outputPath=0;
+
   double startTime=-1.0;
   double endTime=-1.0;
 
@@ -119,8 +132,25 @@ int main(int argc, char **argv)
     controller->Broadcast(&configNameLen,1,0);
     controller->Broadcast(configName,configNameLen,0);
 
-    startTime=atof(argv[2]);
-    endTime=atof(argv[3]);
+    outputPathLen=strlen(argv[2])+1;
+    outputPath=(char *)malloc(outputPathLen);
+    strncpy(outputPath,argv[2],outputPathLen);
+    controller->Broadcast(&outputPathLen,1,0);
+    controller->Broadcast(outputPath,outputPathLen,0);
+
+    baseNameLen=strlen(argv[3])+1;
+    baseName=(char *)malloc(baseNameLen);
+    strncpy(baseName,argv[3],baseNameLen);
+    controller->Broadcast(&baseNameLen,1,0);
+    controller->Broadcast(baseName,baseNameLen,0);
+
+    // times are optional if not provided entire series is
+    // used.
+    if (argc>4)
+      {
+      startTime=atof(argv[4]);
+      endTime=atof(argv[5]);
+      }
     controller->Broadcast(&startTime,1,0);
     controller->Broadcast(&endTime,1,0);
     }
@@ -129,6 +159,15 @@ int main(int argc, char **argv)
     controller->Broadcast(&configNameLen,1,0);
     configName=(char *)malloc(configNameLen);
     controller->Broadcast(configName,configNameLen,0);
+
+    controller->Broadcast(&outputPathLen,1,0);
+    outputPath=(char *)malloc(outputPathLen);
+    controller->Broadcast(outputPath,outputPathLen,0);
+
+    controller->Broadcast(&baseNameLen,1,0);
+    baseName=(char *)malloc(baseNameLen);
+    controller->Broadcast(baseName,baseNameLen,0);
+
     controller->Broadcast(&startTime,1,0);
     controller->Broadcast(&endTime,1,0);
     }
@@ -175,12 +214,6 @@ int main(int argc, char **argv)
   iErr=0;
   const char *bovFileName;
   iErr+=GetRequiredAttribute(elem,"bov_file_name",&bovFileName);
-
-  // double startTime;
-  // GetRequiredAttribute<double,1>(elem,"start_time",&startTime);
-  //
-  // double endTime;
-  // GetRequiredAttribute<double,1>(elem,"end_time",&endTime);
 
   const char *vectors;
   iErr+=GetRequiredAttribute(elem,"vectors",&vectors);
@@ -302,6 +335,7 @@ int main(int argc, char **argv)
     vs->SetPoint2(point2);
     vs->SetPoint3(point3);
     vs->SetResolution(resolution);
+    vs->SetImmediateMode(0);
     ss=vs;
     }
   else
@@ -391,23 +425,6 @@ int main(int argc, char **argv)
   hs->Delete();
   ss->Delete();
 
-  // writer.
-  iErr=0;
-  elem=GetRequiredElement(root,"vtkXMLPDataSetWriter");
-  if (elem==0)
-    {
-    return SQ_EXIT_ERROR;
-    }
-
-  const char *outFileBase;
-  iErr+=GetRequiredAttribute(elem,"out_file_base",&outFileBase);
-
-  if (iErr!=0)
-    {
-    sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
-    return SQ_EXIT_ERROR;
-    }
-
   vtkXMLPDataSetWriter *w=vtkXMLPDataSetWriter::New();
   //w->SetDataModeToBinary();
   w->SetDataModeToAppended();
@@ -434,19 +451,40 @@ int main(int argc, char **argv)
   exec->UpdateInformation();
   double *times=vtkStreamingDemandDrivenPipeline::TIME_STEPS()->Get(info);
   int nTimes=vtkStreamingDemandDrivenPipeline::TIME_STEPS()->Length(info);
-
-  int startTimeIdx=IndexOf(startTime,times,0,nTimes-1);
-  if (startTimeIdx<0)
+  if (nTimes<1)
     {
-    sqErrorMacro(pCerr(),"Invalid start time " << startTimeIdx << ".");
+    sqErrorMacro(pCerr(),"Error: No timesteps.");
     return SQ_EXIT_ERROR;
     }
 
-  int endTimeIdx=IndexOf(endTime,times,0,nTimes-1);
-  if (endTimeIdx<0)
+
+  int startTimeIdx;
+  int endTimeIdx;
+  if (startTime<0.0)
     {
-    sqErrorMacro(pCerr(),"Invalid end time " << endTimeIdx << ".");
-    return SQ_EXIT_ERROR;
+    // if no start time was provided use entire series
+    startTime=times[0];
+    startTimeIdx=0;
+
+    endTime=times[nTimes-1];
+    endTimeIdx=nTimes-1;
+    }
+  else
+    {
+    // get indices of requested start and end times
+    startTimeIdx=IndexOf(startTime,times,0,nTimes-1);
+    if (startTimeIdx<0)
+      {
+      sqErrorMacro(pCerr(),"Invalid start time " << startTimeIdx << ".");
+      return SQ_EXIT_ERROR;
+      }
+
+    endTimeIdx=IndexOf(endTime,times,0,nTimes-1);
+    if (endTimeIdx<0)
+      {
+      sqErrorMacro(pCerr(),"Invalid end time " << endTimeIdx << ".");
+      return SQ_EXIT_ERROR;
+      }
     }
 
   if (worldRank==0)
@@ -459,6 +497,23 @@ int main(int argc, char **argv)
       << endl; 
     }
 
+    ostringstream fns;
+    fns
+      << outputPath
+      << "/"
+      << baseName;
+
+    // make a directory for this time step
+    iErr=mkdir(fns.str().c_str(),S_IRWXU|S_IXGRP);
+    if (iErr<0 && (errno!=EEXIST))
+      {
+      char *sErr=strerror(errno);
+      sqErrorMacro(pCerr(),
+          << "Failed to mkdir " << fns.str() << "." << endl
+          << "Error: " << sErr << ".");
+      return SQ_EXIT_ERROR;
+      }
+
   /// execute
   // run the pipeline for each time step, write the
   // result to disk.
@@ -468,21 +523,46 @@ int main(int argc, char **argv)
 
     exec->SetUpdateTimeStep(0,time);
 
-    ostringstream fns;
+    fns.str("");
     fns
-      << outFileBase << "_"
-      << setfill('0') << setw(8) << time
+      << outputPath
+      << "/"
+      << baseName
+      << "/"
+      << setfill('0') << setw(8) << time;
+
+    // make a directory for this time step
+    iErr=mkdir(fns.str().c_str(),S_IRWXU|S_IXGRP);
+    if (iErr<0 && (errno!=EEXIST))
+      {
+      char *sErr=strerror(errno);
+      sqErrorMacro(pCerr(),
+          << "Failed to mkdir " << fns.str() << "."
+          << "Error: " << sErr << ".");
+      return SQ_EXIT_ERROR;
+      }
+
+    fns
+      << "/"
+      << baseName
       << outFileExt;
 
-    string fn=fns.str();
-
-    w->SetFileName(fn.c_str());
+    w->SetFileName(fns.str().c_str());
     w->Write();
+
+    if (worldRank==0)
+      {
+      pCerr() << "Wrote: " << fns.str().c_str() << "." << endl;
+      }
     }
   w->Delete();
 
-  controller->Finalize();
+  free(configName);
+  free(baseName);
+
   vtkAlgorithm::SetDefaultExecutivePrototype(0);
+
+  controller->Finalize();
 
   return SQ_EXIT_SUCCESS;
 }

@@ -93,11 +93,13 @@ int main(int argc, char **argv)
     {
     if (argc<4)
       {
-      cerr
+      pCerr()
         << "Error: Command tail." << endl
         << " 1) /path/to/runConfig.xml" << endl
-        << " 2) startTime" << endl
-        << " 3) endTime" << endl
+        << " 2) /path/to/output/" << endl
+        << " 3) baseFileName" << endl
+        << " 4) startTime" << endl
+        << " 5) endTime" << endl
         << endl;
       return SQ_EXIT_ERROR;
       }
@@ -110,8 +112,17 @@ int main(int argc, char **argv)
     }
 
   char *configName=argv[1];
-  double startTime=atof(argv[2]);
-  double endTime=atof(argv[3]);
+  char *outputPath=argv[2];
+  char *baseName=argv[3];
+
+  double startTime=-1;
+  double endTime=-1;
+
+  if (argc>4)
+    {
+    startTime=atof(argv[2]);
+    endTime=atof(argv[3]);
+    }
 
   // read the configuration file.
   int iErr=0;
@@ -168,18 +179,33 @@ int main(int argc, char **argv)
   r->GetTimeSteps(&times[0]);
   r->Delete();
 
-  int startTimeIdx=IndexOf(startTime,&times[0],0,nTimes-1);
-  if (startTimeIdx<0)
+  int startTimeIdx;
+  int endTimeIdx;
+  if (startTime<0.0)
     {
-    sqErrorMacro(pCerr(),"Invalid start time " << startTimeIdx << ".");
-    return SQ_EXIT_ERROR;
-    }
+    // if no start time was provided use entire series
+    startTime=times[0];
+    startTimeIdx=0;
 
-  int endTimeIdx=IndexOf(endTime,&times[0],0,nTimes-1);
-  if (endTimeIdx<0)
+    endTime=times[nTimes-1];
+    endTimeIdx=nTimes-1;
+    }
+  else
     {
-    sqErrorMacro(pCerr(),"Invalid end time " << endTimeIdx << ".");
-    return SQ_EXIT_ERROR;
+    // get indices of requested start and end times
+    startTimeIdx=IndexOf(startTime,&times[0],0,nTimes-1);
+    if (startTimeIdx<0)
+      {
+      sqErrorMacro(pCerr(),"Invalid start time " << startTimeIdx << ".");
+      return SQ_EXIT_ERROR;
+      }
+
+    endTimeIdx=IndexOf(endTime,&times[0],0,nTimes-1);
+    if (endTimeIdx<0)
+      {
+      sqErrorMacro(pCerr(),"Invalid end time " << endTimeIdx << ".");
+      return SQ_EXIT_ERROR;
+      }
     }
 
   // seed source for constituent file extention
@@ -201,33 +227,25 @@ int main(int argc, char **argv)
     return SQ_EXIT_ERROR;
     }
 
-  // writer.
-  iErr=0;
-  elem=GetRequiredElement(root,"vtkXMLPDataSetWriter");
-  if (elem==0)
-    {
-    return SQ_EXIT_ERROR;
-    }
 
-  const char *outFileBase;
-  iErr=GetRequiredAttribute(elem,"out_file_base",&outFileBase);
-  if (iErr!=0)
-    {
-    sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
-    return SQ_EXIT_ERROR;
-    }
 
 
   // write pvd file
-  string pvdFileName;
-  pvdFileName+=outFileBase;
-  pvdFileName+=".pvd";
+
+   ostringstream fns;
+    fns
+      << outputPath
+      << "/"
+      << baseName
+      << "/"
+      << baseName
+      << ".pvd";
 
   ofstream pvds;
-  pvds.open(pvdFileName.c_str());
+  pvds.open(fns.str().c_str());
   if (!pvds.good())
     {
-    sqErrorMacro(pCerr(),"Failed to open " << pvdFileName << ".");
+    sqErrorMacro(pCerr(),"Failed to open " << fns.str() << ".");
     return SQ_EXIT_ERROR;
     }
 
@@ -240,29 +258,39 @@ int main(int argc, char **argv)
     {
     double time=times[idx];
 
-    ostringstream fns;
+    fns.str("");
     fns
-      << outFileBase << "_"
+      << "./"
       << setfill('0') << setw(8) << time
+      << "/"
+      << baseName
       << outFileExt;
-
-    string fn=fns.str();
 
     pvds
       << "<DataSet "
       << "timestep=\"" << time << "\" "
       << "group=\"\" part=\"0\" "
-      << "file=\"" << fn.c_str() << "\""
+      << "file=\"" << fns.str().c_str() << "\""
       << "/>"
       << endl;
 
     // sanity - presumably the constituent files have been generated
+    fns.str("");
+    fns
+      << outputPath
+      << "/"
+      << baseName
+      << "/"
+      << setfill('0') << setw(8) << time
+      << "/"
+      << baseName
+      << outFileExt;
     ifstream cfs;
-    cfs.open(fn.c_str());
+    cfs.open(fns.str().c_str());
     if (!cfs.good())
       {
       sqErrorMacro(pCerr(),
-        << "Warning: Failed to open constituent file : " << fn << ".");
+        << "Warning: Failed to open constituent file : " << fns.str() << ".");
       }
     else
       {
