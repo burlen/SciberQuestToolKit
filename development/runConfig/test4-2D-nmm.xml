@@ -31,6 +31,6 @@
       worker_block_size="512"/>
 
   <vtkXMLPDataSetWriter
-      out_file_base="/scratch/01237/bloring/test4/topo-2d/nmm"/>
+      out_file_base="/scratch/01237/bloring/test4/topo-2d/nmm/nmm"/>
 
 </MagnetosphereTopologyBatch>

@@ -26,11 +26,11 @@
       max_number_steps="100000"
       max_arc_length="50000"
       null_threshold="1e-3"
-      dynamic_scheduler="0"
+      dynamic_scheduler="1"
       master_block_size="16"
       worker_block_size="256"/>
 
   <vtkXMLPDataSetWriter
-      out_file_base="/scratch/01237/bloring/test4/topo-2d/eq"/>
+      out_file_base="/scratch/01237/bloring/test4/topo-2d/eq/eq"/>
 
 </MagnetosphereTopologyBatch>
