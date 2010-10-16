@@ -75,6 +75,12 @@ void PolyDataCellCopier::Initialize(vtkDataSet *s, vtkDataSet *o)
     return;
     }
 
+  if (source->GetNumberOfCells()==0)
+    {
+    // nothing to do if there are no cells.
+    return;
+    }
+
   this->SourcePts=dynamic_cast<vtkFloatArray*>(source->GetPoints()->GetData());
   if (this->SourcePts==0)
     {
@@ -108,6 +114,8 @@ void PolyDataCellCopier::Initialize(vtkDataSet *s, vtkDataSet *o)
     }
   else
     {
+    // this is an error because there are cells, but none of
+    // them are the type we expect.
     sqErrorMacro(cerr,"Error: Polydata doesn't have any supported cells.");
     return;
     }
@@ -204,7 +212,7 @@ int PolyDataCellCopier::Copy(IdBlock &SourceIds)
     // but this is wrong as there will be many duplicates. ignored.
     float *pOutPts=this->OutPts->WritePointer(3*nOutPts,3*nPtIds);
     // transfer from input to output (only what we own)
-    for (vtkIdType j=0; j<nPtIds; ++j,++pOutCells)
+    for (vtkIdType j=0; j<nPtIds; ++j)
       {
       vtkIdType idx=3*ptIds[j];
       vtkIdType outId=nOutPts;
