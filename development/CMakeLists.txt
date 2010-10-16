@@ -29,6 +29,7 @@ include(StateFileConfig.cmake)
 # Server manager wrapped sources.
 set(SM_SOURCES
   vtkSQBOVReader.cxx
+  vtkSQFieldTopologySplit.cxx
   vtkSQFieldTracer.cxx
   vtkSQHemisphereSource.cxx
   vtkSQLineSource.cxx
