@@ -9,6 +9,8 @@ shift 1
 TEXT=$1
 shift 1
 
+FONT_SIZE=$1
+shift 1
 
 if [[ -z "$INPUT" || -z "$OUTPUT" || -z "$TEXT" ]]
 then
@@ -16,8 +18,13 @@ then
   exit
 fi
 
+# default font size
+if [[ -z "$FONT_SIZE" ]]
+then
+  FONT_SIZE=25
+fi
 
-gimp -i -b "(annotate \"$INPUT\" \"$OUTPUT\" \"$TEXT\")" -b "(gimp-quit 0)" 
+gimp -i -b "(annotate \"$INPUT\" \"$OUTPUT\" \"$TEXT\" \"$FONT_SIZE\")" -b "(gimp-quit 0)" 
 
 exit
 

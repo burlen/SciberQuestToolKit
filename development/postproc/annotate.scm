@@ -8,7 +8,7 @@
 ;
 
 (define 
-  (annotate inFile outFile text)
+  (annotate inFile outFile text fontSize)
     (let* 
       (
       (imw  0)    ; image width
@@ -31,12 +31,11 @@
       ; load the original
       (set! im (car (gimp-file-load RUN-NONINTERACTIVE inFile inFile)))
       (set! dw (car (gimp-image-get-active-layer im)))
-    
 
       (set! imw (car (gimp-drawable-width dw)))
       (set! imh (car (gimp-drawable-height dw)))
 
-      (set! fpx 25)
+      (set! fpx (string->number fontSize))
 
       (set! lm (* fpx 1))
       (set! rm (* fpx 0))
@@ -67,7 +66,7 @@
               fpx
               PIXELS
               "Nimbus Mono L Bold Oblique")))
-      
+
       ; save the annotated image
       (gimp-image-merge-visible-layers im  CLIP-TO-IMAGE)
       (set! dw (car (gimp-image-get-active-layer im)))
