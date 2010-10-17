@@ -78,6 +78,12 @@ void UnstructuredGridCellCopier::Initialize(vtkDataSet *s, vtkDataSet *o)
     return;
     }
 
+  if (source->GetNumberOfCells()==0)
+    {
+    // nothing to do if there are no cells.
+    return;
+    }
+
   this->SourcePts=dynamic_cast<vtkFloatArray*>(source->GetPoints()->GetData());
   if (this->SourcePts==0)
     {
