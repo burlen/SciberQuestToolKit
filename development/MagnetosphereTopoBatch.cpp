@@ -101,10 +101,11 @@ int main(int argc, char **argv)
       pCerr()
         << "Error: Command tail." << endl
         << " 1) /path/to/runConfig.xml" << endl
-        << " 2) /path/to/output/" << endl
-        << " 3) baseFileName" << endl
-        << " 4) startTime" << endl
-        << " 5) endTime" << endl
+        << " 2) /path/to/input/" << endl
+        << " 3) /path/to/output/" << endl
+        << " 4) baseFileName" << endl
+        << " 5) startTime" << endl
+        << " 6) endTime" << endl
         << endl;
       }
     vtkAlgorithm::SetDefaultExecutivePrototype(0);
@@ -114,6 +115,9 @@ int main(int argc, char **argv)
   // distribute the configuration file name and time range
   int configNameLen=0;
   char *configName=0;
+
+  int bovFileNameLen=0;
+  char *bovFileName=0;
 
   int baseNameLen=0;
   char *baseName=0;
@@ -132,24 +136,30 @@ int main(int argc, char **argv)
     controller->Broadcast(&configNameLen,1,0);
     controller->Broadcast(configName,configNameLen,0);
 
-    outputPathLen=strlen(argv[2])+1;
+    bovFileNameLen=strlen(argv[2])+1;
+    bovFileName=(char *)malloc(bovFileNameLen);
+    strncpy(bovFileName,argv[2],bovFileNameLen);
+    controller->Broadcast(&bovFileNameLen,1,0);
+    controller->Broadcast(bovFileName,bovFileNameLen,0);
+
+    outputPathLen=strlen(argv[3])+1;
     outputPath=(char *)malloc(outputPathLen);
-    strncpy(outputPath,argv[2],outputPathLen);
+    strncpy(outputPath,argv[3],outputPathLen);
     controller->Broadcast(&outputPathLen,1,0);
     controller->Broadcast(outputPath,outputPathLen,0);
 
-    baseNameLen=strlen(argv[3])+1;
+    baseNameLen=strlen(argv[4])+1;
     baseName=(char *)malloc(baseNameLen);
-    strncpy(baseName,argv[3],baseNameLen);
+    strncpy(baseName,argv[4],baseNameLen);
     controller->Broadcast(&baseNameLen,1,0);
     controller->Broadcast(baseName,baseNameLen,0);
 
     // times are optional if not provided entire series is
     // used.
-    if (argc>4)
+    if (argc>5)
       {
-      startTime=atof(argv[4]);
-      endTime=atof(argv[5]);
+      startTime=atof(argv[5]);
+      endTime=atof(argv[6]);
       }
     controller->Broadcast(&startTime,1,0);
     controller->Broadcast(&endTime,1,0);
@@ -159,6 +169,11 @@ int main(int argc, char **argv)
     controller->Broadcast(&configNameLen,1,0);
     configName=(char *)malloc(configNameLen);
     controller->Broadcast(configName,configNameLen,0);
+
+    controller->Broadcast(&bovFileNameLen,1,0);
+    bovFileName=(char *)malloc(bovFileNameLen);
+    controller->Broadcast(bovFileName,bovFileNameLen,0);
+
 
     controller->Broadcast(&outputPathLen,1,0);
     outputPath=(char *)malloc(outputPathLen);
@@ -212,9 +227,6 @@ int main(int argc, char **argv)
     }
 
   iErr=0;
-  const char *bovFileName;
-  iErr+=GetRequiredAttribute(elem,"bov_file_name",&bovFileName);
-
   const char *vectors;
   iErr+=GetRequiredAttribute(elem,"vectors",&vectors);
 
