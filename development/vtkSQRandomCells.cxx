@@ -63,6 +63,15 @@ vtkStandardNewMacro(vtkSQRandomCells);
 
 
 //*****************************************************************************
+void dumpBlocks(IdBlock *bins, int n)
+{
+  for (int i=0; i<n; ++i)
+    {
+    cerr << "proc " << n << " has " << bins[i] << endl; 
+    }
+}
+
+//*****************************************************************************
 int findProcByCellId(unsigned long long cellId, IdBlock *bins, int s, int e)
 {
   // binary search for rank who owns the given cell id.
@@ -268,6 +277,12 @@ int vtkSQRandomCells::RequestData(
         }
       while (!ok.second);
       int rank=findProcByCellId(cellId,remoteCellIds,0,worldSize-1);
+      if (rank<0)
+        {
+        vtkErrorMacro("Cell id  " << cellId << " was not found on any process.");
+        dumpBlocks(remoteCellIds,worldSize);
+        abort();
+        }
       cellId-=remoteCellIds[rank].first();
       assignments[rank].push_back(cellId);
       ++nAssigned[rank];
