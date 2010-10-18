@@ -1,8 +1,11 @@
 <?xml version="1.0"?>
 <MagnetosphereTopologyBatch>
 
+<!--
+bov_file_name="/opt/Data/SciVis/2D/fte-vortex/run2-2D.bov"
+-->
+
   <vtkSQBOVReader
-      bov_file_name="/opt/Data/SciVis/2D/fte-vortex/run2-2D.bov"
       vectors="bp"
       decomp_dims="10 10 1"
       block_cache_size="1000"/>

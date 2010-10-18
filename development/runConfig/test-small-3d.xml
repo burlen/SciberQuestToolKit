@@ -1,8 +1,11 @@
 <?xml version="1.0"?>
 <MagnetosphereTopologyBatch>
 
+<!--
+bov_file_name="/opt/Data/SciVis/un6b/un6b.bov"
+-->
+
   <vtkSQBOVReader
-      bov_file_name="/opt/Data/SciVis/un6b/un6b.bov"
       start_time="50000"
       end_time="50000"
       vectors="b"
@@ -19,7 +22,7 @@
       point1="195 220 245"
       point2="170 290 245"
       point3="170 220 265"
-      resolution="10 20 5"/>
+      resolution="25 50 20"/>
 
   <vtkSQFieldTracer
       integrator_type="3"
@@ -32,8 +35,5 @@
       dynamic_scheduler="1"
       master_block_size="16"
       worker_block_size="256"/>
-
-  <vtkXMLPDataSetWriter
-      out_file_base="./test-small-3d"/>
 
 </MagnetosphereTopologyBatch>
