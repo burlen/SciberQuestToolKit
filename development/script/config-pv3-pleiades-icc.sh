@@ -2,7 +2,7 @@
 
 ICC_PATH=/nasa/intel/cce/10.1.021
 MPI_PATH=/nasa/sgi/mpt/1.26
-MESA_PATH=/u/burlen/apps/Mesa-7.5.1-Intel
+MESA_PATH=/u/bloring/apps/Mesa-7.5.1-Intel
 
 cmake \
   -DCMAKE_C_COMPILER=$ICC_PATH/bin/icc \
