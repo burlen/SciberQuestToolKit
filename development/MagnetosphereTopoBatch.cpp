@@ -250,6 +250,10 @@ int main(int argc, char **argv)
   r->SetPointArrayStatus(vectors,1);
   r->SetDecompDims(decompDims);
   r->SetBlockCacheSize(blockCacheSize);
+  if (!r->IsOpen())
+    {
+    return SQ_EXIT_ERROR;
+    }
 
   // earth terminator surfaces
   iErr=0;

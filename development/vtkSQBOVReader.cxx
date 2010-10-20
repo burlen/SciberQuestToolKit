@@ -302,6 +302,12 @@ void vtkSQBOVReader::SetFileName(const char* _arg)
 }
 
 //-----------------------------------------------------------------------------
+bool vtkSQBOVReader::IsOpen()
+{
+  return this->Reader->IsOpen();
+}
+
+//-----------------------------------------------------------------------------
 void vtkSQBOVReader::SetSubset(const int *s)
 {
   #if defined vtkSQBOVReaderDEBUG

@@ -39,13 +39,21 @@ public:
   static vtkSQBOVReader *New();
   vtkTypeRevisionMacro(vtkSQBOVReader,vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
+
   // Description:
-  // Get/Set the file to read.
+  // Get/Set the file to read. Setting the file name opens
+  // the file. Perhaps it's bad style but this is where open
+  // fits best in VTK/PV pipeline execution.
   void SetFileName(const char *file);
   vtkGetStringMacro(FileName);
   // Description
-  // Determine if the file can be read.
+  // Determine if the file can be read by opening it. If the open
+  // succeeds then we assume th file is readable. Open is restricted
+  // to the calling rank. Only one rank should call CanReadFile.
   int CanReadFile(const char *file);
+  // Descritpion:
+  // Get status indicating if a file is opened successfully.
+  bool IsOpen();
 
   // Description:
   // Array selection.
