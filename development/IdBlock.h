@@ -26,6 +26,7 @@ public:
   unsigned long long *data(){ return m_data; }
   unsigned long long dataSize(){ return 2; }
   bool contains(unsigned long long id){ return ((id>=first()) && (id<last())); }
+  bool empty(){ return m_data[1]==0; }
 private:
   unsigned long long m_data[2]; // id, size
 private:

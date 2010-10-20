@@ -74,7 +74,9 @@ void dumpBlocks(IdBlock *bins, int n)
 //*****************************************************************************
 int findProcByCellId(unsigned long long cellId, IdBlock *bins, int s, int e)
 {
-  // binary search for rank who owns the given cell id.
+  // binary search for rank who owns the given cell id. This
+  // won't handle non-contiguous cell id ranges but will handle
+  // processes with no cells.
 
   if (s>e || e<s)
     {
@@ -83,6 +85,13 @@ int findProcByCellId(unsigned long long cellId, IdBlock *bins, int s, int e)
     }
 
   int m=(s+e)/2;
+
+  // skip procs with no cells
+  while (bins[m].empty() && ((m>s)&&(m<e)))
+    {
+    if (cellId<bins[m].first()){ --m; }
+    else { ++m; }
+    }
 
   if (bins[m].contains(cellId))
     {
@@ -100,7 +109,7 @@ int findProcByCellId(unsigned long long cellId, IdBlock *bins, int s, int e)
     return findProcByCellId(cellId,bins,m+1,e);
     }
 
-  // not found
+  // not found, should always be found
   sqErrorMacro(cerr,"Error: CellId=" << cellId << " was not found.");
   return -1;
 }
