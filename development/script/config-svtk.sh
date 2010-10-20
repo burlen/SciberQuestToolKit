@@ -69,6 +69,7 @@ case $CONFIG in
     -DCMAKE_CXX_FLAGS="-Wall" \
     -DCMAKE_BUILD_TYPE=Debug \
     -DParaView_DIR=$PV3 \
+    -DBUILD_SVTK_UTILITIES=ON \
     $*
     ;;
 
@@ -76,6 +77,7 @@ case $CONFIG in
     cmake  \
     -DCMAKE_BUILD_TYPE=Release \
     -DParaView_DIR=$PV3 \
+    -DBUILD_SVTK_UTILITIES=ON \
     $*
     ;;
 

@@ -9,11 +9,12 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "vtkSQVortexFilter.h"
 
+#include "CartesianExtent.h"
+#include "postream.h"
 
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
-#include "vtkAMRBox.h"
 #include "vtkImageData.h"
 #include "vtkRectilinearGrid.h"
 #include "vtkInformation.h"
@@ -30,13 +31,6 @@ using vtkstd::string;
 
 #include "Numerics.hxx"
 
-//*****************************************************************************
-ostream &operator<<(ostream &os, vtkAMRBox &box)
-{
-  box.Print(os);
-  return os;
-}
-
 vtkCxxRevisionMacro(vtkSQVortexFilter, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQVortexFilter);
 
@@ -47,10 +41,11 @@ vtkSQVortexFilter::vtkSQVortexFilter()
   ComputeHelicity(0),
   ComputeNormalizedHelicity(0),
   ComputeLambda(0),
-  ComputeLambda2(1)
+  ComputeLambda2(1),
+  Mode(MODE_3D)
 {
   #ifdef vtkSQVortexFilterDEBUG
-  cerr << "===============================vtkSQVortexFilter::vtkSQVortexFilter" << endl;
+  pCerr() << "===============================vtkSQVortexFilter::vtkSQVortexFilter" << endl;
   #endif
 
 
@@ -63,7 +58,7 @@ vtkSQVortexFilter::vtkSQVortexFilter()
 vtkSQVortexFilter::~vtkSQVortexFilter()
 {
   #ifdef vtkSQVortexFilterDEBUG
-  cerr << "===============================vtkSQVortexFilter::~vtkSQVortexFilter" << endl;
+  pCerr() << "===============================vtkSQVortexFilter::~vtkSQVortexFilter" << endl;
   #endif
 
 }
@@ -74,7 +69,7 @@ vtkSQVortexFilter::~vtkSQVortexFilter()
 //     vtkInformation *info)
 // {
 //   #ifdef vtkSQVortexFilterDEBUG
-//   cerr << "===============================vtkSQVortexFilter::FillInputPortInformation" << endl;
+//   pCerr() << "===============================vtkSQVortexFilter::FillInputPortInformation" << endl;
 //   #endif
 //
 //   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
@@ -87,7 +82,7 @@ vtkSQVortexFilter::~vtkSQVortexFilter()
 //     vtkInformation *info)
 // {
 //   #ifdef vtkSQVortexFilterDEBUG
-//   cerr << "===============================vtkSQVortexFilter::FillOutputPortInformation" << endl;
+//   pCerr() << "===============================vtkSQVortexFilter::FillOutputPortInformation" << endl;
 //   #endif
 //
 //   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
@@ -101,7 +96,7 @@ int vtkSQVortexFilter::RequestDataObject(
     vtkInformationVector* outInfoVec)
 {
   #ifdef vtkSQVortexFilterDEBUG
-  cerr << "===============================vtkSQVortexFilter::RequestDataObject" << endl;
+  pCerr() << "===============================vtkSQVortexFilter::RequestDataObject" << endl;
   #endif
 
 
@@ -131,7 +126,7 @@ int vtkSQVortexFilter::RequestInformation(
       vtkInformationVector *outInfos)
 {
   #ifdef vtkSQVortexFilterDEBUG
-  cerr << "===============================vtkSQVortexFilter::RequestInformation" << endl;
+  pCerr() << "===============================vtkSQVortexFilter::RequestInformation" << endl;
   #endif
   //this->Superclass::RequestInformation(req,inInfos,outInfos);
 
@@ -139,13 +134,31 @@ int vtkSQVortexFilter::RequestInformation(
   // always a single layer of ghost cells available. To make it so
   // we'll take the upstream's domain and shrink it by 1.
   vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
-  int ext[6];
-  inInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext);
-  vtkAMRBox inputDomain(ext);
-  inputDomain.Shrink(1);
-  inputDomain.GetDimensions(ext);
+  CartesianExtent inputDomain;
+  inInfo->Get(
+        vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+        inputDomain.GetData());
+  switch (this->Mode)
+    {
+    case MODE_3D:
+      inputDomain.Grow(-1);
+      break;
+
+    case MODE_2D_XY:
+      inputDomain.Grow(0,-1);
+      inputDomain.Grow(1,-1);
+      break;
+
+    default:
+      vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+      break;
+    }
+
   vtkInformation* outInfo=outInfos->GetInformationObject(0);
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),ext,6);
+  outInfo->Set(
+        vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+        inputDomain.GetData(),
+        6);
 
   // other keys that need to be coppied
   double dX[3];
@@ -156,11 +169,12 @@ int vtkSQVortexFilter::RequestInformation(
   inInfo->Get(vtkDataObject::ORIGIN(),X0);
   outInfo->Set(vtkDataObject::ORIGIN(),X0,3);
 
-  cerr
-    << "WHOLE_EXTENT=" << Tuple<int>(ext,6) << endl
-    << "ORIGIN" << Tuple<double>(X0,3) << endl
-    << "SPACING" << Tuple<double>(dX,3) << endl
-    << endl;
+  #ifdef vtkSQVortexFilterDEBUG
+  pCerr()
+    << "WHOLE_EXTENT=" << inputDomain << endl;
+    << "ORIGIN" << Tuple<double>(X0,3) << endl;
+    << "SPACING" << Tuple<double>(dX,3) << endl;
+  #endif
 
   return 1;
 }
@@ -172,24 +186,41 @@ int vtkSQVortexFilter::RequestUpdateExtent(
       vtkInformationVector *outInfos)
 {
   #ifdef vtkSQVortexFilterDEBUG
-  cerr << "===============================vtkSQVortexFilter::RequestUpdateExtent" << endl;
+  pCerr() << "===============================vtkSQVortexFilter::RequestUpdateExtent" << endl;
   #endif
 
   // We will modify the extents we request from our input so
   // that we will have a single layer of ghost cells.
   vtkInformation* outInfo=outInfos->GetInformationObject(0);
-  int ext[6];
-  outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext);
-  vtkAMRBox outputExt(ext);
-  outputExt.Grow(1);
-  outputExt.GetDimensions(ext);
+  CartesianExtent outputExt;
+  outInfo->Get(
+        vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
+        outputExt.GetData());
+  switch (this->Mode)
+    {
+    case MODE_3D:
+      outputExt.Grow(1);
+      break;
+
+    case MODE_2D_XY:
+      outputExt.Grow(0,1);
+      outputExt.Grow(1,1);
+      break;
+
+    default:
+      vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+      break;
+    }
 
   vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
-  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),ext,6);
+  inInfo->Set(
+        vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
+        outputExt.GetData(),
+        6);
 
-  cerr
-    << "UPDATE_EXTENT=" << Tuple<int>(ext,6) << endl
-    << endl;
+  #ifdef vtkSQVortexFilterDEBUG
+  pCerr() << "UPDATE_EXTENT=" << outputExt << endl;
+  #endif
 
   return 1;
 }
@@ -203,7 +234,7 @@ int vtkSQVortexFilter::RequestData(
     vtkInformationVector *outInfoVec)
 {
   #ifdef vtkSQVortexFilterDEBUG
-  cerr << "===============================vtkSQVortexFilter::RequestData" << endl;
+  pCerr() << "===============================vtkSQVortexFilter::RequestData" << endl;
   #endif
 
 
@@ -232,16 +263,37 @@ int vtkSQVortexFilter::RequestData(
     }
 
   // Get the input and output extents.
-  int inputExt[6];
-  inInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),inputExt);
-  int outputExt[6];
-  outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),outputExt);
-  int domainExt[6];
-  outInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),domainExt);
+  CartesianExtent inputExt;
+  inInfo->Get(
+        vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
+        inputExt.GetData());
+  CartesianExtent outputExt;
+  outInfo->Get(
+        vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
+        outputExt.GetData());
+  CartesianExtent domainExt;
+  outInfo->Get(
+        vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+        domainExt.GetData());
+
   // Check that we have the ghost cells that we need (more is OK).
-  vtkAMRBox inputBox(inputExt);
-  vtkAMRBox outputBox(outputExt);
-  outputBox.Grow(1);
+  CartesianExtent inputBox(inputExt);
+  CartesianExtent outputBox(outputExt);
+  switch (this->Mode)
+    {
+    case MODE_3D:
+      outputBox.Grow(1);
+      break;
+
+    case MODE_2D_XY:
+      outputBox.Grow(0,1);
+      outputBox.Grow(1,1);
+      break;
+
+    default:
+      vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+      break;
+    }
   if (!inputBox.Contains(outputBox))
     {
     vtkErrorMacro(
@@ -270,19 +322,21 @@ int vtkSQVortexFilter::RequestData(
     outInfo->Get(vtkDataObject::SPACING(),dX);
     outImData->SetSpacing(dX);
 
-    outImData->SetExtent(outputExt);
+    outImData->SetExtent(outputExt.GetData());
 
     int outputDims[3];
     outImData->GetDimensions(outputDims);
     int outputTups=outputDims[0]*outputDims[1]*outputDims[2];
 
-    cerr
-      << "WHOLE_EXTENT=" << Tuple<int>(domainExt,6) << endl
-      << "UPDATE_EXTENT(input)=" << Tuple<int>(inputExt,6) << endl
-      << "UPDATE_EXTENT(output)=" << Tuple<int>(outputExt,6) << endl
+    #ifdef vtkSQVortextFilterDEBUG
+    pCerr()
+      << "WHOLE_EXTENT=" << domainExt << endl
+      << "UPDATE_EXTENT(input)=" << inputExt << endl
+      << "UPDATE_EXTENT(output)=" << outputExt << endl
       << "ORIGIN" << Tuple<double>(X0,3) << endl
       << "SPACING" << Tuple<double>(dX,3) << endl
       << endl;
+    #endif
 
     vtkDataArray *V=this->GetInputArrayToProcess(0,inImData);
 
@@ -311,13 +365,39 @@ int vtkSQVortexFilter::RequestData(
       if ( (fV=dynamic_cast<vtkFloatArray *>(V))!=NULL
         && (fR=dynamic_cast<vtkFloatArray *>(R))!=NULL)
         {
-        Rotation(inputExt,outputExt,dX,fV->GetPointer(0),fR->GetPointer(0));
+        switch (this->Mode)
+          {
+          case MODE_3D:
+            Rotation(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fR->GetPointer(0));
+            break;
+
+          case MODE_2D_XY:
+            RotationXY(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fR->GetPointer(0));
+            break;
+
+          default:
+            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+            break;
+          }
         }
       else
       if ( (dV=dynamic_cast<vtkDoubleArray *>(V))!=NULL
         && (dR=dynamic_cast<vtkDoubleArray *>(R))!=NULL)
         {
-        Rotation(inputExt,outputExt,dX,dV->GetPointer(0),dR->GetPointer(0));
+        switch (this->Mode)
+          {
+          case MODE_3D:
+            Rotation(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dR->GetPointer(0));
+            break;
+
+          case MODE_2D_XY:
+            RotationXY(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dR->GetPointer(0));
+            break;
+
+          default:
+            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+            break;
+          }
         }
       }
 
@@ -338,13 +418,39 @@ int vtkSQVortexFilter::RequestData(
       if ( (fV=dynamic_cast<vtkFloatArray *>(V))!=NULL
         && (fH=dynamic_cast<vtkFloatArray *>(H))!=NULL)
         {
-        Helicity(inputExt,outputExt,dX,fV->GetPointer(0),fH->GetPointer(0));
+        switch (this->Mode)
+          {
+          case MODE_3D:
+            Helicity(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fH->GetPointer(0));
+            break;
+
+          case MODE_2D_XY:
+            HelicityXY(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fH->GetPointer(0));
+            break;
+
+          default:
+            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+            break;
+          }
         }
       else
       if ( (dV=dynamic_cast<vtkDoubleArray *>(V))!=NULL
         && (dH=dynamic_cast<vtkDoubleArray *>(H))!=NULL)
         {
-        Helicity(inputExt,outputExt,dX,dV->GetPointer(0),dH->GetPointer(0));
+        switch (this->Mode)
+          {
+          case MODE_3D:
+            Helicity(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dH->GetPointer(0));
+            break;
+
+          case MODE_2D_XY:
+            HelicityXY(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dH->GetPointer(0));
+            break;
+
+          default:
+            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+            break;
+          }
         }
       }
 
@@ -365,13 +471,39 @@ int vtkSQVortexFilter::RequestData(
       if ( (fV=dynamic_cast<vtkFloatArray *>(V))!=NULL
         && (fHN=dynamic_cast<vtkFloatArray *>(HN))!=NULL)
         {
-        NormalizedHelicity(inputExt,outputExt,dX,fV->GetPointer(0),fHN->GetPointer(0));
+        switch (this->Mode)
+          {
+          case MODE_3D:
+            NormalizedHelicity(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fHN->GetPointer(0));
+            break;
+
+          case MODE_2D_XY:
+            NormalizedHelicityXY(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fHN->GetPointer(0));
+            break;
+
+          default:
+            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+            break;
+          }
         }
       else
       if ( (dV=dynamic_cast<vtkDoubleArray *>(V))!=NULL
         && (dHN=dynamic_cast<vtkDoubleArray *>(HN))!=NULL)
         {
-        NormalizedHelicity(inputExt,outputExt,dX,dV->GetPointer(0),dHN->GetPointer(0));
+        switch (this->Mode)
+          {
+          case MODE_3D:
+            NormalizedHelicity(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dHN->GetPointer(0));
+            break;
+
+          case MODE_2D_XY:
+            NormalizedHelicityXY(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dHN->GetPointer(0));
+            break;
+
+          default:
+            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+            break;
+          }
         }
       }
 
@@ -392,13 +524,39 @@ int vtkSQVortexFilter::RequestData(
       if ( (fV=dynamic_cast<vtkFloatArray *>(V))!=NULL
         && (fL=dynamic_cast<vtkFloatArray *>(L))!=NULL)
         {
-        Lambda(inputExt,outputExt,dX,fV->GetPointer(0),fL->GetPointer(0));
+        switch (this->Mode)
+          {
+          case MODE_3D:
+            Lambda(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fL->GetPointer(0));
+            break;
+
+          case MODE_2D_XY:
+            Lambda(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fL->GetPointer(0));
+            break;
+
+          default:
+            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+            break;
+          }
         }
       else
       if ( (dV=dynamic_cast<vtkDoubleArray *>(V))!=NULL
         && (dL=dynamic_cast<vtkDoubleArray *>(L))!=NULL)
         {
-        Lambda(inputExt,outputExt,dX,dV->GetPointer(0),dL->GetPointer(0));
+        switch (this->Mode)
+          {
+          case MODE_3D:
+            Lambda(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dL->GetPointer(0));
+            break;
+
+          case MODE_2D_XY:
+            Lambda(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dL->GetPointer(0));
+            break;
+
+          default:
+            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+            break;
+          }
         }
       }
 
@@ -419,13 +577,39 @@ int vtkSQVortexFilter::RequestData(
       if ( (fV=dynamic_cast<vtkFloatArray *>(V))!=NULL
         && (fL2=dynamic_cast<vtkFloatArray *>(L2))!=NULL)
         {
-        Lambda2(inputExt,outputExt,dX,fV->GetPointer(0),fL2->GetPointer(0));
+        switch (this->Mode)
+          {
+          case MODE_3D:
+            Lambda2(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fL2->GetPointer(0));
+            break;
+
+          case MODE_2D_XY:
+            Lambda2(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fL2->GetPointer(0));
+            break;
+
+          default:
+            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+            break;
+          }
         }
       else
       if ( (dV=dynamic_cast<vtkDoubleArray *>(V))!=NULL
         && (dL2=dynamic_cast<vtkDoubleArray *>(L2))!=NULL)
         {
-        Lambda2(inputExt,outputExt,dX,dV->GetPointer(0),dL2->GetPointer(0));
+        switch (this->Mode)
+          {
+          case MODE_3D:
+            Lambda2(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dL2->GetPointer(0));
+            break;
+
+          case MODE_2D_XY:
+            Lambda2(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dL2->GetPointer(0));
+            break;
+
+          default:
+            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+            break;
+          }
         }
       }
     // outImData->Print(cerr);
@@ -443,7 +627,7 @@ int vtkSQVortexFilter::RequestData(
 void vtkSQVortexFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   #ifdef vtkSQVortexFilterDEBUG
-  cerr << "===============================vtkSQVortexFilter::PrintSelf" << endl;
+  pCerr() << "===============================vtkSQVortexFilter::PrintSelf" << endl;
   #endif
 
   this->Superclass::PrintSelf(os,indent);

@@ -507,7 +507,7 @@ int main(int argc, char **argv)
     {
     pCerr()
       << "Selected " 
-      << startTime << ":" << startTimeIdx 
+      << startTime << ":" << startTimeIdx
       << " to "
       << endTime << ":" << endTimeIdx
       << endl; 

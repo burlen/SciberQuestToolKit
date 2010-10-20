@@ -38,7 +38,7 @@ void indexToIJ(int idx, int nx, int &i, int &j)
 inline
 void indexToIJK(int idx, int nx, int nxy, int &i, int &j, int &k)
 {
-  // convert a flat array index into a i,j,k three space tuple.
+  // convert a flat array index into a i,j,k three tuple.
   k=idx/nxy;
   j=(idx-k*nxy)/nx;
   i=idx-k*nxy-j*nx;

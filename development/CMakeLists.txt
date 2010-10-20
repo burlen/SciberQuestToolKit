@@ -31,6 +31,7 @@ set(SM_SOURCES
   vtkSQBOVReader.cxx
   vtkSQFieldTopologySplit.cxx
   vtkSQFieldTracer.cxx
+  vtkSQHemicylinderSource.cxx
   vtkSQHemisphereSource.cxx
   vtkSQLineSource.cxx
   vtkSQCellGenerator.cxx

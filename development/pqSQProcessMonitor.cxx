@@ -165,8 +165,11 @@ void pqSQProcessMonitor::Restore()
   defaults
        << ""
        << "-geometry 200x40 -fg white -bg black -T @HOST@:@PID@"
-       << "xterm @XTOPTS@ -e ssh -t @HOST@ gdb --pid=@PID@"
+       << "xterm @XTOPTS@ -e gdb --pid=@PID@"
        << "xterm @XTOPTS@ -e ssh -t @FEURL@ ssh -t @HOST@ gdb --pid=@PID@"
+       << "xterm @XTOPTS@ -e ssh -t @FEURL@ ssh -t @HOST@ top"
+       << "xterm @XTOPTS@ -e ssh -t @HOST@ gdb --pid=@PID@"
+       << "xterm @XTOPTS@ -e ssh -t @HOST@ top"
        << "xterm -e ssh @HOST@ kill -TERM @PID@"
        << "xterm -e ssh @HOST@ kill -KILL @PID@";
 

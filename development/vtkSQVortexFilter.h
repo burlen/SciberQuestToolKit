@@ -22,6 +22,19 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQVortexFilter *New();
 
+  // Description:
+  // Set the mode to 2 or 3D.
+  vtkSetMacro(Mode,int);
+  vtkGetMacro(Mode,int);
+  //BTX
+  enum {
+    MODE_3D=0,
+    MODE_2D_XY,
+    MODE_2D_XZ,
+    MODE_2D_YZ
+    };
+  //ETX
+
   // TODO documentaion
   vtkSetMacro(ComputeRotation,int);
   vtkGetMacro(ComputeRotation,int);
@@ -72,6 +85,9 @@ private:
   //
   int OutputExt[6];
   int DomainExt[6];
+
+  //
+  int Mode;
 
 private:
   vtkSQVortexFilter(const vtkSQVortexFilter &); // Not implemented
