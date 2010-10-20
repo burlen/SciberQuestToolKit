@@ -167,7 +167,7 @@ int TerminationCondition::IntersectsTerminationSurface(
     double t=0.0;
     int c=0;
     int hitSurface
-      = this->TerminationSurfaces[i]->IntersectWithLine(p0,p1,1E-8,t,pi,p,c);
+      = this->TerminationSurfaces[i]->IntersectWithLine(p0,p1,1E-6,t,pi,p,c);
     if (hitSurface)
       {
       return i+1;
