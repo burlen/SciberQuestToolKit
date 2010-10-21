@@ -1,7 +1,7 @@
 #PBS -S /bin/bash
 #PBS -N t4-mt-3d-day 
 #PBS -j oe
-#PBS -m eabs
+#PBS -m eab
 #PBS -M burlen.loring@gmail.com
 
 module use -a /u/bloring/modulefiles

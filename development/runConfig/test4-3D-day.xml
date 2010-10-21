@@ -7,7 +7,7 @@ one stream line per cell
 -->
 
   <vtkSQBOVReader
-      vectors="bb"
+      vectors="bp"
       decomp_dims="5 10 5"
       block_cache_size="250"/>
 
