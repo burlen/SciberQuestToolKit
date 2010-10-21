@@ -269,6 +269,10 @@ int vtkSQRandomCells::RequestData(
       nCellsTotal+=nRemoteCells[i];
       }
 
+    // restrict sample size to at most the number of cells available.
+    unsigned long long nToSelect
+      = ((unsigned long long)this->SampleSize>nCellsTotal?nCellsTotal:this->SampleSize);
+
     // select cells to pass through. assigned to the process who
     // owns them.
     unsigned long long nAssigned[worldSize];
@@ -284,8 +288,9 @@ int vtkSQRandomCells::RequestData(
 
     set<unsigned long long> usedCellIds;
     SetInsert ok;
-    for (int i=0; i<this->SampleSize; ++i)
+    for (unsigned long long i=0; i<nToSelect; ++i)
       {
+      // find an used cell id.
       unsigned long long cellId=0;
       do
         {
@@ -293,6 +298,7 @@ int vtkSQRandomCells::RequestData(
         ok=usedCellIds.insert(cellId);
         }
       while (!ok.second);
+      // look up its process id
       int rank=findProcByCellId(cellId,remoteCellIds,0,worldSize-1);
       if (rank<0)
         {
