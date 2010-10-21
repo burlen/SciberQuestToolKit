@@ -44,6 +44,7 @@ Copyright 2008 SciberQuest Inc.
 #include "IdBlock.h"
 #include "Numerics.hxx"
 #include "Tuple.hxx"
+#include "minmax.h"
 
 #include <set>
 using std::set;
@@ -269,10 +270,6 @@ int vtkSQRandomCells::RequestData(
       nCellsTotal+=nRemoteCells[i];
       }
 
-    // restrict sample size to at most the number of cells available.
-    unsigned long long nToSelect
-      = ((unsigned long long)this->SampleSize>nCellsTotal?nCellsTotal:this->SampleSize);
-
     // select cells to pass through. assigned to the process who
     // owns them.
     unsigned long long nAssigned[worldSize];
@@ -288,27 +285,101 @@ int vtkSQRandomCells::RequestData(
 
     set<unsigned long long> usedCellIds;
     SetInsert ok;
-    for (unsigned long long i=0; i<nToSelect; ++i)
+
+    // fraction of the available set that the sample
+    // covers. values greater than 1 are illegal, sample size
+    // will be capped at the number of available cells. We also
+    // need to avoid coverage approaching 1 because it will take
+    // a long time for the random number generator to hit all values.
+    double coverage=((double)this->SampleSize)/((double)nCellsTotal);
+    // if (coverage>0.9)
+    //   {
+    //   vtkWarningMacro(
+    //     << "Using all cells. Sample size change from "
+    //     << this->SampleSize
+    //     << " to "
+    //     << nCellsTotal
+    //     << ".");
+    //   // assign all to prevent endless spinning while random
+    //   // generator tries to cover all values.
+    //   for (unsigned long long i=0; i<nCellsTotal; ++i)
+    //     {
+    //     unsigned long long cellId=i;
+    //     // look up its process id
+    //     int rank=findProcByCellId(cellId,remoteCellIds,0,worldSize-1);
+    //     if (rank<0)
+    //       {
+    //       vtkErrorMacro("Cell id  " << cellId << " was not found on any process.");
+    //       dumpBlocks(remoteCellIds,worldSize);
+    //       abort();
+    //       }
+    //     cellId-=remoteCellIds[rank].first();
+    //     assignments[rank].push_back(cellId);
+    //     ++nAssigned[rank];
+    //     }
+    //   }
+    // else
+    if (coverage>0.75)
       {
-      // find an used cell id.
-      unsigned long long cellId=0;
-      do
+      // sample size is large enough that random selection of n unique cells
+      // is impractical.
+      unsigned long long reducedSampleSize=max(1.0,0.75*nCellsTotal);
+      vtkWarningMacro(
+        << "Reducing sample size from "
+        << this->SampleSize
+        << " to "
+        << reducedSampleSize
+        << ".");
+
+      for (unsigned long long i=0; i<reducedSampleSize; ++i)
         {
-        cellId=(unsigned long long)((double)(nCellsTotal-1)*(double)rand()/(double)RAND_MAX);
-        ok=usedCellIds.insert(cellId);
+        // find an unsed cell id.
+        unsigned long long cellId=0;
+        do
+          {
+          cellId=(unsigned long long)((double)(nCellsTotal-1)*(double)rand()/(double)RAND_MAX);
+          ok=usedCellIds.insert(cellId);
+          }
+        while (!ok.second);
+        // look up its process id
+        int rank=findProcByCellId(cellId,remoteCellIds,0,worldSize-1);
+        if (rank<0)
+          {
+          vtkErrorMacro("Cell id  " << cellId << " was not found on any process.");
+          dumpBlocks(remoteCellIds,worldSize);
+          abort();
+          }
+        cellId-=remoteCellIds[rank].first();
+        assignments[rank].push_back(cellId);
+        ++nAssigned[rank];
         }
-      while (!ok.second);
-      // look up its process id
-      int rank=findProcByCellId(cellId,remoteCellIds,0,worldSize-1);
-      if (rank<0)
+      }
+    else
+      {
+      // sample size is small enough that selecting n unique cells is
+      // paractical.
+      for (int i=0; i<this->SampleSize; ++i)
         {
-        vtkErrorMacro("Cell id  " << cellId << " was not found on any process.");
-        dumpBlocks(remoteCellIds,worldSize);
-        abort();
+        // find an unsed cell id.
+        unsigned long long cellId=0;
+        do
+          {
+          cellId=(unsigned long long)((double)(nCellsTotal-1)*(double)rand()/(double)RAND_MAX);
+          ok=usedCellIds.insert(cellId);
+          }
+        while (!ok.second);
+        // look up its process id
+        int rank=findProcByCellId(cellId,remoteCellIds,0,worldSize-1);
+        if (rank<0)
+          {
+          vtkErrorMacro("Cell id  " << cellId << " was not found on any process.");
+          dumpBlocks(remoteCellIds,worldSize);
+          abort();
+          }
+        cellId-=remoteCellIds[rank].first();
+        assignments[rank].push_back(cellId);
+        ++nAssigned[rank];
         }
-      cellId-=remoteCellIds[rank].first();
-      assignments[rank].push_back(cellId);
-      ++nAssigned[rank];
       }
 
     // distribute the assignments
