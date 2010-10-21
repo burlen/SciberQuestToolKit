@@ -67,7 +67,7 @@ void dumpBlocks(IdBlock *bins, int n)
 {
   for (int i=0; i<n; ++i)
     {
-    cerr << "proc " << n << " has " << bins[i] << endl; 
+    cerr << "proc " << i << " has " << bins[i] << endl; 
     }
 }
 
@@ -78,24 +78,32 @@ int findProcByCellId(unsigned long long cellId, IdBlock *bins, int s, int e)
   // won't handle non-contiguous cell id ranges but will handle
   // processes with no cells.
 
-  if (s>e || e<s)
-    {
-    sqErrorMacro(cerr,"Index error s=" << s << " e=" << e << ".");
-    return -1;
-    }
+  // if (s>e || e<s)
+  //   {
+  //   sqErrorMacro(cerr,"Index error s=" << s << " e=" << e << ".");
+  //   return -1;
+  //   }
 
   int m=(s+e)/2;
 
   // skip procs with no cells
-  while (bins[m].empty() && ((m>s)&&(m<e)))
+  while (bins[m].empty())
     {
-    if (cellId<bins[m].first()){ --m; }
-    else { ++m; }
+    if (cellId<bins[m].first())
+      {
+      if (m==s){ break; }
+      --m; // move left
+      }
+    else
+      {
+      if (m==e){ break; }
+      ++m; // move right
+      }
     }
 
   if (bins[m].contains(cellId))
     {
-    cerr << "proc=" << m << " owns " << cellId << "." << endl;
+    //cerr << "proc=" << m << " owns " << cellId << "." << endl;
     return m;
     }
   else

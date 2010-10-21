@@ -89,9 +89,6 @@ void GenerateHemicylinder(
     pIa[4]=pid+2;
     pIa+=5;
     }
-
-  output->Print(cerr);
-
 }
 
 
