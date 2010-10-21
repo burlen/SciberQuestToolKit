@@ -91,12 +91,12 @@ int findProcByCellId(unsigned long long cellId, IdBlock *bins, int s, int e)
     {
     if (cellId<bins[m].first())
       {
-      if (m==s){ break; }
+      if (m<=s){ break; }
       --m; // move left
       }
     else
       {
-      if (m==e){ break; }
+      if (m>=e){ break; }
       ++m; // move right
       }
     }
