@@ -289,7 +289,7 @@ int vtkSQRandomCells::RequestData(
       unsigned long long cellId=0;
       do
         {
-        cellId=(unsigned long long)((double)nCellsTotal*(double)rand()/(double)RAND_MAX);
+        cellId=(unsigned long long)((double)(nCellsTotal-1)*(double)rand()/(double)RAND_MAX);
         ok=usedCellIds.insert(cellId);
         }
       while (!ok.second);
