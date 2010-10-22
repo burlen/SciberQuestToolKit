@@ -26,8 +26,14 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkSMIntVectorProperty.h"
 #include "vtkSMDoubleVectorProperty.h"
 #include "vtkSMPropertyHelper.h"
+#include "vtkPVXMLParser.h"
 #include "vtkMath.h"
 
+#include <QMenu>
+#include <QAction>
+#include <QContextMenuEvent>
+#include <QClipboard>
+#include <QApplication>
 #include <QString>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -285,6 +291,76 @@ pqSQVolumeSource::~pqSQVolumeSource()
   #endif
 
   delete this->Form;
+}
+
+//-----------------------------------------------------------------------------
+void pqSQVolumeSource::contextMenuEvent(QContextMenuEvent *evnt)
+{
+  QMenu context(this);
+
+  QAction *copyAct=new QAction(tr("Copy Configuration"),&context);
+  connect(copyAct, SIGNAL(triggered()), this, SLOT(CopyConfiguration()));
+  context.addAction(copyAct);
+
+  QAction *pasteAct=new QAction(tr("Paste Configuration"),&context);
+  connect(pasteAct, SIGNAL(triggered()), this, SLOT(PasteConfiguration()));
+  context.addAction(pasteAct);
+
+  context.exec(evnt->globalPos());
+}
+
+//-----------------------------------------------------------------------------
+void pqSQVolumeSource::CopyConfiguration()
+{
+  // grab the current configuration.
+  ostringstream os;
+
+  vtkSQVolumeSourceConfigurationWriter *writer
+    = vtkSQVolumeSourceConfigurationWriter::New();
+
+  writer->SetProxy(this->proxy());
+  writer->WriteConfiguration(os);
+
+  // place it on the clipboard.
+  QClipboard *clipboard=QApplication::clipboard();
+  clipboard->setText(os.str().c_str());
+
+  writer->Delete();
+}
+
+//-----------------------------------------------------------------------------
+void pqSQVolumeSource::PasteConfiguration()
+{
+  QClipboard *clipboard=QApplication::clipboard();
+  QString config=clipboard->text();
+
+  if (!config.isEmpty())
+    {
+    vtkSmartPointer<vtkPVXMLParser> parser=vtkSmartPointer<vtkPVXMLParser>::New();
+    parser->InitializeParser();
+    parser->ParseChunk(config.toAscii().data(),static_cast<unsigned int>(config.size()));
+    parser->CleanupParser();
+
+    vtkPVXMLElement *xmlStream=parser->GetRootElement();
+    if (!xmlStream)
+      {
+      sqErrorMacro(qDebug(),"Invalid SQVolumeSource configuration  pasted.");
+      return;
+      }
+
+    vtkSmartPointer<vtkSQVolumeSourceConfigurationReader> reader
+      = vtkSmartPointer<vtkSQVolumeSourceConfigurationReader>::New();
+
+    reader->SetProxy(this->proxy());
+    int ok=reader->ReadConfiguration(xmlStream);
+    if (!ok)
+      {
+      sqErrorMacro(qDebug(),"Invalid SQVolumeSource configuration  hierarchy.");
+      return;
+      }
+
+    this->PullServerConfig();
+    }
 }
 
 //-----------------------------------------------------------------------------

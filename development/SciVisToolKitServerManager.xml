@@ -1316,6 +1316,158 @@ Copyright 2008 SciberQuest Inc.
 
   <!-- ==================================================================== -->
   <SourceProxy
+      name="vtkSQFieldTopologySelect"
+      label="SQ Field Topology Select"
+      class="vtkSQFieldTopologySelect">
+
+    <!-- Input -->
+    <InputProperty
+        name="DatasetInput"
+        command="SetInputConnection"
+        label="Topograph">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type" composite_data_supported="0">
+        <DataType value="vtkDataSet"/>
+      </DataTypeDomain>
+      <InputArrayDomain name="input_array" attribute_type="cell" number_of_components="1"/>
+      <Documentation>
+        Dataset containing the topograph.
+      </Documentation>
+    </InputProperty>
+
+    <!-- topological class selection -->
+    <IntVectorProperty
+        name="domain-domain"
+        command="SetSelectDD"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="north-domain"
+        command="SetSelectND"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="south-domain"
+        command="SetSelectSD"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="null-domain"
+        command="SetSelectOD"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="short-domain"
+        command="SetSelectID"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="north-north"
+        command="SetSelectNN"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="south-north"
+        command="SetSelectSN"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="null-north"
+        command="SetSelectON"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="short-north"
+        command="SetSelectIN"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="south-south"
+        command="SetSelectSS"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="null-south"
+        command="SetSelectOS"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="short-south"
+        command="SetSelectIS"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="null-null"
+        command="SetSelectOO"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="short-null"
+        command="SetSelectIO"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="short-short"
+        command="SetSelectII"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <Hints>
+      <Visibility replace_input="2" />
+    </Hints>
+
+  </SourceProxy>
+
+
+  <!-- ==================================================================== -->
+  <SourceProxy
       name="vtkSQFieldTopologySplit"
       label="SQ Field Topology Split"
       class="vtkSQFieldTopologySplit">

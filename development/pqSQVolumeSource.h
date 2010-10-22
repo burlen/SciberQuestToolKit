@@ -51,7 +51,16 @@ public:
   void GetSpacing(double *dx);
   void SetSpacing(double *dx);
 
+  // Description:
+  // dispatch context menu events.
+  void contextMenuEvent(QContextMenuEvent *event);
+
 protected slots:
+  // Description:
+  // Transfer configuration to and from the clip board.
+  void CopyConfiguration();
+  void PasteConfiguration();
+
   // Description:
   // read/write configuration from disk.
   void loadConfiguration();

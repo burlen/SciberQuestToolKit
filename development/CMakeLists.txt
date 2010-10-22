@@ -29,6 +29,7 @@ include(StateFileConfig.cmake)
 # Server manager wrapped sources.
 set(SM_SOURCES
   vtkSQBOVReader.cxx
+  vtkSQFieldTopologySelect.cxx
   vtkSQFieldTopologySplit.cxx
   vtkSQFieldTracer.cxx
   vtkSQHemicylinderSource.cxx
@@ -77,6 +78,7 @@ set(_SOURCES
   RefCountedPointer.cxx
   StreamlineData.cxx
   TerminationCondition.cxx
+  TopologicalClassSelector.cxx
   UnstructuredFieldTopologyMap.cxx
   UnstructuredGridCellCopier.cxx
   vtkSQMetaDataKeys.cxx

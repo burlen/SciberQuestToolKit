@@ -1,18 +1,13 @@
-/*=========================================================================
+/*
+   ____    _ __           ____               __    ____
+  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
+ _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
 
-  Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkSQFieldTopologySplit.cxx,v $
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+Copyright 2008 SciberQuest Inc.
+*/
 #include "vtkSQFieldTopologySplit.h"
+#include "TopologicalClassSelector.h"
 
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
@@ -21,127 +16,7 @@
 
 #include "vtkUnstructuredGrid.h"
 #include "vtkPolyData.h"
-#include "vtkCellData.h"
-#include "vtkAppendFilter.h"
-#include "vtkThreshold.h"
 
-
-//=============================================================================
-class TopologicalClassSelector
-{
-public:
-  TopologicalClassSelector();
-  ~TopologicalClassSelector();
-
-  void Initialize();
-  void Clear();
-
-  void SetInput(vtkDataSet *input);
-  vtkUnstructuredGrid *GetOutput();
-
-  void AppendRange(double v0, double v1);
-
-private:
-  vtkDataSet *Input;
-  vtkThreshold *Threshold;
-  vtkAppendFilter *Append;
-};
-
-//-----------------------------------------------------------------------------
-TopologicalClassSelector::TopologicalClassSelector()
-    :
-  Input(0),
-  Threshold(0),
-  Append(0)
-{
-  this->Initialize();
-}
-
-//-----------------------------------------------------------------------------
-TopologicalClassSelector::~TopologicalClassSelector()
-{
-  this->Clear();
-}
-
-//-----------------------------------------------------------------------------
-void TopologicalClassSelector::Initialize()
-{
-  this->Clear();
-  this->Append=vtkAppendFilter::New();
-}
-
-//-----------------------------------------------------------------------------
-void TopologicalClassSelector::Clear()
-{
-  if (this->Input)
-    {
-    this->Input->Delete();
-    }
-
-  if (this->Append)
-    {
-    this->Append->Delete();
-    this->Append=0;
-    }
-}
-
-//-----------------------------------------------------------------------------
-void TopologicalClassSelector::SetInput(vtkDataSet *input)
-{
-  if (this->Input==input)
-    {
-    return;
-    }
-
-  if (this->Input)
-    {
-    this->Input->Delete();
-    }
-
-  this->Input=input;
-
-  if (this->Input)
-    {
-    this->Input=input->NewInstance();
-    this->Input->ShallowCopy(input);
-    this->Input->GetCellData()->SetActiveScalars("IntersectColor");
-    }
-}
-
-//-----------------------------------------------------------------------------
-void TopologicalClassSelector::AppendRange(double v0, double v1)
-{
-  vtkThreshold *threshold=vtkThreshold::New();
-  threshold->SetInput(this->Input);
-  threshold->SetInputArrayToProcess(
-        0,
-        0,
-        0,
-        vtkDataObject::FIELD_ASSOCIATION_CELLS,
-        "IntersectColor");
-  threshold->ThresholdBetween(v0,v1);
-
-  vtkUnstructuredGrid *ug=threshold->GetOutput();
-  ug->Update();
-
-  this->Append->AddInput(ug);
-
-  threshold->Delete();
-}
-
-//-----------------------------------------------------------------------------
-vtkUnstructuredGrid *TopologicalClassSelector::GetOutput()
-{
-  vtkUnstructuredGrid *ug=this->Append->GetOutput();
-  ug->Update();
-
-//   cerr << "Geting output" << endl;
-//   ug->Print(cerr);
-
-  return ug;
-}
-
-//=============================================================================
 
 //-----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkSQFieldTopologySplit,"$Revision: 1.0$");
