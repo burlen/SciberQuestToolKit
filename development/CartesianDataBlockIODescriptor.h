@@ -21,7 +21,7 @@ using std::ostream;
 /**
 Container for the MPI file and memory views required to 
 read in a cartesian block of data with ghost cells. Here
-the ghost cells are filled directly from disk as it's
+the ghost cells are filled directly from disk as
 no other blocks are assumed to be in memory. The views 
 are accessed via CartesianDataBlockIODescriptorIterator.
 */
@@ -52,7 +52,7 @@ public:
   MPI_Datatype GetFileView(int i) const { return this->FileViews[i]; }
 
   /**
-  Get the extent ofg the array to hold the data.
+  Get the extent of the array to hold the data.
   */
   const CartesianExtent &GetMemExtent() const { return this->MemExtent; }
 

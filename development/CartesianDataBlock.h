@@ -15,7 +15,7 @@ using std::ostream;
 #include "CartesianExtent.h"
 #include "CartesianBounds.h"
 
-class vtkImageData;
+class vtkDataSet;
 
 /// Data and Meta-data describing data on cartesian grid.
 class CartesianDataBlock
@@ -89,8 +89,8 @@ public:
   /**
   Set and get the data associated with this block.
   */
-  void SetData(vtkImageData *data);
-  vtkImageData *GetData();
+  void SetData(vtkDataSet *data);
+  vtkDataSet *GetData();
 
   /**
   Return the decomp index of the neighboring
@@ -109,7 +109,7 @@ private:
   int Id[4];
   CartesianExtent Extent;
   CartesianBounds Bounds;
-  vtkImageData *Data;
+  vtkDataSet *Data;
 };
 
 ostream &operator<<(ostream &os, CartesianDataBlock &b);

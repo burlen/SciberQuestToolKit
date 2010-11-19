@@ -71,7 +71,7 @@ Copyright 2008 SciberQuest Inc.
   // 1 -- adds integration events
   // 2 -- adds pipeline trace
   // 3 -- adds all integration info
-  #define vtkSQFieldTracerDEBUG 0
+  #define vtkSQFieldTracerDEBUG 1
 #endif
 
 #ifdef vtkSQFieldTracerTIME
@@ -774,7 +774,6 @@ int vtkSQFieldTracer::IntegrateDynamic(
     WorkQueue Q(nCells);
     int nActiveWorkers=nProcs-1;
     int moreWork=1;
-    int workerStartUp=(this->Mode==MODE_POINCARE?nActiveWorkers:0);
     while (nActiveWorkers || moreWork)
       {
       // dispatch any and all pending requests
@@ -809,35 +808,31 @@ int vtkSQFieldTracer::IntegrateDynamic(
            #if vtkSQFieldTracerDEBUG>1
            pCerr() << "Master filled request from " << otherProc << " " << sourceIds << endl;
            #endif
-
-          if (workerStartUp>0)
-            {
-            //--workerStartUp;
-            // commenting prevents master from integrating
-            // which is better during poincare map mode.
-            }
           }
         }
-      while (pendingReq || workerStartUp);
+      while (pendingReq);
 
       // now that all the worker that need work have it. Do a small amount
       // of work while the others are busy.
-      IdBlock sourceIds;
-      moreWork=Q.GetBlock(sourceIds,masterBlockSize);
-      if (moreWork)
+      if (!this->MODE_POINCARE || nProcs==1)
         {
-        #if vtkSQFieldTracerDEBUG>1
-        pCerr() << "Master integrating " << sourceIds << endl;
-        #endif
-        this->IntegrateBlock(
-                &sourceIds,
-                traceData,
-                fieldName,
-                oocr,
-                oocrCache);
+        IdBlock sourceIds;
+        moreWork=Q.GetBlock(sourceIds,masterBlockSize);
+        if (moreWork)
+          {
+          #if vtkSQFieldTracerDEBUG>1
+          pCerr() << "Master integrating " << sourceIds << endl;
+          #endif
+          this->IntegrateBlock(
+                  &sourceIds,
+                  traceData,
+                  fieldName,
+                  oocr,
+                  oocrCache);
 
-        double prog=(double)sourceIds.last()/(double)nCells;
-        this->UpdateProgress(prog);
+          double prog=(double)sourceIds.last()/(double)nCells;
+          this->UpdateProgress(prog);
+          }
         }
       }
     }

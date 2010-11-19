@@ -8,7 +8,7 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "CartesianDataBlock.h"
 
-#include "vtkImageData.h"
+#include "vtkDataSet.h"
 #include "Tuple.hxx"
 
 
@@ -85,7 +85,7 @@ void CartesianDataBlock::SetExtent(int *ext)
 }
 
 //-----------------------------------------------------------------------------
-void CartesianDataBlock::SetData(vtkImageData *data)
+void CartesianDataBlock::SetData(vtkDataSet *data)
 {
   if (this->Data==data) return;
   if (this->Data) this->Data->Delete();
@@ -94,7 +94,7 @@ void CartesianDataBlock::SetData(vtkImageData *data)
 }
 
 //-----------------------------------------------------------------------------
-vtkImageData *CartesianDataBlock::GetData()
+vtkDataSet *CartesianDataBlock::GetData()
 {
   return this->Data;
 }

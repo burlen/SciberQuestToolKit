@@ -24,8 +24,8 @@ class CartesianDataBlockIODescriptor;
 /// Splits a cartesian grid into a set of smaller cartesian grids.
 /**
 Splits a cartesian grid into a set of smaller cartesian grids using
-a set of axis aligned planes. Given a point can locates the sub-grid
-which contains it.
+a set of axis aligned planes. Given a point will locate and return 
+the sub-grid which contains it.
 */
 class CartesianDecomp : public RefCountedPointer
 {

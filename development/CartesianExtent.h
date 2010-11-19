@@ -68,6 +68,11 @@ public:
         const double X0[3],
         const double DX[3],
         double lowerBound[3]) const;
+  void GetLowerBound(
+        const double *X,
+        const double *Y,
+        const double *Z,
+        double lowerBound[3]) const;
 
   /**
   Given the dataset origin (point that coresponds to the index 0,0,0)
@@ -77,6 +82,11 @@ public:
         const double X0[3],
         const double DX[3],
         double upperBound[3]) const;
+  void GetUpperBound(
+        const double *X,
+        const double *Y,
+        const double *Z,
+        double upperBound[3]) const;
 
   /**
   Given the dataset origin (point that coresponds to the index 0,0,0)
@@ -85,6 +95,11 @@ public:
   void GetBounds(
         const double X0[3],
         const double DX[3],
+        double bounds[6]) const;
+  void GetBounds(
+        const double *X,
+        const double *Y,
+        const double *Z,
         double bounds[6]) const;
   /// \@}
 
@@ -253,7 +268,6 @@ void CartesianExtent::GetData(int data[6]) const
   data[5]=this->Data[5];
 }
 
-
 //-----------------------------------------------------------------------------
 inline
 void CartesianExtent::GetLowerBound(
@@ -264,6 +278,19 @@ void CartesianExtent::GetLowerBound(
   lowerBound[0]=X0[0]+this->Data[0]*DX[0];
   lowerBound[1]=X0[1]+this->Data[2]*DX[1];
   lowerBound[2]=X0[2]+this->Data[4]*DX[2];
+}
+
+//-----------------------------------------------------------------------------
+inline
+void CartesianExtent::GetLowerBound(
+      const double *X,
+      const double *Y,
+      const double *Z,
+      double lowerBound[3]) const
+{
+  lowerBound[0]=X[this->Data[0]];
+  lowerBound[1]=Y[this->Data[2]];
+  lowerBound[2]=Z[this->Data[4]];
 }
 
 //-----------------------------------------------------------------------------
@@ -282,6 +309,19 @@ void CartesianExtent::GetUpperBound(
   upperBound[0]=extX0[0]+nCells[0]*DX[0];
   upperBound[1]=extX0[1]+nCells[1]*DX[1];
   upperBound[2]=extX0[2]+nCells[2]*DX[2];
+}
+
+//-----------------------------------------------------------------------------
+inline
+void CartesianExtent::GetUpperBound(
+      const double *X,
+      const double *Y,
+      const double *Z,
+      double upperBound[3]) const
+{
+  upperBound[0]=X[this->Data[1]+1];
+  upperBound[1]=Y[this->Data[3]+1];
+  upperBound[2]=Z[this->Data[5]+1];
 }
 
 //-----------------------------------------------------------------------------
@@ -305,6 +345,22 @@ void CartesianExtent::GetBounds(
   bounds[5]=extX0[2]+nCells[2]*DX[2];
 }
 
+//-----------------------------------------------------------------------------
+inline
+void CartesianExtent::GetBounds(
+      const double *X,
+      const double *Y,
+      const double *Z,
+      double bounds[6]) const
+{
+
+  bounds[0]=X[this->Data[0]];
+  bounds[1]=X[this->Data[1]+1];
+  bounds[2]=Y[this->Data[2]];
+  bounds[3]=Y[this->Data[3]+1];
+  bounds[4]=Z[this->Data[4]];
+  bounds[5]=Z[this->Data[5]+1];
+}
 
 //-----------------------------------------------------------------------------
 inline

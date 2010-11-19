@@ -194,7 +194,8 @@ vtkDataSet *vtkSQOOCBOVReader::ReadNeighborhood(
 
 
   // determine if the data associated with block is cached.
-  vtkImageData *data=block->GetData();
+  // TODO this has to change for rectilinear grids
+  vtkImageData *data=dynamic_cast<vtkImageData*>(block->GetData());
   if (data)
     {
     #if vtkSQOOCBOVReaderDEBUG>1
