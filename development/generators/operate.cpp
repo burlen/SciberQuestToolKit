@@ -1,16 +1,26 @@
 #include <iostream>
 #include <string>
+#include <cstring>
+#include <cstdlib>
 using namespace std;
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
+// #include <stdio.h>
+// #include <string.h>
 #include <errno.h>
 
 int main(int argc, char **argv)
 {
+  if (argc!=7)
+    {
+    cerr 
+      << "usage:" << endl
+      << "  " << argv[0] << " /path/to/f /path/to/g /path/to/h nx ny nz" << endl
+      << endl;
+    return 1;
+    }
 
   int i=0;
   char *fnf=argv[++i];
@@ -57,12 +67,12 @@ int main(int argc, char **argv)
 
   const int mode=S_IRUSR|S_IWUSR|S_IRGRP;
   const int flags=O_WRONLY|O_CREAT|O_TRUNC;
-  int fdh=open(fn.str().c_str(),flags,mode);
+  int fdh=open(fnh,flags,mode);
   if (fdh<0)
     {
     string estr=strerror(errno);
     cerr
-      << "Error: Failed to open " << fng << "." << endl
+      << "Error: Failed to open " << fnh << "." << endl
       << estr << endl;
     return 1;
     }
