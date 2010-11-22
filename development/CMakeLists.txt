@@ -24,7 +24,7 @@ endif("${PROJECT_SOURCE_DIR}"  STREQUAL "${PROJECT_BINARY_DIR}")
 include(ParaViewConfig.cmake)
 include(EigenConfig.cmake)
 include(MPICHConfig.cmake)
-include(StateFileConfig.cmake)
+# include(StateFileConfig.cmake)
 
 # Server manager wrapped sources.
 set(SM_SOURCES
@@ -103,95 +103,96 @@ if (WIN32)
   set(_SOURCES ${_SOURCES} win_windirent.cxx)
 endif (WIN32)
 
-if (NOT WIN32)
-  # process monitor currently has some unix only features
+set(BUILD_SVTK_PROCESS_MONITOR OFF CACHE BOOL "Build the process monitor.")
+if (BUILD_SVTK_PROCESS_MONITOR)
   message(STATUS "Building process monitor.")
   set(SM_SOURCES ${SM_SOURCES} vtkSQProcessMonitor.cxx)
-endif (NOT WIN32)
+endif (BUILD_SVTK_PROCESS_MONITOR)
 
 
 if(PARAVIEW_BUILD_QT_GUI)
-message(STATUS "Including custom panels.")
-set(_IFACES)
-set(_IFACE_SRCS)
-# Qt custom panels
-QT4_WRAP_CPP(MOC_SRCS pqSQHemisphereSource.h)
-QT4_WRAP_UI(UI_SRCS pqSQHemisphereSourceForm.ui)
-ADD_PARAVIEW_OBJECT_PANEL(
-  IFACES IFACE_SRCS
-  CLASS_NAME pqSQHemisphereSource
-  XML_NAME vtkSQHemisphereSource
-  XML_GROUP sources)
-set(_IFACES ${_IFACES} ${IFACES})
-set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
-
-QT4_WRAP_CPP(MOC_SRCS pqSQPlaneSource.h)
-QT4_WRAP_UI(UI_SRCS pqSQPlaneSourceForm.ui)
-ADD_PARAVIEW_OBJECT_PANEL(
-  IFACES IFACE_SRCS
-  CLASS_NAME pqSQPlaneSource
-  XML_NAME vtkSQPlaneSource
-  XML_GROUP sources)
-set(_IFACES ${_IFACES} ${IFACES})
-set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
-
-QT4_WRAP_CPP(MOC_SRCS pqSQBOVMetaReader.h)
-ADD_PARAVIEW_OBJECT_PANEL(
-  IFACES IFACE_SRCS
-  CLASS_NAME pqSQBOVMetaReader
-  XML_NAME vtkSQBOVMetaReader
-  XML_GROUP sources)
-set(_IFACES ${_IFACES} ${IFACES})
-set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
-
-QT4_WRAP_CPP(MOC_SRCS pqSQFieldTracer.h)
-ADD_PARAVIEW_OBJECT_PANEL(
-  IFACES IFACE_SRCS
-  CLASS_NAME pqSQFieldTracer
-  XML_NAME vtkSQFieldTracer vtkSQFieldTracerRK45 vtkSQFieldTopologyMapper
-  XML_GROUP filters)
-set(_IFACES ${_IFACES} ${IFACES})
-set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
-
-QT4_WRAP_CPP(MOC_SRCS pqSQVolumeSource.h)
-QT4_WRAP_UI(UI_SRCS pqSQVolumeSourceForm.ui)
-ADD_PARAVIEW_OBJECT_PANEL(
-  IFACES IFACE_SRCS
-  CLASS_NAME pqSQVolumeSource
-  XML_NAME vtkSQVolumeSource
-  XML_GROUP sources)
-set(_IFACES ${_IFACES} ${IFACES})
-set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
-
-if (NOT WIN32)
-  message(STATUS "Building process monitor ui.")
-  QT4_WRAP_CPP(MOC_SRCS pqSQProcessMonitor.h)
-  QT4_WRAP_UI(UI_SRCS pqSQProcessMonitorForm.ui)
+  message(STATUS "Including custom panels.")
+  set(_IFACES)
+  set(_IFACE_SRCS)
+  # Qt custom panels
+  QT4_WRAP_CPP(MOC_SRCS pqSQHemisphereSource.h)
+  QT4_WRAP_UI(UI_SRCS pqSQHemisphereSourceForm.ui)
   ADD_PARAVIEW_OBJECT_PANEL(
     IFACES IFACE_SRCS
-    CLASS_NAME pqSQProcessMonitor
-    XML_NAME vtkSQProcessMonitor
+    CLASS_NAME pqSQHemisphereSource
+    XML_NAME vtkSQHemisphereSource
     XML_GROUP sources)
   set(_IFACES ${_IFACES} ${IFACES})
   set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
-endif (NOT WIN32)
 
-set (_SOURCES
-  ${_SOURCES}
-  ${MOC_SRCS}
-  ${UI_SRCS}
-  ${_IFACE_SRCS}
-  pqSQBOVMetaReader.cxx
-  pqSQFieldTracer.cxx
-  pqSQHemisphereSource.cxx
-  pqSQPlaneSource.cxx
-  pqSQVolumeSource.cxx
-  )
+  QT4_WRAP_CPP(MOC_SRCS pqSQPlaneSource.h)
+  QT4_WRAP_UI(UI_SRCS pqSQPlaneSourceForm.ui)
+  ADD_PARAVIEW_OBJECT_PANEL(
+    IFACES IFACE_SRCS
+    CLASS_NAME pqSQPlaneSource
+    XML_NAME vtkSQPlaneSource
+    XML_GROUP sources)
+  set(_IFACES ${_IFACES} ${IFACES})
+  set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
-if (NOT WIN32)
-  # process monitor currently has some unix only features
-  set (_SOURCES ${_SOURCES} pqSQProcessMonitor.cxx)
-endif (NOT WIN32)
+  QT4_WRAP_CPP(MOC_SRCS pqSQBOVMetaReader.h)
+  ADD_PARAVIEW_OBJECT_PANEL(
+    IFACES IFACE_SRCS
+    CLASS_NAME pqSQBOVMetaReader
+    XML_NAME vtkSQBOVMetaReader
+    XML_GROUP sources)
+  set(_IFACES ${_IFACES} ${IFACES})
+  set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+
+  QT4_WRAP_CPP(MOC_SRCS pqSQFieldTracer.h)
+  ADD_PARAVIEW_OBJECT_PANEL(
+    IFACES IFACE_SRCS
+    CLASS_NAME pqSQFieldTracer
+    XML_NAME vtkSQFieldTracer vtkSQFieldTracerRK45 vtkSQFieldTopologyMapper
+    XML_GROUP filters)
+  set(_IFACES ${_IFACES} ${IFACES})
+  set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+
+  QT4_WRAP_CPP(MOC_SRCS pqSQVolumeSource.h)
+  QT4_WRAP_UI(UI_SRCS pqSQVolumeSourceForm.ui)
+  ADD_PARAVIEW_OBJECT_PANEL(
+    IFACES IFACE_SRCS
+    CLASS_NAME pqSQVolumeSource
+    XML_NAME vtkSQVolumeSource
+    XML_GROUP sources)
+  set(_IFACES ${_IFACES} ${IFACES})
+  set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+
+
+  set(BUILD_SVTK_PROCESS_MONITOR OFF CACHE BOOL "Build the process monitor.")
+  if (BUILD_SVTK_PROCESS_MONITOR)
+    message(STATUS "Building process monitor ui.")
+    QT4_WRAP_CPP(MOC_SRCS pqSQProcessMonitor.h)
+    QT4_WRAP_UI(UI_SRCS pqSQProcessMonitorForm.ui)
+    ADD_PARAVIEW_OBJECT_PANEL(
+      IFACES IFACE_SRCS
+      CLASS_NAME pqSQProcessMonitor
+      XML_NAME vtkSQProcessMonitor
+      XML_GROUP sources)
+    set(_IFACES ${_IFACES} ${IFACES})
+    set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+  endif (BUILD_SVTK_PROCESS_MONITOR)
+
+  set (_SOURCES
+    ${_SOURCES}
+    ${MOC_SRCS}
+    ${UI_SRCS}
+    ${_IFACE_SRCS}
+    pqSQBOVMetaReader.cxx
+    pqSQFieldTracer.cxx
+    pqSQHemisphereSource.cxx
+    pqSQPlaneSource.cxx
+    pqSQVolumeSource.cxx
+    )
+
+  if (BUILD_SVTK_PROCESS_MONITOR)
+    set (_SOURCES ${_SOURCES} pqSQProcessMonitor.cxx SshStream.cxx)
+  endif (BUILD_SVTK_PROCESS_MONITOR)
 
 endif (PARAVIEW_BUILD_QT_GUI)
 
@@ -207,11 +208,14 @@ add_paraview_plugin(
   SERVER_MANAGER_SOURCES ${SM_SOURCES}
   SERVER_MANAGER_XML SciVisToolKitServerManager.xml
   GUI_RESOURCE_FILES ${CLIENT_XML}
-  SOURCES ${_SOURCES} )
+  SOURCES ${_SOURCES})
+
+if (BUILD_SVTK_PROCESS_MONITOR)
+  target_link_libraries(SciVisToolKit ssh)
+endif (BUILD_SVTK_PROCESS_MONITOR)
 
 install(TARGETS SciVisToolKit DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-#target_link_libraries(SciVisToolKit)
 
 # command line utilities
 if (UNIX)

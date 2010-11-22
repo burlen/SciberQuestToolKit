@@ -71,7 +71,7 @@ Copyright 2008 SciberQuest Inc.
   // 1 -- adds integration events
   // 2 -- adds pipeline trace
   // 3 -- adds all integration info
-  #define vtkSQFieldTracerDEBUG 1
+  #define vtkSQFieldTracerDEBUG 0
 #endif
 
 #ifdef vtkSQFieldTracerTIME
@@ -1065,11 +1065,11 @@ void vtkSQFieldTracer::IntegrateOne(
       // 3=unexepcted val. Have to handle out of bounds because
       // in some cases p1 is not updated which leads to incorrect
       // classification as a field null.
-      // TODO should the be ignored for poincare map?
+      // TODO should this be ignored for poincare map?
       if (iErr==1)
         {
         #if vtkSQFieldTracerDEBUG>0
-        pCerr() << "Terminated: Integration outside problem domain." << endl;
+        pCerr() << "Terminated: Integrator reports outside problem domain." << endl;
         #endif
         line->SetTerminator(i,tcon->GetProblemDomainSurfaceId());
         if (this->Mode==MODE_STREAM) line->PushPoint(i,p1);
