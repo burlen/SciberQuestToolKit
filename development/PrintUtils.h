@@ -26,6 +26,7 @@ ostream &operator<<(ostream &os, const map<string,int> &m);
 ostream &operator<<(ostream &os, const vector<vtkAMRBox> &v);
 ostream &operator<<(ostream &os, const vector<string> &v);
 ostream &operator<<(ostream &os, const vector<double> &v);
+ostream &operator<<(ostream &os, const vector<float> &v);
 ostream &operator<<(ostream &os, const vector<int> &v);
 
 //ETX

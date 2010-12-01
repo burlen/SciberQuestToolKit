@@ -19,7 +19,7 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __vtkSQBOVReader_h
 #define __vtkSQBOVReader_h
 
-#include "vtkImageAlgorithm.h"
+#include "vtkDataSetAlgorithm.h"
 
 // define this for cerr status.
 // #define vtkSQBOVReaderDEBUG
@@ -33,11 +33,11 @@ class vtkInformationIntegerKey;
 class vtkInformationIntegerVectorKey;
 //ETX
 
-class VTK_EXPORT vtkSQBOVReader : public vtkImageAlgorithm
+class VTK_EXPORT vtkSQBOVReader : public vtkDataSetAlgorithm
 {
 public:
   static vtkSQBOVReader *New();
-  vtkTypeRevisionMacro(vtkSQBOVReader,vtkImageAlgorithm);
+  vtkTypeRevisionMacro(vtkSQBOVReader,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
@@ -166,7 +166,7 @@ public:
 
 protected:
   /// Pipeline internals.
-  // int RequestDataObject(vtkInformation*,vtkInformationVector**,vtkInformationVector*);
+  int RequestDataObject(vtkInformation*,vtkInformationVector**,vtkInformationVector*);
   int RequestData(vtkInformation*,vtkInformationVector**,vtkInformationVector*);
   int RequestInformation(vtkInformation*,vtkInformationVector**,vtkInformationVector*);
 

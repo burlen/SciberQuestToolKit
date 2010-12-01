@@ -1024,12 +1024,15 @@ void vtkSQFieldTracer::IntegrateOne(
         maxStep=this->MaxStep;
         if (stepSize<=minStep)
           {
+          interp->FunctionValues(p0,V0);
           vtkErrorMacro(
             << "Error bound of "
             << this->MaxError << " could not be met with "
             << "minimum step size of " << this->MinStep << ". "
             << "Either raise the error bound or reduce the "
-            << "minimum step size.");
+            << "minimum step size."
+            << "x=" << Tuple<double>(p0,3) << ", "
+            << "v=" << Tuple<double>(V0,3));
           return;
           }
         // clip step to max step size.

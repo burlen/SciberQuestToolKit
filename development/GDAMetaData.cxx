@@ -14,6 +14,9 @@ using std::endl;
 
 #include <sstream>
 using std::istringstream;
+using std::ostringstream;
+
+#include "vtkInformation.h"
 
 #include "PrintUtils.h"
 #include "FsUtils.h"
@@ -49,7 +52,6 @@ size_t ParseValue(string &in,size_t at, string key, T &value)
   return p;
 }
 
-
 //-----------------------------------------------------------------------------
 GDAMetaData::GDAMetaData()
 {
@@ -57,6 +59,24 @@ GDAMetaData::GDAMetaData()
   this->DipoleCenter[0]=
   this->DipoleCenter[1]=
   this->DipoleCenter[2]=-555.5;
+}
+
+//-----------------------------------------------------------------------------
+GDAMetaData &GDAMetaData::operator=(const GDAMetaData &other)
+{
+  if (&other==this)
+    {
+    return *this;
+    }
+
+  this->BOVMetaData::operator=(other);
+
+  this->HasDipoleCenter=other.HasDipoleCenter;
+  this->DipoleCenter[0]=other.DipoleCenter[0];
+  this->DipoleCenter[1]=other.DipoleCenter[1];
+  this->DipoleCenter[2]=other.DipoleCenter[2];
+
+  return *this;
 }
 
 //-----------------------------------------------------------------------------
@@ -71,6 +91,11 @@ int GDAMetaData::OpenDataset(const char *fileName)
     sqErrorMacro(cerr,"Could not open " << fileName << ".");
     return 0;
     }
+
+  // We expect the bricks to be in the same directory as the metadata file.
+  this->SetPathToBricks(StripFileNameFromPath(fileName).c_str());
+  const char *path=this->GetPathToBricks();
+
   // Read
   metaFile.seekg(0,ios::end);
   size_t metaFileLen=metaFile.tellg();
@@ -80,10 +105,12 @@ int GDAMetaData::OpenDataset(const char *fileName)
   metaFile.read(metaDataBuffer,metaFileLen);
   string metaData(metaDataBuffer);
   free(metaDataBuffer); // TODO use string's memory directly
+
   // Parse
   ToLower(metaData);
-  // We are expecting are nx,ny, and nz. We'll assume the rest of the
-  // details based on what we know of the simulation.
+
+  // We are expecting are nx,ny, and nz in the header for all
+  // mesh types.
   int nx,ny,nz;
   if ( ParseValue(metaData,0,"nx=",nx)==string::npos
     || ParseValue(metaData,0,"ny=",ny)==string::npos
@@ -94,31 +121,81 @@ int GDAMetaData::OpenDataset(const char *fileName)
          << " dimensions not found. Expected nx=N, ny=M, nz=P.");
     return 0;
     }
-
   CartesianExtent domain(0,nx-1,0,ny-1,0,nz-1);
   this->SetDomain(domain);
 
-  double x0,y0,z0;
-  if ( ParseValue(metaData,0,"x0=",x0)==string::npos
-    || ParseValue(metaData,0,"y0=",y0)==string::npos
-    || ParseValue(metaData,0,"z0=",z0)==string::npos )
+  if (Present(path,"x.gda")
+    && Present(path,"y.gda")
+    && Present(path,"z.gda"))
     {
-    // if no origin provided assume 0,0,0
-    x0=y0=z0=0.0;
-    }
-  double X0[3]={x0,y0,z0};
-  this->SetOrigin(X0);
+    // mark as stretched mesh
+    this->SetDataSetType("vtkRectilinearGrid");
 
-  double dx,dy,dz;
-  if ( ParseValue(metaData,0,"dx=",dx)==string::npos
-    || ParseValue(metaData,0,"dy=",dy)==string::npos
-    || ParseValue(metaData,0,"dz=",dz)==string::npos )
-    {
-    // if no spacing is provided assume 1,1,1
-    dx=dy=dz=1.0;
+    // read the coordinate arrays here. Even for large grids
+    // this represents a small ammount of data thus it's
+    // probably better to read on proc 0 and distribute over
+    // the network.
+    size_t n[3]={nx+1,ny+1,nz+1};
+    char coordId[]="xyz";
+    ostringstream coordFn;
+
+    for (int q=0; q<3; ++q)
+      {
+      // read coordinate array
+      coordFn.str("");
+      coordFn << path << PATH_SEP << coordId[q] << ".gda";
+
+      SharedArray<float> *coord=this->GetCoordinate(q);
+      coord->Resize(n[q]);
+
+      float *pCoord=coord->GetPointer();
+
+      if (LoadBin(coordFn.str().c_str(),n[q],pCoord)==0)
+        {
+        sqErrorMacro(cerr,
+          << "Error: Failed to read coordinate "
+          << q << " from \"" << coordFn.str() << "\".");
+        return 0;
+        }
+
+      // shift on to the dual grid
+      size_t nc=n[q]-1;
+
+      for (size_t i=0; i<nc; ++i)
+        {
+        pCoord[i]=(pCoord[i]+pCoord[i+1])/2.0;
+        }
+
+      coord->Resize(nc);
+      }
     }
-  double dX[3]={dx,dy,dz};
-  this->SetSpacing(dX);
+  else
+    {
+    // mark as uniform grid
+    this->SetDataSetType("vtkImageData");
+
+    double x0,y0,z0;
+    if ( ParseValue(metaData,0,"x0=",x0)==string::npos
+      || ParseValue(metaData,0,"y0=",y0)==string::npos
+      || ParseValue(metaData,0,"z0=",z0)==string::npos )
+      {
+      // if no origin provided assume 0,0,0
+      x0=y0=z0=0.0;
+      }
+    double X0[3]={x0,y0,z0};
+    this->SetOrigin(X0);
+
+    double dx,dy,dz;
+    if ( ParseValue(metaData,0,"dx=",dx)==string::npos
+      || ParseValue(metaData,0,"dy=",dy)==string::npos
+      || ParseValue(metaData,0,"dz=",dz)==string::npos )
+      {
+      // if no spacing is provided assume 1,1,1
+      dx=dy=dz=1.0;
+      }
+    double dX[3]={dx,dy,dz};
+    this->SetSpacing(dX);
+    }
 
   // TODO
   // the following meta data enhancments are disabled until
@@ -165,11 +242,8 @@ int GDAMetaData::OpenDataset(const char *fileName)
   //     R_MP=16.,
   //     R_obstacle_to_MP=0.57732,
 
-  // We expect the bricks to be in the same directory as the metadata file.
-  this->SetPathToBricks(StripFileNameFromPath(fileName).c_str());
   // scalars ...
   int nArrays=0;
-  const char *path=this->GetPathToBricks();
   if (Represented(path,"den_"))
     {
     this->AddScalar("den");
@@ -281,16 +355,18 @@ int GDAMetaData::OpenDataset(const char *fileName)
   return 1;
 }
 
-// this is removed because we don't currently need to free any reosurces
-// when the file closes. I left it in case at a future time we need it.
-// //-----------------------------------------------------------------------------
-// int GDAMetaData::CloseDataset()
-// {
-//   this->IsOpen=0;
-//   BOVMetaData::CloseDataset();
-//   return 1;
-// }
+//-----------------------------------------------------------------------------
+int GDAMetaData::CloseDataset()
+{
+  BOVMetaData::CloseDataset();
 
+  this->HasDipoleCenter=false;
+  this->DipoleCenter[0]=
+  this->DipoleCenter[1]=
+  this->DipoleCenter[2]=0.0;
+
+  return 1;
+}
 
 //-----------------------------------------------------------------------------
 void GDAMetaData::PushPipelineInformation(vtkInformation *pinfo)
@@ -303,16 +379,6 @@ void GDAMetaData::PushPipelineInformation(vtkInformation *pinfo)
 }
 
 //-----------------------------------------------------------------------------
-GDAMetaData &GDAMetaData::operator=(const GDAMetaData &other)
-{
-  if (&other==this)
-    {
-    return *this;
-    }
-  this->BOVMetaData::operator=(other);
-  return *this;
-}
-
 void GDAMetaData::Print(ostream &os) const
 {
   os << "GDAMetaData:  " << this << endl;

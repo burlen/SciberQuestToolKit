@@ -9,8 +9,9 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkSQBOVReader.h"
 
 #include "vtkObjectFactory.h"
-#include "vtkMultiBlockDataSet.h"
 #include "vtkImageData.h"
+#include "vtkRectilinearGrid.h"
+#include "vtkFloatArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkInformationStringKey.h"
@@ -28,7 +29,8 @@ Copyright 2008 SciberQuest Inc.
 #include "BOVReader.h"
 #include "GDAMetaData.h"
 #include "BOVTimeStepImage.h"
-#include "CartesianDecomp.h"
+#include "ImageDecomp.h"
+#include "RectilinearDecomp.h"
 #include "Tuple.hxx"
 #include "PrintUtils.h"
 #include "SQMacros.h"
@@ -80,7 +82,6 @@ int fequal(double a, double b, double tol)
     }
   return 0;
 }
-
 
 //-----------------------------------------------------------------------------
 vtkSQBOVReader::vtkSQBOVReader()
@@ -490,34 +491,34 @@ const char* vtkSQBOVReader::GetPointArrayName(int idx)
 }
 
 
-// //----------------------------------------------------------------------------
-// int vtkSQBOVReader::RequestDataObject(
-//       vtkInformation* /*req*/,
-//       vtkInformationVector** /*inputVector*/,
-//       vtkInformationVector* outputVector)
-// {
-//   #if defined vtkSQBOVReaderDEBUG
-//   pCerr() << "===============================RequestDataObject" << endl;
-//   #endif
-// 
-//   vtkInformation* info=outputVector->GetInformationObject(0);
-// 
-//   vtkDataObject *dataset=this->Reader->GetDataSet()
-// 
-//   info->Set(vtkDataObject::DATA_TYPE_NAME(),this->Reader->GetDataSetType());
-//   info->Set(vtkDataObject::DATA_OBJECT(),dataset);
-//   info->Set(vtkDataObject::DATA_EXTENT_TYPE(),this->Reader->GetExtentType());
-//   dataset->SetPipelineInformation(info);
-//   dataset->Delete();
-// 
-//   cerr << "datasetType=" << info->Get(vtkDataObject::DATA_TYPE_NAME()) << endl;
-//   cerr << "dataset=" << info->Get(vtkDataObject::DATA_OBJECT()) << endl;
-// 
-// 
-//   // TODO delete data
-// 
-//   return 1;
-// }
+//----------------------------------------------------------------------------
+int vtkSQBOVReader::RequestDataObject(
+      vtkInformation* /*req*/,
+      vtkInformationVector** /*inInfos*/,
+      vtkInformationVector* outInfos)
+{
+  #if defined vtkSQBOVReaderDEBUG
+  pCerr() << "===============================RequestDataObject" << endl;
+  #endif
+
+  vtkInformation* info=outInfos->GetInformationObject(0);
+
+  vtkDataObject *dataset=this->Reader->GetDataSet();
+
+  info->Set(vtkDataObject::DATA_TYPE_NAME(),this->Reader->GetDataSetType());
+  info->Set(vtkDataObject::DATA_EXTENT_TYPE(),VTK_3D_EXTENT);
+  info->Set(vtkDataObject::DATA_OBJECT(),dataset);
+
+  dataset->SetPipelineInformation(info);
+  dataset->Delete();
+
+  #if defined vtkSQBOVReaderDEBUG
+  cerr << "datasetType=" << info->Get(vtkDataObject::DATA_TYPE_NAME()) << endl;
+  cerr << "dataset=" << info->Get(vtkDataObject::DATA_OBJECT()) << endl;
+  #endif
+
+  return 1;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -527,7 +528,7 @@ int vtkSQBOVReader::RequestInformation(
   vtkInformationVector* outInfos)
 {
   #if defined vtkSQBOVReaderDEBUG
-  pCerr() << "===============================RequestInformation" << endl;
+  pCerr() << "===============================RequestInformationImage" << endl;
   #endif
 
   if (!this->Reader->IsOpen())
@@ -537,14 +538,6 @@ int vtkSQBOVReader::RequestInformation(
     }
 
   vtkInformation *info=outInfos->GetInformationObject(0);
-
-  double X0[3];//={0.0,0.0,0.0};
-  this->Reader->GetMetaData()->GetOrigin(X0);
-
-  double dX[3];//={1.0,1.0,1.0};
-  this->Reader->GetMetaData()->GetSpacing(dX);
-
-  int wholeExtent[6]={0,1,0,1,0,1};
 
   // The two modes to run the reader are Meta mode and Actual mode.
   // In meta mode no data is read rather the pipeline is tricked into
@@ -565,33 +558,37 @@ int vtkSQBOVReader::RequestInformation(
     // The point extent given PV by the meta reader will always start from
     // 0 and range to nProcs and 1. This will neccesitate a false origin
     // and spacing as well.
-    wholeExtent[1]=this->WorldSize;
+    int wholeExtent[6]={0,this->WorldSize,0,1,0,1};
+    info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),wholeExtent,6);
 
-    // Save the real extent in our own key.
-    // info->Set(vtkSQOOCReader::WHOLE_EXTENT(),this->Subset,6);
-    // Set the origin and spacing
-    // We save the actuals in our own keys.
-    // info->Set(vtkSQOOCReader::ORIGIN(),X0,3);
-    // info->Set(vtkSQOOCReader::SPACING(),dX,3);
 
-    // Adjust PV's keys for the false subsetting extents.
-    X0[0]=X0[0]+this->Subset[0]*dX[0];
-    X0[1]=X0[1]+this->Subset[2]*dX[1];
-    X0[2]=X0[2]+this->Subset[4]*dX[2];
+    if (this->Reader->DataSetTypeIsImage())
+      {
+      // Adjust PV's keys for the false subsetting extents.
+      double X0[3];
+      this->Reader->GetMetaData()->GetOrigin(X0);
 
-    // Adjust grid spacing for our single cell per process. We are using the dual
-    // grid so we are subtracting 1 to get the number of cells.
-    int nCells[3]={
-      this->Subset[1]-this->Subset[0],
-      this->Subset[3]-this->Subset[2],
-      this->Subset[5]-this->Subset[4]};
-    dX[0]=dX[0]*((double)nCells[0])/((double)this->WorldSize);
-    dX[1]=dX[1]*((double)nCells[1]);
-    dX[2]=dX[2]*((double)nCells[2]);
+      double dX[3];
+      this->Reader->GetMetaData()->GetSpacing(dX);
 
-    // Set the file name so that filter who process the data may read
-    // as neccessary.
-    // info->Set(vtkSQOOCReader::FILE_NAME(),this->FileName);
+      X0[0]=X0[0]+this->Subset[0]*dX[0];
+      X0[1]=X0[1]+this->Subset[2]*dX[1];
+      X0[2]=X0[2]+this->Subset[4]*dX[2];
+
+      // Adjust grid spacing for our single cell per process. We are using the dual
+      // grid so we are subtracting 1 to get the number of cells.
+      int nCells[3]={
+        this->Subset[1]-this->Subset[0],
+        this->Subset[3]-this->Subset[2],
+        this->Subset[5]-this->Subset[4]};
+      dX[0]=dX[0]*((double)nCells[0])/((double)this->WorldSize);
+      dX[1]=dX[1]*((double)nCells[1]);
+      dX[2]=dX[2]*((double)nCells[2]);
+
+      // Pass values into the pipeline.
+      info->Set(vtkDataObject::ORIGIN(),X0,3);
+      info->Set(vtkDataObject::SPACING(),dX,3);
+      }
     }
   else
     {
@@ -600,16 +597,21 @@ int vtkSQBOVReader::RequestInformation(
     // dimensions and whole extent key reflect the global index space
     // of the dataset, the data set extent will have the decomposed 
     // index space.
+    int wholeExtent[6];
     this->GetSubset(wholeExtent);
-    //
-    this->Reader->GetMetaData()->GetOrigin(X0);
-    this->Reader->GetMetaData()->GetSpacing(dX);
-    }
+    info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),wholeExtent,6);
 
-  // Pass values into the pipeline.
-  info->Set(vtkDataObject::ORIGIN(),X0,3);
-  info->Set(vtkDataObject::SPACING(),dX,3);
-  info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),wholeExtent,6);
+    if (this->Reader->DataSetTypeIsImage())
+      {
+      double X0[3];
+      this->Reader->GetMetaData()->GetOrigin(X0);
+      info->Set(vtkDataObject::ORIGIN(),X0,3);
+
+      double dX[3];
+      this->Reader->GetMetaData()->GetSpacing(dX);
+      info->Set(vtkDataObject::SPACING(),dX,3);
+      }
+    }
 
   // Determine which time steps are available.
   int nSteps=this->Reader->GetMetaData()->GetNumberOfTimeSteps();
@@ -736,9 +738,9 @@ int vtkSQBOVReader::RequestData(
   vtkInformation *info=outInfos->GetInformationObject(0);
 
   // Get the output dataset.
-  vtkImageData *idds
-    = dynamic_cast<vtkImageData *>(info->Get(vtkDataObject::DATA_OBJECT()));
-  if (idds==NULL)
+  vtkDataSet *output
+    = dynamic_cast<vtkDataSet *>(info->Get(vtkDataObject::DATA_OBJECT()));
+  if (output==NULL)
     {
     vtkErrorMacro("Filter data has not been configured correctly.");
     return 1;
@@ -770,121 +772,256 @@ int vtkSQBOVReader::RequestData(
     #endif
     }
 
-  // The two modes to run the reader are Meta mode and Actual mode.
-  // In meta mode no data is read rather the pipeline is tricked into
-  // ploting a bounding box matching the data size. Keys are provided
-  // so that actual read may take place downstream. In actual mode
-  // the reader reads the requested arrays.
 
+  BOVMetaData *md=this->Reader->GetMetaData();
 
-  // index space selected in the UI.
-  CartesianExtent subset=this->Reader->GetMetaData()->GetSubset();
-
-  // Set the number of points in the output depending on the
-  // reader mode.
-  int nPoints[3]={2,2,2};
-  if (this->MetaRead)
+  // The subset is the what the user selected in the GUI. This is what will
+  // be loaded in aggregate across the entire run.
+  CartesianExtent subset=md->GetSubset();
+  #if defined vtkSQBOVReaderDEBUG
+  if (this->WorldRank==0)
     {
-    // A meta read makes a grid consisting of nProcs cells along
-    // the x-axis minimizing the memory footprint while allowing domain
-    // decomposition to take place.
-    nPoints[0]=this->WorldSize+1;
-    nPoints[1]=2;
-    nPoints[2]=2;
+    pCerr()
+      << "subset=" << subset << " size=" subset.Size()*sizeof(float) << endl;
     }
-  else
+  #endif
+  // shift to the dual grid
+  subset.NodeToCell();
+  // we must always have a single cell in all directions.
+  if ((subset[1]<subset[0])||(subset[3]<subset[2]))
     {
-    // A read pulls data from file on a cell centered grid
-    // into memory on a node centered grid. The memory grid
-    // is the dual grid of the file grid. In other words
-    // file->nCells==memory->nPoints
-    subset.Size(nPoints);
+    vtkErrorMacro("Invalid subset requested: " << subset << ".");
+    return 1;
     }
-
-  // now that we have the number of points, convert the
-  // subset extent from a node based extent to a cell based
-  // one.
-  subset.NodeToCell(); // dual grid
+  // this is a hack to accomodate 2D grids.
   if (subset[5]<subset[4])
     {
     subset[5]=subset[4];
     }
 
-  // Get the values for origin and spacing from our previous computation
-  // in RequestInformation. For a meta-read these are pseudo values.
-  double dX[3];
-  info->Get(vtkDataObject::SPACING(),dX);
-  double X0[3];
-  info->Get(vtkDataObject::ORIGIN(),X0);
+  // ParaView sends the update extent to inform us of the domain decomposition.
+  // The decomp is what will be loaded by this process. 
+  CartesianExtent decomp;
+  //int decomp[6];
+  info->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),decomp.GetData());
 
-  // The extent is expetcted to be set to what is actually in
-  // memory on this process. Paraview tells us what this is.
-  int decomp[6];
-  info->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),decomp);
-
-  // Configure the grid in preparation for the read.
-  idds->SetDimensions(nPoints);
-  idds->SetOrigin(X0);
-  idds->SetSpacing(dX);
-  idds->SetExtent(decomp);
+  // Set the region to be read.
+  md->SetDecomp(decomp);
 
   #if defined vtkSQBOVReaderDEBUG
-  pCerr()
-    << "nBytes="
-    << this->Reader->GetMetaData()->GetSubset().Size()*sizeof(float) << " "
-    << "decomp=" << Tuple<int>(decomp,6)
-    << endl;
+  pCerr() << "decomp=" << decomp << endl;
   #endif
 
   // Construct MPI File hints for the reader.
   this->SetMPIFileHints();
 
-  // Read the step.
-  int ok;
+  // The two modes to run the reader are Meta mode and Actual mode.
+  // In meta mode no data is read here rather the ParaView is tricked into
+  // ploting a bounding box matching the data size. Keys are provided
+  // so that actual read may take place downstream. In actual mode
+  // the reader reads the requested arrays here and places them in the
+  // output as usual.
+
   if (this->MetaRead)
     {
-    // Meta read.
-    ok=this->Reader->ReadMetaTimeStep(stepId,idds,this);
-    if (!ok)
+    /// Meta Mode
+
+    // pass the boundary condition flags
+    info->Set(vtkSQOOCReader::PERIODIC_BC(),this->PeriodicBC,3);
+
+    CartesianDecomp *ddecomp;
+
+    // The file extents describe the data as it is on the disk.
+    CartesianExtent fileExt=md->GetDomain();
+    // shift to dual grid
+    fileExt.NodeToCell();
+    // we must always have a single cell in all directions.
+    if ((fileExt[1]<fileExt[0])||(fileExt[3]<fileExt[2]))
       {
-      vtkErrorMacro(
-        << "Read failed." << endl
-        << *this->Reader->GetMetaData());
-      idds->Initialize();
+      vtkErrorMacro("Invalid fileExt requested: " << fileExt << ".");
       return 1;
       }
-
-    // Make a domain decomposition of the requested subset.
-    double *subsetX0=this->Reader->GetMetaData()->GetOrigin();
-    double *subsetDX=this->Reader->GetMetaData()->GetSpacing();
-
-    CartesianExtent fileExt=this->Reader->GetMetaData()->GetDomain();
-    fileExt.NodeToCell(); // dual grid
-
+    // this is a hack to accomodate 2D grids.
     if (fileExt[5]<fileExt[4])
       {
       fileExt[5]=fileExt[4];
       }
 
-    CartesianDecomp *ddecomp=CartesianDecomp::New();
-    ddecomp->SetFileExtent(fileExt);
-    ddecomp->SetExtent(subset);
-    ddecomp->SetOrigin(subsetX0);
-    ddecomp->SetSpacing(subsetDX);
-    ddecomp->ComputeBounds();
-    ddecomp->SetDecompDims(this->DecompDims);
-    ddecomp->SetPeriodicBC(this->PeriodicBC);
-    ddecomp->SetNumberOfGhostCells(this->NGhosts);
-    ok=ddecomp->DecomposeDomain();
+    // This reader can read vtkImageData, vtkRectilinearGrid, and vtkStructuredData
+
+    if (this->Reader->DataSetTypeIsImage())
+      {
+      /// Image data
+
+      // Pull origin and spacing we stored during RequestInformation pass.
+      double dX[3];
+      info->Get(vtkDataObject::SPACING(),dX);
+      double X0[3];
+      info->Get(vtkDataObject::ORIGIN(),X0);
+
+      // dimensions of the dummy output
+      int nPoints[3];
+      nPoints[0]=this->WorldSize+1;
+      nPoints[1]=2;
+      nPoints[2]=2;
+
+      // Configure the output.
+      vtkImageData *idds=dynamic_cast<vtkImageData*>(output);
+      idds->SetDimensions(nPoints);
+      idds->SetOrigin(X0);
+      idds->SetSpacing(dX);
+      idds->SetExtent(decomp.GetData());
+
+      // Store the bounds of the requested subset.
+      double subsetBounds[6];
+      subsetBounds[0]=X0[0];
+      subsetBounds[1]=X0[0]+dX[0]*((double)this->WorldSize);
+      subsetBounds[2]=X0[1];
+      subsetBounds[3]=X0[1]+dX[1];
+      subsetBounds[4]=X0[2];
+      subsetBounds[5]=X0[2]+dX[2];
+      info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
+
+      // Setup the user defined domain decomposition over the subset. This
+      // decomposition is used to fine tune the I/O performance of out-of-core
+      // filters.
+      double *subsetX0=md->GetOrigin();
+      double *subsetDX=md->GetSpacing();
+
+      ImageDecomp *iddecomp=ImageDecomp::New();
+      iddecomp->SetFileExtent(fileExt);
+      iddecomp->SetExtent(subset);
+      iddecomp->SetOrigin(subsetX0);
+      iddecomp->SetSpacing(subsetDX);
+      iddecomp->ComputeBounds();
+      iddecomp->SetDecompDims(this->DecompDims);
+      iddecomp->SetPeriodicBC(this->PeriodicBC);
+      iddecomp->SetNumberOfGhostCells(this->NGhosts);
+      int ok=iddecomp->DecomposeDomain();
+      if (!ok)
+        {
+        vtkErrorMacro("Failed to decompose domain.");
+        output->Initialize();
+        return 1;
+        }
+      ddecomp=iddecomp;
+      }
+    else
+    if (this->Reader->DataSetTypeIsRectilinear())
+      {
+      /// Rectilinear grid
+      // Store the bounds of the requested subset.
+      double subsetBounds[6]={
+        md->GetCoordinate(0)->GetPointer()[subset[0]],
+        md->GetCoordinate(0)->GetPointer()[subset[1]+1],
+        md->GetCoordinate(1)->GetPointer()[subset[2]],
+        md->GetCoordinate(1)->GetPointer()[subset[3]+1],
+        md->GetCoordinate(2)->GetPointer()[subset[4]],
+        md->GetCoordinate(2)->GetPointer()[subset[5]+1]};
+      info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
+
+      // Store the bounds of the requested subset.
+      int nCells[3];
+      subset.Size(nCells);
+
+      int nLocal=nCells[0]/this->WorldSize;
+      int nLarge=nCells[0]%this->WorldSize;
+
+      int ilo;
+      int ihi;
+
+      if (this->WorldRank<nLarge)
+        {
+        ilo=subset[0]+this->WorldRank*(nLocal+1);
+        ihi=ilo+nLocal+1;
+        }
+      else
+        {
+        ilo=subset[0]+this->WorldRank*nLocal+nLarge;
+        ihi=ilo+nLocal;
+        }
+
+      // Configure the output.
+      vtkRectilinearGrid *rgds=dynamic_cast<vtkRectilinearGrid*>(output);
+
+      vtkFloatArray *fa;
+      float *pFa;
+      fa=vtkFloatArray::New();
+      fa->SetNumberOfTuples(2);
+      pFa=fa->GetPointer(0);
+      pFa[0]=md->GetCoordinate(0)->GetPointer()[ilo];
+      pFa[1]=md->GetCoordinate(0)->GetPointer()[ihi];
+      rgds->SetXCoordinates(fa);
+      fa->Delete();
+
+      fa=vtkFloatArray::New();
+      fa->SetNumberOfTuples(2);
+      pFa=fa->GetPointer(0);
+      pFa[0]=subsetBounds[2];
+      pFa[1]=subsetBounds[3];
+      rgds->SetYCoordinates(fa);
+      fa->Delete();
+
+      fa=vtkFloatArray::New();
+      fa->SetNumberOfTuples(2);
+      pFa=fa->GetPointer(0);
+      pFa[0]=subsetBounds[4];
+      pFa[1]=subsetBounds[5];
+      rgds->SetZCoordinates(fa);
+      fa->Delete();
+
+      rgds->SetExtent(decomp.GetData());
+
+      // Setup the user defined domain decomposition over the subset. This
+      // decomposition is used to fine tune the I/O performance of out-of-core
+      // filters.
+      RectilinearDecomp *rddecomp=RectilinearDecomp::New();
+      rddecomp->SetFileExtent(fileExt);
+      rddecomp->SetExtent(subset);
+      rddecomp->SetDecompDims(this->DecompDims);
+      rddecomp->SetPeriodicBC(this->PeriodicBC);
+      rddecomp->SetNumberOfGhostCells(this->NGhosts);
+      rddecomp->SetCoordinate(0,md->GetCoordinate(0));
+      rddecomp->SetCoordinate(1,md->GetCoordinate(1));
+      rddecomp->SetCoordinate(2,md->GetCoordinate(2));
+      int ok=rddecomp->DecomposeDomain();
+      if (!ok)
+        {
+        vtkErrorMacro("Failed to decompose domain.");
+        output->Initialize();
+        return 1;
+        }
+      ddecomp=rddecomp;
+      }
+    else
+    if (this->Reader->DataSetTypeIsStructured())
+      {
+      /// Structured data
+      vtkErrorMacro("vtkStructuredData is not implemented yet.");
+      return 1;
+      }
+    else
+      {
+      /// unrecognized dataset type
+      vtkErrorMacro(
+        << "Error: invalid dataset type \""
+        << md->GetDataSetType() << "\".");
+      }
+
+    // Pseduo read puts place holders for the selected arrays into
+    // the output so they can be selected in downstream filters' GUIs.
+    int ok;
+    ok=this->Reader->ReadMetaTimeStep(stepId,output,this);
     if (!ok)
       {
-      vtkErrorMacro("Failed to decompose domain.");
-      idds->Initialize();
+      vtkErrorMacro(
+        << "Read failed." << endl << *md);
+      output->Initialize();
       return 1;
       }
 
-    // Pass the reader into the pipeline, actual read takes
-    // place later intiated by downstream filter.
+    // Put a reader into the pipeline, downstream filters can
+    // the read on demand.
     vtkSQOOCBOVReader *OOCReader=vtkSQOOCBOVReader::New();
     OOCReader->SetReader(this->Reader);
     OOCReader->SetTimeIndex(stepId);
@@ -895,49 +1032,108 @@ int vtkSQBOVReader::RequestData(
     info->Set(vtkSQOOCReader::READER(),OOCReader);
     OOCReader->Delete();
     ddecomp->Delete();
-
-    // Pass the bounds of what would have been read on all
-    // processes. The subset describes what the user has
-    // marked for reading.
-    double subsetBounds[6];
-    subsetBounds[0]=X0[0];
-    subsetBounds[1]=X0[0]+dX[0]*((double)this->WorldSize);
-    subsetBounds[2]=X0[1];
-    subsetBounds[3]=X0[1]+dX[1];
-    subsetBounds[4]=X0[2];
-    subsetBounds[5]=X0[2]+dX[2];
-    info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
-
-    // pass the boundary condition flags
-    info->Set(vtkSQOOCReader::PERIODIC_BC(),this->PeriodicBC,3);
     }
   else
     {
-    // Read.
-    this->Reader->GetMetaData()->SetDecomp(decomp);
+    /// Actual Mode
 
+    // A read pulls data from file on a cell centered grid into memory
+    // on a node centered grid. file->nCells==memory->nPoints
+
+    // Set the timestep to be read.
     BOVTimeStepImage *stepImg=this->Reader->OpenTimeStep(stepId);
-    ok=this->Reader->ReadTimeStep(stepImg,idds,this);
+
+    if (this->Reader->DataSetTypeIsImage())
+      {
+      // read onto a uniform grid
+
+      // Pull origin and spacing we stored during RequestInformation pass.
+      double dX[3];
+      info->Get(vtkDataObject::SPACING(),dX);
+      double X0[3];
+      info->Get(vtkDataObject::ORIGIN(),X0);
+
+      int nPoints[3];
+      subset.Size(nPoints);
+
+      // Configure the output.
+      vtkImageData *idds=dynamic_cast<vtkImageData*>(output);
+      idds->SetDimensions(nPoints);
+      idds->SetOrigin(X0);
+      idds->SetSpacing(dX);
+      idds->SetExtent(decomp.GetData());
+
+      // Store the bounds of the aggregate dataset.
+      double subsetBounds[6];
+      subset.GetBounds(X0,dX,subsetBounds);
+      info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
+      }
+    else
+    if (this->Reader->DataSetTypeIsRectilinear())
+      {
+      // read onto the stretched grid
+      int nPoints[3];
+      decomp.Size(nPoints);
+
+      // configure the output
+      vtkRectilinearGrid *rgds=dynamic_cast<vtkRectilinearGrid*>(output);
+      rgds->SetExtent(decomp.GetData());
+
+      vtkFloatArray *fa;
+      fa=vtkFloatArray::New();
+      fa->SetArray(md->SubsetCoordinate(0,decomp),nPoints[0],0);
+      rgds->SetXCoordinates(fa);
+      fa->Delete();
+
+      fa=vtkFloatArray::New();
+      fa->SetArray(md->SubsetCoordinate(1,decomp),nPoints[1],0);
+      rgds->SetYCoordinates(fa);
+      fa->Delete();
+
+      fa=vtkFloatArray::New();
+      fa->SetArray(md->SubsetCoordinate(2,decomp),nPoints[2],0);
+      rgds->SetZCoordinates(fa);
+      fa->Delete();
+
+      // Store the bounds of the aggregate dataset.
+      double subsetBounds[6];
+      subset.GetBounds(
+          md->GetCoordinate(0)->GetPointer(),
+          md->GetCoordinate(1)->GetPointer(),
+          md->GetCoordinate(2)->GetPointer(),
+          subsetBounds);
+      info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
+      }
+    else
+    if (this->Reader->DataSetTypeIsStructured())
+      {
+      /// Structured data
+      vtkErrorMacro("vtkStructuredData is not implemented yet.");
+      return 1;
+      }
+    else
+      {
+      // unrecognized dataset type
+      vtkErrorMacro(
+        << "Error: invalid dataset type \""
+        << md->GetDataSetType() << "\".");
+      }
+
+    // Read the selected arrays into the output.
+    int ok=this->Reader->ReadTimeStep(stepImg,output,this);
     this->Reader->CloseTimeStep(stepImg);
     if (!ok)
       {
       vtkErrorMacro(
-        << "Read failed." << endl
-        << *this->Reader->GetMetaData());
-      idds->Initialize();
+        << "Read failed." << endl << *md);
+      output->Initialize();
       return 1;
       }
-
-    // pass the bounds
-    double subsetBounds[6];
-    subset.GetBounds(X0,dX,subsetBounds);
-
-    info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
     }
 
-  // Give implementation classes a chance to push specialized
-  // keys.
-  this->Reader->GetMetaData()->PushPipelineInformation(info);
+  // Give implementation classes a chance to store specialized keys
+  // into the pipeline.
+  md->PushPipelineInformation(info);
 
   #if defined vtkSQBOVReaderDEBUG
   this->Reader->PrintSelf(pCerr());
@@ -980,7 +1176,7 @@ void vtkSQBOVReader::PrintSelf(ostream& os, vtkIndent indent)
 // {
 //   vtkSQBOVReader *dbb
 //     = static_cast<vtkSQBOVReader*>(clientdata);
-// 
+//
 //   dbb->Modified();
 // }
 

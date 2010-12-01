@@ -10,9 +10,11 @@ Copyright 2008 SciberQuest Inc.
 
 #include "vtkAlgorithm.h"
 #include "vtkFloatArray.h"
+#include "vtkDataSet.h"
 #include "vtkImageData.h"
+#include "vtkRectilinearGrid.h"
+#include "vtkStructuredGrid.h"
 #include "vtkPointData.h"
-// #include "vtkMultiBlockDataSet.h"
 // #include "vtkMultiProcessController.h"
 // #include "vtkMPICommunicator.h"
 
@@ -215,9 +217,36 @@ bool BOVReader::IsOpen()
 }
 
 //-----------------------------------------------------------------------------
+vtkDataSet *BOVReader::GetDataSet()
+{
+  if (this->MetaData->DataSetTypeIsImage())
+    {
+    return vtkImageData::New();
+    }
+  else
+  if (this->MetaData->DataSetTypeIsRectilinear())
+    {
+    return vtkRectilinearGrid::New();
+    }
+  else
+  if (this->MetaData->DataSetTypeIsStructured())
+    {
+    return vtkStructuredGrid::New();
+    }
+  else
+    {
+    sqErrorMacro(cerr,
+      << "Unsupported dataset type \""
+      << this->MetaData->GetDataSetType()
+      <<  "\".");
+    return 0;
+    }
+}
+
+//-----------------------------------------------------------------------------
 int BOVReader::ReadScalarArray(
       const BOVScalarImageIterator &it,
-      vtkImageData *grid)
+      vtkDataSet *grid)
 {
   const CartesianExtent &decomp=this->MetaData->GetDecomp();
   const size_t nCells=decomp.Size();
@@ -247,7 +276,7 @@ int BOVReader::ReadScalarArray(
 int BOVReader::ReadScalarArray(
       const BOVScalarImageIterator &fhit,
       const CartesianDataBlockIODescriptor *descr,
-      vtkImageData *grid)
+      vtkDataSet *grid)
 {
   const CartesianExtent &memExt=descr->GetMemExtent();
   size_t nPts=memExt.Size();
@@ -284,7 +313,7 @@ int BOVReader::ReadScalarArray(
 //-----------------------------------------------------------------------------
 int BOVReader::ReadVectorArray(
       const BOVVectorImageIterator &it,
-      vtkImageData *grid)
+      vtkDataSet *grid)
 {
   // Memory requirements:
   // The vtk data is 3*sizeof(component file).
@@ -340,7 +369,7 @@ int BOVReader::ReadVectorArray(
 int BOVReader::ReadVectorArray(
       const BOVVectorImageIterator &fhit,
       const CartesianDataBlockIODescriptor *descr,
-      vtkImageData *grid)
+      vtkDataSet *grid)
 {
   const CartesianExtent &memExt=descr->GetMemExtent();
   size_t nPts=memExt.Size();
@@ -416,7 +445,7 @@ void BOVReader::CloseTimeStep(BOVTimeStepImage *handle)
 int BOVReader::ReadTimeStep(
       const BOVTimeStepImage *step,
       const CartesianDataBlockIODescriptor *descr,
-      vtkImageData *grid,
+      vtkDataSet *grid,
       vtkAlgorithm *alg)
 {
   double progInc=0.70/step->GetNumberOfImages();
@@ -456,7 +485,7 @@ int BOVReader::ReadTimeStep(
 //-----------------------------------------------------------------------------
 int BOVReader::ReadTimeStep(
       const BOVTimeStepImage *step,
-      vtkImageData *grid,
+      vtkDataSet *grid,
       vtkAlgorithm *alg)
 {
   double progInc=0.70/step->GetNumberOfImages();
@@ -493,7 +522,7 @@ int BOVReader::ReadTimeStep(
 }
 
 //-----------------------------------------------------------------------------
-int BOVReader::ReadMetaTimeStep(int stepIdx, vtkImageData *grid, vtkAlgorithm *alg)
+int BOVReader::ReadMetaTimeStep(int stepIdx, vtkDataSet *grid, vtkAlgorithm *alg)
 {
   if (!(this->MetaData && this->MetaData->IsDatasetOpen()))
     {

@@ -80,6 +80,24 @@ using namespace std;
 }
 
 //*****************************************************************************
+ VTK_EXPORT ostream &operator<<(ostream &os, const vector<float> &v)
+{
+  os << "[";
+  size_t n=v.size();
+  if (n>0)
+    {
+    os << v[0];
+    for (size_t i=1; i<n; ++i)
+      {
+      os << ", " << v[i];
+      }
+    }
+  os << "]";
+  return os;
+}
+
+
+//*****************************************************************************
  VTK_EXPORT ostream &operator<<(ostream &os, const vector<int> &v)
 {
   os << "[";

@@ -9,9 +9,10 @@ Copyright 2008 SciberQuest Inc.
 #ifndef BOVMetaData_h
 #define BOVMetaData_h
 
-#include "vtkInformation.h"
+#include "SQExport.h"
 #include "BinaryStream.hxx"
 #include "CartesianExtent.h"
+#include "SharedArray.hxx"
 
 #include <cstdlib>
 #include <map>
@@ -27,19 +28,21 @@ using std::string;
 #define ACTIVE_BIT 0x01
 #define VECTOR_BIT 0x02
 
+class vtkInformation;
+
 /// Interface to a BOV MetaData file.
 /**
 This class defines the interface to a BOV MetaData file, implement
 this interface and fill the data structures during open to enable the
 BOVReader to read your dataset.
 */
-class VTK_EXPORT BOVMetaData
+class SQ_EXPORT BOVMetaData
 {
 public:
   BOVMetaData();
   BOVMetaData(const BOVMetaData &other){ *this=other; }
   BOVMetaData &operator=(const BOVMetaData &other);
-  virtual ~BOVMetaData(){}
+  virtual ~BOVMetaData();
 
   /**
   Virtual copy constructor. Create a new object and copy this into it. 
@@ -105,8 +108,21 @@ public:
   CartesianExtent GetSubset() const { return this->Subset; }
   CartesianExtent GetDecomp() const { return this->Decomp; }
 
+
   /**
-  Set/Get the dataset origin.
+  Return a string naming the vtk dataset that is to be used to
+  hold the data. Possible values include vtkImageData, vtkRectilinearGrid,
+  vtkStructuredGrid.
+  */
+  virtual const char *GetDataSetType() const { return this->DataSetType.c_str(); }
+  virtual void SetDataSetType(const char *type){ this->DataSetType=type; }
+
+  virtual bool DataSetTypeIsImage() const { return (this->DataSetType[3]=='I'); }
+  virtual bool DataSetTypeIsRectilinear() const { return (this->DataSetType[3]=='R'); }
+  virtual bool DataSetTypeIsStructured() const { return (this->DataSetType[3]=='S'); }
+
+  /**
+  Set/Get the dataset origin. Used only with vtkImageData.
   */
   void SetOrigin(const double *origin);
   void SetOrigin(double x0, double y0, double z0);
@@ -115,20 +131,22 @@ public:
   const double *GetOrigin() const { return this->Origin; }
 
   /**
-  Set/Get the grid spacing.
+  Set/Get the grid spacing. Used only for vtkImageData.
   */
   void SetSpacing(const double *spacing);
   void SetSpacing(double dx, double dy, double dz);
   void GetSpacing(double *spacing) const;
   double *GetSpacing(){ return this->Spacing; }
   const double *GetSpacing() const { return this->Spacing; }
-  /// \@}
 
   /**
-  Return a string naming the vtk dataset that is to be used to
-  hold the data.
+  Set/Get the qth domain coordinate array. Used only for vtkRectininearGrid.
   */
-  virtual const char *GetDataSetType(){ return "vtkImageData"; }
+  virtual const SharedArray<float> *GetCoordinate(int q) const { return this->Coordinates[q]; }
+  virtual SharedArray<float> *GetCoordinate(int q) { return this->Coordinates[q]; }
+  virtual void AssignCoordinate(int q, float *coord, size_t n){ this->Coordinates[q]->Assign(coord,n); }
+  virtual float *SubsetCoordinate(int q, CartesianExtent &ext) const;
+  /// \@}
 
   /// \Section ArrayModifiers \@{
   /**
@@ -240,36 +258,18 @@ private:
 
 protected:
   int IsOpen;
-  string PathToBricks;      // path to the brick files.
-  double Origin[3];         // dataset origin
-  double Spacing[3];        // grid spacing.
-  CartesianExtent Domain;   // Dataset domain on disk.
-  CartesianExtent Subset;   // Subset of interst to read.
-  CartesianExtent Decomp;   // Part of the subset this process will read.
-  map<string,int> Arrays;   // map of srray names to a status flag.
-  vector<int> TimeSteps;    // Time values.
+  string PathToBricks;          // path to the brick files.
+  CartesianExtent Domain;       // Dataset domain on disk.
+  CartesianExtent Subset;       // Subset of interst to read.
+  CartesianExtent Decomp;       // Part of the subset this process will read.
+  map<string,int> Arrays;       // map of srray names to a status flag.
+  vector<int> TimeSteps;        // Time values.
+  string DataSetType;           // vtk data set type string
+  double Origin[3];             // dataset origin for image
+  double Spacing[3];            // grid spacing for image
+  SharedArray<float> *Coordinates[3]; // x,y,z coordinate arrays for rectilinear
 };
 
 ostream &operator<<(ostream &os, const BOVMetaData &md);
 
-// TODO develop workable traits model.
-/*
-/// Traits for data array types.
-template<typename T> class ArrayTraits;
-/// Float
-template<> class ArrayTraits<float>
-{
-public:
-  typedef vtkFloatArray vtkType;
-  typedef float cppType;
-};
-/// Double
-template<> class ArrayTraits<double>
-{
-public:
-  typedef vtkDoubleArray vtkType;
-  typedef double cppType;
-};
-/// and so on ...
-*/
 #endif

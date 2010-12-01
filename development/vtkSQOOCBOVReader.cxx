@@ -10,12 +10,16 @@ Copyright 2008 SciberQuest Inc.
 
 #include "vtkObjectFactory.h"
 #include "vtkImageData.h"
-#include "vtkStructuredPointsWriter.h"
+#include "vtkRectilinearGrid.h"
+#include "vtkFloatArray.h"
+#include "vtkDataSetWriter.h"
 
 #include "BOVMetaData.h"
 #include "BOVReader.h"
 #include "BOVTimeStepImage.h"
 #include "CartesianDecomp.h"
+#include "ImageDecomp.h"
+#include "RectilinearDecomp.h"
 #include "CartesianDataBlock.h"
 #include "CartesianDataBlockIODescriptor.h"
 #include "PriorityQueue.hxx"
@@ -166,7 +170,6 @@ vtkDataSet *vtkSQOOCBOVReader::ReadNeighborhood(
     const double pt[3],
     CartesianBounds &workingDomain)
 {
-  // cerr << *this->Image << endl;
 
   // Locate the block containing the given point.
   CartesianDataBlock *block=this->DomainDecomp->GetBlock(pt);
@@ -186,16 +189,10 @@ vtkDataSet *vtkSQOOCBOVReader::ReadNeighborhood(
   #endif
 
   // update the working domain.
-  double *X0=this->DomainDecomp->GetOrigin();
-  double *dX=this->DomainDecomp->GetSpacing();
-
-  CartesianExtent workingExt(block->GetExtent());
-  workingExt.GetBounds(X0,dX,workingDomain.GetData());
-
+  workingDomain.Set(block->GetBounds());
 
   // determine if the data associated with block is cached.
-  // TODO this has to change for rectilinear grids
-  vtkImageData *data=dynamic_cast<vtkImageData*>(block->GetData());
+  vtkDataSet *data=block->GetData();
   if (data)
     {
     #if vtkSQOOCBOVReaderDEBUG>1
@@ -247,16 +244,66 @@ vtkDataSet *vtkSQOOCBOVReader::ReadNeighborhood(
 
     const CartesianExtent &blockExt=descr->GetMemExtent();
 
-    int nPoints[3];
-    blockExt.Size(nPoints);
 
-    double blockX0[3];
-    blockExt.GetLowerBound(X0,dX,blockX0);
+    if (this->Reader->DataSetTypeIsImage())
+      {
+      ImageDecomp *idec=dynamic_cast<ImageDecomp*>(this->DomainDecomp);
+      double *X0=idec->GetOrigin();
+      double *dX=idec->GetSpacing();
 
-    data=vtkImageData::New();
-    data->SetDimensions(nPoints);
-    data->SetOrigin(blockX0);
-    data->SetSpacing(dX);
+      int nPoints[3];
+      blockExt.Size(nPoints);
+
+      double blockX0[3];
+      blockExt.GetLowerBound(X0,dX,blockX0);
+
+      vtkImageData *idata=vtkImageData::New();
+      idata->SetDimensions(nPoints);
+      idata->SetOrigin(blockX0);
+      idata->SetSpacing(dX);
+
+      data=idata;
+      }
+    else
+    if (this->Reader->DataSetTypeIsRectilinear())
+      {
+      RectilinearDecomp *rdec=dynamic_cast<RectilinearDecomp*>(this->DomainDecomp);
+
+      int nPoints[3];
+      blockExt.Size(nPoints);
+
+      vtkRectilinearGrid *rdata=vtkRectilinearGrid::New();
+      rdata->SetExtent(const_cast<int*>(blockExt.GetData()));
+
+      vtkFloatArray *fa;
+      fa=vtkFloatArray::New();
+      fa->SetArray(rdec->SubsetCoordinate(0,blockExt),nPoints[0],0);
+      rdata->SetXCoordinates(fa);
+      fa->Delete();
+
+      fa=vtkFloatArray::New();
+      fa->SetArray(rdec->SubsetCoordinate(1,blockExt),nPoints[1],0);
+      rdata->SetYCoordinates(fa);
+      fa->Delete();
+
+      fa=vtkFloatArray::New();
+      fa->SetArray(rdec->SubsetCoordinate(2,blockExt),nPoints[2],0);
+      rdata->SetZCoordinates(fa);
+      fa->Delete();
+
+      data=rdata;
+      }
+    else
+    if (this->Reader->DataSetTypeIsStructured())
+      {
+      vtkErrorMacro("Path for vtkSturcturedData not implemented.");
+      return 0;
+      }
+    else
+      {
+      vtkErrorMacro("Unsupported dataset type \"" << this->Reader->GetDataSetType() << "\".");
+      return 0;
+      }
 
     int ok=this->Reader->ReadTimeStep(this->Image,descr,data,(vtkAlgorithm*)0);
     if (!ok)
@@ -265,18 +312,6 @@ vtkDataSet *vtkSQOOCBOVReader::ReadNeighborhood(
       vtkErrorMacro("Read failed.");
       return 0;
       }
-
-
-    #if vtkSQOOCBOVReaderDEBUG>2
-    // data->Print(cerr);
-    vtkStructuredPointsWriter *idw=vtkStructuredPointsWriter::New();
-    ostringstream oss;
-    oss << "block." << block->GetIndex() << ".vtk";
-    idw->SetFileName(oss.str().c_str());
-    idw->SetInput(data);
-    idw->Write();
-    idw->Delete();
-    #endif
 
     // cache the dataset
     if (this->BlockCacheSize>0)
@@ -291,6 +326,17 @@ vtkDataSet *vtkSQOOCBOVReader::ReadNeighborhood(
       data->Delete();
       this->LRUQueue->Push(block->GetIndex(),++this->BlockAccessTime);
       }
+
+    #if vtkSQOOCBOVReaderDEBUG>2
+    // data->Print(cerr);
+    vtkDataSetWriter *idw=vtkDataSetWriter::New();
+    ostringstream oss;
+    oss << "block." << block->GetIndex() << ".vtk";
+    idw->SetFileName(oss.str().c_str());
+    idw->SetInput(data);
+    idw->Write();
+    idw->Delete();
+    #endif
     }
 
   return data;

@@ -12,6 +12,9 @@ shift 1
 FONT_SIZE=$1
 shift 1
 
+FONT_COLOR=$1
+shift 1
+
 if [[ -z "$INPUT" || -z "$OUTPUT" || -z "$TEXT" ]]
 then
   echo "Error: $0 /path/to/input /path/to/output text" 1>&2
@@ -24,7 +27,13 @@ then
   FONT_SIZE=25
 fi
 
-gimp -i -b "(annotate \"$INPUT\" \"$OUTPUT\" \"$TEXT\" \"$FONT_SIZE\")" -b "(gimp-quit 0)" 
+# default font color
+if [[ -z "$FONT_COLOR" ]]
+then
+  FONT_COLOR="w"
+fi
+
+gimp -i -b "(annotate \"$INPUT\" \"$OUTPUT\" \"$TEXT\" \"$FONT_SIZE\" \"$FONT_COLOR\")" -b "(gimp-quit 0)"
 
 exit
 

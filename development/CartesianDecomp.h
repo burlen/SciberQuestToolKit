@@ -30,8 +30,7 @@ the sub-grid which contains it.
 class CartesianDecomp : public RefCountedPointer
 {
 public:
-  static CartesianDecomp *New(){ return new CartesianDecomp; }
-
+  //static CartesianDecomp *New(){ return new CartesianDecomp; }
 
   /**
   Set the index space of the data on disk.
@@ -45,18 +44,18 @@ public:
   /**
   Get/Set the domain origin.
   */
-  void SetOrigin(double x0, double y0, double z0);
-  void SetOrigin(const double X0[3]);
-  double *GetOrigin(){ return this->X0; }
-  const double *GetOrigin() const { return this->X0; }
+//   void SetOrigin(double x0, double y0, double z0);
+//   void SetOrigin(const double X0[3]);
+//   double *GetOrigin(){ return this->X0; }
+//   const double *GetOrigin() const { return this->X0; }
 
   /**
   Get/Set the grid spacing.
   */
-  void SetSpacing(double dx, double dy, double dz);
-  void SetSpacing(const double dX[3]);
-  double *GetSpacing(){ return this->DX; }
-  const double *GetSpacing() const { return this->DX; }
+//   void SetSpacing(double dx, double dy, double dz);
+//   void SetSpacing(const double dX[3]);
+//   double *GetSpacing(){ return this->DX; }
+//   const double *GetSpacing() const { return this->DX; }
 
   /**
   Get/Set the physical bounds of the entire decomposition.
@@ -77,7 +76,7 @@ public:
   Set the domain bounds based on curren values of
   extent, oring and spacing.
   */
-  void ComputeBounds();
+//   void ComputeBounds();
 
   /**
   Set the index space of the decomposition.
@@ -114,7 +113,7 @@ public:
   /**
   Decompose the domain in to the requested number of blocks.
   */
-  int DecomposeDomain();
+//   virtual int DecomposeDomain()=0;
 
   /**
   Find and return the block which contains a given point.
@@ -189,21 +188,21 @@ public:
     return idx;
     }
 
-protected:
-  CartesianDecomp();
-  ~CartesianDecomp();
-
 private:
   void operator=(CartesianDecomp &); // not implemented
   CartesianDecomp(CartesianDecomp &); // not implemented 
 
+protected:
+  CartesianDecomp();
+  virtual ~CartesianDecomp();
+
   /**
   Release decomposition resources.
   */
-  void ClearDecomp();
-  void ClearIODescriptors();
+  virtual void ClearDecomp();
+  virtual void ClearIODescriptors();
 
-private:
+protected:
   int NGhosts;                  // number of ghost cells.
   int PeriodicBC[3];            // boolean set if periodic boundary in the direction
   int DecompDims[4];            // block array size (ni,nj,nk,ni*nj)
@@ -212,8 +211,6 @@ private:
   CartesianBounds Bounds;       // domain world space bounds
   CartesianExtent Extent;       // domain index space bounds
   CartesianExtent FileExtent;   // extent of all data on disk
-  double DX[3];                 // grid spacing
-  double X0[3];                 // origin
 };
 
 #endif

@@ -6,16 +6,28 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef fsutil_h
-#define fsutil_h
+#ifndef __fsutil_h
+#define __fsutil_h
 
-#include<vector>
+#include <vector>
 using std::vector;
-#include<string>
+#include <string>
 using std::string;
-#include<iostream>
+#include <iostream>
 using std::ostream;
+using std::cerr;
+using std::endl;
+#include <fstream>
+using std::ifstream;
+using std::ios;
 
+#ifndef WIN32
+  #define PATH_SEP "/"
+#else
+  #define PATH_SEP "\\"
+#endif
+
+int Present(const char *path, const char *file);
 int Represented(const char *path, const char *prefix);
 int GetSeriesIds(const char *path, const char *prefix, vector<int> &ids);
 string StripFileNameFromPath(const string fileName);
@@ -27,5 +39,39 @@ int WriteText(string &fileName, string &text);
 int SearchAndReplace(const string &searchFor,const string &replaceWith,string &inText);
 ostream &operator<<(ostream &os, vector<string> v);
 bool operator&(vector<string> &v, const string &s);
+
+
+//*****************************************************************************
+template<typename T>
+size_t LoadBin(const char *fileName, size_t dlen, T *buffer)
+{
+  ifstream file(fileName,ios::binary);
+  if (!file.is_open())
+    {
+    cerr << "ERROR: File " << fileName << " could not be opened." << endl;
+    return 0;
+    }
+
+  // determine file size
+  file.seekg(0,ios::end);
+  size_t flen=file.tellg();
+  file.seekg(0,ios::beg);
+
+  // check if file size matches expected read size.
+  if (dlen*sizeof(T)!=flen)
+    {
+    cerr
+      << "ERROR: Expected " << dlen << " bytes but found "
+      << flen << " bytes in \"" << fileName << "\".";
+    return 0;
+    }
+
+  // read
+  file.read((char*)buffer,flen);
+  file.close();
+
+  // return the data, it's up to the caller to free.
+  return dlen;
+}
 
 #endif

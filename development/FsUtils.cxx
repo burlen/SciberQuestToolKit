@@ -6,28 +6,48 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#include<cstring>
-#include<cstdlib>
-#include<iostream>
-#include<sstream>
-#include<fstream>
-#include<string>
-#include<vector>
-#include<algorithm>
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <algorithm>
 using namespace std;
 
 #ifndef WIN32
+  #include <dirent.h>
   #define PATH_SEP "/"
-  #include<dirent.h>
 #else
-  #define PATH_SEP "\\"
   #include "win_windirent.h"
   #define opendir win_opendir
   #define readdir win_readdir
   #define closedir win_closedir
   #define DIR win_DIR
   #define dirent win_dirent
+  #define PATH_SEP "\\"
 #endif
+
+
+
+//******************************************************************************
+int Present(const char *path, const char *fileName)
+{
+  ostringstream fn;
+  fn << path << PATH_SEP << fileName;
+  FILE *fp=fopen(fn.str().c_str(),"r");
+  if (fp==0)
+    {
+    // file is not present.
+    return 0;
+    }
+  // file is present.
+  fclose(fp);
+  return 1;
+}
+
 
 
 // Return 1 if a file is found with the prefix in the directory given by path.

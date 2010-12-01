@@ -69,12 +69,14 @@ set(_SOURCES
   FsUtils.cxx
   GDAMetaData.cxx
   GDAMetaDataKeys.cxx
+  ImageDecomp.cxx
   IntersectionSet.cxx
   PolyDataCellCopier.cxx
   PolyDataFieldTopologyMap.cxx
   PoincareMapData.cxx
   postream.cxx
   PrintUtils.cxx
+  RectilinearDecomp.cxx
   RefCountedPointer.cxx
   StreamlineData.cxx
   TerminationCondition.cxx

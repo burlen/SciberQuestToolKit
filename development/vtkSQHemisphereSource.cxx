@@ -28,14 +28,64 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkPolyData.h"
+#include "vtkFloatArray.h"
 #include "vtkSphereSource.h"
-
-
 
 #include "vtkSQMetaDataKeys.h"
 #include "GDAMetaDataKeys.h"
+#include "Tuple.hxx"
+#include "SQMacros.h"
 
 #include <math.h>
+
+//*****************************************************************************
+void LocateHemisphere(float *pX, size_t nx,double *C, double *N)
+{
+  // allign the hemisphere with an aribtrary north and place it
+  // an arbitrary center.
+
+  float magN=sqrt(N[0]*N[0]+N[1]*N[1]+N[2]*N[2]);
+  if (magN<1.0e-3)
+    {
+    sqErrorMacro(cerr,"Vector magniude must be non-zero.");
+    return;
+    }
+
+  float v[3];
+  v[0]=N[0]/magN;
+  v[1]=N[1]/magN;
+  v[2]=N[2]/magN;
+
+  float p=sqrt(v[0]*v[0]+v[1]*v[1]);
+  if (p<1e-03)
+    {
+    // North is coincident with z-axis nothing to do.
+    return;
+    }
+  float q=v[2];
+  float l=v[1]/p;
+  float m=v[0]/p;
+
+  for (size_t i=0; i<nx; ++i)
+    {
+    int ii=3*i;
+    float x=pX[ii  ];
+    float y=pX[ii+1];
+    float z=pX[ii+2];
+
+    // rotate twice and translate (see fig 3-7 rogers & adams)
+    pX[ii  ] =  x*q*m - y*l + z*p*m + C[0];
+    pX[ii+1] =  x*q*l + y*m + z*p*l + C[1];
+    pX[ii+2] = -x*p         + z*q   + C[2];
+
+    // cerr
+    //   << Tuple<float>(x,y,z)
+    //   << "->"
+    //   << Tuple<float>(pX[ii],pX[ii+1],pX[ii+2])
+    //   << endl;
+    }
+}
+
 
 vtkCxxRevisionMacro(vtkSQHemisphereSource, "$Revision: 1.70 $");
 vtkStandardNewMacro(vtkSQHemisphereSource);
@@ -56,6 +106,10 @@ vtkSQHemisphereSource::vtkSQHemisphereSource()
   this->Center[0]=0.0;
   this->Center[1]=0.0;
   this->Center[2]=0.0;
+
+  this->North[0]=
+  this->North[1]=0.0;
+  this->North[2]=1.0;
 
   this->Resolution=32;
 
@@ -152,47 +206,59 @@ int vtkSQHemisphereSource::RequestData(
   this->Print(cerr);
   #endif
 
-  // configure sphere source
-  vtkSphereSource *ss=vtkSphereSource::New();
-  ss->SetCenter(this->Center);
-  ss->SetRadius(this->Radius);
-  ss->SetThetaResolution(this->Resolution);
-  ss->SetPhiResolution(this->Resolution);
-
-  // generate a northern Hemisphere
   vtkInformation *northInfo=outInfos->GetInformationObject(0);
-  //
   if (this->NorthHemisphereName && strlen(this->NorthHemisphereName))
     {
     northInfo->Set(vtkSQMetaDataKeys::DESCRIPTIVE_NAME(),this->NorthHemisphereName);
     }
-  //
   vtkPolyData *northPd
     = vtkPolyData::SafeDownCast(northInfo->Get(vtkDataObject::DATA_OBJECT()));
-  //
-  //ss->SetOutput(northPd);
+
+  vtkSphereSource *ss=vtkSphereSource::New();
+  ss->SetCenter(0.0,0.0,0.0);
+  ss->SetRadius(this->Radius);
   ss->SetStartTheta(0.0);
-  ss->SetEndTheta(180.0);
+  ss->SetEndTheta(360.0);
+  ss->SetThetaResolution(this->Resolution);
+  ss->SetPhiResolution(this->Resolution);
+
+  // generate the northern Hemisphere
+  ss->SetStartPhi(0.0);
+  ss->SetEndPhi(90.0);
   ss->Update();
   ss->GetOutput()->Update();
   northPd->DeepCopy(ss->GetOutput());
 
-  // generate a southern Hemisphere
+  // orient it
+  vtkFloatArray *X;
+  float *pX;
+  int nx;
+  X=dynamic_cast<vtkFloatArray*>(northPd->GetPoints()->GetData());
+  pX=X->GetPointer(0);
+  nx=X->GetNumberOfTuples();
+  LocateHemisphere(pX,nx,this->Center,this->North);
+
+
   vtkInformation *southInfo=outInfos->GetInformationObject(1);
-  //
   if (this->SouthHemisphereName && strlen(this->SouthHemisphereName))
     {
     southInfo->Set(vtkSQMetaDataKeys::DESCRIPTIVE_NAME(),this->SouthHemisphereName);
     }
-  //
   vtkPolyData *southPd
     = vtkPolyData::SafeDownCast(southInfo->Get(vtkDataObject::DATA_OBJECT()));
-  //
-  ss->SetStartTheta(180.0);
-  ss->SetEndTheta(360.0);
+
+  // generate the southern Hemisphere
+  ss->SetStartPhi(90.0);
+  ss->SetEndPhi(180.0);
   ss->Update();
   ss->GetOutput()->Update();
   southPd->DeepCopy(ss->GetOutput());
+
+  // orient it
+  X=dynamic_cast<vtkFloatArray*>(southPd->GetPoints()->GetData());
+  pX=X->GetPointer(0);
+  nx=X->GetNumberOfTuples();
+  LocateHemisphere(pX,nx,this->Center,this->North);
 
   ss->Delete();
 

@@ -8,15 +8,16 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "BOVMetaData.h"
 
+#include "SharedArray.hxx"
 #include "Tuple.hxx"
 #include "PrintUtils.h"
 
 
 //-----------------------------------------------------------------------------
 BOVMetaData::BOVMetaData()
-     :
-  IsOpen(0)
 {
+  this->IsOpen=0;
+
   this->Origin[0]=
   this->Origin[1]=
   this->Origin[2]=0.0;
@@ -24,6 +25,18 @@ BOVMetaData::BOVMetaData()
   this->Spacing[0]=
   this->Spacing[1]=
   this->Spacing[2]=1.0;
+
+  this->Coordinates[0]=SharedArray<float>::New();
+  this->Coordinates[1]=SharedArray<float>::New();
+  this->Coordinates[2]=SharedArray<float>::New();
+}
+
+//-----------------------------------------------------------------------------
+BOVMetaData::~BOVMetaData()
+{
+  this->Coordinates[0]->Delete();
+  this->Coordinates[1]->Delete();
+  this->Coordinates[2]->Delete();
 }
 
 //-----------------------------------------------------------------------------
@@ -41,8 +54,12 @@ BOVMetaData &BOVMetaData::operator=(const BOVMetaData &other)
   this->Domain=other.Domain;
   this->Subset=other.Subset;
   this->Decomp=other.Decomp;
+  this->DataSetType=other.DataSetType;
   this->SetOrigin(other.GetOrigin());
   this->SetSpacing(other.GetSpacing());
+  this->Coordinates[0]->Assign(other.Coordinates[0]);
+  this->Coordinates[1]->Assign(other.Coordinates[1]);
+  this->Coordinates[2]->Assign(other.Coordinates[2]);
 
   return *this;
 }
@@ -57,6 +74,13 @@ int BOVMetaData::CloseDataset()
   this->Decomp.Clear();
   this->Arrays.clear();
   this->TimeSteps.clear();
+  this->DataSetType="";
+  this->SetOrigin(0.0,0.0,0.0);
+  this->SetSpacing(1.0,1.0,1.0);
+  this->Coordinates[0]->Clear();
+  this->Coordinates[1]->Clear();
+  this->Coordinates[2]->Clear();
+
   return 1;
 }
 
@@ -135,6 +159,23 @@ void BOVMetaData::GetSpacing(double *spacing) const
 }
 
 //-----------------------------------------------------------------------------
+float *BOVMetaData::SubsetCoordinate(int q, CartesianExtent &ext) const
+{
+  int N[3];
+  ext.Size(N);
+
+  const float *coord=this->GetCoordinate(q)->GetPointer();
+  float *scoord=(float *)malloc(N[q]*sizeof(float));
+
+  for (int i=0,s=ext[2*q],e=ext[2*q+1]; s<=e; ++i,++s)
+    {
+    scoord[i]=coord[s];
+    }
+
+  return scoord;
+}
+
+//-----------------------------------------------------------------------------
 size_t BOVMetaData::GetNumberOfArrayFiles() const
 {
   size_t nFiles=0;
@@ -163,10 +204,14 @@ void BOVMetaData::Pack(BinaryStream &os)
   os.Pack(this->Domain.GetData(),6);
   os.Pack(this->Decomp.GetData(),6);
   os.Pack(this->Subset.GetData(),6);
-  os.Pack(this->Origin,3);
-  os.Pack(this->Spacing,3);
   os.Pack(this->Arrays);
   os.Pack(this->TimeSteps);
+  os.Pack(this->DataSetType);
+  os.Pack(this->Origin,3);
+  os.Pack(this->Spacing,3);
+  os.Pack(*this->Coordinates[0]);
+  os.Pack(*this->Coordinates[1]);
+  os.Pack(*this->Coordinates[2]);
 }
 
 //-----------------------------------------------------------------------------
@@ -177,23 +222,36 @@ void BOVMetaData::UnPack(BinaryStream &is)
   is.UnPack(this->Domain.GetData(),6);
   is.UnPack(this->Decomp.GetData(),6);
   is.UnPack(this->Subset.GetData(),6);
-  is.UnPack(this->Origin,3);
-  is.UnPack(this->Spacing,3);
   is.UnPack(this->Arrays);
   is.UnPack(this->TimeSteps);
+  is.UnPack(this->DataSetType);
+  is.UnPack(this->Origin,3);
+  is.UnPack(this->Spacing,3);
+  is.UnPack(*this->Coordinates[0]);
+  is.UnPack(*this->Coordinates[1]);
+  is.UnPack(*this->Coordinates[2]);
 }
 
 //-----------------------------------------------------------------------------
 void BOVMetaData::Print(ostream &os) const
 {
-  os << "BOVMetaData: " << this << endl;
-  os << "\tIsOpen: " << this->IsOpen << endl;
-  os << "\tPathToBricks: " << this->PathToBricks << endl;
-  os << "\tDomain: " << this->Domain << endl;
-  os << "\tSubset: " << this->Subset << endl;
-  os << "\tDecomp: " << this->Decomp << endl;
-  os << "\tArrays: " << this->Arrays << endl;
-  os << "\tTimeSteps: " << this->TimeSteps << endl;
+  os
+    << "BOVMetaData: " << this << endl
+    << "\tIsOpen: " << this->IsOpen << endl
+    << "\tPathToBricks: " << this->PathToBricks << endl
+    << "\tDomain: " << this->Domain << endl
+    << "\tSubset: " << this->Subset << endl
+    << "\tDecomp: " << this->Decomp << endl
+    << "\tArrays: " << this->Arrays << endl
+    << "\tTimeSteps: " << this->TimeSteps << endl
+    << "\tDataSetType: " << this->DataSetType << endl
+    << "\tOrigin: " << Tuple<double>(this->Origin,3) << endl
+    << "\tSpacing: " << Tuple<double>(this->Spacing,3) << endl
+    << "\tCoordinates: " << endl
+    << "\t\t" << *this->Coordinates[0] << endl
+    << "\t\t" << *this->Coordinates[1] << endl
+    << "\t\t" << *this->Coordinates[2] << endl
+    << endl;
 }
 
 //-----------------------------------------------------------------------------

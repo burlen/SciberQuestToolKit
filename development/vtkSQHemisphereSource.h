@@ -6,31 +6,15 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-// .NAME vtkSQHemisphereSource - Source/Reader that provides a polydata sphere as 2 hemispheres on 2 outputs.
+// .NAME vtkSQHemisphereSource - Source/Reader that provides a polydata sphere as 2 hemispheres.
 // .SECTION Description
-// Source/Reader that provides a polydata sphere as 2 hemispheres on 2 outputs.
+// Source that provides a polydata sphere as 2 hemispheres on 2 outputs.
 //
 
 #ifndef __vtkSQHemisphereSource_h
 #define __vtkSQHemisphereSource_h
 
 #include "vtkPolyDataAlgorithm.h"
-
-#include<map>
-using std::map;
-using std::pair;
-
-class vtkUnstructuredGrid;
-class vtkSQOOCReader;
-class vtkMultiProcessController;
-class vtkInitialValueProblemSolver;
-class vtkPointSet;
-//BTX
-class FieldLine;
-class IdBlock;
-class FieldTopologyMap;
-class TerminationCondition;
-//ETX
 
 
 class VTK_EXPORT vtkSQHemisphereSource : public vtkPolyDataAlgorithm
@@ -44,6 +28,11 @@ public:
   // Set/Get location of the sphere.
   vtkSetVector3Macro(Center,double);
   vtkGetVector3Macro(Center,double);
+
+  // Description:
+  // Set/Get the vector along the north pole.
+  vtkSetVector3Macro(North,double);
+  vtkGetVector3Macro(North,double);
 
   // Description:
   // Set/Get the radius of the sphere.
@@ -78,6 +67,7 @@ private:
   void operator=(const vtkSQHemisphereSource&);  // Not implemented.
 
 private:
+  double North[3];
   double Center[3];
   double Radius;
   int Resolution;

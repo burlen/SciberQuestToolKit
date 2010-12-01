@@ -49,7 +49,7 @@ public:
         double zhi);
 
   /**
-  Direct acces to internal boudns data.
+  Direct acces to internal bounds data.
   */
   CartesianBounds &GetBounds(){ return this->Bounds; }
 

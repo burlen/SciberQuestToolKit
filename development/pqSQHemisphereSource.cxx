@@ -75,7 +75,13 @@ pqSQHemisphereSource::pqSQHemisphereSource(
   this->Form->c_x->setValidator(new QDoubleValidator(this->Form->c_x));
   this->Form->c_y->setValidator(new QDoubleValidator(this->Form->c_y));
   this->Form->c_z->setValidator(new QDoubleValidator(this->Form->c_z));
+
+  this->Form->n_x->setValidator(new QDoubleValidator(this->Form->n_x));
+  this->Form->n_y->setValidator(new QDoubleValidator(this->Form->n_y));
+  this->Form->n_z->setValidator(new QDoubleValidator(this->Form->n_z));
+
   this->Form->r->setValidator(new QDoubleValidator(this->Form->r));
+
 
 //   vtkSMProxy* pProxy=this->referenceProxy()->getProxy();
 
@@ -107,6 +113,19 @@ pqSQHemisphereSource::pqSQHemisphereSource(
       this, SLOT(setModified()));
   QObject::connect(
       this->Form->c_z,
+      SIGNAL(textChanged(QString)),
+      this, SLOT(setModified()));
+  //
+  QObject::connect(
+      this->Form->n_x,
+      SIGNAL(textChanged(QString)),
+      this, SLOT(setModified()));
+  QObject::connect(
+      this->Form->n_y,
+      SIGNAL(textChanged(QString)),
+      this, SLOT(setModified()));
+  QObject::connect(
+      this->Form->n_z,
       SIGNAL(textChanged(QString)),
       this, SLOT(setModified()));
   //
@@ -165,6 +184,16 @@ void pqSQHemisphereSource::Restore()
         this->Form->c_x->setText(QString("%1").arg(c[0]));
         this->Form->c_y->setText(QString("%1").arg(c[1]));
         this->Form->c_z->setText(QString("%1").arg(c[2]));
+        // North
+        f.getline(buf,1024);
+        f.getline(buf,1024);
+        is=new istringstream(buf);
+        double n[3];
+        *is >> n[0] >> n[1] >> n[2];
+        delete is;
+        this->Form->n_x->setText(QString("%1").arg(n[0]));
+        this->Form->n_y->setText(QString("%1").arg(n[1]));
+        this->Form->n_z->setText(QString("%1").arg(n[2]));
         // Radius
         f.getline(buf,1024);
         f.getline(buf,1024);
@@ -213,6 +242,10 @@ void pqSQHemisphereSource::Save()
         << this->Form->c_x->text().toDouble() << " "
         << this->Form->c_y->text().toDouble() << " "
         << this->Form->c_z->text().toDouble() << endl
+        << "North" << endl
+        << this->Form->n_x->text().toDouble() << " "
+        << this->Form->n_y->text().toDouble() << " "
+        << this->Form->n_z->text().toDouble() << endl
         << "Radius" << endl
         << this->Form->r->text().toDouble() << endl
         << "Resolution" << endl
@@ -315,12 +348,23 @@ void pqSQHemisphereSource::PullServerConfig()
   this->Form->c_x->setText(QString("%1").arg(c[0]));
   this->Form->c_y->setText(QString("%1").arg(c[1]));
   this->Form->c_z->setText(QString("%1").arg(c[2]));
+
+  // North
+  vtkSMDoubleVectorProperty *nProp
+    = dynamic_cast<vtkSMDoubleVectorProperty*>(pProxy->GetProperty("GetNorth"));
+  pProxy->UpdatePropertyInformation(nProp);
+  double *n=nProp->GetElements();
+  this->Form->n_x->setText(QString("%1").arg(n[0]));
+  this->Form->n_y->setText(QString("%1").arg(n[1]));
+  this->Form->n_z->setText(QString("%1").arg(n[2]));
+
   // Radius
   vtkSMDoubleVectorProperty *rProp
     = dynamic_cast<vtkSMDoubleVectorProperty*>(pProxy->GetProperty("GetRadius"));
   pProxy->UpdatePropertyInformation(rProp);
   double r=rProp->GetElement(0);
   this->Form->r->setText(QString("%1").arg(r));
+
   // Resolution
   vtkSMIntVectorProperty *resProp
     = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("GetResolution"));
@@ -331,6 +375,7 @@ void pqSQHemisphereSource::PullServerConfig()
   #if defined pqSQHemisphereSourceDEBUG
   cerr << "Pulled: " << endl
        << "C   " << c[0] << ", " << c[1] << ", " << c[2] << endl
+       << "N   " << n[0] << ", " << n[1] << ", " << n[2] << endl
        << "r   " << r << endl
        << "res " << res << endl
        << endl;
@@ -354,6 +399,15 @@ void pqSQHemisphereSource::PushServerConfig()
     = dynamic_cast<vtkSMDoubleVectorProperty*>(pProxy->GetProperty("Center"));
   cProp->SetElements(c,3);
 
+  // North
+  double n[3];
+  n[0]=this->Form->n_x->text().toDouble();
+  n[1]=this->Form->n_y->text().toDouble();
+  n[2]=this->Form->n_z->text().toDouble();
+  vtkSMDoubleVectorProperty *nProp
+    = dynamic_cast<vtkSMDoubleVectorProperty*>(pProxy->GetProperty("North"));
+  nProp->SetElements(n,3);
+
   // Radius
   double r;
   r=this->Form->r->text().toDouble();
@@ -371,6 +425,7 @@ void pqSQHemisphereSource::PushServerConfig()
   #if defined pqSQHemisphereSourceDEBUG
   cerr << "Pushed: " << endl
        << "C   " << c[0] << ", " << c[1] << ", " << c[2] << endl
+       << "N   " << n[0] << ", " << n[1] << ", " << n[2] << endl
        << "r   " << r << endl
        << "res " << res << endl
        << endl;

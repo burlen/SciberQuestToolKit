@@ -1069,7 +1069,26 @@ Copyright 2008 SciberQuest Inc.
       information_property="GetCenter">
     <DoubleRangeDomain name="range"/>
     <Documentation>
-      This property specifies the 3D coordinates for the center of the sphere.
+      The center of the sphere.
+    </Documentation>
+  </DoubleVectorProperty>
+
+  <DoubleVectorProperty
+      name="GetNorth"
+      command="GetNorth"
+      information_only="1">
+      <SimpleDoubleInformationHelper/>
+    </DoubleVectorProperty>
+    <DoubleVectorProperty
+      name="North"
+      command="SetNorth"
+      number_of_elements="3"
+      animateable="1"
+      default_values="0.0 1.0 0.0"
+      information_property="GetNorth">
+    <DoubleRangeDomain name="range"/>
+    <Documentation>
+      The center of the sphere.
     </Documentation>
   </DoubleVectorProperty>
 
@@ -1102,7 +1121,7 @@ Copyright 2008 SciberQuest Inc.
       name="Resolution"
       command="SetResolution"
       number_of_elements="1"
-      default_values="8"
+      default_values="32"
       information_property="GetResolution">
     <IntRangeDomain name="range" min="3" max="1024" />
     <Documentation>

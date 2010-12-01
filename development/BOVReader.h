@@ -15,12 +15,11 @@ using std::vector;
 #include <string>
 using std::string;
 
+#include "SQExport.h"
 #include "RefCountedPointer.h"
 #include "BOVMetaData.h"
 
-class vtkImageData;
-class vtkMultiBlockDataSet;
-class vtkMultiProcessController;
+class vtkDataSet;
 class vtkAlgorithm;
 class BOVScalarImageIterator;
 class BOVVectorImageIterator;
@@ -34,7 +33,7 @@ vtkImageData objects point data.
 
 Calls that return an int generally return 0 to indicate an error.
 */
-class VTK_EXPORT BOVReader : public RefCountedPointer
+class SQ_EXPORT BOVReader : public RefCountedPointer
 {
 public:
   static BOVReader *New(){ return new BOVReader; }
@@ -108,16 +107,49 @@ public:
   */
   int ReadTimeStep(
         const BOVTimeStepImage *handle,
-        vtkImageData *idds,
+        vtkDataSet *idds,
         vtkAlgorithm *exec=0);
 
   int ReadTimeStep(
         const BOVTimeStepImage *hanlde,
         const CartesianDataBlockIODescriptor *descr,
-        vtkImageData *grid,
+        vtkDataSet *grid,
         vtkAlgorithm *exec=0);
 
-  int ReadMetaTimeStep(int stepNo, vtkImageData *idds, vtkAlgorithm *exec=0);
+  int ReadMetaTimeStep(int stepNo, vtkDataSet *idds, vtkAlgorithm *exec=0);
+
+
+  /**
+  Get an instance of the appropriate dataset type needed to hold the 
+  data. May be one of vtkImageData, vtkRectilinearGrid, or vtkStructuredGrid.
+  */
+  vtkDataSet *GetDataSet();
+
+  /**
+  Return the string naming the dataset type, will be one of vtkImageData
+  vtkRectilinearGrid, or vtkStructuredData.
+  */
+  const char *GetDataSetType() const
+    {
+    return this->MetaData->GetDataSetType();
+    }
+
+  /**
+  Test for the named dataset type.
+  */
+  bool DataSetTypeIsImage() const
+    {
+    return this->MetaData->DataSetTypeIsImage();
+    }
+  bool DataSetTypeIsRectilinear()
+    {
+    return this->MetaData->DataSetTypeIsRectilinear();
+    }
+  bool DataSetTypeIsStructured()
+    {
+    return this->MetaData->DataSetTypeIsStructured();
+    }
+
 
   /**
   Print internal state.
@@ -134,8 +166,8 @@ private:
   Read the array from the specified file into point data in a single
   pass.
   */
-  int ReadScalarArray(const BOVScalarImageIterator &it, vtkImageData *grid);
-  int ReadVectorArray(const BOVVectorImageIterator &it, vtkImageData *grid);
+  int ReadScalarArray(const BOVScalarImageIterator &it, vtkDataSet *grid);
+  int ReadVectorArray(const BOVVectorImageIterator &it, vtkDataSet *grid);
 
   /**
   Read the array from the specified file into point data in multiple
@@ -144,12 +176,12 @@ private:
   int ReadScalarArray(
         const BOVScalarImageIterator &fhit,
         const CartesianDataBlockIODescriptor *descr,
-        vtkImageData *grid);
+        vtkDataSet *grid);
 
   int ReadVectorArray(
         const BOVVectorImageIterator &fhit,
         const CartesianDataBlockIODescriptor *descr,
-        vtkImageData *grid);
+        vtkDataSet *grid);
 
 private:
   BOVMetaData *MetaData;     // Object that knows how to interpret dataset.

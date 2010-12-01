@@ -9,8 +9,9 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __BinaryStream_hxx
 #define __BinaryStream_hxx
 
-#include "CartesianDecomp.h"
+#include "SharedArray.hxx"
 
+#include <cstdlib>
 #include <string>
 using std::string;
 #include <map>
@@ -74,6 +75,8 @@ public:
   void UnPack(string &str);
   template<typename T> void Pack(vector<T> &v);
   template<typename T> void UnPack(vector<T> &v);
+  template<typename T> void Pack(SharedArray<T> &v);
+  template<typename T> void UnPack(SharedArray<T> &v);
   void Pack(map<string,int> &m);
   void UnPack(map<string,int> &m);
 
@@ -258,6 +261,25 @@ void BinaryStream::UnPack(vector<T> &v)
   this->UnPack(vLen);
   v.resize(vLen);
   this->UnPack(&v[0],vLen);
+}
+
+//-----------------------------------------------------------------------------
+template<typename T>
+void BinaryStream::Pack(SharedArray<T> &v)
+{
+  const int vLen=v.Size();
+  this->Pack(vLen);
+  this->Pack(v.GetPointer(),vLen);
+}
+
+//-----------------------------------------------------------------------------
+template<typename T>
+void BinaryStream::UnPack(SharedArray<T> &v)
+{
+  int vLen;
+  this->UnPack(vLen);
+  v.Resize(vLen);
+  this->UnPack(v.GetPointer(),vLen);
 }
 
 //-----------------------------------------------------------------------------

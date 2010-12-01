@@ -18,7 +18,7 @@ using std::ostream;
 /**
 Represnetation of a cartesian volume and common operations
 on it. The implementation is intended to be fast and light
-so that it may be used in place of int[6] with no
+so that it may be used in place of int[6] with little or no
 performance penalty.
 */
 class CartesianExtent
@@ -69,9 +69,9 @@ public:
         const double DX[3],
         double lowerBound[3]) const;
   void GetLowerBound(
-        const double *X,
-        const double *Y,
-        const double *Z,
+        const float *X,
+        const float *Y,
+        const float *Z,
         double lowerBound[3]) const;
 
   /**
@@ -83,9 +83,9 @@ public:
         const double DX[3],
         double upperBound[3]) const;
   void GetUpperBound(
-        const double *X,
-        const double *Y,
-        const double *Z,
+        const float *X,
+        const float *Y,
+        const float *Z,
         double upperBound[3]) const;
 
   /**
@@ -97,9 +97,9 @@ public:
         const double DX[3],
         double bounds[6]) const;
   void GetBounds(
-        const double *X,
-        const double *Y,
-        const double *Z,
+        const float *X,
+        const float *Y,
+        const float *Z,
         double bounds[6]) const;
   /// \@}
 
@@ -283,9 +283,9 @@ void CartesianExtent::GetLowerBound(
 //-----------------------------------------------------------------------------
 inline
 void CartesianExtent::GetLowerBound(
-      const double *X,
-      const double *Y,
-      const double *Z,
+      const float *X,
+      const float *Y,
+      const float *Z,
       double lowerBound[3]) const
 {
   lowerBound[0]=X[this->Data[0]];
@@ -314,9 +314,9 @@ void CartesianExtent::GetUpperBound(
 //-----------------------------------------------------------------------------
 inline
 void CartesianExtent::GetUpperBound(
-      const double *X,
-      const double *Y,
-      const double *Z,
+      const float *X,
+      const float *Y,
+      const float *Z,
       double upperBound[3]) const
 {
   upperBound[0]=X[this->Data[1]+1];
@@ -348,9 +348,9 @@ void CartesianExtent::GetBounds(
 //-----------------------------------------------------------------------------
 inline
 void CartesianExtent::GetBounds(
-      const double *X,
-      const double *Y,
-      const double *Z,
+      const float *X,
+      const float *Y,
+      const float *Z,
       double bounds[6]) const
 {
 
