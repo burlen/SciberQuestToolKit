@@ -22,7 +22,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkIntArray.h"
 #include "vtkDoubleArray.h"
 #include "vtkPointData.h"
-#include "vtkDistributedFieldTracer.h"
+#include "vtkSQDistributedStreamTracer.h"
 #include "vtkPlaneSource.h"
 #include "vtkMultiProcessController.h"
 #include "vtkCommunicator.h"
@@ -346,7 +346,7 @@ int vtkFieldTopologyAnalyzer::RequestData(
   // Trace field lines forward.
   vtkInformation *arrayInfo=this->GetInputArrayInformation(0);
   const char *vectors=arrayInfo->Get(vtkDataObject::FIELD_NAME());
-  vtkDistributedFieldTracer *fwdFieldTracer=vtkDistributedFieldTracer::New();
+  vtkSQDistributedStreamTracer *fwdFieldTracer=vtkSQDistributedStreamTracer::New();
   fwdFieldTracer->SetIntegrationDirectionToForward();
   fwdFieldTracer->SetIntegratorTypeToRungeKutta4();
   fwdFieldTracer->SetInitialIntegrationStep(this->StepSize);
@@ -373,7 +373,7 @@ int vtkFieldTopologyAnalyzer::RequestData(
   this->UpdateProgress(0.35);
 
   // Trace field lines backward.
-  vtkDistributedFieldTracer *bwdFieldTracer=vtkDistributedFieldTracer::New();
+  vtkSQDistributedStreamTracer *bwdFieldTracer=vtkSQDistributedStreamTracer::New();
   bwdFieldTracer->SetIntegrationDirectionToBackward();
   bwdFieldTracer->SetIntegratorTypeToRungeKutta4();
   bwdFieldTracer->SetInitialIntegrationStep(this->StepSize);

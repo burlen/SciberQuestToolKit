@@ -1,7 +1,7 @@
 /*=========================================================================
 
 Program:   Visualization Toolkit
-Module:    $RCSfile: vtkFieldTracer.cxx,v $
+Module:    $RCSfile: vtkSQStreamTracer.cxx,v $
 
 Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
 All rights reserved.
@@ -12,7 +12,7 @@ the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkFieldTracer.h"
+#include "vtkSQStreamTracer.h"
 
 #include "vtkCellArray.h"
 #include "vtkCellData.h"
@@ -45,14 +45,14 @@ PURPOSE.  See the above copyright notice for more information.
   #include "vtkInterpolatedVelocityField.h"
 #endif
 
-vtkCxxRevisionMacro(vtkFieldTracer, "$Revision: 1.49 $");
-vtkStandardNewMacro(vtkFieldTracer);
-vtkCxxSetObjectMacro(vtkFieldTracer,Integrator,vtkInitialValueProblemSolver);
-vtkCxxSetObjectMacro(vtkFieldTracer,InterpolatorPrototype,vtkInterpolatedVelocityField);
+vtkCxxRevisionMacro(vtkSQStreamTracer, "$Revision: 1.49 $");
+vtkStandardNewMacro(vtkSQStreamTracer);
+vtkCxxSetObjectMacro(vtkSQStreamTracer,Integrator,vtkInitialValueProblemSolver);
+vtkCxxSetObjectMacro(vtkSQStreamTracer,InterpolatorPrototype,vtkInterpolatedVelocityField);
 
-const double vtkFieldTracer::EPSILON = 1.0E-12;
+const double vtkSQStreamTracer::EPSILON = 1.0E-12;
 
-vtkFieldTracer::vtkFieldTracer()
+vtkSQStreamTracer::vtkSQStreamTracer()
 {
   this->Integrator = vtkRungeKutta2::New();
   this->IntegrationDirection = FORWARD;
@@ -87,23 +87,23 @@ vtkFieldTracer::vtkFieldTracer()
                                vtkDataSetAttributes::VECTORS);
 }
 
-vtkFieldTracer::~vtkFieldTracer()
+vtkSQStreamTracer::~vtkSQStreamTracer()
 {
   this->SetIntegrator(0);
   this->SetInterpolatorPrototype(0);
 }
 
-void vtkFieldTracer::SetSourceConnection(vtkAlgorithmOutput* algOutput)
+void vtkSQStreamTracer::SetSourceConnection(vtkAlgorithmOutput* algOutput)
 {
   this->SetInputConnection(1, algOutput);
 }
 
-void vtkFieldTracer::SetSource(vtkDataSet *source)
+void vtkSQStreamTracer::SetSource(vtkDataSet *source)
 {
   this->SetInput(1, source);
 }
 
-vtkDataSet *vtkFieldTracer::GetSource()
+vtkDataSet *vtkSQStreamTracer::GetSource()
 {
   if (this->GetNumberOfInputConnections(1) < 1)
     {
@@ -113,7 +113,7 @@ vtkDataSet *vtkFieldTracer::GetSource()
     this->GetExecutive()->GetInputData(1, 0));
 }
 
-int vtkFieldTracer::GetIntegratorType()
+int vtkSQStreamTracer::GetIntegratorType()
 {
   if (!this->Integrator)
     {
@@ -134,7 +134,7 @@ int vtkFieldTracer::GetIntegratorType()
   return UNKNOWN;
 }
 
-void vtkFieldTracer::SetIntegratorType(int type)
+void vtkSQStreamTracer::SetIntegratorType(int type)
 {
   vtkInitialValueProblemSolver* ivp=0;
   switch (type)
@@ -159,7 +159,7 @@ void vtkFieldTracer::SetIntegratorType(int type)
     }
 }
 
-void vtkFieldTracer::SetMaximumPropagation( double max )
+void vtkSQStreamTracer::SetMaximumPropagation( double max )
 {   
   if ( max == this->MaximumPropagation )
     {
@@ -169,7 +169,7 @@ void vtkFieldTracer::SetMaximumPropagation( double max )
   this->Modified();
 }
 
-void vtkFieldTracer::SetIntegrationStepUnit( int unit )
+void vtkSQStreamTracer::SetIntegrationStepUnit( int unit )
 { 
   if ( unit != LENGTH_UNIT && unit != CELL_LENGTH_UNIT )
     {
@@ -185,7 +185,7 @@ void vtkFieldTracer::SetIntegrationStepUnit( int unit )
   this->Modified();
 }   
 
-void vtkFieldTracer::SetMinimumIntegrationStep( double step )
+void vtkSQStreamTracer::SetMinimumIntegrationStep( double step )
 {
   if ( step == this->MinimumIntegrationStep )
     {
@@ -195,7 +195,7 @@ void vtkFieldTracer::SetMinimumIntegrationStep( double step )
   this->Modified();
 }
 
-void vtkFieldTracer::SetMaximumIntegrationStep( double step )
+void vtkSQStreamTracer::SetMaximumIntegrationStep( double step )
 {
   if ( step == this->MaximumIntegrationStep )
     {
@@ -205,7 +205,7 @@ void vtkFieldTracer::SetMaximumIntegrationStep( double step )
   this->Modified();
 }
 
-void vtkFieldTracer::SetInitialIntegrationStep( double step )
+void vtkSQStreamTracer::SetInitialIntegrationStep( double step )
 {
   if ( step == this->InitialIntegrationStep )
     {
@@ -215,7 +215,7 @@ void vtkFieldTracer::SetInitialIntegrationStep( double step )
   this->Modified();
 }
 
-double vtkFieldTracer::ConvertToLength(
+double vtkSQStreamTracer::ConvertToLength(
   double interval, int unit, double cellLength )
 {
   double retVal = 0.0;
@@ -231,13 +231,13 @@ double vtkFieldTracer::ConvertToLength(
   return retVal;
 }
 
-double vtkFieldTracer::ConvertToLength(
-  vtkFieldTracer::IntervalInformation& interval, double cellLength )
+double vtkSQStreamTracer::ConvertToLength(
+  vtkSQStreamTracer::IntervalInformation& interval, double cellLength )
 {
   return ConvertToLength( interval.Interval, interval.Unit, cellLength );
 }
 
-void vtkFieldTracer::ConvertIntervals( double& step, double& minStep, 
+void vtkSQStreamTracer::ConvertIntervals( double& step, double& minStep, 
   double& maxStep, int direction, double cellLength )
 {
   minStep = maxStep = step = 
@@ -257,7 +257,7 @@ void vtkFieldTracer::ConvertIntervals( double& step, double& minStep,
     }
 }
 
-void vtkFieldTracer::CalculateVorticity(vtkGenericCell* cell, 
+void vtkSQStreamTracer::CalculateVorticity(vtkGenericCell* cell, 
                                          double pcoords[3],
                                          vtkDoubleArray* cellVectors, 
                                          double vorticity[3])
@@ -273,7 +273,7 @@ void vtkFieldTracer::CalculateVorticity(vtkGenericCell* cell,
   
 }
 
-void vtkFieldTracer::InitializeSeeds(vtkDataArray*& seeds,
+void vtkSQStreamTracer::InitializeSeeds(vtkDataArray*& seeds,
                                       vtkIdList*& seedIds,
                                       vtkIntArray*& integrationDirections,
                                       vtkDataSet *source)
@@ -366,7 +366,7 @@ void vtkFieldTracer::InitializeSeeds(vtkDataArray*& seeds,
     }
 }
 
-int vtkFieldTracer::SetupOutput(vtkInformation* inInfo, 
+int vtkSQStreamTracer::SetupOutput(vtkInformation* inInfo, 
                                  vtkInformation* outInfo)
 {
   int piece=outInfo->Get(
@@ -406,7 +406,7 @@ int vtkFieldTracer::SetupOutput(vtkInformation* inInfo,
     
 }
 
-int vtkFieldTracer::RequestData(
+int vtkSQStreamTracer::RequestData(
   vtkInformation *vtkNotUsed(request),
   vtkInformationVector **inputVector,
   vtkInformationVector *outputVector)
@@ -484,7 +484,7 @@ int vtkFieldTracer::RequestData(
   return 1;
 }
 
-int vtkFieldTracer::CheckInputs(vtkInterpolatedVelocityField*& func,
+int vtkSQStreamTracer::CheckInputs(vtkInterpolatedVelocityField*& func,
                                    int* maxCellSize)
 {
   if (!this->InputData)
@@ -556,7 +556,7 @@ int vtkFieldTracer::CheckInputs(vtkInterpolatedVelocityField*& func,
   return VTK_OK;
 }
 
-void vtkFieldTracer::Integrate(vtkDataSet *input0,
+void vtkSQStreamTracer::Integrate(vtkDataSet *input0,
                                 vtkPolyData* output,
                                 vtkDataArray* seedSource, 
                                 vtkIdList* seedIds,
@@ -743,7 +743,7 @@ void vtkFieldTracer::Integrate(vtkDataSet *input0,
       {
       inVectors->GetTuples(cell->PointIds, cellVectors);
       func->GetLastLocalCoordinates(pcoords);
-      vtkFieldTracer::CalculateVorticity(cell, pcoords, cellVectors, vort);
+      vtkSQStreamTracer::CalculateVorticity(cell, pcoords, cellVectors, vort);
       vorticity->InsertNextTuple(vort);
       // rotation
       // local rotation = vorticity . unit tangent ( i.e. velocity/speed )
@@ -891,7 +891,7 @@ void vtkFieldTracer::Integrate(vtkDataSet *input0,
         {
         inVectors->GetTuples(cell->PointIds, cellVectors);
         func->GetLastLocalCoordinates(pcoords);
-        vtkFieldTracer::CalculateVorticity(cell, pcoords, cellVectors, vort);
+        vtkSQStreamTracer::CalculateVorticity(cell, pcoords, cellVectors, vort);
         vorticity->InsertNextTuple(vort);
         // rotation
         // angular velocity = vorticity . unit tangent ( i.e. velocity/speed )
@@ -1030,7 +1030,7 @@ void vtkFieldTracer::Integrate(vtkDataSet *input0,
   return;
 }
 
-void vtkFieldTracer::GenerateNormals(vtkPolyData* output, double* firstNormal, 
+void vtkSQStreamTracer::GenerateNormals(vtkPolyData* output, double* firstNormal, 
                                       const char *vecName)
 {
   // Useful pointers
@@ -1107,7 +1107,7 @@ void vtkFieldTracer::GenerateNormals(vtkPolyData* output, double* firstNormal,
 // This is used by sub-classes in certain situations. It
 // does a lot less (for example, does not compute attributes)
 // than Integrate.
-void vtkFieldTracer::SimpleIntegrate(double seed[3], 
+void vtkSQStreamTracer::SimpleIntegrate(double seed[3], 
                                       double lastPoint[3], 
                                       double stepSize,
                                       vtkInterpolatedVelocityField* func)
@@ -1179,7 +1179,7 @@ void vtkFieldTracer::SimpleIntegrate(double seed[3],
   integrator->Delete();
 }
 
-int vtkFieldTracer::FillInputPortInformation(int port, vtkInformation *info)
+int vtkSQStreamTracer::FillInputPortInformation(int port, vtkInformation *info)
 {
   if (port == 0)
     {
@@ -1193,7 +1193,7 @@ int vtkFieldTracer::FillInputPortInformation(int port, vtkInformation *info)
   return 1;
 }
 
-void vtkFieldTracer::PrintSelf(ostream& os, vtkIndent indent)
+void vtkSQStreamTracer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
   os << indent << "Start position: " 
@@ -1242,7 +1242,7 @@ void vtkFieldTracer::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Rotation scale: " << this->RotationScale << endl;
 }
 
-vtkExecutive* vtkFieldTracer::CreateDefaultExecutive()
+vtkExecutive* vtkSQStreamTracer::CreateDefaultExecutive()
 {
   return vtkCompositeDataPipeline::New();
 }

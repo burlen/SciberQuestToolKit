@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkPFieldTracer.h,v $
+  Module:    $RCSfile: vtkSQPStreamTracer.h,v $
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,7 +12,7 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkPFieldTracer - Abstract superclass for parallel streamline generators
+// .NAME vtkSQPStreamTracer - Abstract superclass for parallel streamline generators
 // .SECTION Description
 // This class implements some necessary functionality used by distributed
 // and parallel streamline generators. Note that all processes must have
@@ -21,10 +21,10 @@
 // .SECTION See Also
 // vtkStreamTracer vtkDistributedStreamTracer vtkMPIStreamTracer
 
-#ifndef __vtkPFieldTracer_h
-#define __vtkPFieldTracer_h
+#ifndef __vtkSQPStreamTracer_h
+#define __vtkSQPStreamTracer_h
 
-#include "vtkFieldTracer.h"
+#include "vtkSQStreamTracer.h"
 
 #include "vtkSmartPointer.h" // This is a leaf node. No need to
 #include <vtkstd/vector>     // use PIMPL to avoid compile time penalty.
@@ -32,12 +32,12 @@
 class vtkInterpolatedVelocityField;
 class vtkMultiProcessController;
 
-class VTK_PARALLEL_EXPORT vtkPFieldTracer : public vtkFieldTracer
+class VTK_PARALLEL_EXPORT vtkSQPStreamTracer : public vtkSQStreamTracer
 {
 public:
-  vtkTypeRevisionMacro(vtkPFieldTracer,vtkFieldTracer);
+  vtkTypeRevisionMacro(vtkSQPStreamTracer,vtkSQStreamTracer);
   virtual void PrintSelf(ostream& os, vtkIndent indent);
-  static vtkPFieldTracer *New();
+  static vtkSQPStreamTracer *New();
 
   // Description:
   // Set/Get the controller use in compositing (set to
@@ -49,8 +49,8 @@ public:
 
 protected:
 
-  vtkPFieldTracer();
-  ~vtkPFieldTracer();
+  vtkSQPStreamTracer();
+  ~vtkSQPStreamTracer();
 
   virtual int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
   virtual int RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
@@ -86,8 +86,8 @@ protected:
   TmpOutputsType TmpOutputs;
 
 private:
-  vtkPFieldTracer(const vtkPFieldTracer&);  // Not implemented.
-  void operator=(const vtkPFieldTracer&);  // Not implemented.
+  vtkSQPStreamTracer(const vtkSQPStreamTracer&);  // Not implemented.
+  void operator=(const vtkSQPStreamTracer&);  // Not implemented.
 };
 
 

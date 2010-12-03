@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkPFieldTracer.cxx,v $
+  Module:    $RCSfile: vtkSQPStreamTracer.cxx,v $
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,7 +12,7 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkPFieldTracer.h"
+#include "vtkSQPStreamTracer.h"
 
 #include "vtkAppendPolyData.h"
 #include "vtkCellData.h"
@@ -29,15 +29,15 @@
 #include "vtkPolyData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 
-vtkCxxRevisionMacro(vtkPFieldTracer, "$Revision: 1.22 $");
-vtkStandardNewMacro(vtkPFieldTracer);
+vtkCxxRevisionMacro(vtkSQPStreamTracer, "$Revision: 1.22 $");
+vtkStandardNewMacro(vtkSQPStreamTracer);
 
-vtkCxxSetObjectMacro(vtkPFieldTracer, Controller, vtkMultiProcessController);
-vtkCxxSetObjectMacro(vtkPFieldTracer, 
+vtkCxxSetObjectMacro(vtkSQPStreamTracer, Controller, vtkMultiProcessController);
+vtkCxxSetObjectMacro(vtkSQPStreamTracer, 
                      Interpolator,
                      vtkInterpolatedVelocityField);
 
-vtkPFieldTracer::vtkPFieldTracer()
+vtkSQPStreamTracer::vtkSQPStreamTracer()
 {
   this->Controller = vtkMultiProcessController::GetGlobalController();
   if (this->Controller)
@@ -54,7 +54,7 @@ vtkPFieldTracer::vtkPFieldTracer()
   this->EmptyData = 0;
 }
 
-vtkPFieldTracer::~vtkPFieldTracer()
+vtkSQPStreamTracer::~vtkSQPStreamTracer()
 {
   if (this->Controller)
     {
@@ -81,7 +81,7 @@ vtkPFieldTracer::~vtkPFieldTracer()
 // piece. This has to be done in order to close the gap between
 // pieces which appear due to jump from one process to another.
 // This method waits until a process sends its first points.
-void vtkPFieldTracer::ReceiveLastPoints(vtkPolyData *output)
+void vtkSQPStreamTracer::ReceiveLastPoints(vtkPolyData *output)
 {
   int streamId = 0;
 
@@ -107,7 +107,7 @@ void vtkPFieldTracer::ReceiveLastPoints(vtkPolyData *output)
 
 // Once we are done sending, let's tell the next guy (unless
 // this is the last process) to send it's first points
-void vtkPFieldTracer::MoveToNextSend(vtkPolyData *output)
+void vtkSQPStreamTracer::MoveToNextSend(vtkPolyData *output)
 {
   int numProcs = this->Controller->GetNumberOfProcesses();
   int myid = this->Controller->GetLocalProcessId();
@@ -139,7 +139,7 @@ void vtkPFieldTracer::MoveToNextSend(vtkPolyData *output)
 // This method sends the first point of each streamline which
 // originated in another process to that process. This information
 // is stored in the "Streamline Origin" array.
-void vtkPFieldTracer::SendFirstPoints(vtkPolyData *output)
+void vtkSQPStreamTracer::SendFirstPoints(vtkPolyData *output)
 {
   vtkIntArray* strOrigin = vtkIntArray::SafeDownCast(
     output->GetCellData()->GetArray("Streamline Origin"));
@@ -165,7 +165,7 @@ void vtkPFieldTracer::SendFirstPoints(vtkPolyData *output)
 }
 
 // Receive one point and add it to the given cell.
-void vtkPFieldTracer::ReceiveCellPoint(vtkPolyData* tomod,
+void vtkSQPStreamTracer::ReceiveCellPoint(vtkPolyData* tomod,
                                         int streamId,
                                         vtkIdType idx)
 {
@@ -231,7 +231,7 @@ void vtkPFieldTracer::ReceiveCellPoint(vtkPolyData* tomod,
 }
 
 // Send one point and all of it's attributes to another process
-void vtkPFieldTracer::SendCellPoint(vtkPolyData* togo,
+void vtkSQPStreamTracer::SendCellPoint(vtkPolyData* togo,
                                      vtkIdType cellId, 
                                      vtkIdType idx, 
                                      int sendToId)
@@ -263,7 +263,7 @@ void vtkPFieldTracer::SendCellPoint(vtkPolyData* togo,
   copy->Delete();
 }
 
-int vtkPFieldTracer::RequestUpdateExtent(
+int vtkSQPStreamTracer::RequestUpdateExtent(
   vtkInformation *vtkNotUsed(request),
   vtkInformationVector **inputVector,
   vtkInformationVector *outputVector)
@@ -306,7 +306,7 @@ int vtkPFieldTracer::RequestUpdateExtent(
   return 1;
 }
 
-int vtkPFieldTracer::RequestInformation(
+int vtkSQPStreamTracer::RequestInformation(
   vtkInformation *vtkNotUsed(request),
   vtkInformationVector **vtkNotUsed(inputVector),
   vtkInformationVector *outputVector)
@@ -317,7 +317,7 @@ int vtkPFieldTracer::RequestInformation(
   return 1;
 }
 
-int vtkPFieldTracer::RequestData(
+int vtkSQPStreamTracer::RequestData(
   vtkInformation *request,
   vtkInformationVector **inputVector,
   vtkInformationVector *outputVector)
@@ -436,7 +436,7 @@ int vtkPFieldTracer::RequestData(
   return 1;
 }
 
-void vtkPFieldTracer::PrintSelf(ostream& os, vtkIndent indent)
+void vtkSQPStreamTracer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
   os << indent << "Controller: " << this->Controller << endl;

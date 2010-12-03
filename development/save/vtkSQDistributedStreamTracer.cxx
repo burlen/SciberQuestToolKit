@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkDistributedFieldTracer.cxx,v $
+  Module:    $RCSfile: vtkSQDistributedStreamTracer.cxx,v $
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,7 +12,7 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkDistributedFieldTracer.h"
+#include "vtkSQDistributedStreamTracer.h"
 
 #include "vtkCellData.h"
 #include "vtkCompositeDataIterator.h"
@@ -31,21 +31,21 @@
 #include "vtkRungeKutta2.h"
 #include "vtkSmartPointer.h"
 
-vtkCxxRevisionMacro(vtkDistributedFieldTracer, "$Revision: 1.11 $");
-vtkStandardNewMacro(vtkDistributedFieldTracer);
+vtkCxxRevisionMacro(vtkSQDistributedStreamTracer, "$Revision: 1.11 $");
+vtkStandardNewMacro(vtkSQDistributedStreamTracer);
 
 //-----------------------------------------------------------------------------
-vtkDistributedFieldTracer::vtkDistributedFieldTracer()
+vtkSQDistributedStreamTracer::vtkSQDistributedStreamTracer()
 {
 }
 
 //-----------------------------------------------------------------------------
-vtkDistributedFieldTracer::~vtkDistributedFieldTracer()
+vtkSQDistributedStreamTracer::~vtkSQDistributedStreamTracer()
 {
 }
 
 //-----------------------------------------------------------------------------
-void vtkDistributedFieldTracer::ForwardTask(double seed[3],
+void vtkSQDistributedStreamTracer::ForwardTask(double seed[3],
                                              int direction,
                                              int taskType,
                                              int originatingProcId,
@@ -94,7 +94,7 @@ void vtkDistributedFieldTracer::ForwardTask(double seed[3],
 }
 
 //-----------------------------------------------------------------------------
-int vtkDistributedFieldTracer::ReceiveAndProcessTask()
+int vtkSQDistributedStreamTracer::ReceiveAndProcessTask()
 {
   int taskType = 0;
   int originatingProcId = 0;
@@ -179,7 +179,7 @@ int vtkDistributedFieldTracer::ReceiveAndProcessTask()
 }
 
 //-----------------------------------------------------------------------------
-int vtkDistributedFieldTracer::ProcessNextLine(int currentLine)
+int vtkSQDistributedStreamTracer::ProcessNextLine(int currentLine)
 {
   int myid = this->Controller->GetLocalProcessId();
 
@@ -212,7 +212,7 @@ int vtkDistributedFieldTracer::ProcessNextLine(int currentLine)
 
 // Integrate a streamline
 //-----------------------------------------------------------------------------
-int vtkDistributedFieldTracer::ProcessTask(double seed[3],
+int vtkSQDistributedStreamTracer::ProcessTask(double seed[3],
                                             int direction,
                                             int taskType,
                                             int originatingProcId,
@@ -343,10 +343,10 @@ int vtkDistributedFieldTracer::ProcessTask(double seed[3],
   vtkIntArray* termArray
   =vtkIntArray::SafeDownCast(streamLine->GetCellData()->GetArray("ReasonForTermination"));
   int term
-    = termArray?termArray->GetValue(0):vtkFieldTracer::OUT_OF_DOMAIN;
+    = termArray?termArray->GetValue(0):vtkSQStreamTracer::OUT_OF_DOMAIN;
   // If the interation terminated due to something other than
   // moving outside the domain, move to the next seed.
-  if (nPoints==0 || term!=vtkFieldTracer::OUT_OF_DOMAIN)
+  if (nPoints==0 || term!=vtkSQStreamTracer::OUT_OF_DOMAIN)
     {
     func->Delete();
     return this->ProcessNextLine(currentLine);
@@ -403,7 +403,7 @@ int vtkDistributedFieldTracer::ProcessTask(double seed[3],
 }
 
 //-----------------------------------------------------------------------------
-void vtkDistributedFieldTracer::ParallelIntegrate()
+void vtkSQDistributedStreamTracer::ParallelIntegrate()
 {
   int myid = this->Controller->GetLocalProcessId();
   if (this->Seeds)
@@ -428,7 +428,7 @@ void vtkDistributedFieldTracer::ParallelIntegrate()
 }
 
 //-----------------------------------------------------------------------------
-void vtkDistributedFieldTracer::PrintSelf(ostream& os, vtkIndent indent)
+void vtkSQDistributedStreamTracer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
 }

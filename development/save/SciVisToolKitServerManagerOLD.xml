@@ -1213,7 +1213,7 @@ Copyright 2008 SciberQuest Inc.
   </SourceProxy>
  
  <!-- ==================================================================== -->
- <SourceProxy name="vtkDistributedFieldTracer" class="vtkDistributedFieldTracer"
+ <SourceProxy name="vtkSQDistributedStreamTracer" class="vtkSQDistributedStreamTracer"
     label="Field Tracer">
     <Documentation
        long_help="Integrate field lines in a vector field."

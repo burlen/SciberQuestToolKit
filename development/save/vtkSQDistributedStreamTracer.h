@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkDistributedFieldTracer.h,v $
+  Module:    $RCSfile: vtkSQDistributedStreamTracer.h,v $
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,7 +12,7 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkDistributedFieldTracer - Distributed streamline generator
+// .NAME vtkSQDistributedStreamTracer - Distributed streamline generator
 // .SECTION Description
 // This filter integrates streamlines on a distributed dataset. It is
 // essentially a serial algorithm: only one process is active at one
@@ -22,18 +22,18 @@
 // .SECTION See Also
 // vtkStreamTracer vtkPStreamTracer
 
-#ifndef __vtkDistributedFieldTracer_h
-#define __vtkDistributedFieldTracer_h
+#ifndef __vtkSQDistributedStreamTracer_h
+#define __vtkSQDistributedStreamTracer_h
 
-#include "vtkPFieldTracer.h"
+#include "vtkSQPStreamTracer.h"
 
-class VTK_PARALLEL_EXPORT vtkDistributedFieldTracer : public vtkPFieldTracer
+class VTK_PARALLEL_EXPORT vtkSQDistributedStreamTracer : public vtkSQPStreamTracer
 {
 public:
-  vtkTypeRevisionMacro(vtkDistributedFieldTracer,vtkPFieldTracer);
+  vtkTypeRevisionMacro(vtkSQDistributedStreamTracer,vtkSQPStreamTracer);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  static vtkDistributedFieldTracer *New();
+  static vtkSQDistributedStreamTracer *New();
 
 protected:
   //BTX
@@ -43,8 +43,8 @@ protected:
     TASK_CANCEL=2 };
   //ETX
 
-  vtkDistributedFieldTracer();
-  ~vtkDistributedFieldTracer();
+  vtkSQDistributedStreamTracer();
+  ~vtkSQDistributedStreamTracer();
 
   void ForwardTask(double seed[3],
                    int direction,
@@ -70,8 +70,8 @@ protected:
   virtual void ParallelIntegrate();
 
 private:
-  vtkDistributedFieldTracer(const vtkDistributedFieldTracer&);  // Not implemented.
-  void operator=(const vtkDistributedFieldTracer&);  // Not implemented.
+  vtkSQDistributedStreamTracer(const vtkSQDistributedStreamTracer&);  // Not implemented.
+  void operator=(const vtkSQDistributedStreamTracer&);  // Not implemented.
 };
 
 
