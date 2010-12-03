@@ -29,6 +29,7 @@ include(MPICHConfig.cmake)
 # Server manager wrapped sources.
 set(SM_SOURCES
   vtkSQBOVReader.cxx
+  vtkSQDistributedStreamTracer.cxx
   vtkSQFieldTopologySelect.cxx
   vtkSQFieldTopologySplit.cxx
   vtkSQFieldTracer.cxx
@@ -37,6 +38,7 @@ set(SM_SOURCES
   vtkSQLineSource.cxx
   vtkSQCellGenerator.cxx
   vtkSQPlaneSourceCellGenerator.cxx
+  vtkSQPStreamTracer.cxx
   vtkSQVolumeSourceCellGenerator.cxx
   vtkSQPlaneSource.cxx
   vtkSQPointSource.cxx
@@ -44,6 +46,7 @@ set(SM_SOURCES
   vtkSQRandomSeedPoints.cxx
   vtkSQSeedPointLatice.cxx
   vtkSQSphereSource.cxx
+  vtkSQStreamTracer.cxx
   vtkSQSurfaceVectors.cxx
   vtkSQVolumeSource.cxx
   vtkSQVortexFilter.cxx
@@ -83,11 +86,11 @@ set(_SOURCES
   TopologicalClassSelector.cxx
   UnstructuredFieldTopologyMap.cxx
   UnstructuredGridCellCopier.cxx
-  vtkSQMetaDataKeys.cxx
-  vtkSQOOCReader.cxx
-  vtkSQOOCBOVReader.cxx
   vtkSQHemisphereSourceConfigurationWriter.cxx
   vtkSQHemisphereSourceConfigurationReader.cxx
+  vtkSQMetaDataKeys.cxx
+  vtkSQOOCBOVReader.cxx
+  vtkSQOOCReader.cxx
   vtkSQPlaneSourceConfigurationWriter.cxx
   vtkSQPlaneSourceConfigurationReader.cxx
   vtkSQVolumeSourceConfigurationWriter.cxx

@@ -1214,7 +1214,7 @@ Copyright 2008 SciberQuest Inc.
  
  <!-- ==================================================================== -->
  <SourceProxy name="vtkSQDistributedStreamTracer" class="vtkSQDistributedStreamTracer"
-    label="Field Tracer">
+    label="PV-3.6 Stream Tracer">
     <Documentation
        long_help="Integrate field lines in a vector field."
        short_help="Integrate field lines in a vector field.">
