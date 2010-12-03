@@ -351,24 +351,69 @@ int vtkSQVortexFilter::RequestData(
     // Rotation.
     if (this->ComputeRotation)
       {
+      string name;
+
+      vtkDataArray *Rx=V->NewInstance();
+      outImData->GetPointData()->AddArray(Rx);
+      Rx->Delete();
+      Rx->SetNumberOfComponents(1);
+      Rx->SetNumberOfTuples(outputTups);
+      name="rot-x";
+      name+=V->GetName();
+      Rx->SetName(name.c_str());
+
+      vtkDataArray *Ry=V->NewInstance();
+      outImData->GetPointData()->AddArray(Ry);
+      Ry->Delete();
+      Ry->SetNumberOfComponents(1);
+      Ry->SetNumberOfTuples(outputTups);
+      name="rot-y";
+      name+=V->GetName();
+      Ry->SetName(name.c_str());
+
+      vtkDataArray *Rz=V->NewInstance();
+      outImData->GetPointData()->AddArray(Rz);
+      Rz->Delete();
+      Rz->SetNumberOfComponents(1);
+      Rz->SetNumberOfTuples(outputTups);
+      name="rot-z";
+      name+=V->GetName();
+      Rz->SetName(name.c_str());
+
       vtkDataArray *R=V->NewInstance();
       outImData->GetPointData()->AddArray(R);
       R->Delete();
       R->SetNumberOfComponents(3);
       R->SetNumberOfTuples(outputTups);
-      string name("rot-");
+      name="rot-";
       name+=V->GetName();
       R->SetName(name.c_str());
+
       //
-      vtkFloatArray *fV=0,*fR=0;
-      vtkDoubleArray *dV=0, *dR=0;
+      vtkFloatArray *fV=0,*fRx=0,*fRy=0,*fRz=0,*fR=0;
+      vtkDoubleArray *dV=0, *dRx=0, *dRy=0, *dRz=0, *dR=0;
       if ( (fV=dynamic_cast<vtkFloatArray *>(V))!=NULL
+        && (fRx=dynamic_cast<vtkFloatArray *>(Rx))!=NULL
+        && (fRy=dynamic_cast<vtkFloatArray *>(Ry))!=NULL
+        && (fRz=dynamic_cast<vtkFloatArray *>(Rz))!=NULL
         && (fR=dynamic_cast<vtkFloatArray *>(R))!=NULL)
         {
         switch (this->Mode)
           {
           case MODE_3D:
-            Rotation(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fR->GetPointer(0));
+            Rotation(
+                inputExt.GetData(),
+                outputExt.GetData(),
+                dX,
+                fV->GetPointer(0),
+                fRx->GetPointer(0),
+                fRy->GetPointer(0),
+                fRz->GetPointer(0));
+            Interleave(outputTups,
+                fRx->GetPointer(0),
+                fRy->GetPointer(0),
+                fRz->GetPointer(0),
+                fR->GetPointer(0));
             break;
 
           case MODE_2D_XY:
@@ -382,12 +427,27 @@ int vtkSQVortexFilter::RequestData(
         }
       else
       if ( (dV=dynamic_cast<vtkDoubleArray *>(V))!=NULL
+        && (dRx=dynamic_cast<vtkDoubleArray *>(Rx))!=NULL
+        && (dRy=dynamic_cast<vtkDoubleArray *>(Ry))!=NULL
+        && (dRz=dynamic_cast<vtkDoubleArray *>(Rz))!=NULL
         && (dR=dynamic_cast<vtkDoubleArray *>(R))!=NULL)
         {
         switch (this->Mode)
           {
           case MODE_3D:
-            Rotation(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dR->GetPointer(0));
+            Rotation(
+                inputExt.GetData(),
+                outputExt.GetData(),
+                dX,
+                dV->GetPointer(0),
+                dRx->GetPointer(0),
+                dRy->GetPointer(0),
+                dRz->GetPointer(0));
+            Interleave(outputTups,
+                dRx->GetPointer(0),
+                dRy->GetPointer(0),
+                dRz->GetPointer(0),
+                dR->GetPointer(0));
             break;
 
           case MODE_2D_XY:

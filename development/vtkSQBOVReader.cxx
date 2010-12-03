@@ -1141,13 +1141,15 @@ int vtkSQBOVReader::RequestData(
   #endif
 
   #if defined vtkSQBOVReaderTIME
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (this->WorldRank==0)
-    {
+  // ParaView will sometimes update only a single process, which
+  // dead locks here.
+  // MPI_Barrier(MPI_COMM_WORLD);
+  // if (this->WorldRank==0)
+  //   {
     gettimeofday(&wallt,0x0);
     double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
     pCerr() << "vtkSQBOVReader::RequestData " << walle-walls << endl;
-    }
+  //  }
   #endif
 
   return 1;

@@ -337,6 +337,20 @@ void Magnitude(int *I, T *V, T *mV)
 }
 
 //*****************************************************************************
+template<typename T>
+void Interleave(int n, T *Vx, T *Vy, T *Vz, T* V)
+{
+  // take scalar components and interleve into a vector array.
+  for (int i=0; i<n; ++i)
+    {
+    int ii=3*i;
+    V[ii  ]=Vx[i];
+    V[ii+1]=Vy[i];
+    V[ii+2]=Vz[i];
+    }
+}
+
+//*****************************************************************************
 template <typename T>
 void DivergenceFace(int *I, double *dX, T *V, T *mV, T *div)
 {
@@ -496,6 +510,65 @@ void Rotation(int *input, int *output, double *dX, T *V, T *W)
       }
     }
 }
+
+// input  -> patch input array is defined on
+// output -> patch outpu array is defined on
+// dX     -> grid spacing triple
+// V      -> vector field
+// W      -> vector curl
+//*****************************************************************************
+template <typename T>
+void Rotation(int *input, int *output, double *dX, T *V, T *Wx, T *Wy, T *Wz)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int ninj=ni*nj;
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _ninj=_ni*_nj;
+
+  // stencil deltas
+  const double dx[3]={dX[0]*2.0,dX[1]*2.0,dX[2]*2.0};
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        // output array indices
+        const int _i=p-output[0];
+        const int _j=q-output[2];
+        const int _k=r-output[4];
+        // index into output array;
+        const int pi=_k*_ninj+_j*_ni+_i;
+
+        // input array indices
+        const int i=p-input[0];
+        const int j=q-input[2];
+        const int k=r-input[4];
+        // stencil into the input array
+        const int vilo=3*(k*ninj+j*ni+(i-1));
+        const int vihi=3*(k*ninj+j*ni+(i+1));
+        const int vjlo=3*(k*ninj+(j-1)*ni+i);
+        const int vjhi=3*(k*ninj+(j+1)*ni+i);
+        const int vklo=3*((k-1)*ninj+j*ni+i);
+        const int vkhi=3*((k+1)*ninj+j*ni+i);
+
+        //      __   ->
+        //  w = \/ x V
+        Wx[pi]=(V[vjhi+2]-V[vjlo+2])/dx[1]-(V[vkhi+1]-V[vklo+1])/dx[2];
+        Wy[pi]=(V[vkhi  ]-V[vklo  ])/dx[2]-(V[vihi+2]-V[vilo+2])/dx[0];
+        Wz[pi]=(V[vihi+1]-V[vilo+1])/dx[0]-(V[vjhi  ]-V[vjlo  ])/dx[1];
+        }
+      }
+    }
+}
+
 
 // input  -> patch input array is defined on
 // output -> patch outpu array is defined on
@@ -1015,9 +1088,6 @@ void Lambda2(int *input, int *output, double *dX,T *V, T *L2)
         const int _k=r-output[4];
         // index into output array;
         const int pi=_k*_ninj+_j*_ni+_i;
-        ///const int vi=3*pi; TODO VALIDATE!!!
-        ///const int vj=vi+1;
-        ///const int vk=vi+2;
 
         // input array indices
         const int i=p-input[0];
