@@ -48,6 +48,7 @@ set(SM_SOURCES
   vtkSQSphereSource.cxx
   vtkSQStreamTracer.cxx
   vtkSQSurfaceVectors.cxx
+  vtkSQTubeFilter.cxx
   vtkSQVolumeSource.cxx
   vtkSQVortexFilter.cxx
   )

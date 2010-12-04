@@ -3142,6 +3142,167 @@ Copyright 2008 SciberQuest Inc.
    <!-- End StreamTracer -->
    </SourceProxy>
 
+   <!-- ==================================================================== -->
+   <SourceProxy name="vtkSQTubeFilter" class="vtkSQTubeFilter" label="SQ Tube">
+    <Documentation
+       long_help="Convert lines into tubes. Normals are used to avoid cracks between tube segments."
+       short_help="Convert lines into tubes.">
+      The Tube filter creates tubes around the lines in the input polygonal/unstructured dataset. The output is polygonal.
+    </Documentation>
+    <InputProperty
+       name="Input"
+       command="SetInputConnection">
+          <ProxyGroupDomain name="groups">
+            <Group name="sources"/>
+            <Group name="filters"/>
+          </ProxyGroupDomain>
+          <DataTypeDomain name="input_type">
+            <DataType value="vtkDataSet"/>
+          </DataTypeDomain>
+          <InputArrayDomain name="input_array1" attribute_type="point"
+                            number_of_components="1" optional="1"/>
+          <InputArrayDomain name="input_array2" attribute_type="point"
+                            number_of_components="3" optional="1"/>
+          <Documentation>
+            This property specifies the input to the Tube filter.
+          </Documentation>
+     </InputProperty>
+
+     <StringVectorProperty 
+        name="SelectInputScalars" 
+        command="SetInputArrayToProcess"
+        number_of_elements="5"
+        element_types="0 0 0 0 2"
+        label="Scalars">
+          <ArrayListDomain name="array_list" attribute_type="Scalars" 
+               input_domain_name="input_array1">
+            <RequiredProperties>
+               <Property name="Input" function="Input"/>
+            </RequiredProperties>
+          </ArrayListDomain>
+          <Documentation>
+            This property indicates the name of the scalar array on which to
+            operate. The indicated array may be used for scaling the tubes.
+            (See the VaryRadius property.)
+          </Documentation>
+     </StringVectorProperty>
+
+     <StringVectorProperty 
+        name="SelectInputVectors" 
+        command="SetInputArrayToProcess"
+        number_of_elements="5"
+        element_types="0 0 0 0 2"
+        default_values="1" 
+        label="Vectors">  <!-- default value=1 so normals go to the right place -->
+          <ArrayListDomain name="array_list" attribute_type="Vectors"
+               input_domain_name="input_array2">
+            <RequiredProperties>
+               <Property name="Input" function="Input"/>
+            </RequiredProperties>
+          </ArrayListDomain>
+          <Documentation>
+            This property indicates the name of the vector array on which to
+            operate. The indicated array may be used for scaling and/or
+            orienting the tubes. (See the VaryRadius property.)
+          </Documentation>
+     </StringVectorProperty>
+
+     <IntVectorProperty 
+        name="NumberOfSides" 
+        command="SetNumberOfSides" 
+        number_of_elements="1"
+        animateable="1"
+        default_values="6"
+        label="Number of Sides"> 
+       <IntRangeDomain name="range" min="3"/>
+       <Documentation>
+         The value of this property indicates the number of faces around the circumference of the tube.
+       </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty 
+        name="Capping" 
+        command="SetCapping" 
+        number_of_elements="1"
+        default_values="1" > 
+       <BooleanDomain name="bool"/>
+       <Documentation>
+         If this property is set to 1, endcaps will be drawn on the tube. Otherwise the ends of the tube will be open.
+       </Documentation>
+     </IntVectorProperty>
+
+      <DoubleVectorProperty
+         name="Radius"
+         command="SetRadius"
+         number_of_elements="1"
+         default_values="1.0" >
+        <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="0.01">
+          <RequiredProperties>
+             <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </BoundsDomain>
+        <Documentation>
+          The value of this property sets the radius of the tube. If the radius is varying (VaryRadius property), then this value is the minimum radius.
+        </Documentation>
+      </DoubleVectorProperty>
+
+     <IntVectorProperty 
+        name="VaryRadius" 
+        command="SetVaryRadius" 
+        number_of_elements="1"
+        default_values="0" >
+       <EnumerationDomain name="enum">
+         <Entry value="0" text="Off"/>
+         <Entry value="1" text="By Scalar"/>
+         <Entry value="2" text="By Vector"/>
+         <Entry value="3" text="By Absolute Scalar"/>
+       </EnumerationDomain>
+       <Documentation>
+         The property determines whether/how to vary the radius of the tube. If
+         varying by scalar (1), the tube radius is based on the point-based
+         scalar values in the dataset. If it is varied by vector, the vector
+         magnitude is used in varying the radius.
+       </Documentation>
+     </IntVectorProperty>
+
+      <DoubleVectorProperty
+         name="RadiusFactor"
+         command="SetRadiusFactor"
+         number_of_elements="1"
+         default_values="10" >
+        <DoubleRangeDomain name="range"/>
+        <Documentation>
+          If varying the radius (VaryRadius property), the property sets the
+          maximum tube radius in terms of a multiple of the minimum radius. If
+          not varying the radius, this value has no effect.
+        </Documentation>
+      </DoubleVectorProperty>
+
+     <IntVectorProperty 
+        name="UseDefaultNormal" 
+        command="SetUseDefaultNormal" 
+        number_of_elements="1"
+        default_values="0" > 
+       <BooleanDomain name="bool"/>
+       <Documentation>
+         If this property is set to 0, and the input contains no vector array, then default ribbon normals will be generated (DefaultNormal property); if a vector array has been set (SelectInputVectors property), the ribbon normals will be set from the specified array. If this property is set to 1, the default normal (DefaultNormal property) will be used, regardless of whether the SelectInputVectors property has been set.
+       </Documentation>
+     </IntVectorProperty>
+
+     <DoubleVectorProperty
+        name="DefaultNormal"
+        command="SetDefaultNormal"
+        number_of_elements="3"
+        default_values="0 0 1" >
+       <DoubleRangeDomain name="range"/>
+       <Documentation>
+         The value of this property specifies the normal to use when the UseDefaultNormal property is set to 1 or the input contains no vector array (SelectInputVectors property).
+       </Documentation>
+     </DoubleVectorProperty>
+
+   <!-- End TubeFilter -->
+   </SourceProxy>
+
   <!-- ==================================================================== -->
   <SourceProxy 
     name="vtkSQSeedPointLatice"
