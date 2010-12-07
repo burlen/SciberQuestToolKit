@@ -14,6 +14,7 @@ Copyright 2008 SciberQuest Inc.
 #include "TerminationCondition.h"
 
 #include "vtkDataSet.h"
+#include "vtkCellData.h"
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
 #include "vtkUnstructuredGrid.h"
@@ -42,8 +43,10 @@ void StreamlineData::ClearOut()
 {
   if (this->OutPts){ this->OutPts->Delete(); }
   if (this->OutCells){ this->OutCells->Delete(); }
+  if (this->Length){ this->Length->Delete(); }
   this->OutPts=0;
   this->OutCells=0;
+  this->Length=0;
 }
 
 //-----------------------------------------------------------------------------
@@ -144,6 +147,11 @@ void StreamlineData::SetOutput(vtkDataSet *o)
 
   this->OutCells=vtkCellArray::New();
   out->SetLines(this->OutCells);
+
+  this->Length=vtkFloatArray::New();
+  this->Length->SetName("length");
+  this->Length->Register(0);
+  out->GetCellData()->AddArray(this->Length);
 }
 
 //-----------------------------------------------------------------------------
@@ -222,8 +230,11 @@ int StreamlineData::SyncGeometry()
   vtkIdType *pLineCells
     = lineCells->WritePointer(lineCells->GetNumberOfTuples(),nNewPtsTotal+nLines);
 
-  // before we forget
+  //
   this->OutCells->SetNumberOfCells(this->OutCells->GetNumberOfCells()+nLines);
+
+  float *pLength
+    = this->Length->WritePointer(this->Length->GetNumberOfTuples(),nLines);
 
   vtkIdType ptId=nLinePts;
 
@@ -231,6 +242,20 @@ int StreamlineData::SyncGeometry()
     {
     // copy the points
     vtkIdType nNewPts=this->Lines[i]->CopyPoints(pLinePts);
+
+    // compute the arc-length
+    *pLength=0.0;
+    for (int q=1; q<nNewPts; ++q)
+      {
+      int q0=3*(q-1);
+      int q1=3*q;
+      float x=pLinePts[q1  ]-pLinePts[q0  ];
+      float y=pLinePts[q1+1]-pLinePts[q0+1];
+      float z=pLinePts[q1+2]-pLinePts[q0+2];
+      *pLength+=sqrt(x*x+y*y+z*z);
+      }
+    ++pLength;
+
     pLinePts+=3*nNewPts;
 
     // build the cell
@@ -246,4 +271,5 @@ int StreamlineData::SyncGeometry()
 
   return 1;
 }
+
 

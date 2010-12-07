@@ -266,6 +266,9 @@ int main(int argc, char **argv)
   double hemiCenter[3];
   iErr+=GetRequiredAttribute<double,3>(elem,"center",hemiCenter);
 
+  double hemiNorth[3];
+  iErr+=GetRequiredAttribute<double,3>(elem,"north",hemiNorth);
+
   double hemiRadius;
   iErr+=GetRequiredAttribute<double,1>(elem,"radius",&hemiRadius);
 
@@ -280,6 +283,7 @@ int main(int argc, char **argv)
 
   vtkSQHemisphereSource *hs=vtkSQHemisphereSource::New();
   hs->SetCenter(hemiCenter);
+  hs->SetNorth(hemiNorth);
   hs->SetRadius(hemiRadius);
   hs->SetResolution(hemiResolution);
 

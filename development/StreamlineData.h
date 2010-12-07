@@ -40,7 +40,8 @@ public:
     SourcePts(0),
     SourceCells(0),
     OutPts(0),
-    OutCells(0)
+    OutCells(0),
+    Length(0)
        {}
 
   virtual ~StreamlineData();
@@ -83,6 +84,7 @@ private:
 
   vtkFloatArray *OutPts;
   vtkCellArray *OutCells;
+  vtkFloatArray *Length;
 };
 
 #endif

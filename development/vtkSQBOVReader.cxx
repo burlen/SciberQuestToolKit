@@ -728,11 +728,11 @@ int vtkSQBOVReader::RequestData(
   #if defined vtkSQBOVReaderTIME
   double walls=0.0;
   timeval wallt;
-  if (this->WorldRank==0)
-    {
+  // if (this->WorldRank==0)
+  //   {
     gettimeofday(&wallt,0x0);
     walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-    }
+  //   }
   #endif
 
   vtkInformation *info=outInfos->GetInformationObject(0);
