@@ -1,3 +1,11 @@
+/*
+   ____    _ __           ____               __    ____
+  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
+ _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+
+Copyright 2008 SciberQuest Inc.
+*/
 #include<iostream>
 #include<sstream>
 #include<vector>
@@ -15,6 +23,9 @@ using namespace std;
 
 #include"FsUtils.h"
 
+// this script computes temerature and pressure on H3D datasets.
+// it works in a task parallel way assigning timesteps to processes.
+//-----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
   MPI_Init(&argc,&argv);

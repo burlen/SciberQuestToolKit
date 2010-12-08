@@ -1,3 +1,11 @@
+/*
+   ____    _ __           ____               __    ____
+  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
+ _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+
+Copyright 2008 SciberQuest Inc.
+*/
 #include <iostream>
 using std::cerr;
 using std::endl;
@@ -9,7 +17,9 @@ using std::endl;
 #include <sys/stat.h>
 #include <fcntl.h>
 
-
+// This script generates an array of zeros the same size as the other
+// arrays in the dataset, for use in the projection. bz=0.
+//-----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
   if (argc!=5)
