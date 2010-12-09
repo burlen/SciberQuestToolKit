@@ -26,17 +26,30 @@ for f in `ls bx_[0-9]*.gda`
 do
   STEP=`echo $f | cut -d_ -f2 | cut -d. -f1`
   echo -n "processing $STEP..."
+
   # B
-  ln -s bx_$STEP.gda  bpx_$STEP.gda
-  ln -s by_$STEP.gda  bpy_$STEP.gda
-  ln -s zeros.gda     bpz_$STEP.gda
+  if [ -e bx_$STEP.gda ]
+  then 
+    ln -s bx_$STEP.gda  bpx_$STEP.gda
+    ln -s zeros.gda     bpy_$STEP.gda
+    ln -s bz_$STEP.gda  bpz_$STEP.gda
+  fi
+
   # E
-  ln -s ex_$STEP.gda  epx_$STEP.gda
-  ln -s ey_$STEP.gda  epy_$STEP.gda
-  ln -s zeros.gda     epz_$STEP.gda
+  if [ -e ex_$STEP.gda ]
+  then
+    ln -s ex_$STEP.gda  epx_$STEP.gda
+    ln -s zeros.gda     epy_$STEP.gda
+    ln -s ez_$STEP.gda  epz_$STEP.gda
+  fi
+
   # V
-  ln -s vix_$STEP.gda vipx_$STEP.gda
-  ln -s viy_$STEP.gda vipy_$STEP.gda
-  ln -s zeros.gda     vipz_$STEP.gda
+  if [ -e vix_$STEP.gda ]
+  then
+    ln -s vix_$STEP.gda vipx_$STEP.gda
+    ln -s zeros.gda     vipy_$STEP.gda
+    ln -s viz_$STEP.gda vipz_$STEP.gda
+  fi
+
   echo "OK."
 done
