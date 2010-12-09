@@ -91,37 +91,40 @@ int main(int argc, char **argv)
 
   if (worldRank==0)
     {
-    if (argc<4)
+    if (argc<5)
       {
       pCerr()
         << "Error: Command tail." << endl
         << " 1) /path/to/runConfig.xml" << endl
-        << " 2) /path/to/output/" << endl
-        << " 3) baseFileName" << endl
-        << " 4) startTime" << endl
-        << " 5) endTime" << endl
+        << " 2) /path/to/file.bov" << endl
+        << " 3) /path/to/output/" << endl
+        << " 4) baseFileName" << endl
+        << " 5) startTime" << endl
+        << " 6) endTime" << endl
         << endl;
       return SQ_EXIT_ERROR;
       }
     }
   else
     {
-    // only rank 0 does anything.
+    // only rank 0 does anything, using MPI so we can use
+    // the BOV reader which requires MPI.
     MPI_Finalize();
     return SQ_EXIT_SUCCESS;
     }
 
   char *configName=argv[1];
-  char *outputPath=argv[2];
-  char *baseName=argv[3];
+  char *bovFileName=argv[2];
+  char *outputPath=argv[3];
+  char *baseName=argv[4];
 
   double startTime=-1;
   double endTime=-1;
 
-  if (argc>4)
+  if (argc>5)
     {
-    startTime=atof(argv[2]);
-    endTime=atof(argv[3]);
+    startTime=atof(argv[5]);
+    endTime=atof(argv[6]);
     }
 
   // read the configuration file.
@@ -158,14 +161,6 @@ int main(int argc, char **argv)
   elem=GetRequiredElement(root,"vtkSQBOVReader");
   if (elem==0)
     {
-    return SQ_EXIT_ERROR;
-    }
-
-  const char *bovFileName;
-  iErr=GetRequiredAttribute(elem,"bov_file_name",&bovFileName);
-  if (iErr!=0)
-    {
-    sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
     return SQ_EXIT_ERROR;
     }
 
@@ -226,9 +221,6 @@ int main(int argc, char **argv)
     sqErrorMacro(pCerr(),"No seed source found.");
     return SQ_EXIT_ERROR;
     }
-
-
-
 
   // write pvd file
 

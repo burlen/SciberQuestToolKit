@@ -1,8 +1,12 @@
 <?xml version="1.0"?>
 <MagnetosphereTopologyBatch>
 
+  <!--
+  /scratch/01237/bloring/openggcm/tg457370/all.bovm
+  /scratch/01237/bloring/openggcm/tg457370/topo-2d/nmm
+  -->
+
   <vtkSQBOVReader
-      bov_file_name="/scratch/01237/bloring/openggcm/tg457370/all.bovm"
       vectors="b"
       decomp_dims="5 3 3"
       block_cache_size="45"/>
@@ -28,8 +32,5 @@
       dynamic_scheduler="1"
       master_block_size="16"
       worker_block_size="512"/>
-
-  <vtkXMLPDataSetWriter
-      out_file_base="/scratch/01237/bloring/openggcm/tg457370/topo-2d/nmm/nmm"/>
 
 </MagnetosphereTopologyBatch>
