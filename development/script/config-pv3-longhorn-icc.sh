@@ -7,6 +7,11 @@ cmake \
     -DBUILD_SHARED_LIBS=ON \
     -DBUILD_TESTING=OFF \
     -DPARAVIEW_BUILD_QT_GUI=OFF \
+    -DPARAVIEW_USE_MPI=ON \
+    -DMPI_COMPILER=/opt/apps/intel11_1/mvapich2/1.4/bin/mpicxx \
+    -DMPI_EXTRA_LIBRARY=/opt/apps/intel11_1/mvapich2/1.4/lib/libmpich.so\;/usr/lib64/libpthread.so\;/opt/ofed/lib64/librdmacm.so\;/opt/ofed/lib64/libibverbs.so\;/opt/ofed/lib64/libibumad.so\;/usr/lib64/librt.so \
+    -DMPI_INCLUDE_PATH=/opt/apps/intel11_1/mvapich2/1.4/include \
+    -DMPI_LIBRARY=/opt/apps/intel11_1/mvapich2/1.4/lib/libmpich.so \
     -DPARAVIEW_BUILD_PLUGIN_Array=OFF \
     -DPARAVIEW_BUILD_PLUGIN_ChartViewFrame=OFF \
     -DPARAVIEW_BUILD_PLUGIN_ClientChartView=OFF \
