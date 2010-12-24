@@ -20,6 +20,9 @@ using std::endl;
 #include <fstream>
 using std::ifstream;
 using std::ios;
+#include <sstream>
+using std::istringstream;
+
 
 #ifndef WIN32
   #define PATH_SEP "/"
@@ -73,5 +76,26 @@ size_t LoadBin(const char *fileName, size_t dlen, T *buffer)
   // return the data, it's up to the caller to free.
   return dlen;
 }
+
+
+//*****************************************************************************
+template<typename T>
+int NameValue(vector<string> &lines, string name, T &value)
+{
+  size_t nLines=lines.size();
+  for (size_t i=0; i<nLines; ++i)
+    {
+    string tok;
+    istringstream is(lines[i]);
+    is >> tok;
+    if (tok==name)
+      {
+      is >> value;
+      return 1;
+      }
+    }
+  return 0;
+}
+
 
 #endif

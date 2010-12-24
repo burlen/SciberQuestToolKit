@@ -5,7 +5,6 @@
 /___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
 
 Copyright 2008 SciberQuest Inc.
-
 */
 #ifndef __pqSQProcessMonitor_h
 #define __pqSQProcessMonitor_h
@@ -21,6 +20,7 @@ using Ui::pqSQProcessMonitorForm;
 class pqProxy;
 class vtkEventQtSlotConnect;
 class QWidget;
+class MemoryMonitor;
 
 class pqSQProcessMonitor : public pqNamedObjectPanel
 {
@@ -59,6 +59,8 @@ private:
 private:
   pqSQProcessMonitorForm *Form;
   vtkEventQtSlotConnect *VTKConnect;
+  int InformationMTime;
+  MemoryMonitor *MemMonitor;
 };
 
 #endif

@@ -75,6 +75,7 @@ set(_SOURCES
   GDAMetaDataKeys.cxx
   ImageDecomp.cxx
   IntersectionSet.cxx
+  MemoryMonitor.cxx
   PolyDataCellCopier.cxx
   PolyDataFieldTopologyMap.cxx
   PoincareMapData.cxx

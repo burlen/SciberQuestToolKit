@@ -1,4 +1,16 @@
+/*
+   ____    _ __           ____               __    ____
+  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
+ _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+
+Copyright 2008 SciberQuest Inc.
+*/
 #include "pqSQProcessMonitor.h"
+
+#define pqSQProcessMonitorDEBUG
+
+#include "MemoryMonitor.h"
 
 #include "pqComponentsExport.h"
 #include "pqProxy.h"
@@ -12,10 +24,13 @@
 #include "vtkProcessModule.h"
 
 #include <QTreeWidgetItem>
+#include <QTreeWidgetItemIterator>
 #include <QString>
 #include <QStringList>
 #include <QSettings>
 #include <QMessageBox>
+#include <QProgressBar>
+#include <QPalette>
 
 #include <unistd.h>
 
@@ -39,7 +54,9 @@ enum {
   PROCESS_TYPE=Qt::UserRole,
   PROCESS_TYPE_INVALID,
   PROCESS_TYPE_LOCAL,
-  PROCESS_TYPE_REMOTE
+  PROCESS_TYPE_REMOTE,
+  RANK_INVALID,
+  RANK
 };
 
 //-----------------------------------------------------------------------------
@@ -51,6 +68,7 @@ pqSQProcessMonitor::pqSQProcessMonitor(
   #if defined pqSQProcessMonitorDEBUG
   cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::pqSQProcessMonitor" << endl;
   #endif
+  this->MemMonitor = new MemoryMonitor;
 
   // Construct Qt form.
   this->Form=new pqSQProcessMonitorForm;
@@ -59,18 +77,25 @@ pqSQProcessMonitor::pqSQProcessMonitor(
   // this->Form->execCommand->setIcon(QPixmap(":/pqWidgets/Icons/pqVcrPlay16.png"));
   this->Restore();
 
-
   vtkSMProxy* dpProxy=this->referenceProxy()->getProxy();
 
+  // Set up configuration viewer
+  this->PullServerConfig();
+
   // Connect to server side pipeline's UpdateInformation events.
+  this->InformationMTime=-1;
   this->VTKConnect=vtkEventQtSlotConnect::New();
   this->VTKConnect->Connect(
       dpProxy,
       vtkCommand::UpdateInformationEvent,
       this, SLOT(UpdateInformationEvent()));
+  this->UpdateInformationEvent();
 
-  // Set up configuration viewer
-  this->PullServerConfig();
+  // These are bad because it gets updated more than when you call
+  // modified, see the PV guide.
+  //  iuiProp->SetImmediateUpdate(1); set this in constructor
+  // vtkSMProperty *iuiProp=dbbProxy->GetProperty("InitializeUI");
+  // iuiProp->Modified();
 
   // set command add,edit,del,exec buttons
   QObject::connect(
@@ -140,6 +165,12 @@ pqSQProcessMonitor::pqSQProcessMonitor(
         this,
         SLOT(setModified()));
 
+  QObject::connect(
+        this->Form->updateMemUse,
+        SIGNAL(released()),
+        this,
+        SLOT(setModified()));
+
   // Let the superclass do the undocumented stuff that needs to hapen.
   pqNamedObjectPanel::linkServerManagerProperties();
 }
@@ -156,6 +187,8 @@ pqSQProcessMonitor::~pqSQProcessMonitor()
 
   this->VTKConnect->Delete();
   this->VTKConnect=0;
+
+  delete this->MemMonitor;
 }
 
 //-----------------------------------------------------------------------------
@@ -213,9 +246,77 @@ void pqSQProcessMonitor::UpdateInformationEvent()
   #if defined pqSQProcessMonitorDEBUG
   cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::UpdateInformationEvent" << endl;
   #endif
-  // vtkSMProxy* dpProxy=this->referenceProxy()->getProxy();
-}
 
+//   vtkSMProxy* reader = this->referenceProxy()->getProxy();
+//   reader->UpdatePropertyInformation(reader->GetProperty("SILUpdateStamp"));
+// 
+//   int stamp = vtkSMPropertyHelper(reader, "SILUpdateStamp").GetAsInt();
+
+  vtkSMProxy* pmProxy=this->referenceProxy()->getProxy();
+
+  // see if there has been an update to the server side.
+  vtkSMIntVectorProperty *infoMTimeProp
+    =dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("GetInformationMTime"));
+  pmProxy->UpdatePropertyInformation(infoMTimeProp);
+  int infoMTime=infoMTimeProp->GetElement(0);
+
+  cerr << "infoMTime=" << infoMTime << endl;
+
+  if (infoMTime>this->InformationMTime)
+    {
+    this->InformationMTime=infoMTime;
+
+    vtkSMStringVectorProperty *memProp
+      =dynamic_cast<vtkSMStringVectorProperty *>(pmProxy->GetProperty("MemoryUseStream"));
+
+    pmProxy->UpdatePropertyInformation(memProp);
+
+    string stream=memProp->GetElement(0);
+    istringstream is(stream);
+
+    cerr << stream << endl;
+
+    vector<float> memUse;
+
+    if (stream.size()>0 && is.good())
+      {
+      int commSize;
+      is >> commSize;
+
+      memUse.resize(commSize);
+
+      for (int i=0; i<commSize; ++i)
+        {
+        is >> memUse[i];
+        }
+      }
+
+    QTreeWidgetItemIterator it(this->Form->configView);
+    while (*it)
+      {
+      int nodeType=(*it)->data(0,PROCESS_TYPE).toInt(0);
+      if (nodeType==PROCESS_TYPE_REMOTE)
+        {
+        QProgressBar *memUseWid
+          = dynamic_cast<QProgressBar*>(this->Form->configView->itemWidget(*it,3));
+
+        int rank=(*it)->data(1,RANK).toInt(0);
+        memUseWid->setValue((int)(1000.0*memUse[rank]));
+        }
+      else
+      if (nodeType==PROCESS_TYPE_LOCAL)
+        {
+        QProgressBar *memUseWid
+          = dynamic_cast<QProgressBar*>(this->Form->configView->itemWidget(*it,3));
+
+        float localMemUse=this->MemMonitor->GetVmRSSPercent();
+        memUseWid->setValue((int)(1000.0*localMemUse));
+        }
+
+      ++it;
+      }
+    }
+}
 
 //-----------------------------------------------------------------------------
 void pqSQProcessMonitor::PullServerConfig()
@@ -230,6 +331,7 @@ void pqSQProcessMonitor::PullServerConfig()
   clientGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
   clientGroup->setExpanded(false);
   clientGroup->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_LOCAL));
+  clientGroup->setData(1,RANK,QVariant(RANK_INVALID));
   // hostname
   char clientHostName[1024];
   gethostname(clientHostName,1024);
@@ -237,12 +339,26 @@ void pqSQProcessMonitor::PullServerConfig()
   // pid
   pid_t clientPid=getpid();
   clientGroup->setText(2,QString("%1").arg(clientPid));
+  // local memory use
+  QProgressBar *memUsage;
+  memUsage=new QProgressBar;
+
+  QPalette palette(memUsage->palette());
+  palette.setColor(QPalette::Highlight,QColor(66,232,20));
+  memUsage->setPalette(palette);
+  memUsage->setMaximumSize(1000,15);
+
+  memUsage->setMinimum(0);
+  memUsage->setMaximum(1000);
+  memUsage->setValue(0);
+  this->Form->configView->setItemWidget(clientGroup,3,memUsage);
 
   // server
   QTreeWidgetItem *serverGroup=new QTreeWidgetItem(this->Form->configView,QStringList("pvserver"));
   serverGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
   serverGroup->setExpanded(true);
   serverGroup->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_INVALID));
+  serverGroup->setData(1,RANK,QVariant(RANK_INVALID));
 
   // Pull run time configuration from server. The values are transfered
   // in the form of an ascii stream.
@@ -265,6 +381,7 @@ void pqSQProcessMonitor::PullServerConfig()
       serverConfig->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
       serverConfig->setExpanded(false);
       serverConfig->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_REMOTE));
+      serverConfig->setData(1,RANK,QVariant(i));
 
       serverConfig->setText(0,QString("%1").arg(i));
 
@@ -275,6 +392,16 @@ void pqSQProcessMonitor::PullServerConfig()
       pid_t serverPid;
       is >> serverPid;
       serverConfig->setText(2,QString("%1").arg(serverPid));
+
+      memUsage=new QProgressBar;
+      QPalette palette(memUsage->palette());
+      palette.setColor(QPalette::Highlight,QColor(66,232,20));
+      memUsage->setPalette(palette);
+      memUsage->setMaximumSize(1000,15);
+      memUsage->setMinimum(0);
+      memUsage->setMaximum(1000);
+      memUsage->setValue(0);
+      this->Form->configView->setItemWidget(serverConfig,3,memUsage);
 
       cerr << serverHostName << " " << serverPid << endl;
       }
@@ -512,6 +639,12 @@ void pqSQProcessMonitor::accept()
     prop->SetElement(0,this->Form->fpeTrapUnderflow->isChecked());
     prop->Modified();
     }
+
+  // force a refresh
+  ++this->InformationMTime;
+  prop=dynamic_cast<vtkSMIntVectorProperty *>(l_proxy->GetProperty("SetInformationMTime"));
+  prop->SetElement(0,this->InformationMTime);
+  prop->Modified();
 
   l_proxy->UpdateVTKObjects();
 }

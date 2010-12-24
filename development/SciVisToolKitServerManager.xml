@@ -1237,15 +1237,33 @@ Copyright 2008 SciberQuest Inc.
       A custom panel that manages and monitors the running processes.
     </Documentation>
 
-    <!-- client - server communication -->
+    <!-- run configuration from each server instance -->
     <StringVectorProperty name="ConfigStream"
       command="GetConfigStream"
       information_only="1" >
       <SimpleStringInformationHelper />
     </StringVectorProperty>
 
-   <!-- Signals -->
-   <IntVectorProperty
+    <!-- memory use across all server instances -->
+    <StringVectorProperty name="MemoryUseStream"
+      command="GetMemoryUseStream"
+      information_only="1" >
+      <SimpleStringInformationHelper />
+    </StringVectorProperty>
+
+    <IntVectorProperty name="GetInformationMTime"
+      command="GetInformationMTime"
+      information_only="1" >
+      <SimpleIntInformationHelper />
+    </IntVectorProperty>
+    <IntVectorProperty name="SetInformationMTime"
+      command="SetInformationMTime" 
+      number_of_elements="1"
+      default_values="0">
+    </IntVectorProperty>
+
+    <!-- Signals -->
+    <IntVectorProperty
       name="EnableBacktraceHandler"
       command="SetEnableBacktraceHandler"
       number_of_elements="1"
@@ -1253,10 +1271,10 @@ Copyright 2008 SciberQuest Inc.
     <Documentation>
       Enable/Disable a signal handler that prints a backtrace.
     </Documentation>
-  </IntVectorProperty>
+    </IntVectorProperty>
 
-  <!-- Floating point exceptions -->
-  <IntVectorProperty
+    <!-- Floating point exceptions -->
+    <IntVectorProperty
       name="EnableFE_DIVBYZERO"
       command="SetEnableFE_DIVBYZERO"
       number_of_elements="1"
@@ -1264,57 +1282,57 @@ Copyright 2008 SciberQuest Inc.
     <Documentation>
       Trap divide by zero FPE.
     </Documentation>
-  </IntVectorProperty>
+    </IntVectorProperty>
 
-  <IntVectorProperty
+    <IntVectorProperty
       name="EnableFE_INEXACT"
       command="SetEnableFE_INEXACT"
       number_of_elements="1"
       default_values="0">
-    <Documentation>
-      Trap inexact FPE.
-    </Documentation>
-  </IntVectorProperty>
+      <Documentation>
+        Trap inexact FPE.
+      </Documentation>
+    </IntVectorProperty>
 
-  <IntVectorProperty
+    <IntVectorProperty
       name="EnableFE_INVALID"
       command="SetEnableFE_INVALID"
       number_of_elements="1"
       default_values="0">
-    <Documentation>
-      Trap invalid FPE.
-    </Documentation>
-  </IntVectorProperty>
+      <Documentation>
+        Trap invalid FPE.
+      </Documentation>
+    </IntVectorProperty>
 
-  <IntVectorProperty
+    <IntVectorProperty
       name="EnableFE_OVERFLOW"
       command="SetEnableFE_OVERFLOW"
       number_of_elements="1"
       default_values="0">
-    <Documentation>
-      Trap overflow FPE.
-    </Documentation>
-  </IntVectorProperty>
+      <Documentation>
+        Trap overflow FPE.
+      </Documentation>
+    </IntVectorProperty>
 
-  <IntVectorProperty
+    <IntVectorProperty
       name="EnableFE_UNDERFLOW"
       command="SetEnableFE_UNDERFLOW"
       number_of_elements="1"
       default_values="0">
-    <Documentation>
-      Trap underflow FPE.
-    </Documentation>
-  </IntVectorProperty>
+      <Documentation>
+        Trap underflow FPE.
+      </Documentation>
+    </IntVectorProperty>
 
-  <IntVectorProperty
+    <IntVectorProperty
       name="EnableFE_ALL"
       command="SetEnableFE_ALL"
       number_of_elements="1"
       default_values="0">
-    <Documentation>
-      Enable/Disable all floating point exceptions.
-    </Documentation>
-  </IntVectorProperty>
+      <Documentation>
+        Enable/Disable all floating point exceptions.
+      </Documentation>
+    </IntVectorProperty>
 
    <!-- End Debug Panel -->
    </SourceProxy>

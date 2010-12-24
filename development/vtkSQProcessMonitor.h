@@ -19,7 +19,9 @@ Copyright 2008 SciberQuest Inc.
 #include <string>
 using std::string;
 
-
+//BTX
+class MemoryMonitor;
+//ETX
 
 // define the following ot enable debuging io
 // #define vtkSQProcessMonitorDEBUG
@@ -40,6 +42,18 @@ public:
   // nProcs proc1_hostname proc1_pid ... procN_hostname procN_pid
   vtkGetStringMacro(ConfigStream);
   vtkSetStringMacro(ConfigStream);
+
+  // Description:
+  // Get the memory usage in a stream.
+  // nProcs proc1_mem_use ... procN_mem_use
+  vtkGetStringMacro(MemoryUseStream);
+  vtkSetStringMacro(MemoryUseStream);
+
+  // Description:
+  // Updated if the object has been modifed.
+  vtkSetMacro(InformationMTime,int);
+  vtkGetMacro(InformationMTime,int);
+
 
   // Description:
   // Enable backtrace trap on signals SEGV, ILL, FPE, and BUS. Disabling
@@ -69,6 +83,10 @@ private:
   string Hostname;
 
   char *ConfigStream;
+  char *MemoryUseStream;
+  int InformationMTime;
+
+  MemoryMonitor *MemMonitor;
 
 private:
   vtkSQProcessMonitor(const vtkSQProcessMonitor&);  // Not implemented.
