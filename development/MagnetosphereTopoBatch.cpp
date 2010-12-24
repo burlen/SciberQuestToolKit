@@ -101,7 +101,7 @@ int main(int argc, char **argv)
       pCerr()
         << "Error: Command tail." << endl
         << " 1) /path/to/runConfig.xml" << endl
-        << " 2) /path/to/input/" << endl
+        << " 2) /path/to/file.bovm" << endl
         << " 3) /path/to/output/" << endl
         << " 4) baseFileName" << endl
         << " 5) startTime" << endl
@@ -523,7 +523,7 @@ int main(int argc, char **argv)
       << "/"
       << baseName;
 
-    // make a directory for this time step
+    // make a directory for this dataset
     iErr=mkdir(fns.str().c_str(),S_IRWXU|S_IXGRP);
     if (iErr<0 && (errno!=EEXIST))
       {

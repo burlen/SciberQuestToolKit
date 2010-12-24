@@ -107,8 +107,8 @@ int main(int argc, char **argv)
     }
   else
     {
-    // only rank 0 does anything, using MPI so we can use
-    // the BOV reader which requires MPI.
+    // only rank 0 does anything, MPI is required
+    // by the BOV reader which uses MPI-IO.
     MPI_Finalize();
     return SQ_EXIT_SUCCESS;
     }
