@@ -21,6 +21,9 @@ class pqProxy;
 class vtkEventQtSlotConnect;
 class QWidget;
 class MemoryMonitor;
+class HostData;
+class RankData;
+
 
 class pqSQProcessMonitor : public pqNamedObjectPanel
 {
@@ -43,6 +46,9 @@ protected slots:
   // and load it in to the QTreeWidget.
   void UpdateInformationEvent();
   // Description:
+  // Pull server load data.
+  void UpdateServerLoad();
+  // Description:
   // This is where we have to communicate our state to the server.
   void accept();
   // Description:
@@ -53,14 +59,23 @@ protected slots:
   void EditCommand(bool state);
 
 private:
-
-
+  void ClearServerHostData();
+  void ClearClientHostData();
 
 private:
   pqSQProcessMonitorForm *Form;
   vtkEventQtSlotConnect *VTKConnect;
   int InformationMTime;
-  MemoryMonitor *MemMonitor;
+
+  map<string,HostData *> ServerHosts;
+  vector<RankData *> ServerRanks;
+
+  HostData *ClientHost;
+  RankData *ClientRankData;
+  MemoryMonitor *ClientMemMonitor;
 };
+
+// note:
+// rank data is managed by host. 
 
 #endif

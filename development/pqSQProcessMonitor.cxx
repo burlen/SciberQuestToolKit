@@ -59,6 +59,219 @@ enum {
   RANK
 };
 
+//*****************************************************************************
+template<typename T>
+void ClearVectorOfPointers(vector<T *> data)
+{
+  size_t n=data.size();
+  for (size_t i=0; i<n; ++i)
+    {
+    if (data[i])
+      {
+      delete data[i];
+      }
+    }
+  data.clear();
+}
+
+/// data associated with the host
+//=============================================================================
+class HostData
+{
+public:
+  HostData(string hostName,unsigned long long capacity);
+  HostData(const HostData &other){ *this=other; }
+  HostData &operator=(const HostData &other);
+  ~HostData(){ this->ClearRankData(); }
+
+  void SetHostName(string name){ this->Name=name; }
+  string &GetHostName(){ return this->Name; }
+
+  void SetCapacity(unsigned long long capacity){ this->Capacity=capacity; }
+  unsigned long long GetCapacity(){ return this->Capacity; }
+
+  void SetWidget(QProgressBar *widget){ this->Widget=widget; }
+  QProgressBar *GetWidget(){ return this->Widget; }
+  void InitializeWidget();
+  void UpdateWidget();
+
+  RankData *AddRankData(int rank, int pid);
+  RankData *GetRankData(int i){ return this->RankData[i]; }
+  void ClearRankData();
+
+  unsigned long long GetLoad();
+  float GetLoadFraction(){ return (float)this->GetLoad()/(float)this->Capacity; }
+
+private:
+  string HostName;
+  unsigned long long Capacity;
+  QProgressBar *Widget;
+  vector<RankData *> Ranks;
+};
+
+//-----------------------------------------------------------------------------
+HostData::HostData(
+      string hostName,
+      unsigned long long capacity)
+        :
+    HostName(hostName),
+    Capacity(capacity)
+{
+  this->InitializeWidget();
+}
+
+//-----------------------------------------------------------------------------
+const HostData &HostData::operator=(const HostData &other)
+{
+  if (this==&other) return *this;
+
+  this->HostName=other.HostName;
+  this->Capacity=other.Capacity;
+  this->Widget=other.Widget;
+  this->Ranks=other.Ranks;
+
+  return *this;
+}
+
+//-----------------------------------------------------------------------------
+void HostData::ClearRankData()
+{
+  ClearVectorOfPointers<RankData>(this->RankData);
+}
+
+//-----------------------------------------------------------------------------
+unsigned long long HostData::GetLoad()
+{
+  unsigned long long load=0;
+  size_t n=this->Ranks.size();
+  for (size_t i=0; i<n; ++i)
+    {
+    load+=this->Ranks[i]->GetLoad();
+    }
+  return load;
+}
+
+//-----------------------------------------------------------------------------
+void HostData::InitializeWidget()
+{
+  this->Widget=new QProgressBar;
+
+  this->Widget->setMinimum(0);
+  this->Widget->setMaximum(this->Capacity);
+
+  this->UpdateWidget();
+}
+
+//-----------------------------------------------------------------------------
+void HostData::UpdateWidget()
+{
+  this->Widget->setValue(this->GetLoad());
+
+  QPalette palette(this->Widget->palette());
+  if (this->GetLoadFraction()>0.75)
+    {
+    // danger -> red
+    palette.setColor(QPalette::Highlight,QColor(232,80,80));
+    }
+  else
+    {
+    // ok -> green
+    palette.setColor(QPalette::Highlight,QColor(66,232,20));
+    }
+  this->Widget->setPalette(palette);
+}
+
+//-----------------------------------------------------------------------------
+RankData *HostData::AddRankData(int rank, int pid)
+{
+  RankData *newRank=new RankData(rank,pid,0,this->Capacity);
+  this->Ranks.push_back(newRank);
+  return newRank;
+}
+
+
+/// data associated with a rank
+//=============================================================================
+class RankData
+{
+public:
+  RankData(
+      int rank,
+      int pid,
+      unsigned long long load,
+      unsigned long long capacity);
+
+  void SetRank(int rank){ this->Rank=rank; }
+  int GetRank(){ return this->Rank; }
+
+  void SetPid(int pid){ this->Pid=pid; }
+  int GetPid(){ return this->Pid; }
+
+  void SetLoad(unsigned long long load){ this->Load=load; }
+  unsigned long long GetLoad(){ return this->Load; }
+  float GetLoadFraction(){ return (float)this->Load/(float)this->Capacity; }
+
+  void SetWidget(QTreeWidgetItem *widget){ this->Widget=widget; }
+  QTreeWidgetItem *GetWidget(){ return this->Widget; }
+  void UpdateWidget();
+  void InitializeWidget();
+
+private:
+  int Rank;
+  int Pid;
+  unsigned long long Load;
+  unsigned long long Capacity;
+  QTreeWidgetItem *Widget;
+  //HostData *Host;
+};
+
+//-----------------------------------------------------------------------------
+RankData::RankData(
+      int rank,
+      int pid,
+      unsigned long long load,
+      unsigned long long capacity)
+        :
+    Rank(rank),
+    Pid(pid),
+    Load(load),
+    Capacity(capacity)
+{
+  this->InitializeWidget();
+}
+
+//-----------------------------------------------------------------------------
+void RankData::UpdateWidget()
+{ 
+  this->Widget->setValue(this->GetLoad());
+
+  QPalette palette(this->Widget->palette());
+  if (this->GetLoadFraction()>0.75)
+    {
+    // danger -> red
+    palette.setColor(QPalette::Highlight,QColor(232,80,80));
+    }
+  else
+    {
+    // ok -> green
+    palette.setColor(QPalette::Highlight,QColor(66,232,20));
+    }
+  this->Widget->setPalette(palette);
+}
+
+//-----------------------------------------------------------------------------
+void RankData::InitializeWidget()
+{
+  this->Widget=new QProgressBar;
+
+  this->Widget->setMaximumSize(1000,15);
+
+  this->Widget->setMinimum(0);
+  this->Widget->setMaximum(this->Capacity);
+
+  this->UpdateWidget();
+}
+
 //-----------------------------------------------------------------------------
 pqSQProcessMonitor::pqSQProcessMonitor(
         pqProxy* l_proxy,
@@ -68,7 +281,9 @@ pqSQProcessMonitor::pqSQProcessMonitor(
   #if defined pqSQProcessMonitorDEBUG
   cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::pqSQProcessMonitor" << endl;
   #endif
-  this->MemMonitor = new MemoryMonitor;
+  this->ClientHostData=0;
+  this->ClientRankData=0;
+  this->ClientMemMonitor=new MemoryMonitor;
 
   // Construct Qt form.
   this->Form=new pqSQProcessMonitorForm;
@@ -183,12 +398,38 @@ pqSQProcessMonitor::~pqSQProcessMonitor()
   #endif
 
   this->Save();
+
   delete this->Form;
 
   this->VTKConnect->Delete();
-  this->VTKConnect=0;
 
-  delete this->MemMonitor;
+  delete this->ClientMemMonitor;
+
+  this->ClearClientHostData();
+  this->ClearServerHostData();
+  this->ClearServerRankData();
+}
+
+//-----------------------------------------------------------------------------
+void pqSQProcessMonitor::ClearClientHostData()
+{
+  if (this->ClientHostData)
+    {
+    delete this->ClientHostData;
+    }
+  this->ClientHostData=0;
+}
+
+//-----------------------------------------------------------------------------
+void pqSQProcessMonitor::ClearServerHostData()
+{
+  ClearVectorOfPointers<HostData>(this->Hosts);
+}
+
+//-----------------------------------------------------------------------------
+void pqSQProcessMonitor::ClearServerRankData()
+{
+  ClearVectorOfPointers<RankData>(this->Ranks);
 }
 
 //-----------------------------------------------------------------------------
@@ -239,6 +480,126 @@ void pqSQProcessMonitor::Save()
   settings.setValue("ProcessMonitor/defaults",defs);
 }
 
+//-----------------------------------------------------------------------------
+void pqSQProcessMonitor::PullServerConfig()
+{
+  #if defined pqSQProcessMonitorDEBUG
+  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::PullServerConfig" << endl;
+  #endif
+  vtkSMProxy* dpProxy=this->referenceProxy()->getProxy();
+
+  // client
+  QTreeWidgetItem *clientGroup=new QTreeWidgetItem(this->Form->configView,QStringList("paraview"));
+  clientGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
+  clientGroup->setExpanded(false);
+  clientGroup->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_LOCAL));
+  clientGroup->setData(1,RANK,QVariant(RANK_INVALID));
+
+  // TODO modularize client side so that we can support windows.
+  // {
+  // hostname
+  char clientHostName[1024];
+  gethostname(clientHostName,1024);
+  clientGroup->setText(1,clientHostName);
+  // pid
+  pid_t clientPid=getpid();
+  clientGroup->setText(2,QString("%1").arg(clientPid));
+
+  // local memory use
+  this->ClearClientHostData();
+  this->ClientHostData
+    = new HostData(clientHostName,this->ClientMemMonitor->GetSystemTotal());
+  this->ClientRankData=this->ClientHostData->AddRank(0,clientPid);
+  this->Form->configView->setItemWidget(clientGroup,3,this->ClientRankData->GetWidget());
+  // }
+
+  // server
+  QTreeWidgetItem *serverGroup=new QTreeWidgetItem(this->Form->configView,QStringList("pvserver"));
+  serverGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
+  serverGroup->setExpanded(true);
+  serverGroup->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_INVALID));
+  serverGroup->setData(1,RANK,QVariant(RANK_INVALID));
+
+  // Pull run time configuration from server. The values are transfered
+  // in the form of an ascii stream.
+  vtkSMStringVectorProperty *csProp
+    = dynamic_cast<vtkSMStringVectorProperty*>(dpProxy->GetProperty("ConfigStream"));
+  dpProxy->UpdatePropertyInformation(csProp);
+  string csBytes=csProp->GetElement(0);
+
+  // cerr << csBytes << endl;
+
+  istringstream is(csBytes);
+  if (csBytes.size()>0 && is.good())
+    {
+    int commSize;
+    is >> commSize;
+
+    this->ClearHostData();
+
+    this->HostData.resize(commSize,0);
+    this->RankData.resize(commSize,0);
+
+    for (int i=0; i<commSize; ++i)
+      {
+      string serverHostName;
+      unsigned long long serverCapacity;
+      int serverRank=i;
+      pid_t serverPid;
+
+      is >> serverHostName;
+      is >> serverPid;
+      is >> serverCapacity;
+
+      HostData *host;
+
+      pair<string,HostData*> ins(serverHostName,0);
+      pair<bool,map<string,HostData*>::iterator> ret;
+      ret=this->HostData.insert(ins);
+      if (!ret.first)
+        {
+        // new host
+        host=new HostData(serverHostName,serverCapacity);
+        *(ret.second)=host;
+        }
+      else
+        {
+        host=*(ret.second);
+        }
+      RankData *serverRankData=host->AddRank(serverRank,serverPid);
+
+
+
+
+
+      QTreeWidgetItem *serverConfig=new QTreeWidgetItem(serverGroup);
+      serverConfig->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
+      serverConfig->setExpanded(false);
+      serverConfig->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_REMOTE));
+      serverConfig->setData(1,RANK,QVariant(i));
+
+      serverConfig->setText(0,QString("%1").arg(i));
+      serverConfig->setText(1,serverHostName.c_str());
+      serverConfig->setText(2,QString("%1").arg(serverPid));
+
+      memUsage=new QProgressBar;
+      QPalette palette(memUsage->palette());
+      palette.setColor(QPalette::Highlight,QColor(66,232,20));
+      memUsage->setPalette(palette);
+      memUsage->setMaximumSize(1000,15);
+      memUsage->setMinimum(0);
+      memUsage->setMaximum(1000);
+      memUsage->setValue(0);
+      this->Form->configView->setItemWidget(serverConfig,3,memUsage);
+
+      cerr << serverHostName << " " << serverPid << endl;
+      }
+    }
+  else
+    {
+    cerr << "Error: failed to get configuration stream. Aborting." << endl;
+    }
+}
 
 //-----------------------------------------------------------------------------
 void pqSQProcessMonitor::UpdateInformationEvent()
@@ -309,106 +670,12 @@ void pqSQProcessMonitor::UpdateInformationEvent()
         QProgressBar *memUseWid
           = dynamic_cast<QProgressBar*>(this->Form->configView->itemWidget(*it,3));
 
-        float localMemUse=this->MemMonitor->GetVmRSSPercent();
+        float localMemUse=this->ClientMemMonitor->GetVmRSSPercent();
         memUseWid->setValue((int)(1000.0*localMemUse));
         }
 
       ++it;
       }
-    }
-}
-
-//-----------------------------------------------------------------------------
-void pqSQProcessMonitor::PullServerConfig()
-{
-  #if defined pqSQProcessMonitorDEBUG
-  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::PullServerConfig" << endl;
-  #endif
-  vtkSMProxy* dpProxy=this->referenceProxy()->getProxy();
-
-  // client
-  QTreeWidgetItem *clientGroup=new QTreeWidgetItem(this->Form->configView,QStringList("paraview"));
-  clientGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
-  clientGroup->setExpanded(false);
-  clientGroup->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_LOCAL));
-  clientGroup->setData(1,RANK,QVariant(RANK_INVALID));
-  // hostname
-  char clientHostName[1024];
-  gethostname(clientHostName,1024);
-  clientGroup->setText(1,clientHostName);
-  // pid
-  pid_t clientPid=getpid();
-  clientGroup->setText(2,QString("%1").arg(clientPid));
-  // local memory use
-  QProgressBar *memUsage;
-  memUsage=new QProgressBar;
-
-  QPalette palette(memUsage->palette());
-  palette.setColor(QPalette::Highlight,QColor(66,232,20));
-  memUsage->setPalette(palette);
-  memUsage->setMaximumSize(1000,15);
-
-  memUsage->setMinimum(0);
-  memUsage->setMaximum(1000);
-  memUsage->setValue(0);
-  this->Form->configView->setItemWidget(clientGroup,3,memUsage);
-
-  // server
-  QTreeWidgetItem *serverGroup=new QTreeWidgetItem(this->Form->configView,QStringList("pvserver"));
-  serverGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
-  serverGroup->setExpanded(true);
-  serverGroup->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_INVALID));
-  serverGroup->setData(1,RANK,QVariant(RANK_INVALID));
-
-  // Pull run time configuration from server. The values are transfered
-  // in the form of an ascii stream.
-  vtkSMStringVectorProperty *csProp
-    = dynamic_cast<vtkSMStringVectorProperty*>(dpProxy->GetProperty("ConfigStream"));
-  dpProxy->UpdatePropertyInformation(csProp);
-  string csBytes=csProp->GetElement(0);
-
-  // cerr << csBytes << endl;
-
-  istringstream is(csBytes);
-  if (csBytes.size()>0 && is.good())
-    {
-    int commSize;
-    is >> commSize;
-
-    for (int i=0; i<commSize; ++i)
-      {
-      QTreeWidgetItem *serverConfig=new QTreeWidgetItem(serverGroup);
-      serverConfig->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
-      serverConfig->setExpanded(false);
-      serverConfig->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_REMOTE));
-      serverConfig->setData(1,RANK,QVariant(i));
-
-      serverConfig->setText(0,QString("%1").arg(i));
-
-      string serverHostName;
-      is >> serverHostName;
-      serverConfig->setText(1,serverHostName.c_str());
-
-      pid_t serverPid;
-      is >> serverPid;
-      serverConfig->setText(2,QString("%1").arg(serverPid));
-
-      memUsage=new QProgressBar;
-      QPalette palette(memUsage->palette());
-      palette.setColor(QPalette::Highlight,QColor(66,232,20));
-      memUsage->setPalette(palette);
-      memUsage->setMaximumSize(1000,15);
-      memUsage->setMinimum(0);
-      memUsage->setMaximum(1000);
-      memUsage->setValue(0);
-      this->Form->configView->setItemWidget(serverConfig,3,memUsage);
-
-      cerr << serverHostName << " " << serverPid << endl;
-      }
-    }
-  else
-    {
-    cerr << "Error: failed to get configuration stream. Aborting." << endl;
     }
 }
 
