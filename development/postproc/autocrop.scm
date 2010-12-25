@@ -7,13 +7,9 @@
 
 ;------------------------------------------------------------------------------
 (define
-  (sq-crop inFile outFile width height offx offy)
+  (sq-auto-crop inFile outFile)
     (let*
       (
-      (w    0)
-      (h    0)
-      (x    0)
-      (y    0)
       (im   0)
       (dw   0)
       )
@@ -22,14 +18,13 @@
       (set! im (car (gimp-file-load RUN-NONINTERACTIVE inFile inFile)))
       (set! dw (car (gimp-image-get-active-layer im)))
 
-      ; crop to the requested size
-      (set! w (string->number width))
-      (set! h (string->number height))
-      (set! x (string->number offx))
-      (set! y (string->number offy))
-      (gimp-image-crop im w h x y)
+      ; auto-crop
+      (plug-in-autocrop RUN-NONINTERACTIVE im dw)
 
       ; save the cropped image
       (gimp-file-save RUN-NONINTERACTIVE im dw outFile outFile)
     )
 )
+
+;EOF
+ 
