@@ -208,7 +208,8 @@ vtkSQProcessMonitor::vtkSQProcessMonitor()
   Hostname("localhost"),
   ConfigStream(0),
   MemoryUseStream(0),
-  InformationMTime(0)
+  InformationMTime(0),
+  MemMonitor(0)
 {
   #if defined vtkSQProcessMonitorDEBUG
   cerr << "===============================vtkSQProcessMonitor::vtkSQProcessMonitor" << endl;
@@ -223,6 +224,8 @@ vtkSQProcessMonitor::vtkSQProcessMonitor()
   // standard pv info
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
+
+  this->MemMonitor=new MemoryMonitor;
 
   // gather information about this run.
   this->Pid=getpid();
@@ -243,9 +246,11 @@ vtkSQProcessMonitor::vtkSQProcessMonitor()
     int *pids=0;
     int *hnLens=0;
     int *hnDispls=0;
+    unsigned long long *caps=0;
     if (this->WorldRank==0)
       {
       pids=(int *)malloc(this->WorldSize*sizeof(int));
+      caps=(unsigned long long *)malloc(this->WorldSize*sizeof(unsigned long long));
       hnLens=(int *)malloc(this->WorldSize*sizeof(int));
       hnDispls=(int *)malloc(this->WorldSize*sizeof(int));
       }
@@ -253,6 +258,8 @@ vtkSQProcessMonitor::vtkSQProcessMonitor()
     // gather
     MPI_Gather(&hnLen,1,MPI_INT,hnLens,1,MPI_INT,0,MPI_COMM_WORLD);
     MPI_Gather(&this->Pid,1,MPI_INT,pids,1,MPI_INT,0,MPI_COMM_WORLD);
+    unsigned long long cap=this->MemMonitor->GetSystemTotal();
+    MPI_Gather(&cap,1,MPI_UNSIGNED_LONG_LONG,caps,1,MPI_UNSIGNED_LONG_LONG,0,MPI_COMM_WORLD);
 
     // set root up for gather hostnames
     char *hostnames=0;
@@ -288,12 +295,15 @@ vtkSQProcessMonitor::vtkSQProcessMonitor()
 
       int *pPid=pids;
       char *pHn=hostnames;
+      unsigned long long *pCap=caps;
       for (int i=0; i<this->WorldSize; ++i)
         {
         os << " " << pHn;
         pHn+=hnLens[i];
         os << " " << *pPid;
         ++pPid;
+        os << " " << *pCap;
+        ++pCap;
         }
 
       this->SetConfigStream(os.str().c_str());
@@ -301,6 +311,7 @@ vtkSQProcessMonitor::vtkSQProcessMonitor()
 
       // root cleans up.
       free(pids);
+      free(caps);
       free(hnLens);
       free(hnDispls);
       free(hostnames);
@@ -309,11 +320,9 @@ vtkSQProcessMonitor::vtkSQProcessMonitor()
   else
     {
     ostringstream os;
-    os << 1 << " " << this->Hostname << " " << this->Pid;
+    os << 1 << " " << this->Hostname << " " << this->Pid << " " << this->MemMonitor->GetSystemTotal();
     this->SetConfigStream(os.str().c_str());
     }
-
-  this->MemMonitor=new MemoryMonitor;
 }
 
 //-----------------------------------------------------------------------------
@@ -491,7 +500,7 @@ int vtkSQProcessMonitor::RequestInformation(
   this->vtkPolyDataAlgorithm::RequestInformation(request,inInfos,outInfos);
 
   // get the local memory use
-  float localMemoryUse=this->MemMonitor->GetVmRSSPercent();
+  unsigned long long localMemoryUse=this->MemMonitor->GetVmRSS();
   cerr << localMemoryUse << endl;
 
   int mpiOk=0;
@@ -499,20 +508,20 @@ int vtkSQProcessMonitor::RequestInformation(
   if (mpiOk)
     {
     // set root up for gather memory usage
-    float *remoteMemoryUse=0;
+    unsigned long long  *remoteMemoryUse=0;
     if (this->WorldRank==0)
       {
-      remoteMemoryUse=(float *)malloc(this->WorldSize*sizeof(float));
+      remoteMemoryUse=(unsigned long long *)malloc(this->WorldSize*sizeof(unsigned long long));
       }
 
     // gather
     MPI_Gather(
           &localMemoryUse,
           1,
-          MPI_FLOAT,
+          MPI_UNSIGNED_LONG_LONG,
           remoteMemoryUse,
           1,
-          MPI_FLOAT,
+          MPI_UNSIGNED_LONG_LONG,
           0,
           MPI_COMM_WORLD);
 

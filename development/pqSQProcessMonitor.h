@@ -14,6 +14,13 @@ Copyright 2008 SciberQuest Inc.
 #include "ui_pqSQProcessMonitorForm.h"
 using Ui::pqSQProcessMonitorForm;
 
+#include <vtkstd/map>
+using std::map;
+#include <vtkstd/string>
+using std::string;
+#include  <vtkstd/vector>
+using std::vector;
+
 // Define the following to enable debug io
 // #define pqSQProcessMonitorDEBUG
 
@@ -47,7 +54,7 @@ protected slots:
   void UpdateInformationEvent();
   // Description:
   // Pull server load data.
-  void UpdateServerLoad();
+//   void UpdateServerLoad();
   // Description:
   // This is where we have to communicate our state to the server.
   void accept();
@@ -59,8 +66,8 @@ protected slots:
   void EditCommand(bool state);
 
 private:
-  void ClearServerHostData();
-  void ClearClientHostData();
+  void ClearServerHosts();
+  void ClearClientHost();
 
 private:
   pqSQProcessMonitorForm *Form;
@@ -71,7 +78,7 @@ private:
   vector<RankData *> ServerRanks;
 
   HostData *ClientHost;
-  RankData *ClientRankData;
+  RankData *ClientRank;
   MemoryMonitor *ClientMemMonitor;
 };
 

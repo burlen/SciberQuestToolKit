@@ -39,6 +39,9 @@ Copyright 2008 SciberQuest Inc.
 #endif
 #include "FsUtils.h"
 
+#include <vtkstd/map>
+using std::map;
+using std::pair;
 #include <vtkstd/vector>
 using vtkstd::vector;
 #include <vtkstd/string>
@@ -53,8 +56,11 @@ using std::endl;
 enum {
   PROCESS_TYPE=Qt::UserRole,
   PROCESS_TYPE_INVALID,
-  PROCESS_TYPE_LOCAL,
-  PROCESS_TYPE_REMOTE,
+  PROCESS_TYPE_CLIENT,
+  PROCESS_TYPE_SERVER_HOST,
+  PROCESS_TYPE_SERVER_RANK,
+  PROCESS_ID,
+  HOST_NAME,
   RANK_INVALID,
   RANK
 };
@@ -73,122 +79,6 @@ void ClearVectorOfPointers(vector<T *> data)
     }
   data.clear();
 }
-
-/// data associated with the host
-//=============================================================================
-class HostData
-{
-public:
-  HostData(string hostName,unsigned long long capacity);
-  HostData(const HostData &other){ *this=other; }
-  HostData &operator=(const HostData &other);
-  ~HostData(){ this->ClearRankData(); }
-
-  void SetHostName(string name){ this->Name=name; }
-  string &GetHostName(){ return this->Name; }
-
-  void SetCapacity(unsigned long long capacity){ this->Capacity=capacity; }
-  unsigned long long GetCapacity(){ return this->Capacity; }
-
-  void SetWidget(QProgressBar *widget){ this->Widget=widget; }
-  QProgressBar *GetWidget(){ return this->Widget; }
-  void InitializeWidget();
-  void UpdateWidget();
-
-  RankData *AddRankData(int rank, int pid);
-  RankData *GetRankData(int i){ return this->RankData[i]; }
-  void ClearRankData();
-
-  unsigned long long GetLoad();
-  float GetLoadFraction(){ return (float)this->GetLoad()/(float)this->Capacity; }
-
-private:
-  string HostName;
-  unsigned long long Capacity;
-  QProgressBar *Widget;
-  vector<RankData *> Ranks;
-};
-
-//-----------------------------------------------------------------------------
-HostData::HostData(
-      string hostName,
-      unsigned long long capacity)
-        :
-    HostName(hostName),
-    Capacity(capacity)
-{
-  this->InitializeWidget();
-}
-
-//-----------------------------------------------------------------------------
-const HostData &HostData::operator=(const HostData &other)
-{
-  if (this==&other) return *this;
-
-  this->HostName=other.HostName;
-  this->Capacity=other.Capacity;
-  this->Widget=other.Widget;
-  this->Ranks=other.Ranks;
-
-  return *this;
-}
-
-//-----------------------------------------------------------------------------
-void HostData::ClearRankData()
-{
-  ClearVectorOfPointers<RankData>(this->RankData);
-}
-
-//-----------------------------------------------------------------------------
-unsigned long long HostData::GetLoad()
-{
-  unsigned long long load=0;
-  size_t n=this->Ranks.size();
-  for (size_t i=0; i<n; ++i)
-    {
-    load+=this->Ranks[i]->GetLoad();
-    }
-  return load;
-}
-
-//-----------------------------------------------------------------------------
-void HostData::InitializeWidget()
-{
-  this->Widget=new QProgressBar;
-
-  this->Widget->setMinimum(0);
-  this->Widget->setMaximum(this->Capacity);
-
-  this->UpdateWidget();
-}
-
-//-----------------------------------------------------------------------------
-void HostData::UpdateWidget()
-{
-  this->Widget->setValue(this->GetLoad());
-
-  QPalette palette(this->Widget->palette());
-  if (this->GetLoadFraction()>0.75)
-    {
-    // danger -> red
-    palette.setColor(QPalette::Highlight,QColor(232,80,80));
-    }
-  else
-    {
-    // ok -> green
-    palette.setColor(QPalette::Highlight,QColor(66,232,20));
-    }
-  this->Widget->setPalette(palette);
-}
-
-//-----------------------------------------------------------------------------
-RankData *HostData::AddRankData(int rank, int pid)
-{
-  RankData *newRank=new RankData(rank,pid,0,this->Capacity);
-  this->Ranks.push_back(newRank);
-  return newRank;
-}
-
 
 /// data associated with a rank
 //=============================================================================
@@ -211,17 +101,17 @@ public:
   unsigned long long GetLoad(){ return this->Load; }
   float GetLoadFraction(){ return (float)this->Load/(float)this->Capacity; }
 
-  void SetWidget(QTreeWidgetItem *widget){ this->Widget=widget; }
-  QTreeWidgetItem *GetWidget(){ return this->Widget; }
-  void UpdateWidget();
-  void InitializeWidget();
+  void SetLoadWidget(QProgressBar *widget){ this->LoadWidget=widget; }
+  QProgressBar *GetLoadWidget(){ return this->LoadWidget; }
+  void UpdateLoadWidget();
+  void InitializeLoadWidget();
 
 private:
   int Rank;
   int Pid;
   unsigned long long Load;
   unsigned long long Capacity;
-  QTreeWidgetItem *Widget;
+  QProgressBar *LoadWidget;
   //HostData *Host;
 };
 
@@ -237,40 +127,173 @@ RankData::RankData(
     Load(load),
     Capacity(capacity)
 {
-  this->InitializeWidget();
+  this->InitializeLoadWidget();
 }
 
 //-----------------------------------------------------------------------------
-void RankData::UpdateWidget()
-{ 
-  this->Widget->setValue(this->GetLoad());
+void RankData::UpdateLoadWidget()
+{
+  this->LoadWidget->setValue(this->GetLoad());
+  this->LoadWidget->setFormat(QString("%1%").arg(this->GetLoadFraction()*100.0, 0,'f',2));
 
-  QPalette palette(this->Widget->palette());
+  QPalette palette(this->LoadWidget->palette());
   if (this->GetLoadFraction()>0.75)
     {
     // danger -> red
-    palette.setColor(QPalette::Highlight,QColor(232,80,80));
+    palette.setColor(QPalette::Highlight,QColor(232,40,40));
     }
   else
     {
     // ok -> green
     palette.setColor(QPalette::Highlight,QColor(66,232,20));
     }
-  this->Widget->setPalette(palette);
+  this->LoadWidget->setPalette(palette);
 }
 
 //-----------------------------------------------------------------------------
-void RankData::InitializeWidget()
+void RankData::InitializeLoadWidget()
 {
-  this->Widget=new QProgressBar;
+  this->LoadWidget=new QProgressBar;
 
-  this->Widget->setMaximumSize(1000,15);
+  this->LoadWidget->setMaximumSize(95,15);
 
-  this->Widget->setMinimum(0);
-  this->Widget->setMaximum(this->Capacity);
+  QFont font(this->LoadWidget->font());
+  font.setPointSize(8);
+  this->LoadWidget->setFont(font);
 
-  this->UpdateWidget();
+  this->LoadWidget->setMinimum(0);
+  this->LoadWidget->setMaximum(this->Capacity);
+
+  this->UpdateLoadWidget();
 }
+
+/// data associated with the host
+//=============================================================================
+class HostData
+{
+public:
+  HostData(string hostName,unsigned long long capacity);
+  HostData(const HostData &other){ *this=other; }
+  const HostData &operator=(const HostData &other);
+  ~HostData(){ this->ClearRankData(); }
+
+  void SetHostName(string name){ this->HostName=name; }
+  string &GetHostName(){ return this->HostName; }
+
+  void SetCapacity(unsigned long long capacity){ this->Capacity=capacity; }
+  unsigned long long GetCapacity(){ return this->Capacity; }
+
+  void SetTreeItem(QTreeWidgetItem *item){ this->TreeItem=item; }
+  QTreeWidgetItem *GetTreeItem(){ return this->TreeItem; }
+
+  void SetLoadWidget(QProgressBar *widget){ this->LoadWidget=widget; }
+  QProgressBar *GetLoadWidget(){ return this->LoadWidget; }
+  void InitializeLoadWidget();
+  void UpdateLoadWidget();
+
+  RankData *AddRankData(int rank, int pid);
+  RankData *GetRankData(int i){ return this->Ranks[i]; }
+  void ClearRankData();
+
+  unsigned long long GetLoad();
+  float GetLoadFraction(){ return (float)this->GetLoad()/(float)this->Capacity; }
+
+private:
+  string HostName;
+  unsigned long long Capacity;
+  QProgressBar *LoadWidget;
+  QTreeWidgetItem *TreeItem;
+  vector<RankData *> Ranks;
+};
+
+//-----------------------------------------------------------------------------
+HostData::HostData(
+      string hostName,
+      unsigned long long capacity)
+        :
+    HostName(hostName),
+    Capacity(capacity)
+{
+  this->InitializeLoadWidget();
+}
+
+//-----------------------------------------------------------------------------
+const HostData &HostData::operator=(const HostData &other)
+{
+  if (this==&other) return *this;
+
+  this->HostName=other.HostName;
+  this->Capacity=other.Capacity;
+  this->LoadWidget=other.LoadWidget;
+  this->TreeItem=other.TreeItem;
+  this->Ranks=other.Ranks;
+
+  return *this;
+}
+
+//-----------------------------------------------------------------------------
+void HostData::ClearRankData()
+{
+  ClearVectorOfPointers<RankData>(this->Ranks);
+}
+
+//-----------------------------------------------------------------------------
+unsigned long long HostData::GetLoad()
+{
+  unsigned long long load=0;
+  size_t n=this->Ranks.size();
+  for (size_t i=0; i<n; ++i)
+    {
+    load+=this->Ranks[i]->GetLoad();
+    }
+  return load;
+}
+
+//-----------------------------------------------------------------------------
+void HostData::InitializeLoadWidget()
+{
+  this->LoadWidget=new QProgressBar;
+
+  this->LoadWidget->setMaximumSize(95,15);
+
+  QFont font(this->LoadWidget->font());
+  font.setPointSize(8);
+  this->LoadWidget->setFont(font);
+
+  this->LoadWidget->setMinimum(0);
+  this->LoadWidget->setMaximum(this->Capacity);
+
+  this->UpdateLoadWidget();
+}
+
+//-----------------------------------------------------------------------------
+void HostData::UpdateLoadWidget()
+{
+  this->LoadWidget->setValue(this->GetLoad());
+  this->LoadWidget->setFormat(QString("%1%").arg(this->GetLoadFraction()*100.0, 0,'f',2));
+
+  QPalette palette(this->LoadWidget->palette());
+  if (this->GetLoadFraction()>0.75)
+    {
+    // danger -> red
+    palette.setColor(QPalette::Highlight,QColor(232,40,40));
+    }
+  else
+    {
+    // ok -> green
+    palette.setColor(QPalette::Highlight,QColor(66,232,20));
+    }
+  this->LoadWidget->setPalette(palette);
+}
+
+//-----------------------------------------------------------------------------
+RankData *HostData::AddRankData(int rank, int pid)
+{
+  RankData *newRank=new RankData(rank,pid,0,this->Capacity);
+  this->Ranks.push_back(newRank);
+  return newRank;
+}
+
 
 //-----------------------------------------------------------------------------
 pqSQProcessMonitor::pqSQProcessMonitor(
@@ -281,8 +304,8 @@ pqSQProcessMonitor::pqSQProcessMonitor(
   #if defined pqSQProcessMonitorDEBUG
   cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::pqSQProcessMonitor" << endl;
   #endif
-  this->ClientHostData=0;
-  this->ClientRankData=0;
+  this->ClientHost=0;
+  this->ClientRank=0;
   this->ClientMemMonitor=new MemoryMonitor;
 
   // Construct Qt form.
@@ -405,31 +428,35 @@ pqSQProcessMonitor::~pqSQProcessMonitor()
 
   delete this->ClientMemMonitor;
 
-  this->ClearClientHostData();
-  this->ClearServerHostData();
-  this->ClearServerRankData();
+  this->ClearClientHost();
+  this->ClearServerHosts();
 }
 
 //-----------------------------------------------------------------------------
-void pqSQProcessMonitor::ClearClientHostData()
+void pqSQProcessMonitor::ClearClientHost()
 {
-  if (this->ClientHostData)
+  if (this->ClientHost)
     {
-    delete this->ClientHostData;
+    delete this->ClientHost;
     }
-  this->ClientHostData=0;
+  this->ClientHost=0;
 }
 
 //-----------------------------------------------------------------------------
-void pqSQProcessMonitor::ClearServerHostData()
+void pqSQProcessMonitor::ClearServerHosts()
 {
-  ClearVectorOfPointers<HostData>(this->Hosts);
-}
-
-//-----------------------------------------------------------------------------
-void pqSQProcessMonitor::ClearServerRankData()
-{
-  ClearVectorOfPointers<RankData>(this->Ranks);
+  map<string,HostData*>::iterator it=this->ServerHosts.begin();
+  map<string,HostData*>::iterator end=this->ServerHosts.end();
+  while (it!=end)
+    {
+    if ((*it).second)
+      {
+      delete (*it).second;
+      }
+    ++it;
+    }
+  this->ServerHosts.clear();
+  this->ServerRanks.clear();
 }
 
 //-----------------------------------------------------------------------------
@@ -489,36 +516,46 @@ void pqSQProcessMonitor::PullServerConfig()
   vtkSMProxy* dpProxy=this->referenceProxy()->getProxy();
 
   // client
-  QTreeWidgetItem *clientGroup=new QTreeWidgetItem(this->Form->configView,QStringList("paraview"));
-  clientGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
-  clientGroup->setExpanded(false);
-  clientGroup->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_LOCAL));
-  clientGroup->setData(1,RANK,QVariant(RANK_INVALID));
+  QTreeWidgetItem *clientGroupItem=new QTreeWidgetItem(this->Form->configView);
+  clientGroupItem->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
+  clientGroupItem->setExpanded(true);
+  clientGroupItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_INVALID));
+  clientGroupItem->setData(1,RANK,QVariant(RANK_INVALID));
+  clientGroupItem->setText(0,QString("paraview"));
 
   // TODO modularize client side so that we can support windows.
   // {
-  // hostname
   char clientHostName[1024];
   gethostname(clientHostName,1024);
-  clientGroup->setText(1,clientHostName);
-  // pid
   pid_t clientPid=getpid();
-  clientGroup->setText(2,QString("%1").arg(clientPid));
-
-  // local memory use
-  this->ClearClientHostData();
-  this->ClientHostData
+  this->ClearClientHost();
+  this->ClientHost
     = new HostData(clientHostName,this->ClientMemMonitor->GetSystemTotal());
-  this->ClientRankData=this->ClientHostData->AddRank(0,clientPid);
-  this->Form->configView->setItemWidget(clientGroup,3,this->ClientRankData->GetWidget());
+  this->ClientRank=this->ClientHost->AddRankData(0,clientPid);
+  this->ClientRank->SetLoad(this->ClientMemMonitor->GetVmRSS());
+  this->ClientRank->UpdateLoadWidget();
   // }
+
+  QTreeWidgetItem *clientHostItem=new QTreeWidgetItem(clientGroupItem);
+  clientHostItem->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
+  clientHostItem->setExpanded(true);
+  clientHostItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_INVALID));
+  clientHostItem->setText(0,clientHostName);
+
+  QTreeWidgetItem *clientRankItem=new QTreeWidgetItem(clientHostItem);
+  clientRankItem->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
+  clientRankItem->setExpanded(true);
+  clientRankItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_CLIENT));
+  clientRankItem->setData(1,HOST_NAME,QVariant(clientHostName));
+  clientRankItem->setData(2,PROCESS_ID,QVariant(clientPid));
+  clientRankItem->setText(0,QString("0:%1").arg(clientPid));
+  this->Form->configView->setItemWidget(clientRankItem,1,this->ClientRank->GetLoadWidget());
 
   // server
   QTreeWidgetItem *serverGroup=new QTreeWidgetItem(this->Form->configView,QStringList("pvserver"));
   serverGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
   serverGroup->setExpanded(true);
   serverGroup->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_INVALID));
-  serverGroup->setData(1,RANK,QVariant(RANK_INVALID));
 
   // Pull run time configuration from server. The values are transfered
   // in the form of an ascii stream.
@@ -535,69 +572,71 @@ void pqSQProcessMonitor::PullServerConfig()
     int commSize;
     is >> commSize;
 
-    this->ClearHostData();
-
-    this->HostData.resize(commSize,0);
-    this->RankData.resize(commSize,0);
+    this->ClearServerHosts();
+    this->ServerRanks.resize(commSize,0);
 
     for (int i=0; i<commSize; ++i)
       {
       string serverHostName;
       unsigned long long serverCapacity;
-      int serverRank=i;
       pid_t serverPid;
 
       is >> serverHostName;
       is >> serverPid;
       is >> serverCapacity;
 
-      HostData *host;
+      HostData *serverHost;
 
       pair<string,HostData*> ins(serverHostName,0);
-      pair<bool,map<string,HostData*>::iterator> ret;
-      ret=this->HostData.insert(ins);
-      if (!ret.first)
+      pair<map<string,HostData*>::iterator,bool> ret;
+      ret=this->ServerHosts.insert(ins);
+      if (ret.second)
         {
         // new host
-        host=new HostData(serverHostName,serverCapacity);
-        *(ret.second)=host;
+        serverHost=new HostData(serverHostName,serverCapacity);
+        ret.first->second=serverHost;
+
+        QTreeWidgetItem *serverHostItem=new QTreeWidgetItem(serverGroup);
+        serverHostItem->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
+        serverHostItem->setExpanded(true);
+        serverHostItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_INVALID));
+        serverHostItem->setText(0,serverHostName.c_str());
+        this->Form->configView->setItemWidget(serverHostItem,1,serverHost->GetLoadWidget());
+
+        serverHost->SetTreeItem(serverHostItem);
         }
       else
         {
-        host=*(ret.second);
+        serverHost=ret.first->second;
         }
-      RankData *serverRankData=host->AddRank(serverRank,serverPid);
+      RankData *serverRank=serverHost->AddRankData(i,serverPid);
+      this->ServerRanks[i]=serverRank;
 
+      QTreeWidgetItem *serverRankItem=new QTreeWidgetItem(serverHost->GetTreeItem());
+      serverRankItem->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
+      serverRankItem->setExpanded(false);
+      serverRankItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_SERVER_RANK));
+      serverRankItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_SERVER_HOST));
+      serverRankItem->setData(1,HOST_NAME,QVariant(serverHostName.c_str()));
+      serverRankItem->setData(2,PROCESS_ID,QVariant(serverPid));
+      serverRankItem->setText(0,QString("%1:%2").arg(i).arg(serverPid));
+      this->Form->configView->setItemWidget(serverRankItem,1,serverRank->GetLoadWidget());
 
-
-
-
-      QTreeWidgetItem *serverConfig=new QTreeWidgetItem(serverGroup);
-      serverConfig->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
-      serverConfig->setExpanded(false);
-      serverConfig->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_REMOTE));
-      serverConfig->setData(1,RANK,QVariant(i));
-
-      serverConfig->setText(0,QString("%1").arg(i));
-      serverConfig->setText(1,serverHostName.c_str());
-      serverConfig->setText(2,QString("%1").arg(serverPid));
-
-      memUsage=new QProgressBar;
-      QPalette palette(memUsage->palette());
-      palette.setColor(QPalette::Highlight,QColor(66,232,20));
-      memUsage->setPalette(palette);
-      memUsage->setMaximumSize(1000,15);
-      memUsage->setMinimum(0);
-      memUsage->setMaximum(1000);
-      memUsage->setValue(0);
-      this->Form->configView->setItemWidget(serverConfig,3,memUsage);
-
-      cerr << serverHostName << " " << serverPid << endl;
+      cerr << serverHostName << " " << serverPid << " " << serverCapacity << endl;
       }
     }
   else
     {
     cerr << "Error: failed to get configuration stream. Aborting." << endl;
+    }
+
+  // update host laod to reflect all of its ranks.
+  map<string,HostData*>::iterator it=this->ServerHosts.begin();
+  map<string,HostData*>::iterator end=this->ServerHosts.end();
+  while (it!=end)
+    {
+    it->second->UpdateLoadWidget();
+    ++it;
     }
 }
 
@@ -627,6 +666,9 @@ void pqSQProcessMonitor::UpdateInformationEvent()
     {
     this->InformationMTime=infoMTime;
 
+    this->ClientRank->SetLoad(this->ClientMemMonitor->GetVmRSS());
+    this->ClientRank->UpdateLoadWidget();
+
     vtkSMStringVectorProperty *memProp
       =dynamic_cast<vtkSMStringVectorProperty *>(pmProxy->GetProperty("MemoryUseStream"));
 
@@ -637,46 +679,29 @@ void pqSQProcessMonitor::UpdateInformationEvent()
 
     cerr << stream << endl;
 
-    vector<float> memUse;
-
     if (stream.size()>0 && is.good())
       {
       int commSize;
       is >> commSize;
 
-      memUse.resize(commSize);
-
       for (int i=0; i<commSize; ++i)
         {
-        is >> memUse[i];
+        unsigned long long memUse;
+        is >> memUse;
+        this->ServerRanks[i]->SetLoad(memUse);
+        this->ServerRanks[i]->UpdateLoadWidget();
         }
-      }
-
-    QTreeWidgetItemIterator it(this->Form->configView);
-    while (*it)
-      {
-      int nodeType=(*it)->data(0,PROCESS_TYPE).toInt(0);
-      if (nodeType==PROCESS_TYPE_REMOTE)
+      // update host laod to reflect all of its ranks.
+      map<string,HostData*>::iterator it=this->ServerHosts.begin();
+      map<string,HostData*>::iterator end=this->ServerHosts.end();
+      while (it!=end)
         {
-        QProgressBar *memUseWid
-          = dynamic_cast<QProgressBar*>(this->Form->configView->itemWidget(*it,3));
-
-        int rank=(*it)->data(1,RANK).toInt(0);
-        memUseWid->setValue((int)(1000.0*memUse[rank]));
+        (*it).second->UpdateLoadWidget();
+        ++it;
         }
-      else
-      if (nodeType==PROCESS_TYPE_LOCAL)
-        {
-        QProgressBar *memUseWid
-          = dynamic_cast<QProgressBar*>(this->Form->configView->itemWidget(*it,3));
-
-        float localMemUse=this->ClientMemMonitor->GetVmRSSPercent();
-        memUseWid->setValue((int)(1000.0*localMemUse));
-        }
-
-      ++it;
       }
     }
+
 }
 
 //-----------------------------------------------------------------------------
@@ -719,8 +744,8 @@ void pqSQProcessMonitor::ExecCommand()
     if (!ok) return;
     switch (type)
       {
-      case PROCESS_TYPE_LOCAL:
-      case PROCESS_TYPE_REMOTE:
+      case PROCESS_TYPE_CLIENT:
+      case PROCESS_TYPE_SERVER_RANK:
         {
         string cmd=(const char*)this->Form->commandCombo->currentText().toAscii();
 
@@ -773,7 +798,7 @@ void pqSQProcessMonitor::ExecCommand()
           // QTreeWidgetItem *clientGroup=new QTreeWidgetItem(this->Form->configView);
           // clientGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
           // clientGroup->setExpanded(false);
-          // clientGroup->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_LOCAL));
+          // clientGroup->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_CLIENT));
           // // exec name
           // clientGroup->setText(0,argStrs[0].c_str());
           // // hostname
@@ -811,8 +836,8 @@ void pqSQProcessMonitor::ExecCommand()
 //     if (!ok) return;
 //     switch (type)
 //       {
-//       case PROCESS_TYPE_LOCAL:
-//       case PROCESS_TYPE_REMOTE:
+//       case PROCESS_TYPE_CLIENT:
+//       case PROCESS_TYPE_SERVER_RANK:
 //         {
 //         pid_t childPid=fork();
 //         if (childPid==0)
