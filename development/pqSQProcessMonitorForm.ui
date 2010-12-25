@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>557</width>
+    <width>370</width>
     <height>687</height>
    </rect>
   </property>
@@ -35,30 +35,7 @@
        </property>
        <column>
         <property name="text">
-         <string>Rank</string>
-        </property>
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-          <underline>false</underline>
-         </font>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Host</string>
-        </property>
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>PID</string>
+         <string>Group/Host/Rank/PID</string>
         </property>
         <property name="font">
          <font>
@@ -76,7 +53,6 @@
          <font>
           <weight>75</weight>
           <bold>true</bold>
-          <underline>false</underline>
          </font>
         </property>
        </column>
@@ -84,6 +60,13 @@
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <item>
+        <widget class="QToolButton" name="updateMemUse">
+         <property name="text">
+          <string>u</string>
+         </property>
+        </widget>
+       </item>
        <item>
         <spacer name="horizontalSpacer">
          <property name="orientation">
@@ -96,13 +79,6 @@
           </size>
          </property>
         </spacer>
-       </item>
-       <item>
-        <widget class="QToolButton" name="updateMemUse">
-         <property name="text">
-          <string>u</string>
-         </property>
-        </widget>
        </item>
       </layout>
      </item>
@@ -147,7 +123,7 @@
         <item>
          <widget class="QPushButton" name="delCommand">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -176,7 +152,7 @@
         <item>
          <widget class="QPushButton" name="editCommand">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -208,7 +184,7 @@
         <item>
          <widget class="QPushButton" name="execCommand">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
