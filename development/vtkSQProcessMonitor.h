@@ -20,7 +20,7 @@ Copyright 2008 SciberQuest Inc.
 using std::string;
 
 //BTX
-class MemoryMonitor;
+class SystemInterface;
 //ETX
 
 // define the following ot enable debuging io
@@ -80,13 +80,13 @@ private:
   int WorldRank;
   int WorldSize;
   int Pid;
-  string Hostname;
+  string HostName;
 
   char *ConfigStream;
   char *MemoryUseStream;
   int InformationMTime;
 
-  MemoryMonitor *MemMonitor;
+  SystemInterface *ServerSystem;
 
 private:
   vtkSQProcessMonitor(const vtkSQProcessMonitor&);  // Not implemented.

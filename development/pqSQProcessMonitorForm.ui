@@ -35,7 +35,7 @@
        </property>
        <column>
         <property name="text">
-         <string>Group/Host/Rank/PID</string>
+         <string>Group/Host/Rank:PID</string>
         </property>
         <property name="font">
          <font>
@@ -85,7 +85,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_2">
+    <widget class="QGroupBox" name="groupCommand">
      <property name="title">
       <string>Remote Commands</string>
      </property>
@@ -229,7 +229,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupFPE">
+    <widget class="QGroupBox" name="groupSignal">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -251,7 +251,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QGroupBox" name="groupFPE">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -272,7 +272,7 @@
        <rect>
         <x>7</x>
         <y>29</y>
-        <width>103</width>
+        <width>141</width>
         <height>21</height>
        </rect>
       </property>
@@ -285,7 +285,7 @@
        <rect>
         <x>7</x>
         <y>54</y>
-        <width>97</width>
+        <width>141</width>
         <height>21</height>
        </rect>
       </property>
@@ -298,7 +298,7 @@
        <rect>
         <x>7</x>
         <y>79</y>
-        <width>124</width>
+        <width>141</width>
         <height>21</height>
        </rect>
       </property>
@@ -311,7 +311,7 @@
        <rect>
         <x>7</x>
         <y>104</y>
-        <width>85</width>
+        <width>141</width>
         <height>21</height>
        </rect>
       </property>
@@ -324,7 +324,7 @@
        <rect>
         <x>7</x>
         <y>129</y>
-        <width>88</width>
+        <width>131</width>
         <height>21</height>
        </rect>
       </property>
@@ -337,7 +337,7 @@
        <rect>
         <x>7</x>
         <y>154</y>
-        <width>78</width>
+        <width>141</width>
         <height>21</height>
        </rect>
       </property>

@@ -10,8 +10,6 @@ Copyright 2008 SciberQuest Inc.
 
 #define vtkSQProcessMonitorDEBUG
 
-#include "MemoryMonitor.h"
-
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkDataObject.h"
@@ -19,15 +17,8 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 
-// #include "vtkSQMetaDataKeys.h"
-
 #include <mpi.h>
-#include <unistd.h>
-#include <fenv.h>
-#include <signal.h>
-#include <execinfo.h>
-#include <string.h>
-#include <stdio.h>
+
 
 #include<string>
 using std::string;
@@ -41,160 +32,10 @@ using std::istringstream;
 #include "SQMacros.h"
 #include "FsUtils.h"
 #include "postream.h"
+#include "SystemType.h"
+#include "SystemInterface.h"
+#include "SystemInterfaceFactory.h"
 
-#define TOP "/usr/bin/top"
-
-// Pointer to some process monitor instance provides
-// access to contextual information during signal hander.
-static const vtkSQProcessMonitor *_ProcMonInstance=0;
-
-//*****************************************************************************
-void backtrace_handler(
-      int sigNo,
-      siginfo_t *sigInfo,
-      void */*sigContext*/)
-{
-  cerr << "[" << _ProcMonInstance->WorldRank << "] ";
-
-  switch (sigNo)
-    {
-    case SIGFPE:
-      cerr << "Caught SIGFPE type ";
-      switch (sigInfo->si_code)
-        {
-        case FPE_INTDIV:
-          cerr << "integer division by zero";
-          break;
-
-        case FPE_INTOVF:
-          cerr << "integer overflow";
-          break;
-
-        case FPE_FLTDIV:
-          cerr << "floating point divide by zero";
-          break;
-
-        case FPE_FLTOVF:
-          cerr << "floating point overflow";
-          break;
-
-        case FPE_FLTUND:
-          cerr << "floating point underflow";
-          break;
-
-        case FPE_FLTRES:
-          cerr << "floating point inexact result";
-          break;
-
-        case FPE_FLTINV:
-          cerr << "floating point invalid operation";
-          break;
-
-        case FPE_FLTSUB:
-          cerr << "floating point subscript out of range";
-          break;
-
-        default:
-          cerr << "unknown type";
-          break;
-        }
-      break;
-
-    case SIGSEGV:
-      cerr << "Caught SIGSEGV type ";
-      switch (sigInfo->si_code)
-        {
-        case SEGV_MAPERR:
-          cerr << "address not mapped to object";
-          break;
-
-        case SEGV_ACCERR:
-          cerr << "invalid permission for mapped object";
-          break;
-
-        default:
-          cerr << "unknown type";
-          break;
-        }
-      break;
-
-    case SIGBUS:
-      cerr << "Caught SIGBUS type ";
-      switch (sigInfo->si_code)
-        {
-        case BUS_ADRALN:
-          cerr << "invalid address alignment";
-          break;
-
-        case BUS_ADRERR:
-          cerr << "non-exestent physical address";
-          break;
-
-        case BUS_OBJERR:
-          cerr << "object specific hardware error";
-          break;
-
-        default:
-          cerr << "unknown type";
-          break;
-        }
-      break;
-
-    case SIGILL:
-      cerr << "Caught SIGILL type ";
-      switch (sigInfo->si_code)
-        {
-        case ILL_ILLOPC:
-          cerr << "illegal opcode";
-          break;
-
-        case ILL_ILLOPN:
-          cerr << "illegal operand";
-          break;
-
-        case ILL_ILLADR:
-          cerr << "illegal addressing mode.";
-          break;
-
-        case ILL_ILLTRP:
-          cerr << "illegal trap";
-
-        case ILL_PRVOPC:
-          cerr << "privileged opcode";
-          break;
-
-        case ILL_PRVREG:
-          cerr << "privileged register";
-          break;
-
-        case ILL_COPROC:
-          cerr << "co-processor error";
-          break;
-
-        case ILL_BADSTK:
-          cerr << "internal stack error";
-          break;
-
-        default:
-          cerr << "unknown type";
-          break;
-        }
-      break;
-
-    default:
-      cerr << "Caught " << sigNo;
-      break;
-    }
-
-  // dump a backtrace to stderr
-  cerr << "." << endl;
-
-  void *stack[128];
-  int n=backtrace(stack,128);
-  backtrace_symbols_fd(stack,n,2);
-
-  abort();
-}
 
 vtkCxxRevisionMacro(vtkSQProcessMonitor, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQProcessMonitor);
@@ -205,35 +46,27 @@ vtkSQProcessMonitor::vtkSQProcessMonitor()
   WorldRank(0),
   WorldSize(1),
   Pid(0),
-  Hostname("localhost"),
+  HostName("localhost"),
   ConfigStream(0),
   MemoryUseStream(0),
   InformationMTime(0),
-  MemMonitor(0)
+  ServerSystem(0)
 {
   #if defined vtkSQProcessMonitorDEBUG
   cerr << "===============================vtkSQProcessMonitor::vtkSQProcessMonitor" << endl;
   #endif
 
-  // handle to this instance for use by the signal handler.
-  if (_ProcMonInstance==0)
-    {
-    _ProcMonInstance=this;
-    }
-
   // standard pv info
   this->SetNumberOfInputPorts(0);
   this->SetNumberOfOutputPorts(1);
 
-  this->MemMonitor=new MemoryMonitor;
+  this->ServerSystem=SystemInterfaceFactory::NewSystemInterface();
 
   // gather information about this run.
-  this->Pid=getpid();
-
-  char hostname[1024];
-  gethostname(hostname,1024);
-  this->Hostname=hostname;
-  int hnLen=strlen(hostname)+1;
+  this->Pid=this->ServerSystem->GetProcessId();
+  this->HostName=this->ServerSystem->GetHostName();
+  char *hostname=const_cast<char*>(this->HostName.c_str());
+  int hnLen=this->HostName.size()+1;
 
   int mpiOk=0;
   MPI_Initialized(&mpiOk);
@@ -258,7 +91,7 @@ vtkSQProcessMonitor::vtkSQProcessMonitor()
     // gather
     MPI_Gather(&hnLen,1,MPI_INT,hnLens,1,MPI_INT,0,MPI_COMM_WORLD);
     MPI_Gather(&this->Pid,1,MPI_INT,pids,1,MPI_INT,0,MPI_COMM_WORLD);
-    unsigned long long cap=this->MemMonitor->GetSystemTotal();
+    unsigned long long cap=this->ServerSystem->GetMemoryTotal();
     MPI_Gather(&cap,1,MPI_UNSIGNED_LONG_LONG,caps,1,MPI_UNSIGNED_LONG_LONG,0,MPI_COMM_WORLD);
 
     // set root up for gather hostnames
@@ -291,18 +124,22 @@ vtkSQProcessMonitor::vtkSQProcessMonitor()
     if (this->WorldRank==0)
       {
       ostringstream os;
-      os << this->WorldSize;
+      os
+        << SYSTEM_TYPE << " "
+        << this->WorldSize;
 
       int *pPid=pids;
       char *pHn=hostnames;
       unsigned long long *pCap=caps;
       for (int i=0; i<this->WorldSize; ++i)
         {
-        os << " " << pHn;
+        os
+          << " " << pHn
+          << " " << *pPid
+          << " " << *pCap;
+
         pHn+=hnLens[i];
-        os << " " << *pPid;
         ++pPid;
-        os << " " << *pCap;
         ++pCap;
         }
 
@@ -320,7 +157,12 @@ vtkSQProcessMonitor::vtkSQProcessMonitor()
   else
     {
     ostringstream os;
-    os << 1 << " " << this->Hostname << " " << this->Pid << " " << this->MemMonitor->GetSystemTotal();
+    os
+      << SYSTEM_TYPE << " "
+      << 1 << " "
+      << this->HostName << " "
+      << this->Pid << " "
+      << this->ServerSystem->GetMemoryTotal();
     this->SetConfigStream(os.str().c_str());
     }
 }
@@ -334,7 +176,7 @@ vtkSQProcessMonitor::~vtkSQProcessMonitor()
   this->SetConfigStream(0);
   this->SetMemoryUseStream(0);
 
-  delete this->MemMonitor;
+  delete this->ServerSystem;
 }
 
 //-----------------------------------------------------------------------------
@@ -344,44 +186,7 @@ void vtkSQProcessMonitor::SetEnableBacktraceHandler(int enable)
   cerr << "===============================vtkSQProcessMonitor::SetEnableBacktraceHandler" << endl;
   #endif
 
-  static int saOrigValid=0;
-  static struct sigaction saSEGVOrig;
-  static struct sigaction saILLOrig;
-  static struct sigaction saBUSOrig;
-  static struct sigaction saFPEOrig;
-
-  if (enable)
-    {
-    // save the current actions
-    sigaction(SIGSEGV,0,&saSEGVOrig);
-    sigaction(SIGILL,0,&saILLOrig);
-    sigaction(SIGBUS,0,&saBUSOrig);
-    sigaction(SIGFPE,0,&saFPEOrig);
-
-    saOrigValid=1;
-
-    // install ours
-    struct sigaction sa;
-    sa.sa_sigaction=&backtrace_handler;
-    sa.sa_flags=SA_SIGINFO|SA_RESTART;
-    sigemptyset(&sa.sa_mask);
-
-    sigaction(SIGSEGV,&sa,0);
-    sigaction(SIGILL,&sa,0);
-    sigaction(SIGBUS,&sa,0);
-    sigaction(SIGFPE,&sa,0);
-    }
-  else
-    {
-    if (saOrigValid)
-      {
-      // restore previous actions
-      sigaction(SIGSEGV,&saSEGVOrig,0);
-      sigaction(SIGILL,&saILLOrig,0);
-      sigaction(SIGBUS,&saBUSOrig,0);
-      sigaction(SIGFPE,&saFPEOrig,0);
-      }
-    }
+  this->ServerSystem->StackTraceOnError(enable);
 }
 
 //-----------------------------------------------------------------------------
@@ -391,14 +196,7 @@ void vtkSQProcessMonitor::SetEnableFE_ALL(int enable)
   cerr << "===============================vtkSQProcessMonitor::SetEnableFE_ALL" << endl;
   #endif
 
-  if (enable)
-    {
-    feenableexcept(FE_ALL_EXCEPT);
-    }
-  else
-    {
-    fedisableexcept(FE_ALL_EXCEPT);
-    }
+  this->ServerSystem->CatchAllFloatingPointExceptions(enable);
 }
 
 
@@ -409,14 +207,7 @@ void vtkSQProcessMonitor::SetEnableFE_DIVBYZERO(int enable)
   cerr << "===============================vtkSQProcessMonitor::SetEnableFE_DIVBYZERO" << endl;
   #endif
 
-  if (enable)
-    {
-    feenableexcept(FE_DIVBYZERO);
-    }
-  else
-    {
-    fedisableexcept(FE_DIVBYZERO);
-    }
+  this->ServerSystem->CatchDIVBYZERO(enable);
 }
 
 //-----------------------------------------------------------------------------
@@ -426,14 +217,7 @@ void vtkSQProcessMonitor::SetEnableFE_INEXACT(int enable)
   cerr << "===============================vtkSQProcessMonitor::SetEnableFE_INEXACT" << endl;
   #endif
 
-  if (enable)
-    {
-    feenableexcept(FE_INEXACT);
-    }
-  else
-    {
-    fedisableexcept(FE_INEXACT);
-    }
+  this->ServerSystem->CatchINEXACT(enable);
 }
 
 //-----------------------------------------------------------------------------
@@ -443,14 +227,7 @@ void vtkSQProcessMonitor::SetEnableFE_INVALID(int enable)
   cerr << "===============================vtkSQProcessMonitor::SetEnableFE_INVALID" << endl;
   #endif
 
-  if (enable)
-    {
-    feenableexcept(FE_INVALID);
-    }
-  else
-    {
-    fedisableexcept(FE_INVALID);
-    }
+  this->ServerSystem->CatchINVALID(enable);
 }
 
 //-----------------------------------------------------------------------------
@@ -460,14 +237,7 @@ void vtkSQProcessMonitor::SetEnableFE_OVERFLOW(int enable)
   cerr << "===============================vtkSQProcessMonitor::SetEnableFE_OVERFLOW" << endl;
   #endif
 
-  if (enable)
-    {
-    feenableexcept(FE_OVERFLOW);
-    }
-  else
-    {
-    fedisableexcept(FE_OVERFLOW);
-    }
+  this->ServerSystem->CatchOVERFLOW(enable);
 }
 
 //-----------------------------------------------------------------------------
@@ -477,14 +247,7 @@ void vtkSQProcessMonitor::SetEnableFE_UNDERFLOW(int enable)
   cerr << "===============================vtkSQProcessMonitor::SetEnableFE_UNDERFLOW" << endl;
   #endif
 
-  if (enable)
-    {
-    feenableexcept(FE_UNDERFLOW);
-    }
-  else
-    {
-    fedisableexcept(FE_UNDERFLOW);
-    }
+  this->ServerSystem->CatchUNDERFLOW(enable);
 }
 
 //-----------------------------------------------------------------------------
@@ -500,7 +263,7 @@ int vtkSQProcessMonitor::RequestInformation(
   this->vtkPolyDataAlgorithm::RequestInformation(request,inInfos,outInfos);
 
   // get the local memory use
-  unsigned long long localMemoryUse=this->MemMonitor->GetVmRSS();
+  unsigned long long localMemoryUse=this->ServerSystem->GetMemoryUsed();
   cerr << localMemoryUse << endl;
 
   int mpiOk=0;

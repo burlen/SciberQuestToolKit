@@ -8,9 +8,7 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "pqSQProcessMonitor.h"
 
-#define pqSQProcessMonitorDEBUG
-
-#include "MemoryMonitor.h"
+// #define pqSQProcessMonitorDEBUG
 
 #include "pqComponentsExport.h"
 #include "pqProxy.h"
@@ -31,13 +29,13 @@ Copyright 2008 SciberQuest Inc.
 #include <QMessageBox>
 #include <QProgressBar>
 #include <QPalette>
+#include <QFont>
 
-#include <unistd.h>
-
-#if defined pqSQProcessMonitorDEBUG
-  #include "PrintUtils.h"
-#endif
+#include "PrintUtils.h"
 #include "FsUtils.h"
+#include "SystemType.h"
+#include "SystemInterface.h"
+#include "SystemInterfaceFactory.h"
 
 #include <vtkstd/map>
 using std::map;
@@ -56,13 +54,16 @@ using std::endl;
 enum {
   PROCESS_TYPE=Qt::UserRole,
   PROCESS_TYPE_INVALID,
-  PROCESS_TYPE_CLIENT,
+  PROCESS_TYPE_CLIENT_GROUP,
+  PROCESS_TYPE_CLIENT_HOST,
+  PROCESS_TYPE_CLIENT_RANK,
+  PROCESS_TYPE_SERVER_GROUP,
   PROCESS_TYPE_SERVER_HOST,
   PROCESS_TYPE_SERVER_RANK,
   PROCESS_ID,
-  HOST_NAME,
-  RANK_INVALID,
-  RANK
+  PROCESS_HOST_NAME,
+  PROCESS_RANK_INVALID,
+  PROCESS_RANK
 };
 
 //*****************************************************************************
@@ -306,7 +307,9 @@ pqSQProcessMonitor::pqSQProcessMonitor(
   #endif
   this->ClientHost=0;
   this->ClientRank=0;
-  this->ClientMemMonitor=new MemoryMonitor;
+  this->ClientSystem=SystemInterfaceFactory::NewSystemInterface();
+
+  this->ServerType=SYSTEM_TYPE_UNDEFINED;
 
   // Construct Qt form.
   this->Form=new pqSQProcessMonitorForm;
@@ -315,7 +318,7 @@ pqSQProcessMonitor::pqSQProcessMonitor(
   // this->Form->execCommand->setIcon(QPixmap(":/pqWidgets/Icons/pqVcrPlay16.png"));
   this->Restore();
 
-  vtkSMProxy* dpProxy=this->referenceProxy()->getProxy();
+  vtkSMProxy* pmProxy=this->referenceProxy()->getProxy();
 
   // Set up configuration viewer
   this->PullServerConfig();
@@ -324,16 +327,15 @@ pqSQProcessMonitor::pqSQProcessMonitor(
   this->InformationMTime=-1;
   this->VTKConnect=vtkEventQtSlotConnect::New();
   this->VTKConnect->Connect(
-      dpProxy,
+      pmProxy,
       vtkCommand::UpdateInformationEvent,
       this, SLOT(UpdateInformationEvent()));
   this->UpdateInformationEvent();
 
-  // These are bad because it gets updated more than when you call
-  // modified, see the PV guide.
-  //  iuiProp->SetImmediateUpdate(1); set this in constructor
-  // vtkSMProperty *iuiProp=dbbProxy->GetProperty("InitializeUI");
-  // iuiProp->Modified();
+  // force an update by our button
+  vtkSMIntVectorProperty *infoMTimeProp
+    =dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("GetInformationMTime"));
+  infoMTimeProp->SetImmediateUpdate(1);
 
   // set command add,edit,del,exec buttons
   QObject::connect(
@@ -426,7 +428,7 @@ pqSQProcessMonitor::~pqSQProcessMonitor()
 
   this->VTKConnect->Delete();
 
-  delete this->ClientMemMonitor;
+  delete this->ClientSystem;
 
   this->ClearClientHost();
   this->ClearServerHosts();
@@ -513,40 +515,35 @@ void pqSQProcessMonitor::PullServerConfig()
   #if defined pqSQProcessMonitorDEBUG
   cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::PullServerConfig" << endl;
   #endif
-  vtkSMProxy* dpProxy=this->referenceProxy()->getProxy();
+  vtkSMProxy* pmProxy=this->referenceProxy()->getProxy();
 
   // client
   QTreeWidgetItem *clientGroupItem=new QTreeWidgetItem(this->Form->configView);
   clientGroupItem->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
   clientGroupItem->setExpanded(true);
-  clientGroupItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_INVALID));
-  clientGroupItem->setData(1,RANK,QVariant(RANK_INVALID));
+  clientGroupItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_CLIENT_GROUP));
   clientGroupItem->setText(0,QString("paraview"));
 
-  // TODO modularize client side so that we can support windows.
-  // {
-  char clientHostName[1024];
-  gethostname(clientHostName,1024);
-  pid_t clientPid=getpid();
+  string clientHostName=this->ClientSystem->GetHostName();
+  int clientPid=this->ClientSystem->GetProcessId();
   this->ClearClientHost();
   this->ClientHost
-    = new HostData(clientHostName,this->ClientMemMonitor->GetSystemTotal());
+    = new HostData(clientHostName,this->ClientSystem->GetMemoryTotal());
   this->ClientRank=this->ClientHost->AddRankData(0,clientPid);
-  this->ClientRank->SetLoad(this->ClientMemMonitor->GetVmRSS());
+  this->ClientRank->SetLoad(this->ClientSystem->GetMemoryUsed());
   this->ClientRank->UpdateLoadWidget();
-  // }
 
   QTreeWidgetItem *clientHostItem=new QTreeWidgetItem(clientGroupItem);
   clientHostItem->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
   clientHostItem->setExpanded(true);
-  clientHostItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_INVALID));
-  clientHostItem->setText(0,clientHostName);
+  clientHostItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_CLIENT_HOST));
+  clientHostItem->setText(0,clientHostName.c_str());
 
   QTreeWidgetItem *clientRankItem=new QTreeWidgetItem(clientHostItem);
   clientRankItem->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
   clientRankItem->setExpanded(true);
-  clientRankItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_CLIENT));
-  clientRankItem->setData(1,HOST_NAME,QVariant(clientHostName));
+  clientRankItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_CLIENT_RANK));
+  clientRankItem->setData(1,PROCESS_HOST_NAME,QVariant(clientHostName.c_str()));
   clientRankItem->setData(2,PROCESS_ID,QVariant(clientPid));
   clientRankItem->setText(0,QString("0:%1").arg(clientPid));
   this->Form->configView->setItemWidget(clientRankItem,1,this->ClientRank->GetLoadWidget());
@@ -555,13 +552,13 @@ void pqSQProcessMonitor::PullServerConfig()
   QTreeWidgetItem *serverGroup=new QTreeWidgetItem(this->Form->configView,QStringList("pvserver"));
   serverGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
   serverGroup->setExpanded(true);
-  serverGroup->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_INVALID));
+  serverGroup->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_SERVER_GROUP));
 
   // Pull run time configuration from server. The values are transfered
   // in the form of an ascii stream.
   vtkSMStringVectorProperty *csProp
-    = dynamic_cast<vtkSMStringVectorProperty*>(dpProxy->GetProperty("ConfigStream"));
-  dpProxy->UpdatePropertyInformation(csProp);
+    = dynamic_cast<vtkSMStringVectorProperty*>(pmProxy->GetProperty("ConfigStream"));
+  pmProxy->UpdatePropertyInformation(csProp);
   string csBytes=csProp->GetElement(0);
 
   // cerr << csBytes << endl;
@@ -569,10 +566,19 @@ void pqSQProcessMonitor::PullServerConfig()
   istringstream is(csBytes);
   if (csBytes.size()>0 && is.good())
     {
+    is >> this->ServerType;
+    if (this->ServerType==SYSTEM_TYPE_WIN)
+      {
+      this->Form->groupSignal->hide();
+      this->Form->groupFPE->hide();
+      }
+
     int commSize;
     is >> commSize;
 
     this->ClearServerHosts();
+    this->ServerRanks.clear();
+
     this->ServerRanks.resize(commSize,0);
 
     for (int i=0; i<commSize; ++i)
@@ -599,7 +605,7 @@ void pqSQProcessMonitor::PullServerConfig()
         QTreeWidgetItem *serverHostItem=new QTreeWidgetItem(serverGroup);
         serverHostItem->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
         serverHostItem->setExpanded(true);
-        serverHostItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_INVALID));
+        serverHostItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_SERVER_HOST));
         serverHostItem->setText(0,serverHostName.c_str());
         this->Form->configView->setItemWidget(serverHostItem,1,serverHost->GetLoadWidget());
 
@@ -616,8 +622,7 @@ void pqSQProcessMonitor::PullServerConfig()
       serverRankItem->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
       serverRankItem->setExpanded(false);
       serverRankItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_SERVER_RANK));
-      serverRankItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_SERVER_HOST));
-      serverRankItem->setData(1,HOST_NAME,QVariant(serverHostName.c_str()));
+      serverRankItem->setData(1,PROCESS_HOST_NAME,QVariant(serverHostName.c_str()));
       serverRankItem->setData(2,PROCESS_ID,QVariant(serverPid));
       serverRankItem->setText(0,QString("%1:%2").arg(i).arg(serverPid));
       this->Form->configView->setItemWidget(serverRankItem,1,serverRank->GetLoadWidget());
@@ -629,6 +634,9 @@ void pqSQProcessMonitor::PullServerConfig()
     {
     cerr << "Error: failed to get configuration stream. Aborting." << endl;
     }
+
+  this->Form->configView->resizeColumnToContents(0);
+  this->Form->configView->resizeColumnToContents(1);
 
   // update host laod to reflect all of its ranks.
   map<string,HostData*>::iterator it=this->ServerHosts.begin();
@@ -666,7 +674,7 @@ void pqSQProcessMonitor::UpdateInformationEvent()
     {
     this->InformationMTime=infoMTime;
 
-    this->ClientRank->SetLoad(this->ClientMemMonitor->GetVmRSS());
+    this->ClientRank->SetLoad(this->ClientSystem->GetMemoryUsed());
     this->ClientRank->UpdateLoadWidget();
 
     vtkSMStringVectorProperty *memProp
@@ -702,6 +710,21 @@ void pqSQProcessMonitor::UpdateInformationEvent()
       }
     }
 
+}
+
+//-----------------------------------------------------------------------------
+void pqSQProcessMonitor::IncrementInformationMTime()
+{
+  vtkSMProxy* pmProxy=this->referenceProxy()->getProxy();
+
+  ++this->InformationMTime;
+
+  vtkSMIntVectorProperty *infoMTimeProp
+    =dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("GetInformationMTime"));
+  infoMTimeProp->SetElement(0,this->InformationMTime);
+
+  pmProxy->UpdateVTKObjects();
+//   pqNamedObjectPanel::accept();
 }
 
 //-----------------------------------------------------------------------------
@@ -744,7 +767,7 @@ void pqSQProcessMonitor::ExecCommand()
     if (!ok) return;
     switch (type)
       {
-      case PROCESS_TYPE_CLIENT:
+      case PROCESS_TYPE_CLIENT_RANK:
       case PROCESS_TYPE_SERVER_RANK:
         {
         string cmd=(const char*)this->Form->commandCombo->currentText().toAscii();
@@ -755,62 +778,22 @@ void pqSQProcessMonitor::ExecCommand()
         string xtOptsStr(this->Form->xtOpts->text().toAscii());
         SearchAndReplace(string("@XTOPTS@"),xtOptsStr,cmd);
 
-        string hostNameStr((const char *)item->text(1).toAscii());
+        string hostNameStr((const char *)item->data(1,PROCESS_HOST_NAME).toString().toAscii());
         SearchAndReplace(string("@HOST@"),hostNameStr,cmd);
 
-        string pidStr((const char *)item->text(2).toAscii());
+        string pidStr((const char *)item->data(2,PROCESS_ID).toString().toAscii());
         SearchAndReplace(string("@PID@"),pidStr,cmd);
 
-        vector<string> argStrs;
-        istringstream is(cmd);
-        while (is.good())
-            {
-            string argStr;
-            is >> argStr;
-            argStrs.push_back(argStr);
-            }
-
-        pid_t childPid=fork();
-        if (childPid==0)
+        int iErr=this->ClientSystem->Exec(cmd);
+        if (iErr)
           {
-
-          int nArgStrs=argStrs.size();
-          char **args=(char **)malloc((nArgStrs+1)*sizeof(char *));
-          for (int i=0; i<nArgStrs; ++i)
-            {
-            int argLen=argStrs[i].size();
-            args[i]=(char *)malloc((argLen+1)*sizeof(char));
-            strncpy(args[i],argStrs[i].c_str(),argLen+1);
-            #if defined pqSQProcessMonitorDEBUG
-            cerr << "[" << args[i] << "]" << endl;
-            #endif
-            }
-          args[nArgStrs]=0;
-          execvp(args[0],args);
           QMessageBox ebx;
           ebx.setText("Exec failed.");
           ebx.exec();
-          /// exit(0);
-          }
-        else
-          {
-          // // client
-          // QTreeWidgetItem *clientGroup=new QTreeWidgetItem(this->Form->configView);
-          // clientGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
-          // clientGroup->setExpanded(false);
-          // clientGroup->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_CLIENT));
-          // // exec name
-          // clientGroup->setText(0,argStrs[0].c_str());
-          // // hostname
-          // char clientHostName[1024];
-          // gethostname(clientHostName,1024);
-          // clientGroup->setText(1,clientHostName);
-          // // pid
-          // clientGroup->setText(2,QString("%1").arg(childPid));
+          return;
           }
         }
         break;
-      case PROCESS_TYPE_INVALID:
       default:
         QMessageBox ebx;
         ebx.setText("Could not exec. No process selected.");
@@ -820,67 +803,6 @@ void pqSQProcessMonitor::ExecCommand()
       }
     }
 }
-
-// //-----------------------------------------------------------------------------
-// void pqSQProcessMonitor::Signal()
-// {
-//   #if defined pqSQProcessMonitorDEBUG
-//   cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::Signal" << endl;
-//   #endif
-// 
-//   QTreeWidgetItem *item=this->Form->configView->currentItem();
-//   if (item)
-//     {
-//     bool ok;
-//     int type=item->data(0,PROCESS_TYPE).toInt(&ok);
-//     if (!ok) return;
-//     switch (type)
-//       {
-//       case PROCESS_TYPE_CLIENT:
-//       case PROCESS_TYPE_SERVER_RANK:
-//         {
-//         pid_t childPid=fork();
-//         if (childPid==0)
-//           {
-//           string pidStr((const char *)item->text(2).toAscii());
-//           string sigName("-");
-//           sigName+=(const char *)this->Form->signalCombo->currentText().toAscii();
-//           const char *const args[]={"kill",sigName.c_str(),pidStr.c_str(),0};
-//           execvp(args[0],( char* const*)args);
-// 
-// //           // use linux kill command
-// //           const char exe[]="kill";
-// //           // signame
-// //           int sigNameLen=sigName.size()+1;
-// //           args[0]=(char*)malloc(sigNameLen*sizeof(char));
-// //           strncpy(args[0],sigName.c_str(),sigNameLen);
-// //           // pid
-// //           string pidStr((const char *)item->text(2).toAscii());
-// //           int pidStrLen=pidStr.size()+1;
-// //           args[1]=(char*)malloc(pidStrLen*sizeof(char));
-// //           strncpy(args[0],sigName.c_str(),pidStrLen);
-// //           // end
-// //           args[2]=0;
-// //           // exec
-// //           execvp(exe,args);
-//           // should never get here
-//           QMessageBox ebx;
-//           ebx.setText("Exec failed.");
-//           ebx.exec();
-//           /// exit(0);
-//           }
-//         }
-//         break;
-//       case PROCESS_TYPE_INVALID:
-//       default:
-//         QMessageBox ebx;
-//         ebx.setText("Could not signal. No process selected.");
-//         ebx.exec();
-//         return;
-//         break;
-//       }
-//     }
-// }
 
 //-----------------------------------------------------------------------------
 void pqSQProcessMonitor::accept()
@@ -893,52 +815,52 @@ void pqSQProcessMonitor::accept()
   pqNamedObjectPanel::accept();
 
 
-  vtkSMProxy* l_proxy=this->referenceProxy()->getProxy();
+  vtkSMProxy* pmProxy=this->referenceProxy()->getProxy();
 
   vtkSMIntVectorProperty *prop=0;
 
-  prop=dynamic_cast<vtkSMIntVectorProperty *>(l_proxy->GetProperty("EnableBacktraceHandler"));
+  prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("EnableBacktraceHandler"));
   prop->SetElement(0,this->Form->btSignalHandler->isChecked());
-  //l_proxy->UpdateProperty("EnableBacktraceHandler");
+  //pmProxy->UpdateProperty("EnableBacktraceHandler");
 
 
   bool disableFPE=this->Form->fpeDisableAll->isChecked();
   if (disableFPE)
     {
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(l_proxy->GetProperty("EnableFE_ALL"));
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("EnableFE_ALL"));
     prop->SetElement(0,0);
     prop->Modified();
     }
   else
     {
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(l_proxy->GetProperty("EnableFE_DIVBYZERO"));
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("EnableFE_DIVBYZERO"));
     prop->SetElement(0,this->Form->fpeTrapDivByZero->isChecked());
     prop->Modified(); // force push
 
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(l_proxy->GetProperty("EnableFE_INEXACT"));
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("EnableFE_INEXACT"));
     prop->SetElement(0,this->Form->fpeTrapInexact->isChecked());
     prop->Modified();
 
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(l_proxy->GetProperty("EnableFE_INVALID"));
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("EnableFE_INVALID"));
     prop->SetElement(0,this->Form->fpeTrapInvalid->isChecked());
     prop->Modified();
 
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(l_proxy->GetProperty("EnableFE_OVERFLOW"));
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("EnableFE_OVERFLOW"));
     prop->SetElement(0,this->Form->fpeTrapOverflow->isChecked());
     prop->Modified();
 
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(l_proxy->GetProperty("EnableFE_UNDERFLOW"));
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("EnableFE_UNDERFLOW"));
     prop->SetElement(0,this->Form->fpeTrapUnderflow->isChecked());
     prop->Modified();
     }
 
   // force a refresh
   ++this->InformationMTime;
-  prop=dynamic_cast<vtkSMIntVectorProperty *>(l_proxy->GetProperty("SetInformationMTime"));
+  prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("SetInformationMTime"));
   prop->SetElement(0,this->InformationMTime);
   prop->Modified();
 
-  l_proxy->UpdateVTKObjects();
+  pmProxy->UpdateVTKObjects();
 }
 
 
@@ -998,8 +920,8 @@ void pqSQProcessMonitor::accept()
   // Pull run time configuration from server. The values are transfered
   // in the form of an ascii stream.
 //   vtkSMIntVectorProperty *pidProp
-//     = dynamic_cast<vtkSMIntVectorProperty*>(dpProxy->GetProperty("Pid"));
-//   dpProxy->UpdatePropertyInformation(pidProp);
+//     = dynamic_cast<vtkSMIntVectorProperty*>(pmProxy->GetProperty("Pid"));
+//   pmProxy->UpdatePropertyInformation(pidProp);
 //   pid_t p=pidProp->GetElement(0);
 //   cerr << "PID=" << p << endl;
 /*

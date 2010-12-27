@@ -75,7 +75,7 @@ set(_SOURCES
   GDAMetaDataKeys.cxx
   ImageDecomp.cxx
   IntersectionSet.cxx
-  MemoryMonitor.cxx
+  LinuxSystemInterface.cxx
   PolyDataCellCopier.cxx
   PolyDataFieldTopologyMap.cxx
   PoincareMapData.cxx
@@ -84,8 +84,10 @@ set(_SOURCES
   RectilinearDecomp.cxx
   RefCountedPointer.cxx
   StreamlineData.cxx
+  SystemInterfaceFactory.cxx
   TerminationCondition.cxx
   TopologicalClassSelector.cxx
+  UnixSystemInterface.cxx
   UnstructuredFieldTopologyMap.cxx
   UnstructuredGridCellCopier.cxx
   vtkSQHemisphereSourceConfigurationWriter.cxx

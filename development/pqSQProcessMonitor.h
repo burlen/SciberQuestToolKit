@@ -27,7 +27,7 @@ using std::vector;
 class pqProxy;
 class vtkEventQtSlotConnect;
 class QWidget;
-class MemoryMonitor;
+class SystemInterface;
 class HostData;
 class RankData;
 
@@ -65,6 +65,8 @@ protected slots:
   void DelCommand();
   void EditCommand(bool state);
 
+  void IncrementInformationMTime();
+
 private:
   void ClearServerHosts();
   void ClearClientHost();
@@ -74,12 +76,13 @@ private:
   vtkEventQtSlotConnect *VTKConnect;
   int InformationMTime;
 
+  int ServerType;
   map<string,HostData *> ServerHosts;
   vector<RankData *> ServerRanks;
 
   HostData *ClientHost;
   RankData *ClientRank;
-  MemoryMonitor *ClientMemMonitor;
+  SystemInterface *ClientSystem;
 };
 
 // note:
