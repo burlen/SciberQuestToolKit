@@ -1,5 +1,7 @@
 #!/bin/bash
 
+
+    #
 cmake \
     -DCMAKE_C_COMPILER=/opt/apps/intel/11.1/bin/intel64/icc \
     -DCMAKE_CXX_COMPILER=/opt/apps/intel/11.1/bin/intel64/icpc \
@@ -9,10 +11,11 @@ cmake \
     -DBUILD_TESTING=OFF \
     -DPARAVIEW_BUILD_QT_GUI=OFF \
     -DPARAVIEW_USE_MPI=ON \
-    -DMPI_COMPILER=/opt/apps/intel11_1/mvapich2/1.4/bin/mpicxx \
-    -DMPI_EXTRA_LIBRARY=/opt/apps/intel11_1/mvapich2/1.4/lib/libmpich.so\;/usr/lib64/libpthread.so\;/opt/ofed/lib64/librdmacm.so\;/opt/ofed/lib64/libibverbs.so\;/opt/ofed/lib64/libibumad.so\;/usr/lib64/librt.so \
-    -DMPI_INCLUDE_PATH=/opt/apps/intel11_1/mvapich2/1.4/include \
-    -DMPI_LIBRARY=/opt/apps/intel11_1/mvapich2/1.4/lib/libmpich.so \
+    -DMPI_COMPILER=/opt/apps/intel11_1/openmpi/1.3.3/bin/mpicxx \
+    -DMPI_EXTRA_LIBRARY=/opt/apps/intel11_1/openmpi/1.3.3/lib/libmpi.so\;/opt/apps/intel11_1/openmpi/1.3.3/lib/libopen-rte.so\;/opt/apps/intel11_1/openmpi/1.3.3/lib/libopen-pal.so\;/usr/lib64/libdl.so\;/usr/lib64/libnsl.so\;/usr/lib64/libutil.so \
+    -DMPI_INCLUDE_PATH=/opt/apps/intel11_1/openmpi/1.3.3/include \
+    -DMPI_LIBRARY=/opt/apps/intel11_1/openmpi/1.3.3/lib/libmpi.so \
+    -DMPI_LINK_FLAGS=-Wl,--export-dynamic \
     -DPARAVIEW_BUILD_PLUGIN_Array=OFF \
     -DPARAVIEW_BUILD_PLUGIN_ChartViewFrame=OFF \
     -DPARAVIEW_BUILD_PLUGIN_ClientChartView=OFF \
