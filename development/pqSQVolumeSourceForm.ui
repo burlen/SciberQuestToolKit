@@ -48,6 +48,9 @@
        <property name="text">
         <string>O</string>
        </property>
+       <property name="buddy">
+        <cstring>o_x</cstring>
+       </property>
       </widget>
      </item>
      <item row="0" column="1">
@@ -63,6 +66,9 @@
       <widget class="QLabel" name="label_2">
        <property name="text">
         <string>P_1</string>
+       </property>
+       <property name="buddy">
+        <cstring>p1_x</cstring>
        </property>
       </widget>
      </item>
@@ -80,6 +86,9 @@
        <property name="text">
         <string>P_2</string>
        </property>
+       <property name="buddy">
+        <cstring>p2_x</cstring>
+       </property>
       </widget>
      </item>
      <item row="2" column="1">
@@ -95,6 +104,9 @@
       <widget class="QLabel" name="label_11">
        <property name="text">
         <string>P_3</string>
+       </property>
+       <property name="buddy">
+        <cstring>p3_x</cstring>
        </property>
       </widget>
      </item>
@@ -173,6 +185,9 @@
        <property name="text">
         <string>Resolution</string>
        </property>
+       <property name="buddy">
+        <cstring>res_x</cstring>
+       </property>
       </widget>
      </item>
      <item row="1" column="1">
@@ -229,6 +244,9 @@
       <widget class="QLabel" name="label_8">
        <property name="text">
         <string>Spacing</string>
+       </property>
+       <property name="buddy">
+        <cstring>dx</cstring>
        </property>
       </widget>
      </item>
@@ -295,6 +313,9 @@
        <property name="text">
         <string>Coord-sys</string>
        </property>
+       <property name="buddy">
+        <cstring>coordStatus</cstring>
+       </property>
       </widget>
      </item>
      <item row="0" column="1">
@@ -309,6 +330,9 @@
        <property name="text">
         <string>NCells</string>
        </property>
+       <property name="buddy">
+        <cstring>nCells</cstring>
+       </property>
       </widget>
      </item>
      <item row="1" column="1">
@@ -322,6 +346,9 @@
       <widget class="QLabel" name="label_7">
        <property name="text">
         <string>Dimensions</string>
+       </property>
+       <property name="buddy">
+        <cstring>dim_x</cstring>
        </property>
       </widget>
      </item>
@@ -400,11 +427,6 @@
     </spacer>
    </item>
   </layout>
-  <zorder>line_2</zorder>
-  <zorder>line_3</zorder>
-  <zorder>line_4</zorder>
-  <zorder>layoutWidget</zorder>
-  <zorder>immediateMode</zorder>
  </widget>
  <tabstops>
   <tabstop>o_x</tabstop>

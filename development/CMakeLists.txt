@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.4)
-cmake_policy(SET CMP0003 NEW)
+cmake_minimum_required(VERSION 2.8)
+#cmake_policy(SET CMP0003 NEW)
 #    ____    _ __           ____               __    ____
 #   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
 #  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
@@ -18,16 +18,16 @@ project(SciVisToolKit)
 # Prevent in-source build
 if("${PROJECT_SOURCE_DIR}"  STREQUAL "${PROJECT_BINARY_DIR}")
   message(FATAL_ERROR "SciVisToolKit requires an out of source Build.")
-endif("${PROJECT_SOURCE_DIR}"  STREQUAL "${PROJECT_BINARY_DIR}")
+endif()
 
 # Locate our PV build/development install.
 include(ParaViewConfig.cmake)
 include(EigenConfig.cmake)
 include(MPICHConfig.cmake)
-# include(StateFileConfig.cmake)
+include(GimpConfig.cmake)
 
 # Server manager wrapped sources.
-set(SM_SOURCES
+set(SM_CXX_SOURCES
   vtkSQBOVReader.cxx
   vtkSQDistributedStreamTracer.cxx
   vtkSQFieldTopologySelect.cxx
@@ -54,7 +54,7 @@ set(SM_SOURCES
   )
 
 # Un-wrapped sources
-set(_SOURCES
+set(CXX_SOURCES
   BOVMetaData.cxx
   BOVReader.cxx
   BOVTimeStepImage.cxx
@@ -109,14 +109,14 @@ set_source_files_properties(
 
 if (WIN32)
   # Augment windows with some posix codes.
-  set(_SOURCES ${_SOURCES} win_windirent.cxx)
-endif (WIN32)
+  set(CXX_SOURCES ${CXX_SOURCES} win_windirent.cxx)
+endif()
 
-set(BUILD_SVTK_PROCESS_MONITOR OFF CACHE BOOL "Build the process monitor.")
-if (BUILD_SVTK_PROCESS_MONITOR)
+set(SVTK_PROCESS_MONITOR OFF CACHE BOOL "Build the process monitor.")
+if (SVTK_PROCESS_MONITOR)
   message(STATUS "Building process monitor.")
-  set(SM_SOURCES ${SM_SOURCES} vtkSQProcessMonitor.cxx)
-endif (BUILD_SVTK_PROCESS_MONITOR)
+  set(PV_SM_CXX_SOURCES ${SM_CXX_SOURCES} vtkSQProcessMonitor.cxx)
+endif()
 
 
 if(PARAVIEW_BUILD_QT_GUI)
@@ -172,9 +172,7 @@ if(PARAVIEW_BUILD_QT_GUI)
   set(_IFACES ${_IFACES} ${IFACES})
   set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
-
-  set(BUILD_SVTK_PROCESS_MONITOR OFF CACHE BOOL "Build the process monitor.")
-  if (BUILD_SVTK_PROCESS_MONITOR)
+  if (SVTK_PROCESS_MONITOR)
     message(STATUS "Building process monitor ui.")
     QT4_WRAP_CPP(MOC_SRCS pqSQProcessMonitor.h)
     QT4_WRAP_UI(UI_SRCS pqSQProcessMonitorForm.ui)
@@ -185,10 +183,10 @@ if(PARAVIEW_BUILD_QT_GUI)
       XML_GROUP sources)
     set(_IFACES ${_IFACES} ${IFACES})
     set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
-  endif (BUILD_SVTK_PROCESS_MONITOR)
+  endif()
 
-  set (_SOURCES
-    ${_SOURCES}
+  set (CXX_SOURCES
+    ${CXX_SOURCES}
     ${MOC_SRCS}
     ${UI_SRCS}
     ${_IFACE_SRCS}
@@ -199,9 +197,9 @@ if(PARAVIEW_BUILD_QT_GUI)
     pqSQVolumeSource.cxx
     )
 
-  if (BUILD_SVTK_PROCESS_MONITOR)
-    set (_SOURCES ${_SOURCES} pqSQProcessMonitor.cxx SshStream.cxx)
-  endif (BUILD_SVTK_PROCESS_MONITOR)
+  if (SVTK_PROCESS_MONITOR)
+    set (CXX_SOURCES ${CXX_SOURCES} pqSQProcessMonitor.cxx)
+  endif()
 
 endif (PARAVIEW_BUILD_QT_GUI)
 
@@ -214,23 +212,73 @@ set (CLIENT_XML
 add_paraview_plugin(
   SciVisToolKit "1.0"
   GUI_INTERFACES ${_IFACES}
-  SERVER_MANAGER_SOURCES ${SM_SOURCES}
+  SERVER_MANAGER_SOURCES ${SM_CXX_SOURCES}
   SERVER_MANAGER_XML SciVisToolKitServerManager.xml
   GUI_RESOURCE_FILES ${CLIENT_XML}
-  SOURCES ${_SOURCES})
+  SOURCES ${CXX_SOURCES})
 
-if (BUILD_SVTK_PROCESS_MONITOR AND PARAVIEW_BUILD_QT_GUI)
+if (SVTK_PROCESS_MONITOR AND PARAVIEW_BUILD_QT_GUI)
   target_link_libraries(SciVisToolKit ssh)
-endif (BUILD_SVTK_PROCESS_MONITOR AND PARAVIEW_BUILD_QT_GUI)
+endif()
 
 install(TARGETS SciVisToolKit DESTINATION ${CMAKE_INSTALL_PREFIX})
 
+# GIMP scripts
+set (SVTK_POSTPROC_SCRIPTS ON CACHE BOOL "Install post-processing scripts.")
+if ((NOT GIMP_FOUND) AND SVTK_POSTPROC_SCRIPTS)
+  message(SEND_ERROR "GIMP was not found.")
+endif()
+if (GIMP_FOUND AND SVTK_POSTPROC_SCRIPTS)
+  message(STATUS "Installing post-processing scripts.")
+  set(POSTPROC_SCRIPT_DIR "${PROJECT_SOURCE_DIR}/script/postproc/")
+  set(SVTK_GIMP_SCM_SOURCES
+    "${POSTPROC_SCRIPT_DIR}/annotate.scm"
+    "${POSTPROC_SCRIPT_DIR}/autocrop.scm"
+    "${POSTPROC_SCRIPT_DIR}/crop.scm"
+    )
+  set(SVTK_GIMP_SH_SOURCES
+    "${POSTPROC_SCRIPT_DIR}/annotate.sh"
+    "${POSTPROC_SCRIPT_DIR}/autocrop.sh"
+    "${POSTPROC_SCRIPT_DIR}/crop.sh"
+    "${POSTPROC_SCRIPT_DIR}/mp42avi.sh"
+    "${POSTPROC_SCRIPT_DIR}/png2mp4.sh"
+    )
+  install(FILES ${SVTK_GIMP_SCM_SOURCES} DESTINATION ${GIMP_SCRIPT_PATH})
+  install(PROGRAMS ${SVTK_GIMP_SH_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX})
+endif()
+
+# batch scripts
+set(SVTK_BATCH_SCRIPTS ON CACHE BOOL "Install batch submission scripts.")
+if (SVTK_BATCH_SCRIPTS)
+  message(STATUS "Installing batch scripts.")
+  set(BATCH_SCRIPT_DIR "${PROJECT_SOURCE_DIR}/script/batch/")
+  set(SVTK_BATCH_SCRIPT_SOURCES
+    "${BATCH_SCRIPT_DIR}/qsub-gentp-longhorn.sh"
+    "${BATCH_SCRIPT_DIR}/qsub-mtopo-longhorn.sh"
+    "${BATCH_SCRIPT_DIR}/qsub-pvserver-fc-batch-longhorn.sh"
+    "${BATCH_SCRIPT_DIR}/qsub-pvserver-rc-batch-longhorn.sh"
+    "${BATCH_SCRIPT_DIR}/qsub-test4-topo-3d-pleiades.sh"
+    )
+  install(PROGRAMS ${SVTK_BATCH_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX})
+endif()
+
+# shell scripts
+set(SVTK_SHELL_SCRIPTS ON CACHE BOOL "Install shell scripts.")
+if (SVTK_SHELL_SCRIPTS)
+  message(STATUS "Installing shell scripts.")
+  set(SHELL_SCRIPT_DIR "${PROJECT_SOURCE_DIR}/script/util/")
+  set(SVTK_SHELL_SCRIPT_SOURCES
+    "${SHELL_SCRIPT_DIR}/projxy.sh"
+    "${SHELL_SCRIPT_DIR}/projxz.sh"
+    )
+  install(PROGRAMS ${SVTK_SHELL_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX})
+endif()
 
 # command line utilities
 if (UNIX)
-set(BUILD_SVTK_UTILITIES OFF CACHE BOOL "Build SciVisToolKit utilities.")
-  if (BUILD_SVTK_UTILITIES)
-    message(STATUS "Building SciVisToolKit utilities.")
+  set(SVTK_UTILITIES OFF CACHE BOOL "Build command line utilities.")
+  if (SVTK_UTILITIES)
+    message(STATUS "Building utilities.")
     include(FindMPI)
     if (NOT MPI_FOUND)
       message(SEND_ERROR "MPI is required for the gentp utility.")
@@ -252,28 +300,20 @@ set(BUILD_SVTK_UTILITIES OFF CACHE BOOL "Build SciVisToolKit utilities.")
     target_link_libraries(MagnetosphereTopoBatchPVD ${MPI_LIBRARIES} SciVisToolKit)
     install(TARGETS MagnetosphereTopoBatchPVD DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-  endif (BUILD_SVTK_UTILITIES)
-endif (UNIX)
+  endif()
+endif()
 
 # testing
-set(BUILD_SVTK_TESTING OFF CACHE BOOL "Build project tests.")
-if (BUILD_SVTK_TESTING)
-  message(STATUS "Including SciVisToolKit tests.")
+set(SVTK_TESTING OFF CACHE BOOL "Build project tests.")
+if (SVTK_TESTING)
+  message(STATUS "Building tests.")
   include(FindMPI)
   if (NOT MPI_FOUND)
-    message(SEND_ERROR "MPI is required for the gentp utility.")
+    message(SEND_ERROR "MPI is required for the tests.")
   endif(NOT MPI_FOUND)
   add_definitions("-DMPICH_IGNORE_CXX_SEEK")
   add_executable(TestFieldTopologyMapper TestFieldTopologyMapper.cpp)
   target_link_libraries(TestFieldTopologyMapper SciVisToolKit ${MPI_LIBRARIES})
   install(TARGETS TestFieldTopologyMapper DESTINATION ${CMAKE_INSTALL_PREFIX})
-endif (BUILD_SVTK_TESTING)
-
-# instrument -- command line utility
-set(BUILD_INSTRUMENT OFF CACHE BOOL "Build intrumentation utility to intrument cxx classes.")
-if (BUILD_INSTRUMENT)
-  message(STATUS "Including InstrumentClass.")
-  add_executable(instrumentClass InstrumentClass.cpp FsUtils.cxx)
-  install(TARGETS instrumentClass DESTINATION ${CMAKE_INSTALL_PREFIX})
-endif (BUILD_INSTRUMENT)
+endif ()
 

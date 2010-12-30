@@ -4,7 +4,6 @@ cmake \
     -DCMAKE_C_COMPILER=/opt/apps/intel/11.1/bin/intel64/icc \
     -DCMAKE_CXX_COMPILER=/opt/apps/intel/11.1/bin/intel64/icpc \
     -DCMAKE_LINKER=/opt/apps/intel/11.1/bin/intel64/icpc \
-    -DCMAKE_CXX_FLAGS=-Wno-deprecated \
     -DBUILD_SHARED_LIBS=ON \
     -DBUILD_TESTING=OFF \
     -DPARAVIEW_BUILD_QT_GUI=OFF \

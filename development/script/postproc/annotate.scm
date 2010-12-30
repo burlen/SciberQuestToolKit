@@ -8,7 +8,7 @@
 ;
 
 (define 
-  (annotate inFile outFile text fontSize)
+  (annotate inFile outFile text fontSize fontColor)
     (let* 
       (
       (imw  0)    ; image width
@@ -50,8 +50,13 @@
       (set! y (- imh (+ bm th)))
 
       ; add annotation
-      (gimp-context-set-background '(  0   0   0))
-      (gimp-context-set-foreground '(255 255 255))
+      (cond
+        ((string=? fontColor "w")
+          (gimp-context-set-background '(  0   0   0))
+          (gimp-context-set-foreground '(255 255 255)))
+        ((string=? fontColor "b")
+          (gimp-context-set-background '(255 255 255))
+          (gimp-context-set-foreground '(  0   0   0))))
 
       (gimp-floating-sel-to-layer 
         (car 
