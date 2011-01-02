@@ -53,7 +53,7 @@ set(SM_CXX_SOURCES
   vtkSQVortexFilter.cxx
   )
 
-set(SVTK_PROCESS_MONITOR OFF CACHE BOOL "Build the process monitor.")
+set(SVTK_PROCESS_MONITOR ON CACHE BOOL "Build the process monitor.")
 if (SVTK_PROCESS_MONITOR)
   message(STATUS "Building process monitor.")
   set(SM_CXX_SOURCES ${SM_CXX_SOURCES} vtkSQProcessMonitor.cxx)
