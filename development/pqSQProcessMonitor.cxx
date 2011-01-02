@@ -303,6 +303,7 @@ pqSQProcessMonitor::pqSQProcessMonitor(
   #if defined pqSQProcessMonitorDEBUG
   cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::pqSQProcessMonitor" << endl;
   #endif
+  this->ClientOnly=0;
   this->ClientHost=0;
   this->ClientRank=0;
   this->ClientSystem=SystemInterfaceFactory::NewSystemInterface();
@@ -548,6 +549,8 @@ void pqSQProcessMonitor::PullServerConfig()
 
 
   // server group
+  this->ClientOnly=0;
+
   QTreeWidgetItem *serverGroup=new QTreeWidgetItem(this->Form->configView,QStringList("pvserver"));
   serverGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
   serverGroup->setExpanded(true);
@@ -595,7 +598,7 @@ void pqSQProcessMonitor::PullServerConfig()
       if (clientPid==serverPid)
         {
         this->ClientOnly=1;
-        this->Form->configView->takeTopLevelItem(1);//removeItemWidget(serverGroup,0);
+        this->Form->configView->takeTopLevelItem(1);
         break;
         }      
 

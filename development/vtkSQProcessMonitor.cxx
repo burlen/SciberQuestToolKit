@@ -8,7 +8,7 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "vtkSQProcessMonitor.h"
 
-#define vtkSQProcessMonitorDEBUG
+// #define vtkSQProcessMonitorDEBUG
 
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
