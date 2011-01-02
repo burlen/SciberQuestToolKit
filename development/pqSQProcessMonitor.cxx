@@ -30,6 +30,7 @@ Copyright 2008 SciberQuest Inc.
 #include <QProgressBar>
 #include <QPalette>
 #include <QFont>
+#include <QPlastiqueStyle>
 #include <QDebug>
 
 #include "PrintUtils.h"
@@ -156,16 +157,13 @@ void RankData::UpdateLoadWidget()
 void RankData::InitializeLoadWidget()
 {
   this->LoadWidget=new QProgressBar;
-
-  this->LoadWidget->setMaximumSize(95,15);
-
+  this->LoadWidget->setStyle(new QPlastiqueStyle);
+  this->LoadWidget->setMaximumSize(128,15);
+  this->LoadWidget->setMinimum(0);
+  this->LoadWidget->setMaximum(this->Capacity);
   QFont font(this->LoadWidget->font());
   font.setPointSize(8);
   this->LoadWidget->setFont(font);
-
-  this->LoadWidget->setMinimum(0);
-  //this->LoadWidget->setMaximum(this->Capacity);
-  this->LoadWidget->setMaximum(100);
 
   this->UpdateLoadWidget();
 }
@@ -256,15 +254,13 @@ unsigned long long HostData::GetLoad()
 void HostData::InitializeLoadWidget()
 {
   this->LoadWidget=new QProgressBar;
-
-  this->LoadWidget->setMaximumSize(95,15);
-
+  this->LoadWidget->setStyle(new QPlastiqueStyle);
+  this->LoadWidget->setMaximumSize(128,15);
+  this->LoadWidget->setMinimum(0);
+  this->LoadWidget->setMaximum(this->Capacity);
   QFont font(this->LoadWidget->font());
   font.setPointSize(8);
   this->LoadWidget->setFont(font);
-
-  this->LoadWidget->setMinimum(0);
-  this->LoadWidget->setMaximum(this->Capacity);
 
   this->UpdateLoadWidget();
 }
@@ -550,7 +546,8 @@ void pqSQProcessMonitor::PullServerConfig()
   clientRankItem->setText(0,QString("0:%1").arg(clientPid));
   this->Form->configView->setItemWidget(clientRankItem,1,this->ClientRank->GetLoadWidget());
 
-  // server
+
+  // server group
   QTreeWidgetItem *serverGroup=new QTreeWidgetItem(this->Form->configView,QStringList("pvserver"));
   serverGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
   serverGroup->setExpanded(true);
@@ -593,6 +590,15 @@ void pqSQProcessMonitor::PullServerConfig()
       is >> serverPid;
       is >> serverCapacity;
 
+      // don't build a redundant process tree when
+      // running on the builtin connection
+      if (clientPid==serverPid)
+        {
+        this->ClientOnly=1;
+        this->Form->configView->takeTopLevelItem(1);//removeItemWidget(serverGroup,0);
+        break;
+        }      
+
       HostData *serverHost;
 
       pair<string,HostData*> ins(serverHostName,0);
@@ -629,7 +635,7 @@ void pqSQProcessMonitor::PullServerConfig()
       serverRankItem->setText(0,QString("%1:%2").arg(i).arg(serverPid));
       this->Form->configView->setItemWidget(serverRankItem,1,serverRank->GetLoadWidget());
 
-      cerr << serverHostName << " " << serverPid << " " << serverCapacity << endl;
+      cerr << i << " " << serverHostName << " " << serverPid << endl;
       }
     }
   else
@@ -640,13 +646,16 @@ void pqSQProcessMonitor::PullServerConfig()
   this->Form->configView->resizeColumnToContents(0);
   this->Form->configView->resizeColumnToContents(1);
 
-  // update host laod to reflect all of its ranks.
-  map<string,HostData*>::iterator it=this->ServerHosts.begin();
-  map<string,HostData*>::iterator end=this->ServerHosts.end();
-  while (it!=end)
+  if (!this->ClientOnly)
     {
-    it->second->UpdateLoadWidget();
-    ++it;
+    // update host laod to reflect all of its ranks.
+    map<string,HostData*>::iterator it=this->ServerHosts.begin();
+    map<string,HostData*>::iterator end=this->ServerHosts.end();
+    while (it!=end)
+      {
+      it->second->UpdateLoadWidget();
+      ++it;
+      }
     }
 }
 
@@ -657,27 +666,26 @@ void pqSQProcessMonitor::UpdateInformationEvent()
   cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::UpdateInformationEvent" << endl;
   #endif
 
-//   vtkSMProxy* reader = this->referenceProxy()->getProxy();
-//   reader->UpdatePropertyInformation(reader->GetProperty("SILUpdateStamp"));
-// 
-//   int stamp = vtkSMPropertyHelper(reader, "SILUpdateStamp").GetAsInt();
-
-  vtkSMProxy* pmProxy=this->referenceProxy()->getProxy();
+  this->ClientRank->SetLoad(this->ClientSystem->GetMemoryUsed());
+  this->ClientRank->UpdateLoadWidget();
+  if (this->ClientOnly)
+    {
+    return;
+    }
 
   // see if there has been an update to the server side.
+  vtkSMProxy* pmProxy=this->referenceProxy()->getProxy();
+
   vtkSMIntVectorProperty *infoMTimeProp
     =dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("GetInformationMTime"));
   pmProxy->UpdatePropertyInformation(infoMTimeProp);
   int infoMTime=infoMTimeProp->GetElement(0);
 
-  cerr << "infoMTime=" << infoMTime << endl;
+  // cerr << "infoMTime=" << infoMTime << endl;
 
   if (infoMTime>this->InformationMTime)
     {
     this->InformationMTime=infoMTime;
-
-    this->ClientRank->SetLoad(this->ClientSystem->GetMemoryUsed());
-    this->ClientRank->UpdateLoadWidget();
 
     vtkSMStringVectorProperty *memProp
       =dynamic_cast<vtkSMStringVectorProperty *>(pmProxy->GetProperty("MemoryUseStream"));
@@ -687,7 +695,7 @@ void pqSQProcessMonitor::UpdateInformationEvent()
     string stream=memProp->GetElement(0);
     istringstream is(stream);
 
-    cerr << stream << endl;
+    // cerr << stream << endl;
 
     if (stream.size()>0 && is.good())
       {

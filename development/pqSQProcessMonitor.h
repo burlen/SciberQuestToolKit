@@ -80,6 +80,7 @@ private:
   map<string,HostData *> ServerHosts;
   vector<RankData *> ServerRanks;
 
+  int ClientOnly;
   HostData *ClientHost;
   RankData *ClientRank;
   SystemInterface *ClientSystem;
