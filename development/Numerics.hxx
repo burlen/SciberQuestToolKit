@@ -5,17 +5,16 @@
 /___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
 
 Copyright 2008 SciberQuest Inc.
-
 */
-#ifndef Numerics_h
-#define Numerics_h
+#ifndef __Numerics_hxx
+#define __Numerics_hxx
 
 #include<iostream>
 using std::cerr;
 using std::endl;
 
 // disable gcc shadow variable warnings for eigen
-#if not defined __INTEL_COMPILER && defined __GNUG__
+#if !defined(__INTEL_COMPILER) && defined(__GNUG__)
 #pragma GCC diagnostic ignored "-Wshadow"
 #endif
 

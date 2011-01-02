@@ -30,6 +30,7 @@ Copyright 2008 SciberQuest Inc.
 #include <QProgressBar>
 #include <QPalette>
 #include <QFont>
+#include <QDebug>
 
 #include "PrintUtils.h"
 #include "FsUtils.h"
@@ -163,7 +164,8 @@ void RankData::InitializeLoadWidget()
   this->LoadWidget->setFont(font);
 
   this->LoadWidget->setMinimum(0);
-  this->LoadWidget->setMaximum(this->Capacity);
+  //this->LoadWidget->setMaximum(this->Capacity);
+  this->LoadWidget->setMaximum(100);
 
   this->UpdateLoadWidget();
 }
@@ -585,7 +587,7 @@ void pqSQProcessMonitor::PullServerConfig()
       {
       string serverHostName;
       unsigned long long serverCapacity;
-      pid_t serverPid;
+      int serverPid;
 
       is >> serverHostName;
       is >> serverPid;

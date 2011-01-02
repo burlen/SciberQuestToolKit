@@ -197,8 +197,8 @@ int vtkSQHemisphereSource::RequestInformation(
 
 //----------------------------------------------------------------------------
 int vtkSQHemisphereSource::RequestData(
-      vtkInformation */*req*/,
-      vtkInformationVector **/*inInfos*/,
+      vtkInformation * /*req*/,
+      vtkInformationVector ** /*inInfos*/,
       vtkInformationVector *outInfos)
 {
   #ifdef vtkSQHemisphereSourceDEBUG

@@ -154,8 +154,8 @@ vtkSQRandomCells::~vtkSQRandomCells()
 
 //----------------------------------------------------------------------------
 int vtkSQRandomCells::RequestInformation(
-    vtkInformation */*req*/,
-    vtkInformationVector **/*inInfos*/,
+    vtkInformation * /*req*/,
+    vtkInformationVector ** /*inInfos*/,
     vtkInformationVector *outInfos)
 {
   #ifdef vtkSQRandomCellsDEBUG
@@ -173,7 +173,7 @@ int vtkSQRandomCells::RequestInformation(
 
 //----------------------------------------------------------------------------
 int vtkSQRandomCells::RequestData(
-    vtkInformation */*req*/,
+    vtkInformation * /*req*/,
     vtkInformationVector **inInfos,
     vtkInformationVector *outInfos)
 {
@@ -249,7 +249,8 @@ int vtkSQRandomCells::RequestData(
   if (worldRank==masterRank)
     {
     // get counts of all cells.
-    unsigned long long nRemoteCells[worldSize];
+    unsigned long long *nRemoteCells
+      = (unsigned long long *)malloc(worldSize*sizeof(unsigned long long));
     MPI_Gather(
         &nLocalCells,
         1,
@@ -262,22 +263,24 @@ int vtkSQRandomCells::RequestData(
 
     // construct the cell id block owned by each process.
     unsigned long long nCellsTotal=0;
-    IdBlock remoteCellIds[worldSize];
+    IdBlock *remoteCellIds=new IdBlock[worldSize];
     for (int i=0; i<worldSize; ++i)
       {
       remoteCellIds[i].first()=nCellsTotal;
       remoteCellIds[i].size()=nRemoteCells[i];
       nCellsTotal+=nRemoteCells[i];
       }
+    free(nRemoteCells);
 
     // select cells to pass through. assigned to the process who
     // owns them.
-    unsigned long long nAssigned[worldSize];
+    unsigned long long *nAssigned
+      = (unsigned long long *)malloc(worldSize*sizeof(unsigned long long));
     for (int i=0; i<worldSize; ++i)
       {
       nAssigned[i]=0ll;
       }
-    vector<unsigned long long> assignments[worldSize];
+    vector<unsigned long long> *assignments=new vector<unsigned long long>[worldSize];
 
     // seed the number generator.
     int seed=(this->Seed<0?time(0):this->Seed);
@@ -337,7 +340,8 @@ int vtkSQRandomCells::RequestData(
         unsigned long long cellId=0;
         do
           {
-          cellId=(unsigned long long)((double)(nCellsTotal-1)*(double)rand()/(double)RAND_MAX);
+          cellId
+          =(unsigned long long)((double)(nCellsTotal-1)*(double)rand()/(double)RAND_MAX);
           ok=usedCellIds.insert(cellId);
           }
         while (!ok.second);
@@ -381,6 +385,7 @@ int vtkSQRandomCells::RequestData(
         ++nAssigned[rank];
         }
       }
+    delete [] remoteCellIds;
 
     // distribute the assignments
     for (int i=0; i<worldSize; ++i)
@@ -391,9 +396,23 @@ int vtkSQRandomCells::RequestData(
         cellsToPass=assignments[i];
         continue;
         }
-      MPI_Send(&nAssigned[i],1,MPI_UNSIGNED_LONG_LONG,i,0,MPI_COMM_WORLD);
-      MPI_Send(&((assignments[i])[0]),nAssigned[i],MPI_UNSIGNED_LONG_LONG,i,1,MPI_COMM_WORLD);
+      MPI_Send(
+          &nAssigned[i],
+          1,
+          MPI_UNSIGNED_LONG_LONG,
+          i,
+          0,
+          MPI_COMM_WORLD);
+      MPI_Send(
+          &((assignments[i])[0]),
+          nAssigned[i],
+          MPI_UNSIGNED_LONG_LONG,
+          i,
+          1,
+          MPI_COMM_WORLD);
       }
+    delete [] assignments;
+    free(nAssigned);
     }
   else
     {
@@ -411,23 +430,23 @@ int vtkSQRandomCells::RequestData(
     // obtain our assignments
     MPI_Status stat;
     MPI_Recv(
-          &nCellsToPass,
-          1,
-          MPI_UNSIGNED_LONG_LONG,
-          masterRank,
-          0,
-          MPI_COMM_WORLD,
-          &stat);
+        &nCellsToPass,
+        1,
+        MPI_UNSIGNED_LONG_LONG,
+        masterRank,
+        0,
+        MPI_COMM_WORLD,
+        &stat);
 
     cellsToPass.resize(nCellsToPass);
     MPI_Recv(
-          &cellsToPass[0],
-          nCellsToPass,
-          MPI_UNSIGNED_LONG_LONG,
-          masterRank,
-          1,
-          MPI_COMM_WORLD,
-          &stat);
+        &cellsToPass[0],
+        nCellsToPass,
+        MPI_UNSIGNED_LONG_LONG,
+        masterRank,
+        1,
+        MPI_COMM_WORLD,
+        &stat);
     }
 
   // copy cells, assoictaed points and data attributes to the output.

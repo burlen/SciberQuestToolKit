@@ -93,8 +93,8 @@ void vtkSQPlaneSource::SetResolution(const int xR, const int yR)
 
 //----------------------------------------------------------------------------
 int vtkSQPlaneSource::RequestInformation(
-    vtkInformation */*req*/,
-    vtkInformationVector **/*inInfos*/,
+    vtkInformation * /*req*/,
+    vtkInformationVector ** /*inInfos*/,
     vtkInformationVector *outInfos)
 {
   #ifdef vtkSQPlaneSourceDEBUG

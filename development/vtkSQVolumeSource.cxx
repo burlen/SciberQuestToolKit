@@ -96,8 +96,8 @@ vtkSQVolumeSource::~vtkSQVolumeSource()
 
 //----------------------------------------------------------------------------
 int vtkSQVolumeSource::RequestInformation(
-    vtkInformation */*req*/,
-    vtkInformationVector **/*inInfos*/,
+    vtkInformation * /*req*/,
+    vtkInformationVector ** /*inInfos*/,
     vtkInformationVector *outInfos)
 {
   #ifdef vtkSQVolumeSourceDEBUG
@@ -115,7 +115,7 @@ int vtkSQVolumeSource::RequestInformation(
 
 //----------------------------------------------------------------------------
 int vtkSQVolumeSource::RequestData(
-    vtkInformation */*req*/,
+    vtkInformation * /*req*/,
     vtkInformationVector **inInfos,
     vtkInformationVector *outInfos)
 {

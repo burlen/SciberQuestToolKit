@@ -91,8 +91,6 @@ private:
 private:
   vtkSQProcessMonitor(const vtkSQProcessMonitor&);  // Not implemented.
   void operator=(const vtkSQProcessMonitor&);  // Not implemented.
-
-  friend void backtrace_handler(int sigNo, siginfo_t *sigInfo, void *sigContext);
 };
 
 #endif

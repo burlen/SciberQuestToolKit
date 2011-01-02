@@ -78,7 +78,7 @@ void logspace(T lo, T hi, int n, T p, T *data)
   int nhi=n-mid;
   T s=hi-lo;
 
-  T rhi=pow(10.0,p);
+  T rhi=pow((T)10.0,p);
 
   linspace<T>(1.0,0.99*rhi,nlo,data);
   linspace<T>(1.0,rhi,nhi,data+nlo);
@@ -249,8 +249,8 @@ int vtkSQSeedPointLatice::FillInputPortInformation(
 
 //----------------------------------------------------------------------------
 int vtkSQSeedPointLatice::RequestInformation(
-    vtkInformation */*req*/,
-    vtkInformationVector **/*inInfos*/,
+    vtkInformation * /*req*/,
+    vtkInformationVector ** /*inInfos*/,
     vtkInformationVector *outInfos)
 {
   #ifdef vtkSQSeedPointLaticeDEBUG
@@ -269,7 +269,7 @@ int vtkSQSeedPointLatice::RequestInformation(
 
 //----------------------------------------------------------------------------
 int vtkSQSeedPointLatice::RequestData(
-    vtkInformation */*req*/,
+    vtkInformation * /*req*/,
     vtkInformationVector **inInfos,
     vtkInformationVector *outInfos)
 {

@@ -64,7 +64,7 @@ Copyright 2008 SciberQuest Inc.
 
 #include <mpi.h>
 
-#define vtkSQFieldTracerTIME
+// #define vtkSQFieldTracerTIME
 
 #ifndef vtkSQFieldTracerDEBUG
   // 0 -- no output
@@ -74,7 +74,7 @@ Copyright 2008 SciberQuest Inc.
   #define vtkSQFieldTracerDEBUG 0
 #endif
 
-#ifdef vtkSQFieldTracerTIME
+#if defined(vtkSQFieldTracerTIME) 
   #include <sys/time.h>
 #endif
 
@@ -1227,18 +1227,23 @@ void vtkSQFieldTracer::IntegrateOne(
 //-----------------------------------------------------------------------------
 unsigned long vtkSQFieldTracer::GetGlobalCellId(vtkDataSet *data)
 {
-  unsigned long gid=0;
-  unsigned long nGlobal[this->WorldSize];
   unsigned long nLocal=data->GetNumberOfCells();
+  
+  unsigned long *nGlobal
+    = (unsigned long *)malloc(this->WorldSize*sizeof(unsigned long));
+  
   MPI_Allgather(
         &nLocal,1,MPI_UNSIGNED_LONG,
         &nGlobal,1,MPI_UNSIGNED_LONG,
         MPI_COMM_WORLD);
 
+  unsigned long gid=0;
   for (int i=0; i<this->WorldRank; ++i)
     {
     gid+=nGlobal[i];
     }
+
+  free(nGlobal);
 
   return gid;
 }

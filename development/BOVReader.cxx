@@ -211,7 +211,7 @@ bool BOVReader::IsOpen()
 {
   if (this->MetaData)
     {
-    return this->MetaData->IsDatasetOpen();
+    return (bool)this->MetaData->IsDatasetOpen();
     }
   return false;
 }

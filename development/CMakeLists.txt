@@ -53,6 +53,18 @@ set(SM_CXX_SOURCES
   vtkSQVortexFilter.cxx
   )
 
+set(SVTK_PROCESS_MONITOR OFF CACHE BOOL "Build the process monitor.")
+if (SVTK_PROCESS_MONITOR)
+  message(STATUS "Building process monitor.")
+  set(SM_CXX_SOURCES ${SM_CXX_SOURCES} vtkSQProcessMonitor.cxx)
+endif()
+
+set_source_files_properties(
+  vtkSQOOCReader.cxx
+  vtkSQCellGenerator.cxx
+  ABSTRACT
+  )
+
 # Un-wrapped sources
 set(CXX_SOURCES
   BOVMetaData.cxx
@@ -99,25 +111,13 @@ set(CXX_SOURCES
   vtkSQPlaneSourceConfigurationReader.cxx
   vtkSQVolumeSourceConfigurationWriter.cxx
   vtkSQVolumeSourceConfigurationReader.cxx
-  )
-
-set_source_files_properties(
-  vtkSQOOCReader.cxx
-  vtkSQCellGenerator.cxx
-  ABSTRACT
+  WindowsSystemInterface.cxx
   )
 
 if (WIN32)
   # Augment windows with some posix codes.
   set(CXX_SOURCES ${CXX_SOURCES} win_windirent.cxx)
 endif()
-
-set(SVTK_PROCESS_MONITOR OFF CACHE BOOL "Build the process monitor.")
-if (SVTK_PROCESS_MONITOR)
-  message(STATUS "Building process monitor.")
-  set(PV_SM_CXX_SOURCES ${SM_CXX_SOURCES} vtkSQProcessMonitor.cxx)
-endif()
-
 
 if(PARAVIEW_BUILD_QT_GUI)
   message(STATUS "Including custom panels.")
@@ -217,14 +217,14 @@ add_paraview_plugin(
   GUI_RESOURCE_FILES ${CLIENT_XML}
   SOURCES ${CXX_SOURCES})
 
-if (SVTK_PROCESS_MONITOR AND PARAVIEW_BUILD_QT_GUI)
-  target_link_libraries(SciVisToolKit ssh)
+if (WIN32 AND SVTK_PROCESS_MONITOR)
+  target_link_libraries(SciVisToolKit Psapi)
 endif()
 
 install(TARGETS SciVisToolKit DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 # GIMP scripts
-set (SVTK_POSTPROC_SCRIPTS ON CACHE BOOL "Install post-processing scripts.")
+set (SVTK_POSTPROC_SCRIPTS OFF CACHE BOOL "Install post-processing scripts.")
 if ((NOT GIMP_FOUND) AND SVTK_POSTPROC_SCRIPTS)
   message(SEND_ERROR "GIMP was not found.")
 endif()
@@ -248,7 +248,7 @@ if (GIMP_FOUND AND SVTK_POSTPROC_SCRIPTS)
 endif()
 
 # batch scripts
-set(SVTK_BATCH_SCRIPTS ON CACHE BOOL "Install batch submission scripts.")
+set(SVTK_BATCH_SCRIPTS OFF CACHE BOOL "Install batch submission scripts.")
 if (SVTK_BATCH_SCRIPTS)
   message(STATUS "Installing batch scripts.")
   set(BATCH_SCRIPT_DIR "${PROJECT_SOURCE_DIR}/script/batch/")
@@ -316,4 +316,3 @@ if (SVTK_TESTING)
   target_link_libraries(TestFieldTopologyMapper SciVisToolKit ${MPI_LIBRARIES})
   install(TARGETS TestFieldTopologyMapper DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif ()
-

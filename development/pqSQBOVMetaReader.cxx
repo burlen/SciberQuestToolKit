@@ -197,7 +197,7 @@ void pqSQBOVMetaReader::UpdateDecompDims()
     return;
     }
 
-  unsigned long int nBlocks=1;
+  int nBlocks=1;
 
   for (int q=0; q<3; ++q)
     {
@@ -210,10 +210,10 @@ void pqSQBOVMetaReader::UpdateDecompDims()
       }
     else
       {
-      unsigned long int p=log10(nCells[q]);
-      unsigned long int b=pow(10,p-2);
-      unsigned long int m=nCells[q]/((unsigned long int)pow(10,p));
-      unsigned long int dim=m*b;
+      int p=log10((float)nCells[q]);
+      int b=pow(10.0,p-2);
+      int m=nCells[q]/((int)pow(10.0,p));
+      int dim=m*b;
       nBlocks*=dim;
       this->DecompDims[q]->setText(QString("%1").arg(dim));
       }

@@ -162,7 +162,8 @@ vtkDataArray *DataArrayCopierImpl<T>::GetOutput()
 template<typename T>
 void DataArrayCopierImpl<T>::Copy(vtkIdType id)
 {
-  typename DataArrayTraits<T>::InternalType val[this->NComps];
+  // expecting scalars, vectors, and tensors
+  typename DataArrayTraits<T>::InternalType val[9];
 
   this->Input->GetTupleValue(id,val);
   this->Output->InsertNextTupleValue(val);

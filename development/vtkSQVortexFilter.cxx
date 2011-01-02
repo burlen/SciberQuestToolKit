@@ -121,7 +121,7 @@ int vtkSQVortexFilter::RequestDataObject(
 
 //-----------------------------------------------------------------------------
 int vtkSQVortexFilter::RequestInformation(
-      vtkInformation */*req*/,
+      vtkInformation * /*req*/,
       vtkInformationVector **inInfos,
       vtkInformationVector *outInfos)
 {
@@ -229,7 +229,7 @@ int vtkSQVortexFilter::RequestUpdateExtent(
 
 //-----------------------------------------------------------------------------
 int vtkSQVortexFilter::RequestData(
-    vtkInformation */*req*/,
+    vtkInformation * /*req*/,
     vtkInformationVector **inInfoVec,
     vtkInformationVector *outInfoVec)
 {

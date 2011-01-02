@@ -25,6 +25,10 @@ Copyright 2008 SciberQuest Inc.
 
 #include <math.h>
 
+#if defined _WIN32
+  #define M_PI 3.14151692358979
+#endif
+
 //*****************************************************************************
 void GenerateHemicylinder(
       vtkPolyData *output,
@@ -198,8 +202,8 @@ int vtkSQHemicylinderSource::RequestInformation(
 
 //----------------------------------------------------------------------------
 int vtkSQHemicylinderSource::RequestData(
-      vtkInformation */*req*/,
-      vtkInformationVector **/*inInfos*/,
+      vtkInformation * /*req*/,
+      vtkInformationVector ** /*inInfos*/,
       vtkInformationVector *outInfos)
 {
   #ifdef vtkSQHemicylinderSourceDEBUG

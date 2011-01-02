@@ -89,8 +89,8 @@ int vtkSQFieldTopologySelect::FillOutputPortInformation(
 
 //----------------------------------------------------------------------------
 int vtkSQFieldTopologySelect::RequestInformation(
-    vtkInformation */*req*/,
-    vtkInformationVector **/*inInfos*/,
+    vtkInformation * /*req*/,
+    vtkInformationVector ** /*inInfos*/,
     vtkInformationVector *outInfos)
 {
   #ifdef vtkSQFieldTopologySelectDEBUG

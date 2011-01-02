@@ -27,7 +27,7 @@
 
 #include "vtkSQPStreamTracer.h"
 
-class VTK_PARALLEL_EXPORT vtkSQDistributedStreamTracer : public vtkSQPStreamTracer
+class VTK_EXPORT vtkSQDistributedStreamTracer : public vtkSQPStreamTracer
 {
 public:
   vtkTypeRevisionMacro(vtkSQDistributedStreamTracer,vtkSQPStreamTracer);

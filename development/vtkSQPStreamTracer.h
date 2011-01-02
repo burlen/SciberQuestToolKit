@@ -32,7 +32,7 @@
 class vtkInterpolatedVelocityField;
 class vtkMultiProcessController;
 
-class VTK_PARALLEL_EXPORT vtkSQPStreamTracer : public vtkSQStreamTracer
+class VTK_EXPORT vtkSQPStreamTracer : public vtkSQStreamTracer
 {
 public:
   vtkTypeRevisionMacro(vtkSQPStreamTracer,vtkSQStreamTracer);

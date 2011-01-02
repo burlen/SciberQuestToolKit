@@ -52,7 +52,7 @@ using std::ostringstream;
 #endif
 
 // #define vtkSQBOVReaderDEBUG
-#define vtkSQBOVReaderTIME
+// #define vtkSQBOVReaderTIME
 
 #if defined vtkSQBOVReaderTIME
   #include <sys/time.h>
@@ -60,7 +60,7 @@ using std::ostringstream;
 #endif
 
 // disbale warning about passing string literals.
-#if not defined __INTEL_COMPILER && defined __GNUG__
+#if not defined(__INTEL_COMPILER) && defined(__GNUG__)
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 #endif
 

@@ -72,8 +72,8 @@ int vtkSQFieldTopologySplit::FillOutputPortInformation(
 
 //----------------------------------------------------------------------------
 int vtkSQFieldTopologySplit::RequestInformation(
-    vtkInformation */*req*/,
-    vtkInformationVector **/*inInfos*/,
+    vtkInformation * /*req*/,
+    vtkInformationVector ** /*inInfos*/,
     vtkInformationVector *outInfos)
 {
   #ifdef vtkSQFieldTopologySplitDEBUG

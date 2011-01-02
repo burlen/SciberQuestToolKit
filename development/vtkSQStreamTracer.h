@@ -1,3 +1,12 @@
+/*
+   ____    _ __           ____               __    ____
+  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
+ _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+
+Copyright 2008 SciberQuest Inc.
+
+*/
 /*=========================================================================
 
   Program:   Visualization Toolkit
@@ -12,15 +21,6 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-/*
-   ____    _ __           ____               __    ____
-  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
- _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
-
-Copyright 2008 SciberQuest Inc.
-
-*/
 // .NAME vtkSQStreamTracer - Streamline generator
 // .SECTION Description
 // vtkSQStreamTracer is a filter that integrates a vector field to generate
@@ -98,7 +98,7 @@ class vtkIdList;
 class vtkIntArray;
 class vtkInterpolatedVelocityField;
 
-class VTK_GRAPHICS_EXPORT vtkSQStreamTracer : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkSQStreamTracer : public vtkPolyDataAlgorithm
 {
 public:
   vtkTypeRevisionMacro(vtkSQStreamTracer,vtkPolyDataAlgorithm);

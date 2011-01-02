@@ -16,32 +16,36 @@ Copyright 2008 SciberQuest Inc.
 #include <string>
 using std::string;
 
+#include "windows.h"
+#include "psapi.h"
+
+
 /// Windows interface.
 class WindowsSystemInterface : public SystemInterface
 {
 public:
-  WindowsSystemInterface(){}
-  virtual ~WindowsSystemInterface(){}
+  WindowsSystemInterface();
+  virtual ~WindowsSystemInterface();
 
   /**
   Return the total amount of physical RAM avaiable on the system.
   */
-  virtual unsigned long long GetMemoryTotal(){ return 0; }
+  virtual unsigned long long GetMemoryTotal(){ return this->MemoryTotal; }
 
   /**
   Return the amount of physical RAM used by this process.
   */
-  virtual unsigned long long GetMemoryUsed(){ return 0; }
+  virtual unsigned long long GetMemoryUsed();
 
   /**
   Return the processs identifier of this process.
   */
-  virtual int GetProcessId(){ return -1; }
+  virtual int GetProcessId(){ return this->Pid; }
 
   /**
   Return the hostname.
   */
-  virtual string GetHostName(){ return string("localhost"); }
+  virtual string GetHostName(){ return this->HostName; }
 
   /**
   Execute the given command in a new process.
@@ -63,6 +67,12 @@ public:
   virtual void CatchINVALID(int ){}
   virtual void CatchOVERFLOW(int ){}
   virtual void CatchUNDERFLOW(int ){}
+
+private:
+  int Pid;
+  HANDLE HProc;
+  string HostName;
+  unsigned long long MemoryTotal;
 };
 
 #else

@@ -17,10 +17,10 @@ enum SystemType
   SYSTEM_TYPE_LINUX=2
 };
 
-#if defined __APPLE__
+#if defined(__APPLE__)
   #define SYSTEM_TYPE SYSTEM_TYPE_APPLE
 
-#elseif defined _WIN32
+#elif defined(_WIN32)
   #define SYSTEM_TYPE SYSTEM_TYPE_WIN
 
 #else
