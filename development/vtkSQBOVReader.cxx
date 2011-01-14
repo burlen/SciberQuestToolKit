@@ -60,7 +60,7 @@ using std::ostringstream;
 #endif
 
 // disbale warning about passing string literals.
-#if not defined(__INTEL_COMPILER) && defined(__GNUG__)
+#if !defined(__INTEL_COMPILER) && defined(__GNUG__)
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 #endif
 

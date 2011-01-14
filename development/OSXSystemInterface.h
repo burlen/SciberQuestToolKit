@@ -11,8 +11,6 @@ Copyright 2008 SciberQuest Inc.
 
 #include "UnixSystemInterface.h"
 
-#ifdef __APPLE__
-
 /// Mac interface.
 class OSXSystemInterface : public UnixSystemInterface
 {
@@ -34,9 +32,5 @@ public:
 private:
   unsigned long long MemoryTotal;
 };
-
-#else
-  typedef SystemInterface OSXSystemInterface;
-#endif
 
 #endif

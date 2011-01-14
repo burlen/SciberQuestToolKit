@@ -9,6 +9,7 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __SystemInterface_h
 #define __SystemInterface_h
 
+#include "vtkType.h"
 #include "SystemType.h"
 #include <string>
 using std::string;

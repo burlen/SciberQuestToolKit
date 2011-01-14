@@ -6,7 +6,7 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-// .NAME vtkSQProcessMonitor - Monitors server as it runs.
+// .NAME vtkSQProcessMonitor - Monitors pvserver heatlth as it runs.
 // .SECTION Description
 // .SECTION Caveats
 

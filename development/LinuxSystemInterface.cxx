@@ -8,8 +8,6 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "LinuxSystemInterface.h"
 
-#ifdef __linux__
-
 #include "FsUtils.h"
 #include "SQMacros.h"
 
@@ -139,5 +137,3 @@ unsigned long long LinuxSystemInterface::GetStatusField(const char *name)
 
   return value;
 }
-
-#endif

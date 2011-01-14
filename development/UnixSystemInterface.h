@@ -11,8 +11,6 @@ Copyright 2008 SciberQuest Inc.
 
 #include "SystemInterface.h"
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__unix__) 
-
 #include <string>
 using std::string;
 
@@ -22,7 +20,6 @@ class UnixSystemInterface : public SystemInterface
 public:
   UnixSystemInterface();
   virtual ~UnixSystemInterface(){}
-
 
   /**
   Return the processs identifier of this process.
@@ -58,9 +55,5 @@ public:
 private:
   int Pid;
 };
-
-#else
-  typedef SystemInterface UnixSystemInterface;
-#endif
 
 #endif

@@ -8,8 +8,6 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "OSXSystemInterface.h"
 
-#ifdef APPLE
-
 // #include <sys/types.h>
 // #include <sys/sysctl.h>
 // #include <sys/vmmeter.h>
@@ -77,5 +75,3 @@ Copyright 2008 SciberQuest Inc.
 //     mach_port_deallocate(mach_task_self(), task);
 //     return 0;
 // }
-
-#endif

@@ -315,6 +315,7 @@ pqSQProcessMonitor::pqSQProcessMonitor(
   this->Form->setupUi(this);
   // this->Form->addCommand->setIcon(QPixmap(":/pqWidgets/Icons/pqNewItem16.png"));
   // this->Form->execCommand->setIcon(QPixmap(":/pqWidgets/Icons/pqVcrPlay16.png"));
+  this->Form->updateMemUse->setIcon(QPixmap(":/pqWidgets/Icons/pqRedo24.png"));
   this->Restore();
 
   vtkSMProxy* pmProxy=this->referenceProxy()->getProxy();

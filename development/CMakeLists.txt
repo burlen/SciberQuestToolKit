@@ -87,7 +87,7 @@ set(CXX_SOURCES
   GDAMetaDataKeys.cxx
   ImageDecomp.cxx
   IntersectionSet.cxx
-  LinuxSystemInterface.cxx
+  
   PolyDataCellCopier.cxx
   PolyDataFieldTopologyMap.cxx
   PoincareMapData.cxx
@@ -99,7 +99,6 @@ set(CXX_SOURCES
   SystemInterfaceFactory.cxx
   TerminationCondition.cxx
   TopologicalClassSelector.cxx
-  UnixSystemInterface.cxx
   UnstructuredFieldTopologyMap.cxx
   UnstructuredGridCellCopier.cxx
   vtkSQHemisphereSourceConfigurationWriter.cxx
@@ -111,12 +110,26 @@ set(CXX_SOURCES
   vtkSQPlaneSourceConfigurationReader.cxx
   vtkSQVolumeSourceConfigurationWriter.cxx
   vtkSQVolumeSourceConfigurationReader.cxx
-  WindowsSystemInterface.cxx
   )
 
 if (WIN32)
-  # Augment windows with some posix codes.
-  set(CXX_SOURCES ${CXX_SOURCES} win_windirent.cxx)
+  set(CXX_SOURCES 
+    ${CXX_SOURCES}
+    WindowsSystemInterface.cxx
+    win_windirent.cxx
+    )
+elseif (APPLE)
+  set(CXX_SOURCES 
+    ${CXX_SOURCES}
+    UnixSystemInterface.cxx
+    OSXSystemInterface.cxx
+    )
+else()
+  set(CXX_SOURCES 
+    ${CXX_SOURCES}
+    UnixSystemInterface.cxx
+    LinuxSystemInterface.cxx
+    )
 endif()
 
 if(PARAVIEW_BUILD_QT_GUI)

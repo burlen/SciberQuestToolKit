@@ -16,9 +16,9 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkPolyData.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
+#include "vtkMultiProcessController.h"
 
-#include <mpi.h>
-
+// #include <mpi.h>
 
 #include<string>
 using std::string;
@@ -68,102 +68,86 @@ vtkSQProcessMonitor::vtkSQProcessMonitor()
   char *hostname=const_cast<char*>(this->HostName.c_str());
   int hnLen=this->HostName.size()+1;
 
-  int mpiOk=0;
-  MPI_Initialized(&mpiOk);
-  if (mpiOk)
+  vtkMultiProcessController *controller
+    = vtkMultiProcessController::GetGlobalController();
+
+  this->WorldRank=controller->GetLocalProcessId();
+  this->WorldSize=controller->GetNumberOfProcesses();
+
+  // set root up for gather pid and hostname sizes
+  int *pids=0;
+  int *hnLens=0;
+  int *hnDispls=0;
+  unsigned long long *caps=0;
+  if (this->WorldRank==0)
     {
-    MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
-    MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
-
-    // set root up for gather pid and hostname sizes
-    int *pids=0;
-    int *hnLens=0;
-    int *hnDispls=0;
-    unsigned long long *caps=0;
-    if (this->WorldRank==0)
-      {
-      pids=(int *)malloc(this->WorldSize*sizeof(int));
-      caps=(unsigned long long *)malloc(this->WorldSize*sizeof(unsigned long long));
-      hnLens=(int *)malloc(this->WorldSize*sizeof(int));
-      hnDispls=(int *)malloc(this->WorldSize*sizeof(int));
-      }
-
-    // gather
-    MPI_Gather(&hnLen,1,MPI_INT,hnLens,1,MPI_INT,0,MPI_COMM_WORLD);
-    MPI_Gather(&this->Pid,1,MPI_INT,pids,1,MPI_INT,0,MPI_COMM_WORLD);
-    unsigned long long cap=this->ServerSystem->GetMemoryTotal();
-    MPI_Gather(&cap,1,MPI_UNSIGNED_LONG_LONG,caps,1,MPI_UNSIGNED_LONG_LONG,0,MPI_COMM_WORLD);
-
-    // set root up for gather hostnames
-    char *hostnames=0;
-    if (this->WorldRank==0)
-      {
-      int n=0;
-      for (int i=0; i<this->WorldSize; ++i)
-        {
-        hnDispls[i]=n;
-        n+=hnLens[i];
-        }
-      hostnames=(char *)malloc(n*sizeof(char));
-      }
-
-    // gather
-    MPI_Gatherv(
-          hostname,
-          hnLen,
-          MPI_CHAR,
-          hostnames,
-          hnLens,
-          hnDispls,
-          MPI_CHAR,
-          0,
-          MPI_COMM_WORLD);
-
-    // root saves the configuration to an ascii stream where it
-    // will be accessed by pv client.
-    if (this->WorldRank==0)
-      {
-      ostringstream os;
-      os
-        << SYSTEM_TYPE << " "
-        << this->WorldSize;
-
-      int *pPid=pids;
-      char *pHn=hostnames;
-      unsigned long long *pCap=caps;
-      for (int i=0; i<this->WorldSize; ++i)
-        {
-        os
-          << " " << pHn
-          << " " << *pPid
-          << " " << *pCap;
-
-        pHn+=hnLens[i];
-        ++pPid;
-        ++pCap;
-        }
-
-      this->SetConfigStream(os.str().c_str());
-      /// cerr << os.str() << endl;
-
-      // root cleans up.
-      free(pids);
-      free(caps);
-      free(hnLens);
-      free(hnDispls);
-      free(hostnames);
-      }
+    pids=(int *)malloc(this->WorldSize*sizeof(int));
+    caps=(unsigned long long *)malloc(this->WorldSize*sizeof(unsigned long long));
+    hnLens=(int *)malloc(this->WorldSize*sizeof(int));
+    hnDispls=(int *)malloc(this->WorldSize*sizeof(int));
     }
-  else
+
+  // gather  
+  controller->Gather(&hnLen,hnLens,1,0);
+  controller->Gather(&this->Pid,pids,1,0); 
+  unsigned long long cap=this->ServerSystem->GetMemoryTotal();
+  controller->Gather(
+      (char *)&cap,
+      (char *)caps,
+      sizeof(unsigned long long),
+      0);
+  // cast to char * because vtkMultiProcessController doesn't
+  // support unsigned long long
+
+  // set root up for gather hostnames
+  char *hostnames=0;
+  if (this->WorldRank==0)
+    {
+    int n=0;
+    for (int i=0; i<this->WorldSize; ++i)
+      {
+      hnDispls[i]=n;
+      n+=hnLens[i];
+      }
+    hostnames=(char *)malloc(n*sizeof(char));
+    }
+
+  // gather
+  controller->GatherV(hostname,hostnames,hnLen,hnLens,hnDispls,0);
+
+  // root saves the configuration to an ascii stream where it
+  // will be accessed by pv client.
+  if (this->WorldRank==0)
     {
     ostringstream os;
     os
       << SYSTEM_TYPE << " "
-      << 1 << " "
-      << this->HostName << " "
-      << this->Pid << " "
-      << this->ServerSystem->GetMemoryTotal();
+      << this->WorldSize;
+
+    int *pPid=pids;
+    char *pHn=hostnames;
+    unsigned long long *pCap=caps;
+    for (int i=0; i<this->WorldSize; ++i)
+      {
+      os
+        << " " << pHn
+        << " " << *pPid
+        << " " << *pCap;
+
+      pHn+=hnLens[i];
+      ++pPid;
+      ++pCap;
+      }
+
     this->SetConfigStream(os.str().c_str());
+    /// cerr << os.str() << endl;
+
+    // root cleans up.
+    free(pids);
+    free(caps);
+    free(hnLens);
+    free(hnDispls);
+    free(hostnames);
     }
 }
 
@@ -264,58 +248,46 @@ int vtkSQProcessMonitor::RequestInformation(
 
   // get the local memory use
   unsigned long long localMemoryUse=this->ServerSystem->GetMemoryUsed();
-  cerr << localMemoryUse << endl;
 
-  int mpiOk=0;
-  MPI_Initialized(&mpiOk);
-  if (mpiOk)
+  // set root up for gather memory usage
+  unsigned long long  *remoteMemoryUse=0;
+  if (this->WorldRank==0)
     {
-    // set root up for gather memory usage
-    unsigned long long  *remoteMemoryUse=0;
-    if (this->WorldRank==0)
-      {
-      remoteMemoryUse=(unsigned long long *)malloc(this->WorldSize*sizeof(unsigned long long));
-      }
-
-    // gather
-    MPI_Gather(
-          &localMemoryUse,
-          1,
-          MPI_UNSIGNED_LONG_LONG,
-          remoteMemoryUse,
-          1,
-          MPI_UNSIGNED_LONG_LONG,
-          0,
-          MPI_COMM_WORLD);
-
-    // root saves the configuration to an ascii stream where it
-    // will be accessed by pv client.
-    if (this->WorldRank==0)
-      {
-      ostringstream os;
-      os << this->WorldSize;
-
-      for (int i=0; i<this->WorldSize; ++i)
-        {
-        os << " " << remoteMemoryUse[i];
-        }
-
-      this->SetMemoryUseStream(os.str().c_str());
-      cerr << os.str() << endl;
-
-      // root cleans up.
-      free(remoteMemoryUse);
-      }
+    remoteMemoryUse
+      = (unsigned long long *)malloc(this->WorldSize*sizeof(unsigned long long));
     }
-  else
+
+  vtkMultiProcessController *controller
+    = vtkMultiProcessController::GetGlobalController();
+
+  controller->Gather(
+        (char *)&localMemoryUse,
+        (char *)remoteMemoryUse,
+        sizeof(unsigned long long),
+        0);
+  // cast to char * because vtkMultiProcessController doesn't
+  // support unsigned long long
+
+  // root saves the configuration to an ascii stream where it
+  // will be accessed by pv client.
+  if (this->WorldRank==0)
     {
     ostringstream os;
-    os << 1 << " " << localMemoryUse;
-    this->SetMemoryUseStream(os.str().c_str());
-    }
+    os << this->WorldSize;
 
+    for (int i=0; i<this->WorldSize; ++i)
+      {
+      os << " " << remoteMemoryUse[i];
+      }
+
+    this->SetMemoryUseStream(os.str().c_str());
+    cerr << os.str() << endl;
+
+    // root cleans up.
+    free(remoteMemoryUse);
+    }
+ 
   ++this->InformationMTime;
-  cerr << this->InformationMTime;
 
   return 1;
 }

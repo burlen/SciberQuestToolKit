@@ -22,26 +22,7 @@ using std::endl;
 //-----------------------------------------------------------------------------
 SystemInterface *SystemInterfaceFactory::NewSystemInterface()
 {
-  switch (SYSTEM_TYPE)
-    {
-    case SYSTEM_TYPE_APPLE:
-      return new OSXSystemInterface;
-      break;
-
-    case SYSTEM_TYPE_WIN:
-      return new WindowsSystemInterface;
-      break;
-
-    case SYSTEM_TYPE_LINUX:
-      return new LinuxSystemInterface;
-      break;
-
-    default:
-      sqErrorMacro(cerr,
-        << "Failed to create an interface for system type "
-        << SYSTEM_TYPE << ".");
-      break;
-    }
-
-  return 0;
+  // This typdef is declared in SystemType.h according to the 
+  // current system type
+  return new CurrentSystemInterface;
 }

@@ -19,12 +19,16 @@ enum SystemType
 
 #if defined(__APPLE__)
   #define SYSTEM_TYPE SYSTEM_TYPE_APPLE
+  typedef OSXSystemInterface CurrentSystemInterface;
 
 #elif defined(_WIN32)
   #define SYSTEM_TYPE SYSTEM_TYPE_WIN
+  class WindowsSystemInterface;
+  typedef WindowsSystemInterface CurrentSystemInterface;
 
 #else
   #define SYSTEM_TYPE SYSTEM_TYPE_LINUX
+  typedef LinuxSystemInterface CurrentSystemInterface;
 
 #endif
 

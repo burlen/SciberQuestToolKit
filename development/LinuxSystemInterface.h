@@ -11,8 +11,6 @@ Copyright 2008 SciberQuest Inc.
 
 #include "UnixSystemInterface.h"
 
-#ifdef __linux__
-
 /// Linux interface.
 class LinuxSystemInterface : public UnixSystemInterface
 {
@@ -51,9 +49,5 @@ private:
 private:
   unsigned long long MemoryTotal;
 };
-
-#else
-  typedef SystemInterface LinuxSystemInterface;
-#endif
 
 #endif

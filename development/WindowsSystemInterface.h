@@ -11,14 +11,8 @@ Copyright 2008 SciberQuest Inc.
 
 #include "SystemInterface.h"
 
-#ifdef _WIN32
-
 #include <string>
 using std::string;
-
-#include "windows.h"
-#include "psapi.h"
-
 
 /// Windows interface.
 class WindowsSystemInterface : public SystemInterface
@@ -30,7 +24,7 @@ public:
   /**
   Return the total amount of physical RAM avaiable on the system.
   */
-  virtual unsigned long long GetMemoryTotal(){ return this->MemoryTotal; }
+  virtual vtkIdType GetMemoryTotal();
 
   /**
   Return the amount of physical RAM used by this process.
@@ -40,12 +34,12 @@ public:
   /**
   Return the processs identifier of this process.
   */
-  virtual int GetProcessId(){ return this->Pid; }
+  virtual int GetProcessId();
 
   /**
   Return the hostname.
   */
-  virtual string GetHostName(){ return this->HostName; }
+  virtual string GetHostName();
 
   /**
   Execute the given command in a new process.
@@ -69,14 +63,8 @@ public:
   virtual void CatchUNDERFLOW(int ){}
 
 private:
-  int Pid;
-  HANDLE HProc;
-  string HostName;
-  unsigned long long MemoryTotal;
+  class Implementation;
+  Implementation *impl;
 };
-
-#else
-  typedef SystemInterface WindowsSystemInterface;
-#endif
 
 #endif

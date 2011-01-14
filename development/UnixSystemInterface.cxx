@@ -8,8 +8,6 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "UnixSystemInterface.h"
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__unix__)
-
 #include "FsUtils.h"
 #include "SQMacros.h"
 
@@ -96,14 +94,15 @@ void UnixSystemInterface::StackTraceOnError(int enable)
   static struct sigaction saBUSOrig;
   static struct sigaction saFPEOrig;
 
-  if (enable)
+  if (enable && !saOrigValid)
     {
     // save the current actions
     sigaction(SIGSEGV,0,&saSEGVOrig);
     sigaction(SIGILL,0,&saILLOrig);
     sigaction(SIGBUS,0,&saBUSOrig);
     sigaction(SIGFPE,0,&saFPEOrig);
-
+  
+    // enable read, disable write
     saOrigValid=1;
 
     // install ours
@@ -118,15 +117,16 @@ void UnixSystemInterface::StackTraceOnError(int enable)
     sigaction(SIGFPE,&sa,0);
     }
   else
+  if (!enable && saOrigValid)
     {
-    if (saOrigValid)
-      {
-      // restore previous actions
-      sigaction(SIGSEGV,&saSEGVOrig,0);
-      sigaction(SIGILL,&saILLOrig,0);
-      sigaction(SIGBUS,&saBUSOrig,0);
-      sigaction(SIGFPE,&saFPEOrig,0);
-      }
+    // restore previous actions
+    sigaction(SIGSEGV,&saSEGVOrig,0);
+    sigaction(SIGILL,&saILLOrig,0);
+    sigaction(SIGBUS,&saBUSOrig,0);
+    sigaction(SIGFPE,&saFPEOrig,0);
+
+    // enable write, disable read
+    saOrigValid=0;
     }
 }
 
@@ -356,5 +356,3 @@ void backtrace_handler(
 
   abort();
 }
-
-#endif

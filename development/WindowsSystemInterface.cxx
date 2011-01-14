@@ -8,33 +8,51 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "WindowsSystemInterface.h"
 
-#ifdef _WIN32
+#include "windows.h"
+#include "psapi.h"
 
 #include <iostream>
 using std::cerr;
 using std::endl;
 
-//#include "Winsock2.h"
+class WindowsSystemInterface::Implementation
+{
+public:
+  Implementation()
+        :
+    Pid(-1),
+    HProc(0),
+    HostName("localhost"),
+    MemoryTotal(-1)
+      {}
+
+  int Pid;
+  HANDLE HProc;
+  string HostName;
+  unsigned long long MemoryTotal;
+};
 
 //-----------------------------------------------------------------------------
 WindowsSystemInterface::WindowsSystemInterface()
 {
-  this->Pid=GetCurrentProcessId();
+  this->impl=new Implementation;
+
+  this->impl->Pid=GetCurrentProcessId();
 
   MEMORYSTATUSEX statex;
   statex.dwLength=sizeof(statex);
   GlobalMemoryStatusEx(&statex);
-  this->MemoryTotal=statex.ullTotalPhys/1024;
+  this->impl->MemoryTotal=statex.ullTotalPhys/1024;
 
-  this->HProc=OpenProcess(
+  this->impl->HProc=OpenProcess(
       PROCESS_QUERY_INFORMATION|PROCESS_VM_READ,
       false,
-      this->Pid);
-  if (this->HProc==0)
+      this->impl->Pid);
+  if (this->impl->HProc==0)
     {
     cerr
       << "Error: failed to obtain process handle for "
-      << this->Pid << "."
+      << this->impl->Pid << "."
       << endl;
     }
 
@@ -43,25 +61,32 @@ WindowsSystemInterface::WindowsSystemInterface()
   if (iErr)
     {
     cerr << "Error: failed to obtain the hostname." << endl;
-    this->HostName="localhost";
+    this->impl->HostName="localhost";
     }
   else
     {
-    this->HostName=hostName;
+    this->impl->HostName=hostName;
     }
 }
 
 //-----------------------------------------------------------------------------
 WindowsSystemInterface::~WindowsSystemInterface()
 {
-  CloseHandle(this->HProc);
+  CloseHandle(this->impl->HProc);
+  delete this->impl;
+}
+
+//-----------------------------------------------------------------------------
+unsigned long long WindowsSystemInterface::GetMemoryTotal()
+{ 
+  return this->impl->MemoryTotal;
 }
 
 //-----------------------------------------------------------------------------
 unsigned long long WindowsSystemInterface::GetMemoryUsed()
 {
   PROCESS_MEMORY_COUNTERS pmc;
-  int ok=GetProcessMemoryInfo(this->HProc,&pmc,sizeof(pmc));
+  int ok=GetProcessMemoryInfo(this->impl->HProc,&pmc,sizeof(pmc));
   if (!ok)
     {
     cerr << "Failed to obtain memory information." << endl;
@@ -70,4 +95,14 @@ unsigned long long WindowsSystemInterface::GetMemoryUsed()
   return pmc.WorkingSetSize/1024;
 }
 
-#endif
+//-----------------------------------------------------------------------------
+int WindowsSystemInterface::GetProcessId()
+{ 
+  return this->impl->Pid;
+}
+
+//-----------------------------------------------------------------------------
+string WindowsSystemInterface::GetHostName()
+{
+  return this->impl->HostName;
+}
