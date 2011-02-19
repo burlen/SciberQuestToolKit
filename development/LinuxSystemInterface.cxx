@@ -49,73 +49,73 @@ LinuxSystemInterface::LinuxSystemInterface()
 }
 
 //-----------------------------------------------------------------------------
-unsigned long long LinuxSystemInterface::GetVmRSS()
+unsigned long LinuxSystemInterface::GetVmRSS()
 {
   return this->GetStatusField("VmRSS:");
 }
 
 //-----------------------------------------------------------------------------
-unsigned long long LinuxSystemInterface::GetVmPeak()
+unsigned long LinuxSystemInterface::GetVmPeak()
 {
   return this->GetStatusField("VmPeak:");
 }
 
 //-----------------------------------------------------------------------------
-unsigned long long LinuxSystemInterface::GetVmSize()
+unsigned long LinuxSystemInterface::GetVmSize()
 {
   return this->GetStatusField("VmSize:");
 }
 
 //-----------------------------------------------------------------------------
-unsigned long long LinuxSystemInterface::GetVmLock()
+unsigned long LinuxSystemInterface::GetVmLock()
 {
   return this->GetStatusField("VmLck:");
 }
 
 //-----------------------------------------------------------------------------
-unsigned long long LinuxSystemInterface::GetVmHWM()
+unsigned long LinuxSystemInterface::GetVmHWM()
 {
   return this->GetStatusField("VmHWM:");
 }
 
 //-----------------------------------------------------------------------------
-unsigned long long LinuxSystemInterface::GetVmData()
+unsigned long LinuxSystemInterface::GetVmData()
 {
   return this->GetStatusField("VmData:");
 }
 
 //-----------------------------------------------------------------------------
-unsigned long long LinuxSystemInterface::GetVmStack()
+unsigned long LinuxSystemInterface::GetVmStack()
 {
   return this->GetStatusField("VmStk:");
 }
 
 //-----------------------------------------------------------------------------
-unsigned long long LinuxSystemInterface::GetVmExec()
+unsigned long LinuxSystemInterface::GetVmExec()
 {
   return this->GetStatusField("VmExe:");
 }
 
 //-----------------------------------------------------------------------------
-unsigned long long LinuxSystemInterface::GetVmLib()
+unsigned long LinuxSystemInterface::GetVmLib()
 {
   return this->GetStatusField("VmLib:");
 }
 
 //-----------------------------------------------------------------------------
-unsigned long long LinuxSystemInterface::GetVmPTE()
+unsigned long LinuxSystemInterface::GetVmPTE()
 {
   return this->GetStatusField("VmPTE:");
 }
 
 //-----------------------------------------------------------------------------
-unsigned long long LinuxSystemInterface::GetVmSwap()
+unsigned long LinuxSystemInterface::GetVmSwap()
 {
   return this->GetStatusField("VmSwap:");
 }
 
 //-----------------------------------------------------------------------------
-unsigned long long LinuxSystemInterface::GetStatusField(const char *name)
+unsigned long LinuxSystemInterface::GetStatusField(const char *name)
 {
   // load a fresh copy of /proc/self/status get the value from name
   // value pairs there in
@@ -127,7 +127,7 @@ unsigned long long LinuxSystemInterface::GetStatusField(const char *name)
     sqErrorMacro(cerr,"Failed to open /proc/self/status.");
     return -1;
     }
-  unsigned long long value;
+  unsigned long value;
   ok=NameValue(status,name,value);
   if (!ok)
     {

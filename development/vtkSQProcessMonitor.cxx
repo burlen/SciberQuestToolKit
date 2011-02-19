@@ -66,7 +66,7 @@ vtkSQProcessMonitor::vtkSQProcessMonitor()
   this->Pid=this->ServerSystem->GetProcessId();
   this->HostName=this->ServerSystem->GetHostName();
   char *hostname=const_cast<char*>(this->HostName.c_str());
-  int hnLen=this->HostName.size()+1;
+  vtkIdType hnLen=this->HostName.size()+1;
 
   vtkMultiProcessController *controller
     = vtkMultiProcessController::GetGlobalController();
@@ -76,28 +76,28 @@ vtkSQProcessMonitor::vtkSQProcessMonitor()
 
   // set root up for gather pid and hostname sizes
   int *pids=0;
-  int *hnLens=0;
-  int *hnDispls=0;
-  unsigned long long *caps=0;
+  vtkIdType *hnLens=0;
+  vtkIdType *hnDispls=0;
+  unsigned long *caps=0;
   if (this->WorldRank==0)
     {
     pids=(int *)malloc(this->WorldSize*sizeof(int));
-    caps=(unsigned long long *)malloc(this->WorldSize*sizeof(unsigned long long));
-    hnLens=(int *)malloc(this->WorldSize*sizeof(int));
-    hnDispls=(int *)malloc(this->WorldSize*sizeof(int));
+    caps=(unsigned long *)malloc(this->WorldSize*sizeof(unsigned long));
+    hnLens=(vtkIdType *)malloc(this->WorldSize*sizeof(vtkIdType));
+    hnDispls=(vtkIdType *)malloc(this->WorldSize*sizeof(vtkIdType));
     }
 
-  // gather  
+  // gather
   controller->Gather(&hnLen,hnLens,1,0);
   controller->Gather(&this->Pid,pids,1,0); 
-  unsigned long long cap=this->ServerSystem->GetMemoryTotal();
+  unsigned long cap=this->ServerSystem->GetMemoryTotal();
   controller->Gather(
       (char *)&cap,
       (char *)caps,
-      sizeof(unsigned long long),
+      sizeof(unsigned long),
       0);
   // cast to char * because vtkMultiProcessController doesn't
-  // support unsigned long long
+  // support unsigned long
 
   // set root up for gather hostnames
   char *hostnames=0;
@@ -126,7 +126,7 @@ vtkSQProcessMonitor::vtkSQProcessMonitor()
 
     int *pPid=pids;
     char *pHn=hostnames;
-    unsigned long long *pCap=caps;
+    unsigned long *pCap=caps;
     for (int i=0; i<this->WorldSize; ++i)
       {
       os
@@ -247,14 +247,14 @@ int vtkSQProcessMonitor::RequestInformation(
   this->vtkPolyDataAlgorithm::RequestInformation(request,inInfos,outInfos);
 
   // get the local memory use
-  unsigned long long localMemoryUse=this->ServerSystem->GetMemoryUsed();
+  unsigned long localMemoryUse=this->ServerSystem->GetMemoryUsed();
 
   // set root up for gather memory usage
-  unsigned long long  *remoteMemoryUse=0;
+  unsigned long  *remoteMemoryUse=0;
   if (this->WorldRank==0)
     {
     remoteMemoryUse
-      = (unsigned long long *)malloc(this->WorldSize*sizeof(unsigned long long));
+      = (unsigned long *)malloc(this->WorldSize*sizeof(unsigned long));
     }
 
   vtkMultiProcessController *controller
@@ -263,10 +263,10 @@ int vtkSQProcessMonitor::RequestInformation(
   controller->Gather(
         (char *)&localMemoryUse,
         (char *)remoteMemoryUse,
-        sizeof(unsigned long long),
+        sizeof(unsigned long),
         0);
   // cast to char * because vtkMultiProcessController doesn't
-  // support unsigned long long
+  // support unsigned long
 
   // root saves the configuration to an ascii stream where it
   // will be accessed by pv client.

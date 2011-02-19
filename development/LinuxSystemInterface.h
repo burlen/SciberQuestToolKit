@@ -21,33 +21,33 @@ public:
   /**
   Return the total amount of physical RAM avaiable on the system.
   */
-  virtual unsigned long long GetMemoryTotal(){ return this->MemoryTotal; }
+  virtual unsigned long GetMemoryTotal(){ return this->MemoryTotal; }
 
   /**
   Return the amount of physical RAM used by this process.
   */
-  virtual unsigned long long GetMemoryUsed(){ return this->GetVmRSS(); }
+  virtual unsigned long GetMemoryUsed(){ return this->GetVmRSS(); }
 
   /**
   More detailed information specific to linux.
   */
-  unsigned long long GetVmRSS();
-  unsigned long long GetVmPeak();
-  unsigned long long GetVmSize();
-  unsigned long long GetVmLock();
-  unsigned long long GetVmHWM();
-  unsigned long long GetVmData();
-  unsigned long long GetVmStack();
-  unsigned long long GetVmExec();
-  unsigned long long GetVmLib();
-  unsigned long long GetVmPTE();
-  unsigned long long GetVmSwap();
+  unsigned long GetVmRSS();
+  unsigned long GetVmPeak();
+  unsigned long GetVmSize();
+  unsigned long GetVmLock();
+  unsigned long GetVmHWM();
+  unsigned long GetVmData();
+  unsigned long GetVmStack();
+  unsigned long GetVmExec();
+  unsigned long GetVmLib();
+  unsigned long GetVmPTE();
+  unsigned long GetVmSwap();
 
 private:
-  unsigned long long GetStatusField(const char *name);
+  unsigned long GetStatusField(const char *name);
 
 private:
-  unsigned long long MemoryTotal;
+  unsigned long MemoryTotal;
 };
 
 #endif

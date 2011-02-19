@@ -21,16 +21,16 @@ public:
   /**
   Return the total amount of physical RAM avaiable on the system.
   */
-  virtual unsigned long long GetMemoryTotal(){ return this->MemoryTotal; }
+  virtual unsigned long GetMemoryTotal(){ return this->MemoryTotal; }
 
   /**
   Return the amount of physical RAM used by this process.
   */
-  virtual unsigned long long GetMemoryUsed(){ return 0; }
+  virtual unsigned long GetMemoryUsed(){ return 0; }
 
 
 private:
-  unsigned long long MemoryTotal;
+  unsigned long MemoryTotal;
 };
 
 #endif

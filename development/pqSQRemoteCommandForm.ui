@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>pqSQRemoteCommandForm</class>
- <widget class="QDialog" name="pqSQRemoteCommandForm">
+ <class>pqSQCommandSelectionDialog</class>
+ <widget class="QDialog" name="pqSQCommandSelectionDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>424</width>
-    <height>278</height>
+    <width>484</width>
+    <height>595</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -183,7 +183,7 @@
   <connection>
    <sender>accept</sender>
    <signal>released()</signal>
-   <receiver>pqSQRemoteCommandForm</receiver>
+   <receiver>pqSQCommandSelectionDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">

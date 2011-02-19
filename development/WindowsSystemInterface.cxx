@@ -29,7 +29,7 @@ public:
   int Pid;
   HANDLE HProc;
   string HostName;
-  unsigned long long MemoryTotal;
+  unsigned long MemoryTotal;
 };
 
 //-----------------------------------------------------------------------------
@@ -77,13 +77,13 @@ WindowsSystemInterface::~WindowsSystemInterface()
 }
 
 //-----------------------------------------------------------------------------
-unsigned long long WindowsSystemInterface::GetMemoryTotal()
+unsigned long WindowsSystemInterface::GetMemoryTotal()
 { 
   return this->impl->MemoryTotal;
 }
 
 //-----------------------------------------------------------------------------
-unsigned long long WindowsSystemInterface::GetMemoryUsed()
+unsigned long WindowsSystemInterface::GetMemoryUsed()
 {
   PROCESS_MEMORY_COUNTERS pmc;
   int ok=GetProcessMemoryInfo(this->impl->HProc,&pmc,sizeof(pmc));

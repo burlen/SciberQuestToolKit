@@ -24,12 +24,12 @@ public:
   /**
   Return the total amount of physical RAM avaiable on the system.
   */
-  virtual unsigned long long GetMemoryTotal(){ return 0; }
+  virtual unsigned long GetMemoryTotal(){ return 0; }
 
   /**
   Return the amount of physical RAM used by this process.
   */
-  virtual unsigned long long GetMemoryUsed(){ return 0; }
+  virtual unsigned long GetMemoryUsed(){ return 0; }
 
   /**
   Return the processs identifier of this process.

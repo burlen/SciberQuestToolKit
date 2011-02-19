@@ -24,12 +24,12 @@ public:
   /**
   Return the total amount of physical RAM avaiable on the system.
   */
-  virtual vtkIdType GetMemoryTotal();
+  virtual unsigned long GetMemoryTotal();
 
   /**
   Return the amount of physical RAM used by this process.
   */
-  virtual unsigned long long GetMemoryUsed();
+  virtual unsigned long GetMemoryUsed();
 
   /**
   Return the processs identifier of this process.
