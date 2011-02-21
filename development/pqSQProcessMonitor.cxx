@@ -12,6 +12,9 @@ Copyright 2008 SciberQuest Inc.
 
 #include "pqComponentsExport.h"
 #include "pqProxy.h"
+#include "pqActiveObjects.h"
+#include "pqRenderView.h"
+
 #include "vtkSMProxy.h"
 #include "vtkSMProperty.h"
 #include "vtkSMStringVectorProperty.h"
@@ -405,11 +408,17 @@ pqSQProcessMonitor::pqSQProcessMonitor(
         this,
         SLOT(setModified()));
 
+  //QObject::connect(
+  //      this->Form->updateMemUse,
+  //      SIGNAL(released()),
+  //      this,
+  //      SLOT(setModified()));
+  
   QObject::connect(
         this->Form->updateMemUse,
         SIGNAL(released()),
         this,
-        SLOT(setModified()));
+        SLOT(UpdateServerLoad()));
 
   // Let the superclass do the undocumented stuff that needs to hapen.
   pqNamedObjectPanel::linkServerManagerProperties();
@@ -877,6 +886,17 @@ void pqSQProcessMonitor::accept()
   pmProxy->UpdateVTKObjects();
 }
 
+//-----------------------------------------------------------------------------
+void pqSQProcessMonitor::UpdateServerLoad()
+{
+  this->setModified();
+  this->accept();
+  
+  pqRenderView* renderView = 
+    qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
+
+  renderView->render();
+}
 
 
 

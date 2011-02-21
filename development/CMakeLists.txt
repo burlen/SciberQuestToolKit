@@ -15,12 +15,10 @@ cmake_minimum_required(VERSION 2.8)
 #
 project(SciVisToolKit)
 
-# Prevent in-source build
 if("${PROJECT_SOURCE_DIR}"  STREQUAL "${PROJECT_BINARY_DIR}")
   message(FATAL_ERROR "SciVisToolKit requires an out of source Build.")
 endif()
 
-# Locate our PV build/development install.
 include(ParaViewConfig.cmake)
 include(EigenConfig.cmake)
 include(MPICHConfig.cmake)

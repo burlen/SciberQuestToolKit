@@ -18,8 +18,6 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkInformationVector.h"
 #include "vtkMultiProcessController.h"
 
-// #include <mpi.h>
-
 #include<string>
 using std::string;
 #include<iostream>
@@ -265,8 +263,6 @@ int vtkSQProcessMonitor::RequestInformation(
         (char *)remoteMemoryUse,
         sizeof(unsigned long),
         0);
-  // cast to char * because vtkMultiProcessController doesn't
-  // support unsigned long
 
   // root saves the configuration to an ascii stream where it
   // will be accessed by pv client.

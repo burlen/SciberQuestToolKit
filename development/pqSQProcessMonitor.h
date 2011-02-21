@@ -54,7 +54,7 @@ protected slots:
   void UpdateInformationEvent();
   // Description:
   // Pull server load data.
-//   void UpdateServerLoad();
+  void UpdateServerLoad();
   // Description:
   // This is where we have to communicate our state to the server.
   void accept();
