@@ -31,7 +31,6 @@ set(SM_CXX_SOURCES
   vtkSQFieldTopologySelect.cxx
   vtkSQFieldTopologySplit.cxx
   vtkSQFieldTracer.cxx
-  vtkSQHemicylinderSource.cxx
   vtkSQHemisphereSource.cxx
   vtkSQLineSource.cxx
   vtkSQCellGenerator.cxx
@@ -221,7 +220,7 @@ set (CLIENT_XML
 
 # Generate the plugin, servermanager and wrapped language bindings.
 add_paraview_plugin(
-  SciVisToolKit "1.0"
+  SciVisToolKit "11.02"
   GUI_INTERFACES ${_IFACES}
   SERVER_MANAGER_SOURCES ${SM_CXX_SOURCES}
   SERVER_MANAGER_XML SciVisToolKitServerManager.xml
