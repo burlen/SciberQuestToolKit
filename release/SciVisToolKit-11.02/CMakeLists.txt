@@ -84,7 +84,6 @@ set(CXX_SOURCES
   GDAMetaDataKeys.cxx
   ImageDecomp.cxx
   IntersectionSet.cxx
-  
   PolyDataCellCopier.cxx
   PolyDataFieldTopologyMap.cxx
   PoincareMapData.cxx
@@ -326,3 +325,4 @@ if (SVTK_TESTING)
   target_link_libraries(TestFieldTopologyMapper SciVisToolKit ${MPI_LIBRARIES})
   install(TARGETS TestFieldTopologyMapper DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif ()
+
