@@ -796,6 +796,18 @@ Copyright 2008 SciberQuest Inc.
       </DoubleVectorProperty>
 
       <IntVectorProperty
+         name="Constraint"
+         command="SetConstraint"
+         number_of_elements="1"
+         animateable="0"
+         default_values="0" >
+        <IntRangeDomain name="range"/>
+        <Documentation>
+          This property specifies a constraint type.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty
          name="XResolution"
          command="SetXResolution"
          number_of_elements="1"

@@ -116,7 +116,7 @@ public:
   vtkGetVectorMacro(Point2,double,3);
 
   // Description:
-  // Set/Get the center of the plane. Works in conjunction with the plane 
+  // Set/Get the center of the plane. Works in conjunction with the plane
   // normal to position the plane. Don't use this method to define the plane.
   // Instead, use it to move the plane to a new center point.
   void SetCenter(double x, double y, double z);
@@ -130,6 +130,16 @@ public:
   void SetNormal(double nx, double ny, double nz);
   void SetNormal(double n[3]);
   vtkGetVectorMacro(Normal,double,3);
+
+  // Desciption:
+  // Set/Get the constraint, one of: NONE, XY, XZ, or YZ.
+  void SetConstraint(int type);
+  vtkGetMacro(Constraint,int);
+
+  // Description:
+  // Applies the current constraint, by fixing one of the
+  // corrdinate values.
+  void ApplyConstraint();
 
   // Description:
   // Set a name that will be placed into the output vtkInformation object
@@ -161,6 +171,7 @@ private:
   double Point2[3];
   double Normal[3];
   double Center[3];
+  int Constraint;
   char *DescriptiveName;
 
 private:

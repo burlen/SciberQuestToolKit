@@ -52,6 +52,9 @@ public:
   void GetNormal(double *n);
   void SetNormal(double *n);
 
+  int GetConstraint();
+  void SetConstraint(int type);
+
   void contextMenuEvent(QContextMenuEvent *event);
 
 protected slots:
@@ -95,6 +98,9 @@ protected slots:
   // snap camera to the plane normal.
   void SnapViewToNormal();
 
+  // Description:
+  // restricts UI based on current constraints.
+  void ApplyConstraint();
 
   // Description:
   // Update the UI with values from the server.

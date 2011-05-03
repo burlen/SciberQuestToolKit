@@ -11,6 +11,7 @@ Copyright 2008 SciberQuest Inc.
 
 #include "vtkSQPlaneSourceConfigurationReader.h"
 #include "vtkSQPlaneSourceConfigurationWriter.h"
+#include "vtkSQPlaneSourceConstants.h"
 #include "SQMacros.h"
 
 #include "pqApplicationCore.h"
@@ -99,6 +100,8 @@ pqSQPlaneSource::pqSQPlaneSource(
   this->SetSpacing(this->Dx);
   this->SetResolution(this->Nx);
   this->SetNormal(this->N);
+
+  this->Form->constraintNone->click();
 
   //   vtkSMProxy* pProxy=this->referenceProxy()->getProxy();
   //   
@@ -255,6 +258,41 @@ pqSQPlaneSource::pqSQPlaneSource(
       SIGNAL(stateChanged(int)),
       this, SLOT(setModified()));
 
+  // These configure UI for constraints.
+  QObject::connect(
+      this->Form->constraintNone,
+      SIGNAL(clicked()),
+      this, SLOT(ApplyConstraint()));
+  //
+  QObject::connect(
+      this->Form->constraintXy,
+      SIGNAL(clicked()),
+      this, SLOT(ApplyConstraint()));
+  //
+  QObject::connect(
+      this->Form->constraintXz,
+      SIGNAL(clicked()),
+      this, SLOT(ApplyConstraint()));
+  //
+  QObject::connect(
+      this->Form->constraintYz,
+      SIGNAL(clicked()),
+      this, SLOT(ApplyConstraint()));
+
+  // These make sure constrained values get updated in the UI.
+  QObject::connect(
+      this->Form->o_x,
+      SIGNAL(textChanged(QString)),
+      this, SLOT(ApplyConstraint()));
+  QObject::connect(
+      this->Form->o_y,
+      SIGNAL(textChanged(QString)),
+      this, SLOT(ApplyConstraint()));
+  QObject::connect(
+      this->Form->o_z,
+      SIGNAL(textChanged(QString)),
+      this, SLOT(ApplyConstraint()));
+
   pqNamedObjectPanel::linkServerManagerProperties();
 }
 
@@ -274,6 +312,10 @@ pqSQPlaneSource::~pqSQPlaneSource()
 //-----------------------------------------------------------------------------
 void pqSQPlaneSource::contextMenuEvent(QContextMenuEvent *event)
 {
+  #if defined pqSQPlaneSourceDEBUG
+  cerr << ":::::::::::::::::::::::::::::::contextMenuEvent" << endl;
+  #endif
+
   QMenu context(this);
 
   QAction *copyAct=new QAction(tr("Copy Configuration"),&context);
@@ -290,6 +332,10 @@ void pqSQPlaneSource::contextMenuEvent(QContextMenuEvent *event)
 //-----------------------------------------------------------------------------
 void pqSQPlaneSource::CopyConfiguration()
 {
+  #if defined pqSQPlaneSourceDEBUG
+  cerr << ":::::::::::::::::::::::::::::::CopyConfiguration" << endl;
+  #endif
+
   // grab the current configuration.
   ostringstream os;
 
@@ -309,6 +355,10 @@ void pqSQPlaneSource::CopyConfiguration()
 //-----------------------------------------------------------------------------
 void pqSQPlaneSource::PasteConfiguration()
 {
+  #if defined pqSQPlaneSourceDEBUG
+  cerr << ":::::::::::::::::::::::::::::::PasteConfiguration" << endl;
+  #endif
+
   QClipboard *clipboard=QApplication::clipboard();
   QString config=clipboard->text();
 
@@ -405,13 +455,19 @@ void pqSQPlaneSource::Restore()
         }
       else
         {
-        QMessageBox::warning(this,"Open SQ Plane Source","Error: Bad format not a SQ plane source file.");
+        QMessageBox::warning(
+              this,
+              "Open SQ Plane Source",
+              "Error: Bad format not a SQ plane source file.");
         }
       f.close();
       }
     else
       {
-      QMessageBox::warning(this,"Save SQ Plane Source","Error: Could not open the file.");
+      QMessageBox::warning(
+          this,
+          "Save SQ Plane Source",
+          "Error: Could not open the file.");
       }
     }
 }
@@ -526,6 +582,10 @@ void pqSQPlaneSource::saveConfiguration()
 //-----------------------------------------------------------------------------
 int pqSQPlaneSource::ValidateCoordinates()
 {
+  #if defined pqSQPlaneSourceDEBUG
+  cerr << ":::::::::::::::::::::::::::::::ValidateCoordinates" << endl;
+  #endif
+
   double n[3]={0.0};
   int ok=this->CalculateNormal(n);
   if (ok)
@@ -682,6 +742,134 @@ int pqSQPlaneSource::CalculateNormal(double *n)
     }
 
   return ok;
+}
+
+//-----------------------------------------------------------------------------
+int pqSQPlaneSource::GetConstraint()
+{
+  #if defined pqSQPlaneSourceDEBUG
+  cerr << ":::::::::::::::::::::::::::::::GetConstraint" << endl;
+  #endif
+
+  if (this->Form->constraintNone->isChecked())
+    {
+    return SQPS_CONSTRAINT_NONE;
+    }
+  else
+  if (this->Form->constraintXy->isChecked())
+    {
+    return SQPS_CONSTRAINT_XY;
+    }
+  else
+  if (this->Form->constraintXz->isChecked())
+    {
+    return SQPS_CONSTRAINT_XZ;
+    }
+  else
+  if (this->Form->constraintYz->isChecked())
+    {
+    return SQPS_CONSTRAINT_YZ;
+    }
+
+  sqErrorMacro(qDebug(),"Invalid constraint.");
+  return SQPS_CONSTRAINT_INVALID;
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::SetConstraint(int type)
+{
+  #if defined pqSQPlaneSourceDEBUG
+  cerr << ":::::::::::::::::::::::::::::::SetConstraint" << endl;
+  #endif
+
+  switch(type)
+    {
+    case SQPS_CONSTRAINT_NONE:
+      this->Form->constraintNone->click();
+      break;
+
+    case SQPS_CONSTRAINT_XY:
+      this->Form->constraintXy->click();
+      break;
+
+    case SQPS_CONSTRAINT_XZ:
+      this->Form->constraintXz->click();
+      break;
+
+    case SQPS_CONSTRAINT_YZ:
+      this->Form->constraintYz->click();
+      break;
+
+    default:
+      sqErrorMacro(qDebug(),"Invalid constraint " << type << ".");
+      break;
+    }
+  this->ApplyConstraint();
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::ApplyConstraint()
+{
+  #if defined pqSQPlaneSourceDEBUG
+  cerr << ":::::::::::::::::::::::::::::::ApplyConstraint" << endl;
+  #endif
+
+  int type=this->GetConstraint();
+
+  switch(type)
+    {
+    case SQPS_CONSTRAINT_NONE:
+      this->Form->p1_x->setEnabled(true);
+      this->Form->p1_y->setEnabled(true);
+      this->Form->p1_z->setEnabled(true);
+
+      this->Form->p2_x->setEnabled(true);
+      this->Form->p2_y->setEnabled(true);
+      this->Form->p2_z->setEnabled(true);
+      break;
+
+    case SQPS_CONSTRAINT_XY:
+      this->Form->p1_x->setEnabled(true);
+      this->Form->p1_y->setEnabled(true);
+      this->Form->p1_z->setEnabled(false);
+      this->Form->p1_z->setText(this->Form->o_z->text());
+
+      this->Form->p2_x->setEnabled(true);
+      this->Form->p2_y->setEnabled(true);
+      this->Form->p2_z->setEnabled(false);
+      this->Form->p2_z->setText(this->Form->o_z->text());
+      break;
+
+    case SQPS_CONSTRAINT_XZ:
+      this->Form->p1_x->setEnabled(true);
+      this->Form->p1_y->setEnabled(false);
+      this->Form->p1_z->setEnabled(true);
+      this->Form->p1_y->setText(this->Form->o_y->text());
+
+      this->Form->p2_x->setEnabled(true);
+      this->Form->p2_y->setEnabled(false);
+      this->Form->p2_z->setEnabled(true);
+      this->Form->p2_y->setText(this->Form->o_y->text());
+      break;
+
+    case SQPS_CONSTRAINT_YZ:
+      this->Form->p1_x->setEnabled(false);
+      this->Form->p1_y->setEnabled(true);
+      this->Form->p1_z->setEnabled(true);
+      this->Form->p1_x->setText(this->Form->o_x->text());
+
+      this->Form->p2_x->setEnabled(false);
+      this->Form->p2_y->setEnabled(true);
+      this->Form->p2_z->setEnabled(true);
+      this->Form->p2_x->setText(this->Form->o_x->text());
+      break;
+
+    default:
+      sqErrorMacro(qDebug(),"Invalid constraint " << type << ".");
+      break;
+    }
+
+    this->setModified();
 }
 
 //-----------------------------------------------------------------------------
@@ -965,6 +1153,12 @@ void pqSQPlaneSource::PullServerConfig()
   pProxy->UpdatePropertyInformation(modeProp);
   this->Form->immediateMode->setChecked(modeProp->GetElement(0));
 
+  // Constraints
+  vtkSMIntVectorProperty *constraintProp
+    = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("Constraint"));
+  pProxy->UpdatePropertyInformation(constraintProp);
+  this->SetConstraint(constraintProp->GetElement(0));
+
   // update derived/computed values.
   this->DimensionsModified();
 }
@@ -973,7 +1167,6 @@ void pqSQPlaneSource::PullServerConfig()
 void pqSQPlaneSource::PushServerConfig()
 {
   #if defined pqSQPlaneSourceDEBUG
-
   cerr << ":::::::::::::::::::::::::::::::PushServerConfig" << endl;
   #endif
   vtkSMProxy* pProxy=this->referenceProxy()->getProxy();
@@ -1020,6 +1213,12 @@ void pqSQPlaneSource::PushServerConfig()
   pProxy->UpdatePropertyInformation(modeProp);
   modeProp->SetElement(0,this->Form->immediateMode->isChecked()?1:0);
 
+  // Constraint
+  vtkSMIntVectorProperty *constraintProp
+    = dynamic_cast<vtkSMIntVectorProperty*>(pProxy->GetProperty("Constraint"));
+  pProxy->UpdatePropertyInformation(constraintProp);
+  constraintProp->SetElement(0,this->GetConstraint());
+
   // Let proxy send updated values.
   pProxy->UpdateVTKObjects();
 }
@@ -1054,3 +1253,4 @@ void pqSQPlaneSource::reset()
 
   pqNamedObjectPanel::reset();
 }
+

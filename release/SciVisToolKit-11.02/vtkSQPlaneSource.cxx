@@ -27,7 +27,10 @@
 #include "vtkTransform.h"
 
 #include "vtkSQMetaDataKeys.h"
+#include "vtkSQPlaneSourceConstants.h"
 #include "vtkSQPlaneSourceCellGenerator.h"
+#include "SQMacros.h"
+#include "postream.h"
 
 #include <map>
 using std::map;
@@ -57,6 +60,8 @@ vtkSQPlaneSource::vtkSQPlaneSource()
   this->Point2[1]=1.0;
   this->Normal[2]=1.0;
   this->Center[0]=this->Center[1]=0.5;
+
+  this->Constraint=SQPS_CONSTRAINT_NONE;
 
   this->DescriptiveName=0;
 
@@ -138,7 +143,6 @@ int vtkSQPlaneSource::RequestData(
     output->Initialize();
     return 1;
     }
-
 
   // The default domain decomposition of one cell per process
   // is used in demand mode. If immediate mode is on then these
@@ -375,7 +379,7 @@ void vtkSQPlaneSource::SetNormal(double N[3])
     vtkErrorMacro(<<"Specified zero normal");
     return;
     }
-  
+
   // Compute rotation vector using a transformation matrix.
   // Note that if normals are parallel then the rotation is either
   // 0 or 180 degrees.
@@ -475,6 +479,83 @@ void vtkSQPlaneSource::SetCenter(double x, double y, double z)
 }
 
 //-----------------------------------------------------------------------------
+void vtkSQPlaneSource::ApplyConstraint()
+{
+  #ifdef vtkSQPlaneSourceDEBUG
+  cerr << "===============================ApplyConstraint" << endl;
+  #endif
+
+  double p[3]={0.0};
+  double o[3]={0.0};
+
+  switch (this->Constraint)
+  {
+  case SQPS_CONSTRAINT_NONE:
+    break;
+
+  case SQPS_CONSTRAINT_XY:
+    this->GetOrigin(o);
+
+    this->GetPoint1(p);
+    p[2]=o[2];
+    this->SetPoint1(p);
+
+    this->GetPoint2(p);
+    p[2]=o[2];
+    this->SetPoint2(p);
+
+    break;
+
+  case SQPS_CONSTRAINT_XZ:
+    this->GetOrigin(o);
+
+    this->GetPoint1(p);
+    p[1]=o[1];
+    this->SetPoint1(p);
+
+    this->GetPoint2(p);
+    p[1]=o[1];
+    this->SetPoint2(p);
+
+    break;
+
+  case SQPS_CONSTRAINT_YZ:
+    this->GetOrigin(o);
+
+    this->GetPoint1(p);
+    p[0]=o[0];
+    this->SetPoint1(p);
+
+    this->GetPoint2(p);
+    p[0]=o[0];
+    this->SetPoint2(p);
+
+    break;
+
+  default:
+    sqErrorMacro(pCerr(),"Invalid constraint.");
+  }
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQPlaneSource::SetConstraint(int type)
+{
+  #ifdef vtkSQPlaneSourceDEBUG
+  cerr << "===============================SetConstraint" << endl;
+  cerr << type << endl;
+  #endif
+
+  if (this->Constraint == type )
+    {
+    return; // no change
+    }
+
+  this->Constraint = type;
+  this->ApplyConstraint();
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
 void vtkSQPlaneSource::SetOrigin(double ox, double oy, double oz)
 {
   #ifdef vtkSQPlaneSourceDEBUG
@@ -482,9 +563,36 @@ void vtkSQPlaneSource::SetOrigin(double ox, double oy, double oz)
   cerr << ox << " " << oy << " " << oz << endl;
   #endif
 
-  this->Origin[0]=ox;
-  this->Origin[1]=oy;
-  this->Origin[2]=oz;
+
+  // modifies the normal and origin
+  if ( this->Origin[0] == ox
+    && this->Origin[1] == oy
+    && this->Origin[2] == oz )
+    {
+    return; //no change
+    }
+  else
+    {
+    double v1[3], v2[3];
+
+    this->Origin[0] = ox;
+    this->Origin[1] = oy;
+    this->Origin[2] = oz;
+
+    v1[0] = this->Point1[0]-this->Origin[0];
+    v1[1] = this->Point1[1]-this->Origin[1];
+    v1[2] = this->Point1[2]-this->Origin[2];
+
+    v2[0] = this->Point2[0]-this->Origin[0];
+    v2[1] = this->Point2[1]-this->Origin[1];
+    v2[2] = this->Point2[2]-this->Origin[2];
+
+    // set plane normal
+    this->UpdatePlane(v1,v2);
+    this->Modified();
+
+    this->ApplyConstraint();
+    }
 }
 
 //-----------------------------------------------------------------------------

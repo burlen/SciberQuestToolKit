@@ -234,22 +234,22 @@ int GDAMetaData::OpenDataset(const char *fileName)
   //   {
   //   this->CellSizeRe=r_mp*r_obs_to_mp/100.0;
   //   }
-  // double 
-  // 
+  // double
+  //
   //     i_dipole=100,
   //     j_dipole=128,
   //     k_dipole=128,
   //     R_MP=16.,
   //     R_obstacle_to_MP=0.57732,
 
-  // scalars ...
+  // H3D scalars ...
   int nArrays=0;
   if (Represented(path,"den_"))
     {
     this->AddScalar("den");
     ++nArrays;
     }
-  if (Represented(path,"eta_")) 
+  if (Represented(path,"eta_"))
     {
     this->AddScalar("eta");
     ++nArrays;
@@ -274,7 +274,130 @@ int GDAMetaData::OpenDataset(const char *fileName)
     this->AddScalar("p");
     ++nArrays;
     }
-  // vectors ...
+
+  // VPIC scalars
+  if (Represented(path,"pe_"))
+    {
+    this->AddScalar("pe");
+    ++nArrays;
+    }
+  if (Represented(path,"pi_"))
+    {
+    this->AddScalar("pi");
+    ++nArrays;
+    }
+  if (Represented(path,"ne_"))
+    {
+    this->AddScalar("ne");
+    ++nArrays;
+    }
+  if (Represented(path,"ni_"))
+    {
+    this->AddScalar("ni");
+    ++nArrays;
+    }
+  if (Represented(path,"eeb01_"))
+    {
+    this->AddScalar("eeb01");
+    ++nArrays;
+    }
+  if (Represented(path,"eeb02_"))
+    {
+    this->AddScalar("eeb02");
+    ++nArrays;
+    }
+  if (Represented(path,"eeb03_"))
+    {
+    this->AddScalar("eeb03");
+    ++nArrays;
+    }
+  if (Represented(path,"eeb04_"))
+    {
+    this->AddScalar("eeb04");
+    ++nArrays;
+    }
+  if (Represented(path,"eeb05_"))
+    {
+    this->AddScalar("eeb05");
+    ++nArrays;
+    }
+  if (Represented(path,"eeb06_"))
+    {
+    this->AddScalar("eeb06");
+    ++nArrays;
+    }
+  if (Represented(path,"eeb07_"))
+    {
+    this->AddScalar("eeb07");
+    ++nArrays;
+    }
+  if (Represented(path,"eeb08_"))
+    {
+    this->AddScalar("eeb08");
+    ++nArrays;
+    }
+  if (Represented(path,"eeb09_"))
+    {
+    this->AddScalar("eeb09");
+    ++nArrays;
+    }
+  if (Represented(path,"eeb10_"))
+    {
+    this->AddScalar("eeb10");
+    ++nArrays;
+    }
+  if (Represented(path,"ieb01_"))
+    {
+    this->AddScalar("ieb01");
+    ++nArrays;
+    }
+  if (Represented(path,"ieb02_"))
+    {
+    this->AddScalar("ieb02");
+    ++nArrays;
+    }
+  if (Represented(path,"ieb03_"))
+    {
+    this->AddScalar("ieb03");
+    ++nArrays;
+    }
+  if (Represented(path,"ieb04_"))
+    {
+    this->AddScalar("ieb04");
+    ++nArrays;
+    }
+  if (Represented(path,"ieb05_"))
+    {
+    this->AddScalar("ieb05");
+    ++nArrays;
+    }
+  if (Represented(path,"ieb06_"))
+    {
+    this->AddScalar("ieb06");
+    ++nArrays;
+    }
+  if (Represented(path,"ieb07_"))
+    {
+    this->AddScalar("ieb07");
+    ++nArrays;
+    }
+  if (Represented(path,"ieb08_"))
+    {
+    this->AddScalar("ieb08");
+    ++nArrays;
+    }
+  if (Represented(path,"ieb09_"))
+    {
+    this->AddScalar("ieb09");
+    ++nArrays;
+    }
+  if (Represented(path,"ieb10_"))
+    {
+    this->AddScalar("ieb10");
+    ++nArrays;
+    }
+
+  // H3D vectors
   if (Represented(path,"bx_")
     && Represented(path,"by_")
     && Represented(path,"bz_"))
@@ -296,7 +419,7 @@ int GDAMetaData::OpenDataset(const char *fileName)
     this->AddVector("vi");
     ++nArrays;
     }
-  // 2d vector projections 
+  // 2d vector projections
   if (Represented(path,"bpx_")
     && Represented(path,"bpy_")
     && Represented(path,"bpz_"))
@@ -318,6 +441,89 @@ int GDAMetaData::OpenDataset(const char *fileName)
     this->AddVector("vip");
     ++nArrays;
     }
+ // VPIC vectors
+ if (Represented(path,"vex_")
+    && Represented(path,"vey_")
+    && Represented(path,"vez_"))
+    {
+    this->AddVector("ve");
+    ++nArrays;
+    }
+ if (Represented(path,"uix_")
+    && Represented(path,"uiy_")
+    && Represented(path,"uiz_"))
+    {
+    this->AddVector("ui");
+    ++nArrays;
+    }
+ if (Represented(path,"uex_")
+    && Represented(path,"uey_")
+    && Represented(path,"uez_"))
+    {
+    this->AddVector("ue");
+    ++nArrays;
+    }
+ if (Represented(path,"ax_")
+    && Represented(path,"ay_")
+    && Represented(path,"az_"))
+    {
+    this->AddVector("a");
+    ++nArrays;
+    }
+  // projections
+ if (Represented(path,"vepx_")
+    && Represented(path,"vepy_")
+    && Represented(path,"vepz_"))
+    {
+    this->AddVector("vep");
+    ++nArrays;
+    }
+ if (Represented(path,"uipx_")
+    && Represented(path,"uipy_")
+    && Represented(path,"uipz_"))
+    {
+    this->AddVector("uip");
+    ++nArrays;
+    }
+ if (Represented(path,"uepx_")
+    && Represented(path,"uepy_")
+    && Represented(path,"uepz_"))
+    {
+    this->AddVector("uep");
+    ++nArrays;
+    }
+ if (Represented(path,"apx_")
+    && Represented(path,"apy_")
+    && Represented(path,"apz_"))
+    {
+    this->AddVector("ap");
+    ++nArrays;
+    }
+
+  // VPIC tensors
+  // TODO
+  /*
+  if (Represented(path,"pe-xx_")
+    && Represented(path,"pe-xy_")
+    && Represented(path,"pe-xz_")
+    && Represented(path,"pe-yy_")
+    && Represented(path,"pe-yz_")
+    && Represented(path,"pe-zz_"))
+    {
+    this->AddTensor("pe");
+    ++nArrays;
+    }
+  if (Represented(path,"pi-xx_")
+    && Represented(path,"pi-xy_")
+    && Represented(path,"pi-xz_")
+    && Represented(path,"pi-yy_")
+    && Represented(path,"pi-yz_")
+    && Represented(path,"pi-zz_"))
+    {
+    this->AddTensor("pi");
+    ++nArrays;
+    }
+  */
 
   // We had to find at least one brick, otherwise we have problems.
   // As long as there is at least one brick, generate the series ids.
