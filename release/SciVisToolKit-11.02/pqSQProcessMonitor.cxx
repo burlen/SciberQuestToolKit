@@ -71,6 +71,50 @@ enum {
   PROCESS_RANK
 };
 
+#define SQPM_PROGBAR_MAX 1000
+
+//*****************************************************************************
+QString FormatMemUsage(float memUse)
+{
+  QString fmt("%1 %2");
+
+  float p210=pow(2.0,10.0);
+  float p220=pow(2.0,20.0);
+  float p230=pow(2.0,30.0);
+  float p240=pow(2.0,40.0);
+  float p250=pow(2.0,50.0);
+
+  // were dealing with kiB
+  memUse *= 1024;
+
+  if (memUse<p210)
+    {
+    return fmt.arg(memUse, 0,'f',2).arg("B");
+    }
+  else
+  if (memUse<p220)
+    {
+    return fmt.arg(memUse/p210, 0,'f',2).arg("KiB");
+    }
+  else
+  if (memUse<p230)
+    {
+    return fmt.arg(memUse/p220, 0,'f',2).arg("MiB");
+    }
+  else
+  if (memUse<p240)
+    {
+    return fmt.arg(memUse/p230, 0,'f',2).arg("GiB");
+    }
+  else
+  if (memUse<p250)
+    {
+    return fmt.arg(memUse/p240, 0,'f',2).arg("TiB");
+    }
+
+  return fmt.arg(memUse/p250, 0,'f',2).arg("PiB");
+}
+
 //*****************************************************************************
 template<typename T>
 void ClearVectorOfPointers(vector<T *> data)
@@ -102,6 +146,10 @@ public:
 
   void SetPid(int pid){ this->Pid=pid; }
   int GetPid(){ return this->Pid; }
+
+  void OverrideCapacity(unsigned long long capacity);
+  void SetCapacity(unsigned long long capacity){ this->Capacity=capacity; }
+  unsigned long long GetCapacity(){ return this->Capacity; }
 
   void SetLoad(unsigned long long load){ this->Load=load; }
   unsigned long long GetLoad(){ return this->Load; }
@@ -139,11 +187,17 @@ RankData::RankData(
 //-----------------------------------------------------------------------------
 void RankData::UpdateLoadWidget()
 {
-  this->LoadWidget->setValue(this->GetLoad());
-  this->LoadWidget->setFormat(QString("%1%").arg(this->GetLoadFraction()*100.0, 0,'f',2));
+  float used = this->GetLoad();
+  float fracUsed = this->GetLoadFraction();
+  float percUsed = fracUsed*100.0;
+  int progVal = fracUsed*SQPM_PROGBAR_MAX;
+
+  this->LoadWidget->setValue(progVal);
+  this->LoadWidget->setFormat(
+    QString("%1 %2%").arg(FormatMemUsage(used)).arg(percUsed, 0,'f',2));
 
   QPalette palette(this->LoadWidget->palette());
-  if (this->GetLoadFraction()>0.75)
+  if (fracUsed>0.75)
     {
     // danger -> red
     palette.setColor(QPalette::Highlight,QColor(232,40,40));
@@ -163,13 +217,21 @@ void RankData::InitializeLoadWidget()
   this->LoadWidget->setStyle(new QPlastiqueStyle);
   this->LoadWidget->setMaximumSize(128,15);
   this->LoadWidget->setMinimum(0);
-  this->LoadWidget->setMaximum(this->Capacity);
+  this->LoadWidget->setMaximum(SQPM_PROGBAR_MAX);
   QFont font(this->LoadWidget->font());
   font.setPointSize(8);
   this->LoadWidget->setFont(font);
 
   this->UpdateLoadWidget();
 }
+
+//-----------------------------------------------------------------------------
+void RankData::OverrideCapacity(unsigned long long capacity)
+{
+  this->Capacity=capacity;
+  this->UpdateLoadWidget();
+}
+
 
 /// data associated with the host
 //=============================================================================
@@ -184,8 +246,24 @@ public:
   void SetHostName(string name){ this->HostName=name; }
   string &GetHostName(){ return this->HostName; }
 
+  void SetRealCapacity(unsigned long long capacity){ this->RealCapacity=capacity; }
+  unsigned long long GetRealCapacity(){ return this->RealCapacity; }
+
   void SetCapacity(unsigned long long capacity){ this->Capacity=capacity; }
   unsigned long long GetCapacity(){ return this->Capacity; }
+
+  /**
+  Set the capacity based on some artificial restriction on
+  per-process memory use. eg. shared memory machine. Updates
+  all ranks.
+  */
+  void OverrideCapacity(unsigned long long capacity);
+
+  /**
+  Reset the capacity to the available amount of ram. Updates
+  all ranks.
+  */
+  void ResetCapacity();
 
   void SetTreeItem(QTreeWidgetItem *item){ this->TreeItem=item; }
   QTreeWidgetItem *GetTreeItem(){ return this->TreeItem; }
@@ -204,7 +282,8 @@ public:
 
 private:
   string HostName;
-  unsigned long long Capacity;
+  unsigned long long Capacity;     // host memory available to us.
+  unsigned long long RealCapacity; // host memory available.
   QProgressBar *LoadWidget;
   QTreeWidgetItem *TreeItem;
   vector<RankData *> Ranks;
@@ -216,7 +295,8 @@ HostData::HostData(
       unsigned long long capacity)
         :
     HostName(hostName),
-    Capacity(capacity)
+    Capacity(capacity),
+    RealCapacity(capacity)
 {
   this->InitializeLoadWidget();
 }
@@ -228,6 +308,7 @@ const HostData &HostData::operator=(const HostData &other)
 
   this->HostName=other.HostName;
   this->Capacity=other.Capacity;
+  this->RealCapacity=other.RealCapacity;
   this->LoadWidget=other.LoadWidget;
   this->TreeItem=other.TreeItem;
   this->Ranks=other.Ranks;
@@ -239,6 +320,14 @@ const HostData &HostData::operator=(const HostData &other)
 void HostData::ClearRankData()
 {
   ClearVectorOfPointers<RankData>(this->Ranks);
+}
+
+//-----------------------------------------------------------------------------
+RankData *HostData::AddRankData(int rank, int pid)
+{
+  RankData *newRank=new RankData(rank,pid,0,this->Capacity);
+  this->Ranks.push_back(newRank);
+  return newRank;
 }
 
 //-----------------------------------------------------------------------------
@@ -254,13 +343,41 @@ unsigned long long HostData::GetLoad()
 }
 
 //-----------------------------------------------------------------------------
+void HostData::ResetCapacity()
+{
+  this->Capacity = this->RealCapacity;
+
+  size_t n=this->Ranks.size();
+  for (size_t i=0; i<n; ++i)
+    {
+    this->Ranks[i]->OverrideCapacity(this->RealCapacity);
+    }
+
+  this->UpdateLoadWidget();
+}
+
+//-----------------------------------------------------------------------------
+void HostData::OverrideCapacity(unsigned long long capacity)
+{
+  size_t n=this->Ranks.size();
+  this->Capacity = n*capacity;
+
+  for (size_t i=0; i<n; ++i)
+    {
+    this->Ranks[i]->OverrideCapacity(capacity);
+    }
+
+  this->UpdateLoadWidget();
+}
+
+//-----------------------------------------------------------------------------
 void HostData::InitializeLoadWidget()
 {
   this->LoadWidget=new QProgressBar;
   this->LoadWidget->setStyle(new QPlastiqueStyle);
   this->LoadWidget->setMaximumSize(128,15);
   this->LoadWidget->setMinimum(0);
-  this->LoadWidget->setMaximum(this->Capacity);
+  this->LoadWidget->setMaximum(SQPM_PROGBAR_MAX);
   QFont font(this->LoadWidget->font());
   font.setPointSize(8);
   this->LoadWidget->setFont(font);
@@ -271,11 +388,17 @@ void HostData::InitializeLoadWidget()
 //-----------------------------------------------------------------------------
 void HostData::UpdateLoadWidget()
 {
-  this->LoadWidget->setValue(this->GetLoad());
-  this->LoadWidget->setFormat(QString("%1%").arg(this->GetLoadFraction()*100.0, 0,'f',2));
+  float used = this->GetLoad();
+  float fracUsed = this->GetLoadFraction();
+  float percUsed = fracUsed*100.0;
+  int progVal = fracUsed*SQPM_PROGBAR_MAX;
+
+  this->LoadWidget->setValue(progVal);
+  this->LoadWidget->setFormat(
+    QString("%1 %2%").arg(FormatMemUsage(used)).arg(percUsed, 0,'f',2));
 
   QPalette palette(this->LoadWidget->palette());
-  if (this->GetLoadFraction()>0.75)
+  if (fracUsed>0.75)
     {
     // danger -> red
     palette.setColor(QPalette::Highlight,QColor(232,40,40));
@@ -288,13 +411,6 @@ void HostData::UpdateLoadWidget()
   this->LoadWidget->setPalette(palette);
 }
 
-//-----------------------------------------------------------------------------
-RankData *HostData::AddRankData(int rank, int pid)
-{
-  RankData *newRank=new RankData(rank,pid,0,this->Capacity);
-  this->Ranks.push_back(newRank);
-  return newRank;
-}
 
 
 //-----------------------------------------------------------------------------
@@ -339,6 +455,20 @@ pqSQProcessMonitor::pqSQProcessMonitor(
   vtkSMIntVectorProperty *infoMTimeProp
     =dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("GetInformationMTime"));
   infoMTimeProp->SetImmediateUpdate(1);
+
+  // apply capacity override
+  QObject::connect(
+        this->Form->overrideCapacity,
+        SIGNAL(editingFinished()),
+        this,
+        SLOT(OverrideCapacity()));
+
+  QObject::connect(
+        this->Form->enableOverrideCapacity,
+        SIGNAL(toggled(bool)),
+        this,
+        SLOT(OverrideCapacity()));
+
 
   // set command add,edit,del,exec buttons
   QObject::connect(
@@ -413,7 +543,7 @@ pqSQProcessMonitor::pqSQProcessMonitor(
   //      SIGNAL(released()),
   //      this,
   //      SLOT(setModified()));
-  
+
   QObject::connect(
         this->Form->updateMemUse,
         SIGNAL(released()),
@@ -557,7 +687,6 @@ void pqSQProcessMonitor::PullServerConfig()
   clientRankItem->setText(0,QString("0:%1").arg(clientPid));
   this->Form->configView->setItemWidget(clientRankItem,1,this->ClientRank->GetLoadWidget());
 
-
   // server group
   this->ClientOnly=0;
 
@@ -610,7 +739,7 @@ void pqSQProcessMonitor::PullServerConfig()
         this->ClientOnly=1;
         this->Form->configView->takeTopLevelItem(1);
         break;
-        }      
+        }
 
       HostData *serverHost;
 
@@ -732,7 +861,48 @@ void pqSQProcessMonitor::UpdateInformationEvent()
         }
       }
     }
+}
 
+//-----------------------------------------------------------------------------
+void pqSQProcessMonitor::OverrideCapacity()
+{
+  #if defined pqSQProcessMonitorDEBUG
+  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::OverrideCapacity" << endl;
+  #endif
+
+  bool applyOverride = this->Form->enableOverrideCapacity->isChecked();
+
+  map<string,HostData*>::iterator it=this->ServerHosts.begin();
+  map<string,HostData*>::iterator end=this->ServerHosts.end();
+
+  if (applyOverride)
+    {
+    // capacity and usage are reported in kiB, but UI request
+    // in GiB.
+    unsigned long long capacity
+      = this->Form->overrideCapacity->text().toDouble()*pow(2.0,20);
+
+    if (capacity<=0)
+      {
+      return; // short circuit invalid entry
+      }
+
+    // apply the constrained capacity to each host.
+    while (it!=end)
+      {
+      (*it).second->OverrideCapacity(capacity);
+      ++it;
+      }
+    }
+  else
+    {
+    // reset each host to use real capacity
+    while (it!=end)
+      {
+      (*it).second->ResetCapacity();
+      ++it;
+      }
+    }
 }
 
 //-----------------------------------------------------------------------------
