@@ -11,40 +11,52 @@ Copyright 2008 SciberQuest Inc.
 
 #include "BOVScalarImage.h"
 
-#include<iostream>
+#include <iostream>
 using std::ostream;
 using std::endl;
 
-/// Handle to a vector (3 scalar handles).
+#include <vector>
+using std::vector;
+
+#include <string>
+using std::string;
+
+/// Handle to the files comprising a multi-component vector.
 class BOVVectorImage
 {
 public:
-  BOVVectorImage(
-      MPI_Comm comm,
-      MPI_Info hints,
-      const char *xFileName,
-      const char *yFileName,
-      const char *zFileName,
-      const char *name);
+  BOVVectorImage(){};
   ~BOVVectorImage();
 
-  MPI_File GetXFile() const { return this->X->GetFile(); }
-  MPI_File GetYFile() const { return this->Y->GetFile(); }
-  MPI_File GetZFile() const { return this->Z->GetFile(); }
-  const char *GetName() const { return this->X->GetName(); }
+  void Clear();
+
+  void SetComponentFile(
+        int i,
+        MPI_Comm comm,
+        MPI_Info hints,
+        const char *fileName);
+
+  MPI_File GetComponentFile(int i) const
+    {
+    return this->ComponentFiles[i]->GetFile();
+    }
+
+  void SetNumberOfComponents(int nComps);
+  int GetNumberOfComponents() const { return this->ComponentFiles.size(); }
+
+  void SetName(const char *name){ this->Name=name; }
+  const char *GetName() const { return this->Name.c_str(); }
 
 private:
-  BOVScalarImage *X;
-  BOVScalarImage *Y;
-  BOVScalarImage *Z;
+  string Name;
+  vector<BOVScalarImage *> ComponentFiles;
 
 private:
   friend ostream &operator<<(ostream &os, const BOVVectorImage &si);
   const BOVVectorImage &operator=(const BOVVectorImage &other);
   BOVVectorImage(const BOVVectorImage &other);
-  BOVVectorImage();
 };
 
-ostream &operator<<(ostream &os, const BOVVectorImage &si);
+ostream &operator<<(ostream &os, const BOVVectorImage &vi);
 
 #endif

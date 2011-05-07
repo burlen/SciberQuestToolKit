@@ -9,19 +9,30 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __BOVTimeStepImage_h
 #define __BOVTimeStepImage_h
 
-#include "BOVScalarImage.h"
-#include "BOVVectorImage.h"
+#include <mpi.h>
 
 #include <vector>
 using std::vector;
 
+#include <iostream>
+using std::ostream;
+
 class BOVMetaData;
 
-/// Handle to single timestep in a dataset.
+class BOVScalarImage;
+class BOVVectorImage;
+class BOVTensorImage;
+class BOVSymetricTensorImage;
+
+class BOVScalarImageIterator;
+class BOVVectorImageIterator;
+class BOVTensorImageIterator;
+class BOVSymetricTensorImageIterator;
+
+/// Collection of file handles for a single timestep.
 /**
-Handle to single timestep in a dataset. A collection of 
-handles to the scalar and vector data that comprise the 
-time step.
+A collection of file handles to the scalar, vector, and tensor 
+data that together comprise this time step.
 */
 class BOVTimeStepImage
 {
@@ -33,19 +44,32 @@ public:
       BOVMetaData *metaData);
   ~BOVTimeStepImage();
 
-  int GetNumberOfImages() const { return this->Scalars.size()+this->Vectors.size(); }
+  int GetNumberOfImages() const 
+    {
+    return
+      this->Scalars.size()+
+      this->Vectors.size()+
+      this->Tensors.size()+
+      this->SymetricTensors.size();
+    }
 
 private:
   vector<BOVScalarImage*> Scalars;
   vector<BOVVectorImage*> Vectors;
+  vector<BOVVectorImage*> Tensors;
+  vector<BOVVectorImage*> SymetricTensors;
+
 private:
   BOVTimeStepImage();
   BOVTimeStepImage(const BOVTimeStepImage&);
   const BOVTimeStepImage &operator=(const BOVTimeStepImage &);
+
 private:
   friend ostream &operator<<(ostream &os, const BOVTimeStepImage &si);
   friend class BOVScalarImageIterator;
   friend class BOVVectorImageIterator;
+  friend class BOVTensorImageIterator;
+  friend class BOVSymetricTensorImageIterator;
 };
 
 ostream &operator<<(ostream &os, const BOVTimeStepImage &si);

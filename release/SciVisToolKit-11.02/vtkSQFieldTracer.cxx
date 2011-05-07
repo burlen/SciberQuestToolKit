@@ -485,6 +485,7 @@ int vtkSQFieldTracer::RequestData(
   // produced by a meta-reader. The information object should have the
   // OOC Reader.
   info=inputVector[0]->GetInformationObject(0);
+
   if (!info->Has(vtkSQOOCReader::READER()))
     {
     vtkErrorMacro(

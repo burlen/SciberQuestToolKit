@@ -17,6 +17,7 @@ using std::istringstream;
 using std::ostringstream;
 
 #include "vtkInformation.h"
+#include "vtkExecutive.h"
 
 #include "PrintUtils.h"
 #include "FsUtils.h"
@@ -502,7 +503,6 @@ int GDAMetaData::OpenDataset(const char *fileName)
 
   // VPIC tensors
   // TODO
-  /*
   if (Represented(path,"pe-xx_")
     && Represented(path,"pe-xy_")
     && Represented(path,"pe-xz_")
@@ -510,7 +510,7 @@ int GDAMetaData::OpenDataset(const char *fileName)
     && Represented(path,"pe-yz_")
     && Represented(path,"pe-zz_"))
     {
-    this->AddTensor("pe");
+    this->AddSymetricTensor("pe");
     ++nArrays;
     }
   if (Represented(path,"pi-xx_")
@@ -520,10 +520,9 @@ int GDAMetaData::OpenDataset(const char *fileName)
     && Represented(path,"pi-yz_")
     && Represented(path,"pi-zz_"))
     {
-    this->AddTensor("pi");
+    this->AddSymetricTensor("pi");
     ++nArrays;
     }
-  */
 
   // We had to find at least one brick, otherwise we have problems.
   // As long as there is at least one brick, generate the series ids.
@@ -575,13 +574,20 @@ int GDAMetaData::CloseDataset()
 }
 
 //-----------------------------------------------------------------------------
-void GDAMetaData::PushPipelineInformation(vtkInformation *pinfo)
+void GDAMetaData::PushPipelineInformation(
+      vtkInformation *req,
+      vtkInformation *pinfo)
 {
   if (this->HasDipoleCenter)
     {
     pinfo->Set(GDAMetaDataKeys::DIPOLE_CENTER(),this->DipoleCenter,3);
+    req->Append(vtkExecutive::KEYS_TO_COPY(),GDAMetaDataKeys::DIPOLE_CENTER());
     }
-  // pinfo->Set(GDAMetaDataKeys::CELL_SIZE_RE(),this->CellSizeRe);
+  // if (this->HasCellSizeRE)
+  //   {
+  //   pinfo->Set(GDAMetaDataKeys::CELL_SIZE_RE(),this->CellSizeRe);
+  //   req->Append(vtkExecutive::KEYS_TO_COPY(),GDAMetaDataKeys::DIPOLE_CENTER());
+  //   }
 }
 
 //-----------------------------------------------------------------------------

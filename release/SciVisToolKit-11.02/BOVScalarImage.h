@@ -31,7 +31,7 @@ public:
       const char *name);
   ~BOVScalarImage();
 
-  MPI_File GetFile() const { return this->File; } 
+  MPI_File GetFile() const { return this->File; }
   const char *GetName() const { return this->Name.c_str(); }
   const char *GetFileName() const { return this->FileName.c_str(); }
 

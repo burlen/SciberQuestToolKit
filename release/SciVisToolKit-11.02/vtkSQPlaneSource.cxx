@@ -116,8 +116,8 @@ int vtkSQPlaneSource::RequestInformation(
 
 //-----------------------------------------------------------------------------
 int vtkSQPlaneSource::RequestData(
-      vtkInformation *vtkNotUsed(request),
-      vtkInformationVector **vtkNotUsed(inputVector),
+      vtkInformation *req,
+      vtkInformationVector **/*inputVector*/,
       vtkInformationVector *outputVector)
 {
   #ifdef vtkSQPlaneSourceDEBUG
@@ -166,6 +166,10 @@ int vtkSQPlaneSource::RequestData(
 
     outInfo->Set(vtkSQCellGenerator::CELL_GENERATOR(),gen);
     gen->Delete();
+
+    req->Append(
+          vtkExecutive::KEYS_TO_COPY(),
+          vtkSQCellGenerator::CELL_GENERATOR());
     }
   else
     {

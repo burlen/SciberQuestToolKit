@@ -77,7 +77,9 @@ public:
   //virtual const char *GetMetadataFileExtension() const =0;
 
   /// Add our keys to the pipeline information.
-  virtual void PushPipelineInformation(vtkInformation *pinfo);
+  virtual void PushPipelineInformation(
+        vtkInformation *req,
+        vtkInformation *pinfo);
 
   /// Print internal state.
   virtual void Print(ostream &os) const;

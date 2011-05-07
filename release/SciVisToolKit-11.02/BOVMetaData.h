@@ -25,8 +25,12 @@ using std::string;
 // These masks are used with array status methods.
 // ACTIVE_BIT is set to indicate an array is to be read
 // VECTOR_BIT is set to indicate an array is a vector, cleared for scalar.
-#define ACTIVE_BIT 0x01
-#define VECTOR_BIT 0x02
+#define ACTIVE_BIT       0x01
+#define SCALAR_BIT       0x02
+#define VECTOR_BIT       0x04
+#define TENSOR_BIT       0x08
+#define SYM_TENSOR_BIT   0x10
+#define ARRAY_TYPE_BITS (SCALAR_BIT|VECTOR_BIT|TENSOR_BIT|SYM_TENSOR_BIT)
 
 class vtkInformation;
 
@@ -152,15 +156,25 @@ public:
   /**
   Add an array to the list of available arrays.
   */
-  void AddScalar(const char *name){ this->Arrays[name]=0; }
+  void AddScalar(const char *name){ this->Arrays[name]=SCALAR_BIT; }
   void AddVector(const char *name){ this->Arrays[name]=VECTOR_BIT; }
+  void AddTensor(const char *name){ this->Arrays[name]=TENSOR_BIT; }
+  void AddSymetricTensor(const char *name){ this->Arrays[name]=SYM_TENSOR_BIT; }
   /**
   Set the arry type.
   */
-  void SetArrayTypeToScalar(const char *name){ this->Arrays[name]&=~VECTOR_BIT; }
-  void SetArrayTypeToVector(const char *name){ this->Arrays[name]|=VECTOR_BIT; }
+  void ClearArrayType(const char *name){ this->Arrays[name]&=~ARRAY_TYPE_BITS; }
+  void SetArrayType(const char *name, int type)
+    {
+    this->ClearArrayType(name);
+    this->Arrays[name]|=type;
+    }
+  void SetArrayTypeToScalar(const char *name){ this->SetArrayType(name,VECTOR_BIT); }
+  void SetArrayTypeToVector(const char *name){ this->SetArrayType(name,SCALAR_BIT); }
+  void SetArrayTypeToTensor(const char *name){ this->SetArrayType(name,TENSOR_BIT); }
+  void SetArrayTypeToSymetricTensor(const char *name){ this->SetArrayType(name,SYM_TENSOR_BIT); }
   /**
-  Activate/Deactivate the named array so thatit will be read.
+  Activate/Deactivate the named array so that it will/will not be read.
   */
   void ActivateArray(const char *name){ this->Arrays[name] |= ACTIVE_BIT; }
   void DeactivateArray(const char *name){ this->Arrays[name] &= ~ACTIVE_BIT; }
@@ -174,12 +188,22 @@ public:
   int IsArrayScalar(const char *name)
     {
     int status=this->Arrays[name];
-    return (status&VECTOR_BIT)^VECTOR_BIT;
+    return status&SCALAR_BIT;
     }
   int IsArrayVector(const char *name)
     {
     int status=this->Arrays[name];
     return status&VECTOR_BIT;
+    }
+  int IsArrayTensor(const char *name)
+    {
+    int status=this->Arrays[name];
+    return status&TENSOR_BIT;
+    }
+  int IsArraySymetricTensor(const char *name)
+    {
+    int status=this->Arrays[name];
+    return status&SYM_TENSOR_BIT;
     }
   /**
   Query the named array's status
@@ -235,7 +259,10 @@ public:
   Implemantion's chance to add any specialized key,value pairs
   it needs into the pipeline information.
   */
-  virtual void PushPipelineInformation(vtkInformation *){}
+  virtual void PushPipelineInformation(
+        vtkInformation *req,
+        vtkInformation *info)
+  {}
 
   /**
   Serialize the object into a byte stream  Returns the

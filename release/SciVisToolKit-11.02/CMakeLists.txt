@@ -108,24 +108,26 @@ set(CXX_SOURCES
   vtkSQVolumeSourceConfigurationReader.cxx
   )
 
-if (WIN32)
-  set(CXX_SOURCES 
-    ${CXX_SOURCES}
-    WindowsSystemInterface.cxx
-    win_windirent.cxx
-    )
-elseif (APPLE)
-  set(CXX_SOURCES 
-    ${CXX_SOURCES}
-    UnixSystemInterface.cxx
-    OSXSystemInterface.cxx
-    )
-else()
-  set(CXX_SOURCES 
-    ${CXX_SOURCES}
-    UnixSystemInterface.cxx
-    LinuxSystemInterface.cxx
-    )
+if (SVTK_PROCESS_MONITOR)
+  if (WIN32)
+    set(CXX_SOURCES 
+      ${CXX_SOURCES}
+      WindowsSystemInterface.cxx
+      win_windirent.cxx
+      )
+  elseif (APPLE)
+    set(CXX_SOURCES 
+      ${CXX_SOURCES}
+      UnixSystemInterface.cxx
+      OSXSystemInterface.cxx
+      )
+  else()
+    set(CXX_SOURCES 
+      ${CXX_SOURCES}
+      UnixSystemInterface.cxx
+      LinuxSystemInterface.cxx
+      )
+  endif()
 endif()
 
 if(PARAVIEW_BUILD_QT_GUI)

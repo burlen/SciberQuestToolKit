@@ -560,7 +560,9 @@ int vtkSQBOVReader::RequestInformation(
     // and spacing as well.
     int wholeExtent[6]={0,this->WorldSize,0,1,0,1};
     info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),wholeExtent,6);
-
+    // req->Append(
+    //     vtkExecutive::KEYS_TO_COPY(),
+    //     vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT());
 
     if (this->Reader->DataSetTypeIsImage())
       {
@@ -587,7 +589,10 @@ int vtkSQBOVReader::RequestInformation(
 
       // Pass values into the pipeline.
       info->Set(vtkDataObject::ORIGIN(),X0,3);
+      // req->Append(vtkExecutive::KEYS_TO_COPY(),vtkDataObject::ORIGIN());
+
       info->Set(vtkDataObject::SPACING(),dX,3);
+      // req->Append(vtkExecutive::KEYS_TO_COPY(),vtkDataObject::SPACING());
       }
     }
   else
@@ -600,16 +605,21 @@ int vtkSQBOVReader::RequestInformation(
     int wholeExtent[6];
     this->GetSubset(wholeExtent);
     info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),wholeExtent,6);
+    // req->Append(
+    //     vtkExecutive::KEYS_TO_COPY(),
+    //     vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT());
 
     if (this->Reader->DataSetTypeIsImage())
       {
       double X0[3];
       this->Reader->GetMetaData()->GetOrigin(X0);
       info->Set(vtkDataObject::ORIGIN(),X0,3);
+      // req->Append(vtkExecutive::KEYS_TO_COPY(),vtkDataObject::ORIGIN());
 
       double dX[3];
       this->Reader->GetMetaData()->GetSpacing(dX);
       info->Set(vtkDataObject::SPACING(),dX,3);
+      // req->Append(vtkExecutive::KEYS_TO_COPY(),vtkDataObject::SPACING());
       }
     }
 
@@ -718,7 +728,7 @@ void vtkSQBOVReader::SetMPIFileHints()
 
 //-----------------------------------------------------------------------------
 int vtkSQBOVReader::RequestData(
-        vtkInformation * /*req*/,
+        vtkInformation *req,
         vtkInformationVector ** /*input*/,
         vtkInformationVector *outInfos)
 {
@@ -768,7 +778,6 @@ int vtkSQBOVReader::RequestData(
     pCerr() << "Requested time " << *step << " using " << stepId << "." << endl;
     #endif
     }
-
 
   BOVMetaData *md=this->Reader->GetMetaData();
 
@@ -825,6 +834,7 @@ int vtkSQBOVReader::RequestData(
 
     // pass the boundary condition flags
     info->Set(vtkSQOOCReader::PERIODIC_BC(),this->PeriodicBC,3);
+    req->Append(vtkExecutive::KEYS_TO_COPY(), vtkSQOOCReader::PERIODIC_BC());
 
     CartesianDecomp *ddecomp;
 
@@ -878,6 +888,9 @@ int vtkSQBOVReader::RequestData(
       subsetBounds[4]=X0[2];
       subsetBounds[5]=X0[2]+dX[2];
       info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
+      req->Append(
+          vtkExecutive::KEYS_TO_COPY(),
+          vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX());
 
       // Setup the user defined domain decomposition over the subset. This
       // decomposition is used to fine tune the I/O performance of out-of-core
@@ -916,6 +929,9 @@ int vtkSQBOVReader::RequestData(
         md->GetCoordinate(2)->GetPointer()[subset[4]],
         md->GetCoordinate(2)->GetPointer()[subset[5]+1]};
       info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
+      req->Append(
+          vtkExecutive::KEYS_TO_COPY(),
+          vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX());
 
       // Store the bounds of the requested subset.
       int nCells[3];
@@ -1029,6 +1045,7 @@ int vtkSQBOVReader::RequestData(
     info->Set(vtkSQOOCReader::READER(),OOCReader);
     OOCReader->Delete();
     ddecomp->Delete();
+    req->Append(vtkExecutive::KEYS_TO_COPY(),vtkSQOOCReader::READER());
     }
   else
     {
@@ -1063,7 +1080,13 @@ int vtkSQBOVReader::RequestData(
       // Store the bounds of the aggregate dataset.
       double subsetBounds[6];
       subset.GetBounds(X0,dX,subsetBounds);
-      info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
+      info->Set(
+          vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),
+          subsetBounds,
+          6);
+      req->Append(
+          vtkExecutive::KEYS_TO_COPY(),
+          vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX());
       }
     else
     if (this->Reader->DataSetTypeIsRectilinear())
@@ -1100,6 +1123,9 @@ int vtkSQBOVReader::RequestData(
           md->GetCoordinate(2)->GetPointer(),
           subsetBounds);
       info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),subsetBounds,6);
+      req->Append(
+          vtkExecutive::KEYS_TO_COPY(),
+          vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX());
       }
     else
     if (this->Reader->DataSetTypeIsStructured())
@@ -1130,7 +1156,7 @@ int vtkSQBOVReader::RequestData(
 
   // Give implementation classes a chance to store specialized keys
   // into the pipeline.
-  md->PushPipelineInformation(info);
+  md->PushPipelineInformation(req, info);
 
   #if defined vtkSQBOVReaderDEBUG
   this->Reader->PrintSelf(pCerr());

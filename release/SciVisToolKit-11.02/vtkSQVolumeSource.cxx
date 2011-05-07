@@ -115,7 +115,7 @@ int vtkSQVolumeSource::RequestInformation(
 
 //----------------------------------------------------------------------------
 int vtkSQVolumeSource::RequestData(
-    vtkInformation * /*req*/,
+    vtkInformation *req,
     vtkInformationVector **inInfos,
     vtkInformationVector *outInfos)
 {
@@ -178,6 +178,10 @@ int vtkSQVolumeSource::RequestData(
 
     outInfo->Set(vtkSQCellGenerator::CELL_GENERATOR(),gen);
     gen->Delete();
+
+    req->Append(
+          vtkExecutive::KEYS_TO_COPY(),
+          vtkSQCellGenerator::CELL_GENERATOR());
     }
   else
     {

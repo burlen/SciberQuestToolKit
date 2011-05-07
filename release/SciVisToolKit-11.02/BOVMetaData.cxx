@@ -183,7 +183,25 @@ size_t BOVMetaData::GetNumberOfArrayFiles() const
   map<string,int>::const_iterator end=this->Arrays.end();
   for (;it!=end; ++it)
     {
-    nFiles+=(it->second&VECTOR_BIT?3:1);
+    if (it->second&SCALAR_BIT)
+      {
+      nFiles+=1;
+      }
+    else
+    if (it->second&VECTOR_BIT)
+      {
+      nFiles+=3;
+      }
+    else
+    if (it->second&TENSOR_BIT)
+      {
+      nFiles+=6;
+      }
+    else
+    if (it->second&SYM_TENSOR_BIT)
+      {
+      nFiles+=9;
+      }
     }
   return nFiles;
 }

@@ -22,7 +22,7 @@ using std::string;
 class vtkDataSet;
 class vtkAlgorithm;
 class BOVScalarImageIterator;
-class BOVVectorImageIterator;
+class BOVArrayImageIterator;
 class BOVTimeStepImage;
 class CartesianDataBlockIODescriptor;
 
@@ -167,7 +167,8 @@ private:
   pass.
   */
   int ReadScalarArray(const BOVScalarImageIterator &it, vtkDataSet *grid);
-  int ReadVectorArray(const BOVVectorImageIterator &it, vtkDataSet *grid);
+  int ReadVectorArray(const BOVArrayImageIterator &it, vtkDataSet *grid);
+  int ReadSymetricTensorArray(const BOVArrayImageIterator &it, vtkDataSet *grid);
 
   /**
   Read the array from the specified file into point data in multiple
@@ -179,7 +180,12 @@ private:
         vtkDataSet *grid);
 
   int ReadVectorArray(
-        const BOVVectorImageIterator &fhit,
+        const BOVArrayImageIterator &fhit,
+        const CartesianDataBlockIODescriptor *descr,
+        vtkDataSet *grid);
+
+  int ReadSymetricTensorArray(
+        const BOVArrayImageIterator &fhit,
         const CartesianDataBlockIODescriptor *descr,
         vtkDataSet *grid);
 

@@ -9,37 +9,66 @@ Copyright 2008 SciberQuest Inc.
 #include "BOVVectorImage.h"
 
 //-----------------------------------------------------------------------------
-BOVVectorImage::BOVVectorImage(
-      MPI_Comm comm,
-      MPI_Info hints,
-      const char *xFileName,
-      const char *yFileName,
-      const char *zFileName,
-      const char *name)
+BOVVectorImage::~BOVVectorImage()
 {
-  this->X=new BOVScalarImage(comm,hints,xFileName,name);
-  this->Y=new BOVScalarImage(comm,hints,yFileName);
-  this->Z=new BOVScalarImage(comm,hints,zFileName);
+  this->Clear();
 }
 
 //-----------------------------------------------------------------------------
-BOVVectorImage::~BOVVectorImage()
+void BOVVectorImage::Clear()
 {
-  delete this->X;
-  delete this->Y;
-  delete this->Z;
+  int nComps=this->ComponentFiles.size();
+  for (int i=0; i<nComps; ++i)
+    {
+    BOVScalarImage *comp=this->ComponentFiles[i];
+    if (comp)
+      {
+      delete comp;
+      }
+    }
+  this->ComponentFiles.clear();
+}
+
+//-----------------------------------------------------------------------------
+void BOVVectorImage::SetComponentFile(
+        int i,
+        MPI_Comm comm,
+        MPI_Info hints,
+        const char *fileName)
+{
+  BOVScalarImage *oldComp = this->ComponentFiles[i];
+
+  if (oldComp)
+    {
+    delete oldComp;
+    }
+
+  this->ComponentFiles[i] = new BOVScalarImage(comm,hints,fileName);
+}
+
+//-----------------------------------------------------------------------------
+void BOVVectorImage::SetNumberOfComponents(int nComps)
+{
+  this->Clear();
+  this->ComponentFiles.resize(nComps,0);
 }
 
 //-----------------------------------------------------------------------------
 ostream &operator<<(ostream &os, const BOVVectorImage &vi)
 {
-  os << vi.GetName() << endl
-     << "  " << vi.X->GetFileName() << " " << vi.X->GetFile() << endl
-     << "  " << vi.Y->GetFileName() << " " << vi.X->GetFile() << endl
-     << "  " << vi.Z->GetFileName() << " " << vi.X->GetFile() << endl;
+  os << vi.GetName() << endl;
+
+  int nComps = vi.GetNumberOfComponents();
+  for (int i=0; i<nComps; ++i)
+    {
+    os
+      << "    " << vi.ComponentFiles[i]->GetFileName()
+      << " "    << vi.ComponentFiles[i]->GetFile()
+      << endl;
+    }
 
   // only one of the file's hints
-  MPI_File file=vi.GetXFile();
+  MPI_File file=vi.ComponentFiles[0]->GetFile();
   if (file)
     {
     os << "  Hints:" << endl;

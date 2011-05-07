@@ -12,9 +12,6 @@ Copyright 2008 SciberQuest Inc.
 #include "BOVTimeStepImage.h"
 #include "BOVScalarImage.h"
 
-#include <vector>
-using std::vector;
-
 /// Iterator for a collection of scalar handles.
 class BOVScalarImageIterator
 {
@@ -23,25 +20,18 @@ public:
        :
     Step(step),
     Idx(0),
-    End(0)
-      {
-      this->End=this->Step->Scalars.size();
-      }
+    End(step->Scalars.size())
+      { }
 
   /**
-  Perpare to start traversal.
+  Will evaluate true during the traversal.
   */
-  void Initialize(){ this->Idx=0; }
+  virtual bool Ok() const { return this->Idx<this->End; }
 
   /**
-  Evaluates true during tarversal.
+  Advance the iterator.
   */
-  bool Ok() const { return this->Idx<this->End; }
-
-  /**
-  Advance traversal.
-  */
-  int Next()
+  virtual int Next()
     {
     if (this->Idx<this->End)
       {
@@ -54,17 +44,18 @@ public:
   /**
   Access file handle.
   */
-  MPI_File GetFile() const { return this->Step->Scalars[this->Idx]->GetFile(); }
+  virtual MPI_File GetFile() const
+    {
+    return this->Step->Scalars[this->Idx]->GetFile();
+    }
 
   /**
   Get array name.
   */
-  const char *GetName() const { return this->Step->Scalars[this->Idx]->GetName(); }
-
-  /**
-  Get file name.
-  */
-  const char *GetFileName() const { return this->Step->Scalars[this->Idx]->GetFileName(); }
+  virtual const char *GetName() const
+    {
+    return this->Step->Scalars[this->Idx]->GetName();
+    }
 
 private:
   /// \Section NotImplemented \@{
