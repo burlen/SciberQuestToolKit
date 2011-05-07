@@ -502,7 +502,6 @@ int GDAMetaData::OpenDataset(const char *fileName)
     }
 
   // VPIC tensors
-  // TODO
   if (Represented(path,"pe-xx_")
     && Represented(path,"pe-xy_")
     && Represented(path,"pe-xz_")
@@ -533,6 +532,12 @@ int GDAMetaData::OpenDataset(const char *fileName)
     if (this->IsArrayVector(arrayName))
       {
       prefix+="x_";
+      }
+    else
+    if (this->IsArrayTensor(arrayName)
+      || this->IsArraySymetricTensor(arrayName))
+      {
+      prefix+="-xx_";
       }
     else
       {

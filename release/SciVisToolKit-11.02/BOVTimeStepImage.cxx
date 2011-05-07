@@ -88,15 +88,15 @@ BOVTimeStepImage::BOVTimeStepImage(
             yxFileName,yyFileName,yzFileName,
             zxFileName,zyFileName,zzFileName;
 
-      xxFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "xx" << seriesExt.str();
-      xyFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "xy" << seriesExt.str();
-      xzFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "xz" << seriesExt.str();
-      yxFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "yx" << seriesExt.str();
-      yyFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "yy" << seriesExt.str();
-      yzFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "yz" << seriesExt.str();
-      zxFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "zx" << seriesExt.str();
-      zyFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "zy" << seriesExt.str();
-      zzFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "zz" << seriesExt.str();
+      xxFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "-xx" << seriesExt.str();
+      xyFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "-xy" << seriesExt.str();
+      xzFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "-xz" << seriesExt.str();
+      yxFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "-yx" << seriesExt.str();
+      yyFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "-yy" << seriesExt.str();
+      yzFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "-yz" << seriesExt.str();
+      zxFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "-zx" << seriesExt.str();
+      zyFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "-zy" << seriesExt.str();
+      zzFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "-zz" << seriesExt.str();
 
       // open
       BOVVectorImage *tensor = new BOVVectorImage;
@@ -125,12 +125,12 @@ BOVTimeStepImage::BOVTimeStepImage(
                        yyFileName,yzFileName,
                                   zzFileName;
 
-      xxFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "xx" << seriesExt.str();
-      xyFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "xy" << seriesExt.str();
-      xzFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "xz" << seriesExt.str();
-      yyFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "yy" << seriesExt.str();
-      yzFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "yz" << seriesExt.str();
-      zzFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "zz" << seriesExt.str();
+      xxFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "-xx" << seriesExt.str();
+      xyFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "-xy" << seriesExt.str();
+      xzFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "-xz" << seriesExt.str();
+      yyFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "-yy" << seriesExt.str();
+      yzFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "-yz" << seriesExt.str();
+      zzFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "-zz" << seriesExt.str();
 
       // open
       BOVVectorImage *symTensor = new BOVVectorImage;
@@ -139,9 +139,9 @@ BOVTimeStepImage::BOVTimeStepImage(
       symTensor->SetComponentFile(0,comm,hints,xxFileName.str().c_str());
       symTensor->SetComponentFile(1,comm,hints,xyFileName.str().c_str());
       symTensor->SetComponentFile(2,comm,hints,xzFileName.str().c_str());
-      symTensor->SetComponentFile(4,comm,hints,yyFileName.str().c_str());
-      symTensor->SetComponentFile(5,comm,hints,yzFileName.str().c_str());
-      symTensor->SetComponentFile(8,comm,hints,zzFileName.str().c_str());
+      symTensor->SetComponentFile(3,comm,hints,yyFileName.str().c_str());
+      symTensor->SetComponentFile(4,comm,hints,yzFileName.str().c_str());
+      symTensor->SetComponentFile(5,comm,hints,zzFileName.str().c_str());
 
       this->SymetricTensors.push_back(symTensor);
       }
