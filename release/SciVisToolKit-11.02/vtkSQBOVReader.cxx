@@ -115,7 +115,7 @@ vtkSQBOVReader::vtkSQBOVReader()
   this->DecompDims[2]=1;
   this->BlockCacheSize=10;
   this->ClearCachedBlocks=1;
-  this->UseCollectiveIO=HINT_ENABLED;
+  this->UseCollectiveIO=HINT_DISABLED;
   this->NumberOfIONodes=0;
   this->CollectBufferSize=0;
   this->UseDeferredOpen=HINT_DEFAULT;

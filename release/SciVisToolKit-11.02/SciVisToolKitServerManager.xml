@@ -147,7 +147,7 @@ Copyright 2008 SciberQuest Inc.
         lable="Collective IO"
         command="SetUseCollectiveIO"
         number_of_elements="1"
-        default_values="2" >
+        default_values="1" >
       <EnumerationDomain name="enum">
         <Entry value="0" text="automatic"/>
         <Entry value="1" text="disabled"/>
