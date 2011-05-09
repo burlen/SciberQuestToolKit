@@ -440,7 +440,7 @@ int BOVReader::ReadSymetricTensorArray(
 
   // Create a VTK array.
   vtkFloatArray *fa=vtkFloatArray::New();
-  fa->SetNumberOfComponents(6);
+  fa->SetNumberOfComponents(9);
   fa->SetNumberOfTuples(nCells); // dual grid
   fa->SetName(it.GetName());
   grid->GetPointData()->AddArray(fa);
@@ -471,7 +471,7 @@ int BOVReader::ReadSymetricTensorArray(
     // unpack from the read buffer into the vtk array
     for (size_t i=0; i<nCells; ++i)
       {
-      pfa[6*i+memComp[q]]=buf[i];
+      pfa[9*i+memComp[q]]=buf[i];
       }
     }
 
@@ -484,7 +484,7 @@ int BOVReader::ReadSymetricTensorArray(
     {
     for (size_t i=0; i<nCells; ++i)
       {
-      pfa[6*i+desComp[q]]=pfa[6*i+srcComp[q]];
+      pfa[9*i+desComp[q]]=pfa[9*i+srcComp[q]];
       }
     }
 
@@ -503,7 +503,7 @@ int BOVReader::ReadSymetricTensorArray(
   float *buf=(float*)malloc(nPts*sizeof(float));
 
   vtkFloatArray *vec=vtkFloatArray::New();
-  vec->SetNumberOfComponents(6);
+  vec->SetNumberOfComponents(9);
   vec->SetNumberOfTuples(nPts);
   vec->SetName(fhit.GetName());
   grid->GetPointData()->AddArray(vec);
@@ -538,7 +538,7 @@ int BOVReader::ReadSymetricTensorArray(
 
     for (size_t i=0; i<nPts; ++i)
       {
-      pVec[6*i+memComp[q]]=buf[i];
+      pVec[9*i+memComp[q]]=buf[i];
       }
     }
 
@@ -551,7 +551,7 @@ int BOVReader::ReadSymetricTensorArray(
     {
     for (size_t i=0; i<nPts; ++i)
       {
-      pVec[6*i+desComp[q]]=pVec[6*i+srcComp[q]];
+      pVec[9*i+desComp[q]]=pVec[9*i+srcComp[q]];
       }
     }
 
@@ -634,7 +634,7 @@ int BOVReader::ReadTimeStep(
   BOVSymetricTensorImageIterator stIt(step);
   for (;stIt.Ok(); stIt.Next())
     {
-    int ok=this->ReadVectorArray(stIt,descr,grid);
+    int ok=this->ReadSymetricTensorArray(stIt,descr,grid);
     if (!ok)
       {
       return 0;
@@ -700,7 +700,7 @@ int BOVReader::ReadTimeStep(
   BOVSymetricTensorImageIterator stIt(step);
   for (;stIt.Ok(); stIt.Next())
     {
-    int ok=this->ReadVectorArray(stIt,grid);
+    int ok=this->ReadSymetricTensorArray(stIt,grid);
     if (!ok)
       {
       return 0;
