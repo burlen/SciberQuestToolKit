@@ -191,8 +191,8 @@ protected:
   ~vtkSQTubeFilter() {}
 
   // Usual data generation method
-  int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-  int FillOutputPortInformation(int,vtkInformation *info);
+  virtual int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
+  virtual int FillOutputPortInformation(int,vtkInformation *info);
 
   double Radius; //minimum radius of tube
   int VaryRadius; //controls radius variation

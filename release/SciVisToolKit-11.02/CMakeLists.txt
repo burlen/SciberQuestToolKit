@@ -45,6 +45,7 @@ set(SM_CXX_SOURCES
   vtkSQSphereSource.cxx
   vtkSQStreamTracer.cxx
   vtkSQSurfaceVectors.cxx
+  vtkSQTensorGlyph.cxx
   vtkSQTubeFilter.cxx
   vtkSQVolumeSource.cxx
   vtkSQVortexFilter.cxx
@@ -183,6 +184,15 @@ if(PARAVIEW_BUILD_QT_GUI)
   set(_IFACES ${_IFACES} ${IFACES})
   set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
+  QT4_WRAP_CPP(MOC_SRCS pqSQTensorGlyph.h)
+  ADD_PARAVIEW_OBJECT_PANEL(
+    IFACES IFACE_SRCS
+    CLASS_NAME pqSQTensorGlyph
+    XML_NAME vtkSQTensorGlyph
+    XML_GROUP filters)
+  set(_IFACES ${_IFACES} ${IFACES})
+  set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+
   if (SVTK_PROCESS_MONITOR)
     message(STATUS "Building process monitor ui.")
     QT4_WRAP_CPP(MOC_SRCS pqSQProcessMonitor.h)
@@ -205,6 +215,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     pqSQFieldTracer.cxx
     pqSQHemisphereSource.cxx
     pqSQPlaneSource.cxx
+    pqSQTensorGlyph.cxx
     pqSQVolumeSource.cxx
     )
 
