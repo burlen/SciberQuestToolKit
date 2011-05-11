@@ -426,14 +426,6 @@ int vtkSQTensorGlyph::RequestData(
         trans->Translate(-this->Length, 0., 0.);
         }
 
-      // a negative determinant indicates inverted orientation
-      // this affects surface normals. By applying a flip to
-      // the transform we presever orientation.
-      if (trans->GetMatrix()->Determinant()<0)
-        {
-        trans->Scale(-1.,-1.,-1.);
-        }
-
       // multiply points (and normals if available) by resulting
       // matrix
       trans->TransformPoints(sourcePts,newPts); 
@@ -442,6 +434,14 @@ int vtkSQTensorGlyph::RequestData(
       // and append the results to outPts.
       if ( newNormals )
         {
+        // a negative determinant indicates inverted orientation
+        // this affects surface normals. By applying a flip to
+        // the transform we presever orientation.
+        if (trans->GetMatrix()->Determinant()<0)
+          {
+          trans->Scale(-1.,-1.,-1.);
+          }
+  
         trans->TransformNormals(sourceNormals,newNormals);
         }
 
