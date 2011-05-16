@@ -277,6 +277,11 @@ int GDAMetaData::OpenDataset(const char *fileName)
     }
 
   // VPIC scalars
+  if (Represented(path,"misc_"))
+    {
+    this->AddScalar("misc");
+    ++nArrays;
+    }
   if (Represented(path,"pe_"))
     {
     this->AddScalar("pe");
@@ -471,6 +476,13 @@ int GDAMetaData::OpenDataset(const char *fileName)
     this->AddVector("a");
     ++nArrays;
     }
+ if (Represented(path,"jx_")
+    && Represented(path,"jy_")
+    && Represented(path,"jz_"))
+    {
+    this->AddVector("j");
+    ++nArrays;
+    }
   // projections
  if (Represented(path,"vepx_")
     && Represented(path,"vepy_")
@@ -500,7 +512,20 @@ int GDAMetaData::OpenDataset(const char *fileName)
     this->AddVector("ap");
     ++nArrays;
     }
-
+ if (Represented(path,"jpx_")
+    && Represented(path,"jpy_")
+    && Represented(path,"jpz_"))
+    {
+    this->AddVector("jp");
+    ++nArrays;
+    }
+ if (Represented(path,"vmiscx_")
+    && Represented(path,"vmiscy_")
+    && Represented(path,"vmiscz_"))
+    {
+    this->AddVector("vmisc");
+    ++nArrays;
+    }
   // VPIC tensors
   if (Represented(path,"pe-xx_")
     && Represented(path,"pe-xy_")

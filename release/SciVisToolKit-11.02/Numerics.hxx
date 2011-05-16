@@ -25,6 +25,25 @@ using namespace Eigen;
 #include "Tuple.hxx"
 
 //*****************************************************************************
+template <typename T>
+T Gaussian(T X[3], T a, T B[3], T c)
+{
+  // X - evaluate at this location
+  // a - peak height
+  // B - center
+  // c - width
+
+  T x,y,z;
+  x=X[0]-B[0];
+  y=X[1]-B[1];
+  z=X[2]-B[2];
+
+  T r2 = x*x+y*y+z*z;
+
+  return a*exp(-r2/(2.0*c*c));
+}
+
+//*****************************************************************************
 inline
 void indexToIJ(int idx, int nx, int &i, int &j)
 {
@@ -346,6 +365,90 @@ void Interleave(int n, T *Vx, T *Vy, T *Vz, T* V)
     V[ii  ]=Vx[i];
     V[ii+1]=Vy[i];
     V[ii+2]=Vz[i];
+    }
+}
+
+// input  -> patch input array is defined on
+// output -> patch outpu array is defined on
+// dX     -> grid spacing triple
+// V      -> vector field
+// W      -> vector curl
+//*****************************************************************************
+template <typename T>
+void Convolution(int *input, int *output, T *K, int nK, T *V, int nComp, T *W)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int ninj=ni*nj;
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _ninj=_ni*_nj;
+
+  // kernel dimensions
+  const int nK2=nK/2;
+  const int kni=nK;
+  const int knj=nK;
+  const int kninj=nK*nK;
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        // output array indices
+        const int _i=p-output[0];
+        const int _j=q-output[2];
+        const int _k=r-output[4];
+
+        // input array indices
+        const int i=p-input[0];
+        const int j=q-input[2];
+        const int k=r-input[4];
+
+        cerr << Tuple<int>(i,j,k) << " -> " << Tuple<int>(p,q,r) << endl;
+
+        for (int c=0; c<nComp; ++c)
+          {
+          cerr << "comp=" << c << endl;
+
+          // index into output array;
+          const int pi=nComp*(_k*_ninj+_j*_ni+_i)+c;
+
+          // index into input array
+          int vi = nComp*(k*ninj+j*ni+i)+c;
+
+          // index into the kernel
+          int ki = nK2*(kninj+kni+1);
+
+          cerr << "V[" << vi << "]*K[" << ki << "]" << endl;
+
+          // start out with the center.
+          W[pi] = V[vi]*K[ki];
+
+          // permutations to pick out the remaining kernel elements
+          for (int h=-nK2; h<=nK2; ++h)
+            {
+            for (int g=-nK2; g<=nK2; ++g)
+              {
+              for (int f=-nK2; f<=nK2; ++f)
+                {
+                vi = nComp*((k+h)*ninj+(j+g)*ni+(i+f))+c;
+                ki = kninj*(nK2-h)+kni*(nK2-g)+(nK2-f);
+
+                cerr << "V[" << vi << "]*K[" << ki << "]" << endl;
+
+                W[pi] += V[vi]*K[ki];
+                }
+              }
+            }
+          }
+        }
+      }
     }
 }
 
