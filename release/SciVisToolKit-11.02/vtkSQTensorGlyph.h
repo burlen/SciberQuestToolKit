@@ -86,7 +86,7 @@ Copyright 2008 SciberQuest Inc.
 
 #include "vtkPolyDataAlgorithm.h"
 
-class VTK_GRAPHICS_EXPORT vtkSQTensorGlyph : public vtkPolyDataAlgorithm
+class VTK_EXPORT vtkSQTensorGlyph : public vtkPolyDataAlgorithm
 {
 public:
   vtkTypeMacro(vtkSQTensorGlyph,vtkPolyDataAlgorithm);
