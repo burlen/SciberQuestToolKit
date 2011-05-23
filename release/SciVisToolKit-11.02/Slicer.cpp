@@ -248,7 +248,7 @@ int main(int argc, char **argv)
   /// build the pipeline
   vtkSQBOVReader *r=vtkSQBOVReader::New();
   r->SetMetaRead(0);
-  r->SetUseCollectiveIO(vtkSQBOVReader::HINT_DISABLED);
+  r->SetUseCollectiveIO(vtkSQBOVReader::HINT_ENABLED);
   r->SetUseDataSieving(vtkSQBOVReader::HINT_AUTOMATIC);
   r->SetFileName(bovFileName);
   if (!r->IsOpen())

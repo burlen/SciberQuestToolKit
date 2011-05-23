@@ -1,15 +1,16 @@
 #!/bin/bash
 
-#PBS -N Slicer-xyz-100
-#PBS -m abe
-#PBS -M bloring@lbl.gov
-#PBS -j eo
-#PBS -q request
-#PBS -pe 8way 256
-#PBS -l h_rt=06:00:00
-#PBS -P data
-
-cd $PBS_O_WORKDIR
+#$ -V                                   # Inherit the submission environment
+#$ -cwd                                 # Start job in submission dir
+#$ -N Slicer-xyz-100
+#$ -o $HOME/$JOB_NAME.out               # Name of the output file
+#$ -m abe
+#$ -M bloring@lbl.gov
+#$ -j y 
+#$ -q request
+#$ -pe 8way 256
+#$ -l h_rt=06:00:00
+#$ -P data
 
 module use -a /home/01237/bloring/modulefiles
 module load PV3-3.8.0-icc-ompi-R
