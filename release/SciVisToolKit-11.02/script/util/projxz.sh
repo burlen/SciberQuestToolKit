@@ -9,6 +9,9 @@
 # utility is used to make the array of zeros.
 #
 
+#dd if=/dev/zero of=./zeros.gda bs=1278960000 count=32
+
+
 DATA_PATH=$1
 shift 1
 
@@ -49,6 +52,22 @@ do
     ln -s vix_$STEP.gda vipx_$STEP.gda
     ln -s zeros.gda     vipy_$STEP.gda
     ln -s viz_$STEP.gda vipz_$STEP.gda
+  fi
+
+  # ui 
+  if [ -e uix_$STEP.gda ]
+  then
+    ln -s uix_$STEP.gda uipx_$STEP.gda
+    ln -s zeros.gda     uipy_$STEP.gda
+    ln -s uiz_$STEP.gda uipz_$STEP.gda
+  fi
+
+  # ue 
+  if [ -e uex_$STEP.gda ]
+  then
+    ln -s uex_$STEP.gda uepx_$STEP.gda
+    ln -s zeros.gda     uepy_$STEP.gda
+    ln -s uez_$STEP.gda uepz_$STEP.gda
   fi
 
   echo "OK."

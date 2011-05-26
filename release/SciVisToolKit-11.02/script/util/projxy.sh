@@ -51,5 +51,21 @@ do
     ln -s zeros.gda     vipz_$STEP.gda
   fi
 
+  # ui
+  if [ -e uix_$STEP.gda ]
+  then
+    ln -s uix_$STEP.gda uipx_$STEP.gda
+    ln -s zeros.gda     uipy_$STEP.gda
+    ln -s uiz_$STEP.gda uipz_$STEP.gda
+  fi
+
+  # ue
+  if [ -e uex_$STEP.gda ]
+  then
+    ln -s uex_$STEP.gda uepx_$STEP.gda
+    ln -s zeros.gda     uepy_$STEP.gda
+    ln -s uez_$STEP.gda uepz_$STEP.gda
+  fi
+
   echo "OK."
 done
