@@ -52,7 +52,7 @@ using std::ostringstream;
 #endif
 
 // #define vtkSQBOVReaderDEBUG
-// #define vtkSQBOVReaderTIME
+#define vtkSQBOVReaderTIME
 
 #if defined vtkSQBOVReaderTIME
   #include <sys/time.h>
@@ -736,10 +736,13 @@ int vtkSQBOVReader::RequestData(
   pCerr() << "===============================RequestData" << endl;
   #endif
   #if defined vtkSQBOVReaderTIME
-  double walls=0.0;
   timeval wallt;
-  gettimeofday(&wallt,0x0);
-  walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+  double walls=0.0;
+  if (this->WorldRank==0)
+    {
+    gettimeofday(&wallt,0x0);
+    walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+    }
   #endif
 
   vtkInformation *info=outInfos->GetInformationObject(0);
@@ -1164,9 +1167,12 @@ int vtkSQBOVReader::RequestData(
   #endif
 
   #if defined vtkSQBOVReaderTIME
-  gettimeofday(&wallt,0x0);
-  double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-  pCerr() << "vtkSQBOVReader::RequestData " << walle-walls << endl;
+  if (this->WorldRank==0)
+    {
+    gettimeofday(&wallt,0x0);
+    double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+    pCerr() << "vtkSQBOVReader::RequestData " << walle-walls << endl;
+    }
   #endif
 
   return 1;
