@@ -56,7 +56,10 @@
           (gimp-context-set-foreground '(255 255 255)))
         ((string=? fontColor "b")
           (gimp-context-set-background '(255 255 255))
-          (gimp-context-set-foreground '(  0   0   0))))
+          (gimp-context-set-foreground '(  0   0   0)))
+        ((string=? fontColor "g")
+          (gimp-context-set-background '(  0   0   0))
+          (gimp-context-set-foreground '(145 145 145))))
 
       (gimp-floating-sel-to-layer 
         (car 
