@@ -31,17 +31,20 @@ using vtkstd::string;
 
 #include "Numerics.hxx"
 
+#define vtkSQKernelConvolutionDEBUG
+
 vtkCxxRevisionMacro(vtkSQKernelConvolution, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQKernelConvolution);
 
 //-----------------------------------------------------------------------------
 vtkSQKernelConvolution::vtkSQKernelConvolution()
     :
-  StencilWidth(3),
+  KernelWidth(3),
   KernelType(KERNEL_TYPE_GAUSIAN),
   Kernel(0),
   KernelModified(1),
-  Mode(MODE_3D)
+  Mode(MODE_3D),
+  NumberOfIterations(1)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
   pCerr() << "===============================vtkSQKernelConvolution::vtkSQKernelConvolution" << endl;
@@ -50,7 +53,7 @@ vtkSQKernelConvolution::vtkSQKernelConvolution()
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
 
-  this->UpdateKernel():
+  this->UpdateKernel();
 }
 
 //-----------------------------------------------------------------------------
@@ -93,6 +96,22 @@ vtkSQKernelConvolution::~vtkSQKernelConvolution()
 //   return 1;
 // }
 
+//-----------------------------------------------------------------------------
+void vtkSQKernelConvolution::SetMode(int mode)
+{
+  #ifdef vtkSQKernelConvolutionDEBUG
+  pCerr() << "===============================vtkSQKernelConvolution::SetMode" << endl;
+  #endif
+
+  if (mode==this->Mode)
+    {
+    return;
+    }
+
+  this->Mode=mode;
+  this->Modified();
+  this->KernelModified=1;
+}
 
 //-----------------------------------------------------------------------------
 void vtkSQKernelConvolution::SetKernelType(int type)
@@ -123,7 +142,7 @@ void vtkSQKernelConvolution::SetKernelWidth(int width)
     return;
     }
 
-  if ((this->width%2)==0)
+  if ((this->KernelWidth%2)==0)
     {
     vtkErrorMacro("KernelWidth must be odd.");
     return;
@@ -133,7 +152,6 @@ void vtkSQKernelConvolution::SetKernelWidth(int width)
   this->Modified();
   this->KernelModified=1;
 }
-
 
 //-----------------------------------------------------------------------------
 void vtkSQKernelConvolution::UpdateKernel()
@@ -153,16 +171,17 @@ void vtkSQKernelConvolution::UpdateKernel()
     this->Kernel=0;
     }
 
-  int size=this->KerneWidth;
+  int size=this->KernelWidth;
   switch (this->Mode)
     {
     case MODE_3D:
       size*=this->KernelWidth;
-    case MODE_2D:
+    case MODE_2D_XY:
       size*=this->KernelWidth;
       break;
     default:
       vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+      return;
     }
 
   this->Kernel=new float [size];
@@ -171,7 +190,7 @@ void vtkSQKernelConvolution::UpdateKernel()
   if (this->KernelType==KERNEL_TYPE_GAUSIAN)
     {
     float *X=new float[this->KernelWidth];
-    linspace<float>(-1.0,1.0,X);
+    linspace<float>(-1.0,1.0, this->KernelWidth, X);
 
     float B[3]={0.0,0.0,0.0};
     float a=1.0;
@@ -179,28 +198,33 @@ void vtkSQKernelConvolution::UpdateKernel()
 
     switch (this->Mode)
       {
-      case MODE_2D:
-        for (int j=0; j<this-KernelWidth; ++j)
+      case MODE_2D_XY:
+        for (int j=0; j<this->KernelWidth; ++j)
           {
           for (int i=0; i<this->KernelWidth; ++i)
             {
             float x[3]={X[i],X[j],0.0};
-            this->Kernel[i]=Gausian(X,a,B,c);
-            kernelNorm+=this->Kernel[i];
+            int q = this->KernelWidth*j+i;
+
+            this->Kernel[q]=Gaussian(x,a,B,c);
+            kernelNorm+=this->Kernel[q];
             }
           }
         break;
 
       case MODE_3D:
-        for (int k=0; k<this-KernelWidth; ++k)
+        for (int k=0; k<this->KernelWidth; ++k)
           {
-          for (int j=0; j<this-KernelWidth; ++j)
+          for (int j=0; j<this->KernelWidth; ++j)
             {
             for (int i=0; i<this->KernelWidth; ++i)
               {
               float x[3]={X[i],X[j],X[k]};
-              this->Kernel[i]=Gausian(X,a,B,c);
-              kernelNorm+=this->Kernel[i];
+
+              int q = this->KernelWidth*this->KernelWidth*k+this->KernelWidth*j+i;
+
+              this->Kernel[q]=Gaussian(x,a,B,c);
+              kernelNorm+=this->Kernel[q];
               }
             }
           }
@@ -209,6 +233,7 @@ void vtkSQKernelConvolution::UpdateKernel()
       default:
         vtkErrorMacro("Unsupported mode " << this->Mode << ".");
       }
+    }
   else
   if (this->KernelType==KERNEL_TYPE_CONSTANT)
     {
@@ -221,6 +246,9 @@ void vtkSQKernelConvolution::UpdateKernel()
   else
     {
     vtkErrorMacro("Unsupported KernelType " << this->KernelType << ".");
+    delete [] this->Kernel;
+    this->Kernel=0;
+    return;
     }
 
   // normalize
@@ -229,6 +257,7 @@ void vtkSQKernelConvolution::UpdateKernel()
     this->Kernel[i]/=kernelNorm;
     }
 
+  this->KernelModified = 0;
 
   #ifdef vtkSQKernelConvolutionDEBUG
   pCerr() << "Kernel=[";
@@ -236,12 +265,9 @@ void vtkSQKernelConvolution::UpdateKernel()
     {
     cerr << this->Kernel[i] << " ";
     }
-  cerr << endl;
+  cerr << "]" << endl;
   #endif
 }
-
-//-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 int vtkSQKernelConvolution::RequestDataObject(
@@ -288,7 +314,7 @@ int vtkSQKernelConvolution::RequestInformation(
   // always a single layer of ghost cells available. To make it so
   // we'll take the upstream's domain and shrink it by half the 
   // kernel width.
-  int nGhost = this->StencilWidth/2;
+  int nGhost = this->KernelWidth/2;
 
   vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
   CartesianExtent inputDomain;
@@ -349,7 +375,7 @@ int vtkSQKernelConvolution::RequestUpdateExtent(
 
   // We will modify the extents we request from our input so
   // that we will have a layers of ghost cells.
-  int nGhost = this->StencilWidth/2;
+  int nGhost = this->KernelWidth/2;
 
   vtkInformation* outInfo=outInfos->GetInformationObject(0);
   CartesianExtent outputExt;
@@ -397,6 +423,9 @@ int vtkSQKernelConvolution::RequestData(
   pCerr() << "===============================vtkSQKernelConvolution::RequestData" << endl;
   #endif
 
+  this->UpdateKernel();
+
+
   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
   vtkDataObject *inData=inInfo->Get(vtkDataObject::DATA_OBJECT());
 
@@ -436,7 +465,7 @@ int vtkSQKernelConvolution::RequestData(
         domainExt.GetData());
 
   // Check that we have the ghost cells that we need (more is OK).
-  int nGhost = this->StencilWidth/2;
+  int nGhost = this->KernelWidth/2;
 
   CartesianExtent inputBox(inputExt);
   CartesianExtent outputBox(outputExt);
@@ -510,121 +539,54 @@ int vtkSQKernelConvolution::RequestData(
       return 1;
       }
 
-    // Rotation.
-    if (this->ComputeRotation)
+    int nComps = V->GetNumberOfComponents();
+    int dim = this->Mode==MODE_2D_XY ? 2:3;
+
+    vtkDataArray *W=V->NewInstance();
+    outImData->GetPointData()->AddArray(W);
+    W->Delete();
+    W->SetNumberOfComponents(nComps);
+    W->SetNumberOfTuples(outputTups);
+    W->SetName(V->GetName());
+
+    //
+    vtkFloatArray *fV=0, *fW=0;
+    vtkDoubleArray *dV=0, *dW=0;
+    if ( (fV=dynamic_cast<vtkFloatArray *>(V))!=NULL
+      && (fW=dynamic_cast<vtkFloatArray *>(W))!=NULL)
       {
-      string name;
-
-      vtkDataArray *Rx=V->NewInstance();
-      outImData->GetPointData()->AddArray(Rx);
-      Rx->Delete();
-      Rx->SetNumberOfComponents(1);
-      Rx->SetNumberOfTuples(outputTups);
-      name="rot-x";
-      name+=V->GetName();
-      Rx->SetName(name.c_str());
-
-      vtkDataArray *Ry=V->NewInstance();
-      outImData->GetPointData()->AddArray(Ry);
-      Ry->Delete();
-      Ry->SetNumberOfComponents(1);
-      Ry->SetNumberOfTuples(outputTups);
-      name="rot-y";
-      name+=V->GetName();
-      Ry->SetName(name.c_str());
-
-      vtkDataArray *Rz=V->NewInstance();
-      outImData->GetPointData()->AddArray(Rz);
-      Rz->Delete();
-      Rz->SetNumberOfComponents(1);
-      Rz->SetNumberOfTuples(outputTups);
-      name="rot-z";
-      name+=V->GetName();
-      Rz->SetName(name.c_str());
-
-      vtkDataArray *R=V->NewInstance();
-      outImData->GetPointData()->AddArray(R);
-      R->Delete();
-      R->SetNumberOfComponents(3);
-      R->SetNumberOfTuples(outputTups);
-      name="rot-";
-      name+=V->GetName();
-      R->SetName(name.c_str());
-
-      //
-      vtkFloatArray *fV=0,*fRx=0,*fRy=0,*fRz=0,*fR=0;
-      vtkDoubleArray *dV=0, *dRx=0, *dRy=0, *dRz=0, *dR=0;
-      if ( (fV=dynamic_cast<vtkFloatArray *>(V))!=NULL
-        && (fRx=dynamic_cast<vtkFloatArray *>(Rx))!=NULL
-        && (fRy=dynamic_cast<vtkFloatArray *>(Ry))!=NULL
-        && (fRz=dynamic_cast<vtkFloatArray *>(Rz))!=NULL
-        && (fR=dynamic_cast<vtkFloatArray *>(R))!=NULL)
+      for (int i=0; i<this->NumberOfIterations; ++i)
         {
-        switch (this->Mode)
-          {
-          case MODE_3D:
-            Rotation(
-                inputExt.GetData(),
-                outputExt.GetData(),
-                dX,
-                fV->GetPointer(0),
-                fRx->GetPointer(0),
-                fRy->GetPointer(0),
-                fRz->GetPointer(0));
-            Interleave(outputTups,
-                fRx->GetPointer(0),
-                fRy->GetPointer(0),
-                fRz->GetPointer(0),
-                fR->GetPointer(0));
-            break;
-
-          case MODE_2D_XY:
-            RotationXY(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fR->GetPointer(0));
-            break;
-
-          default:
-            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-            break;
-          }
+        Convolution(
+            inputExt.GetData(),
+            outputExt.GetData(),
+            this->Kernel,
+            this->KernelWidth,
+            fV->GetPointer(0),
+            nComps,
+            fW->GetPointer(0),
+            dim);
         }
-      else
-      if ( (dV=dynamic_cast<vtkDoubleArray *>(V))!=NULL
-        && (dRx=dynamic_cast<vtkDoubleArray *>(Rx))!=NULL
-        && (dRy=dynamic_cast<vtkDoubleArray *>(Ry))!=NULL
-        && (dRz=dynamic_cast<vtkDoubleArray *>(Rz))!=NULL
-        && (dR=dynamic_cast<vtkDoubleArray *>(R))!=NULL)
+      }
+    else
+    if ( (dV=dynamic_cast<vtkDoubleArray *>(V))!=NULL
+      && (dW=dynamic_cast<vtkDoubleArray *>(W))!=NULL)
+      {
+      for (int i=0; i<this->NumberOfIterations; ++i)
         {
-        switch (this->Mode)
-          {
-          case MODE_3D:
-            Rotation(
-                inputExt.GetData(),
-                outputExt.GetData(),
-                dX,
-                dV->GetPointer(0),
-                dRx->GetPointer(0),
-                dRy->GetPointer(0),
-                dRz->GetPointer(0));
-            Interleave(outputTups,
-                dRx->GetPointer(0),
-                dRy->GetPointer(0),
-                dRz->GetPointer(0),
-                dR->GetPointer(0));
-            break;
-
-          case MODE_2D_XY:
-            RotationXY(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dR->GetPointer(0));
-            break;
-
-          default:
-            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-            break;
-          }
+        Convolution(
+            inputExt.GetData(),
+            outputExt.GetData(),
+            this->Kernel,
+            this->KernelWidth,
+            dV->GetPointer(0),
+            nComps,
+            dW->GetPointer(0),
+            dim);
         }
       }
 
-
-    // outImData->Print(cerr);
+    outImData->Print(cerr);
     }
   else
   if (isRecti)

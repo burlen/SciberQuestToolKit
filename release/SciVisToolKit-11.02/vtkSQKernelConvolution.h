@@ -32,25 +32,31 @@ public:
   //ETX
   // Description:
   // Set the mode to 2 or 3D.
-  vtkSetMacro(Mode,int);
+  void SetMode(int mode);
   vtkGetMacro(Mode,int);
 
   //BTX
   enum {
     KERNEL_TYPE_GAUSIAN=0,
-    KERNEL_TYPE_AVERAGE=1
+    KERNEL_TYPE_CONSTANT=1
     };
   //ETX
   // Description:
   // Select a kernel for the convolution.
-  vtkSetMacro(KernelType,int);
+  void SetKernelType(int type);
   vtkGetMacro(KernelType,int);
 
   // Description:
   // Set the stencil width, must be an odd integer, bound bellow by 3
   // and above by the size of the smallest block
-  vtkSetMacro(int,StencilWidth);
-  vtkGetMacro(int,StencilWidth);
+  void SetKernelWidth(int width);
+  vtkGetMacro(KernelWidth,int);
+
+  // Description:
+  // Set the stencil width, must be an odd integer, bound bellow by 3
+  // and above by the size of the smallest block
+  vtkSetMacro(NumberOfIterations,int);
+  vtkGetMacro(NumberOfIterations,int);
 
 protected:
   //int FillInputPortInformation(int port, vtkInformation *info);
@@ -62,8 +68,12 @@ protected:
   vtkSQKernelConvolution();
   virtual ~vtkSQKernelConvolution();
 
+  // Description:
+  // Called before execution to generate the selected kernel.
+  void UpdateKernel();
+
 private:
-  int StencilWidth;
+  int KernelWidth;
   int KernelType;
   float *Kernel;
   int KernelModified;
@@ -72,6 +82,8 @@ private:
   int DomainExt[6];
   //
   int Mode;
+  //
+  int NumberOfIterations;
 
 private:
   vtkSQKernelConvolution(const vtkSQKernelConvolution &); // Not implemented

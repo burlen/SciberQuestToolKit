@@ -370,12 +370,23 @@ void Interleave(int n, T *Vx, T *Vy, T *Vz, T* V)
 
 // input  -> patch input array is defined on
 // output -> patch outpu array is defined on
-// dX     -> grid spacing triple
-// V      -> vector field
-// W      -> vector curl
+// K      -> kernel (square matrix whose sum is 1)
+// nk     -> number of rows in K
+// V      -> scalar or vector field
+// nComp  -> number of components in V
+// W      -> convolution of V and K
+// dim    -> dim, 2d or 3d
 //*****************************************************************************
 template <typename T>
-void Convolution(int *input, int *output, T *K, int nK, T *V, int nComp, T *W)
+void Convolution(
+      int *input,
+      int *output,
+      float *K,
+      int nK,
+      T *V,
+      int nComp,
+      T *W,
+      int dim)
 {
   // input array bounds.
   const int ni=input[1]-input[0]+1;
@@ -410,11 +421,11 @@ void Convolution(int *input, int *output, T *K, int nK, T *V, int nComp, T *W)
         const int j=q-input[2];
         const int k=r-input[4];
 
-        cerr << Tuple<int>(i,j,k) << " -> " << Tuple<int>(p,q,r) << endl;
+        // cerr << Tuple<int>(i,j,k) << " -> " << Tuple<int>(p,q,r) << endl;
 
         for (int c=0; c<nComp; ++c)
           {
-          cerr << "comp=" << c << endl;
+          // cerr << "comp=" << c << endl;
 
           // index into output array;
           const int pi=nComp*(_k*_ninj+_j*_ni+_i)+c;
@@ -425,13 +436,15 @@ void Convolution(int *input, int *output, T *K, int nK, T *V, int nComp, T *W)
           // index into the kernel
           int ki = nK2*(kninj+kni+1);
 
-          cerr << "V[" << vi << "]*K[" << ki << "]" << endl;
+          // cerr << "V[" << vi << "]*K[" << ki << "]" << endl;
 
           // start out with the center.
           W[pi] = V[vi]*K[ki];
 
           // permutations to pick out the remaining kernel elements
-          for (int h=-nK2; h<=nK2; ++h)
+          int H = (dim==2?0:nK2);
+
+          for (int h=-H; h<=H; ++h)
             {
             for (int g=-nK2; g<=nK2; ++g)
               {
@@ -440,9 +453,13 @@ void Convolution(int *input, int *output, T *K, int nK, T *V, int nComp, T *W)
                 vi = nComp*((k+h)*ninj+(j+g)*ni+(i+f))+c;
                 ki = kninj*(nK2-h)+kni*(nK2-g)+(nK2-f);
 
-                cerr << "V[" << vi << "]*K[" << ki << "]" << endl;
+                // cerr << "I=" << Tuple<int>(i,j,k) << endl;
+                // cerr << "F=" << Tuple<int>(f,g,h) << endl;
+                // cerr << "K[" << ki << "]=" << K[ki] << endl;
+                // cerr << "V[" << vi << "]*K[" << ki << "]" << endl;
 
                 W[pi] += V[vi]*K[ki];
+                // cerr << "W[" << pi << "]=" << W[pi] << endl;
                 }
               }
             }
@@ -451,6 +468,7 @@ void Convolution(int *input, int *output, T *K, int nK, T *V, int nComp, T *W)
       }
     }
 }
+
 
 //*****************************************************************************
 template <typename T>
