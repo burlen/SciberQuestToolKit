@@ -70,7 +70,7 @@ protected:
 
   // Description:
   // Called before execution to generate the selected kernel.
-  void UpdateKernel();
+  int UpdateKernel();
 
 private:
   int KernelWidth;

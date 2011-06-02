@@ -3123,6 +3123,7 @@ Copyright 2008 SciberQuest Inc.
             </Documentation>
       </StringVectorProperty>
 
+    <!--
     <IntVectorProperty
         name="Mode"
         lable="Mode"
@@ -3137,6 +3138,7 @@ Copyright 2008 SciberQuest Inc.
         Select finite difference stencil.
       </Documentation>
     </IntVectorProperty>
+    -->
 
     <IntVectorProperty
         name="KernelType"
@@ -3185,6 +3187,7 @@ Copyright 2008 SciberQuest Inc.
       </Documentation>
     </IntVectorProperty>
 
+    <!--
     <IntVectorProperty
         name="NumberOfIterations"
         label="Iterations"
@@ -3196,6 +3199,7 @@ Copyright 2008 SciberQuest Inc.
         Set the number of times to apply the convolution.
       </Documentation>
     </IntVectorProperty>
+    -->
 
     <Hints>
       <View type="RenderView"/>

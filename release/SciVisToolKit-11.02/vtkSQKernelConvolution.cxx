@@ -52,8 +52,6 @@ vtkSQKernelConvolution::vtkSQKernelConvolution()
 
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
-
-  this->UpdateKernel();
 }
 
 //-----------------------------------------------------------------------------
@@ -154,7 +152,7 @@ void vtkSQKernelConvolution::SetKernelWidth(int width)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQKernelConvolution::UpdateKernel()
+int vtkSQKernelConvolution::UpdateKernel()
 {
   #ifdef vtkSQKernelConvolutionDEBUG
   pCerr() << "===============================vtkSQKernelConvolution::UpdateKernel" << endl;
@@ -162,7 +160,7 @@ void vtkSQKernelConvolution::UpdateKernel()
 
   if (!this->KernelModified)
     {
-    return;
+    return 0;
     }
 
   if (this->Kernel)
@@ -171,18 +169,9 @@ void vtkSQKernelConvolution::UpdateKernel()
     this->Kernel=0;
     }
 
-  int size=this->KernelWidth;
-  switch (this->Mode)
-    {
-    case MODE_3D:
-      size*=this->KernelWidth;
-    case MODE_2D_XY:
-      size*=this->KernelWidth;
-      break;
-    default:
-      vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-      return;
-    }
+  int size = (this->Mode==MODE_3D ?
+        this->KernelWidth*this->KernelWidth*this->KernelWidth :
+        this->KernelWidth*this->KernelWidth);
 
   this->Kernel=new float [size];
   float kernelNorm=0.0;
@@ -196,42 +185,22 @@ void vtkSQKernelConvolution::UpdateKernel()
     float a=1.0;
     float c=0.55;
 
-    switch (this->Mode)
+    int H=(this->Mode==MODE_3D?this->KernelWidth:1);
+
+    for (int k=0; k<H; ++k)
       {
-      case MODE_2D_XY:
-        for (int j=0; j<this->KernelWidth; ++j)
+      for (int j=0; j<this->KernelWidth; ++j)
+        {
+        for (int i=0; i<this->KernelWidth; ++i)
           {
-          for (int i=0; i<this->KernelWidth; ++i)
-            {
-            float x[3]={X[i],X[j],0.0};
-            int q = this->KernelWidth*j+i;
+          float x[3]={X[i],X[j],this->Mode==MODE_3D?X[k]:0.0};
 
-            this->Kernel[q]=Gaussian(x,a,B,c);
-            kernelNorm+=this->Kernel[q];
-            }
+          int q = this->KernelWidth*this->KernelWidth*k+this->KernelWidth*j+i;
+
+          this->Kernel[q]=Gaussian(x,a,B,c);
+          kernelNorm+=this->Kernel[q];
           }
-        break;
-
-      case MODE_3D:
-        for (int k=0; k<this->KernelWidth; ++k)
-          {
-          for (int j=0; j<this->KernelWidth; ++j)
-            {
-            for (int i=0; i<this->KernelWidth; ++i)
-              {
-              float x[3]={X[i],X[j],X[k]};
-
-              int q = this->KernelWidth*this->KernelWidth*k+this->KernelWidth*j+i;
-
-              this->Kernel[q]=Gaussian(x,a,B,c);
-              kernelNorm+=this->Kernel[q];
-              }
-            }
-          }
-        break;
-
-      default:
-        vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+        }
       }
     }
   else
@@ -248,7 +217,7 @@ void vtkSQKernelConvolution::UpdateKernel()
     vtkErrorMacro("Unsupported KernelType " << this->KernelType << ".");
     delete [] this->Kernel;
     this->Kernel=0;
-    return;
+    return -1;
     }
 
   // normalize
@@ -267,6 +236,8 @@ void vtkSQKernelConvolution::UpdateKernel()
     }
   cerr << "]" << endl;
   #endif
+
+  return 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -321,6 +292,29 @@ int vtkSQKernelConvolution::RequestInformation(
   inInfo->Get(
         vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
         inputDomain.GetData());
+
+  // check for 2D input.
+  int inExt[3];
+  inputDomain.Size(inExt);
+  if (inExt[0]<this->KernelWidth)
+    {
+    this->SetMode(MODE_2D_YZ);
+    }
+  else
+  if (inExt[1]<this->KernelWidth)
+    {
+    this->SetMode(MODE_2D_XZ);
+    }
+  else
+  if (inExt[2]<this->KernelWidth)
+    {
+    this->SetMode(MODE_2D_XY);
+    }
+  else
+    {
+    this->SetMode(MODE_3D);
+    }
+
   switch (this->Mode)
     {
     case MODE_3D:
@@ -423,9 +417,6 @@ int vtkSQKernelConvolution::RequestData(
   pCerr() << "===============================vtkSQKernelConvolution::RequestData" << endl;
   #endif
 
-  this->UpdateKernel();
-
-
   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
   vtkDataObject *inData=inInfo->Get(vtkDataObject::DATA_OBJECT());
 
@@ -495,9 +486,15 @@ int vtkSQKernelConvolution::RequestData(
     return 1;
     }
 
+  // generate the requested kernel, if needed.
+  if (this->UpdateKernel())
+    {
+    vtkErrorMacro("Failed to create the requested kernel.");
+    return 1;
+    }
+
   // NOTE You can't do a shallow copy because the array dimensions are
   // different on output and input because of the ghost layers.
-  // outData->ShallowCopy(inData);
 
   if (isImage)
     {
@@ -519,7 +516,7 @@ int vtkSQKernelConvolution::RequestData(
     outImData->GetDimensions(outputDims);
     int outputTups=outputDims[0]*outputDims[1]*outputDims[2];
 
-    #ifdef vtkSQVortextFilterDEBUG
+    #ifdef vtkSQKernelConvolutionDEBUG
     pCerr()
       << "WHOLE_EXTENT=" << domainExt << endl
       << "UPDATE_EXTENT(input)=" << inputExt << endl
@@ -539,23 +536,27 @@ int vtkSQKernelConvolution::RequestData(
       return 1;
       }
 
-    int nComps = V->GetNumberOfComponents();
-    int dim = this->Mode==MODE_2D_XY ? 2:3;
 
-    vtkDataArray *W=V->NewInstance();
-    outImData->GetPointData()->AddArray(W);
-    W->Delete();
-    W->SetNumberOfComponents(nComps);
-    W->SetNumberOfTuples(outputTups);
-    W->SetName(V->GetName());
+    /// TODO -- multiple passes require updates ghost cells!
 
-    //
-    vtkFloatArray *fV=0, *fW=0;
-    vtkDoubleArray *dV=0, *dW=0;
-    if ( (fV=dynamic_cast<vtkFloatArray *>(V))!=NULL
-      && (fW=dynamic_cast<vtkFloatArray *>(W))!=NULL)
-      {
-      for (int i=0; i<this->NumberOfIterations; ++i)
+    // vector<vtkDataArray*> workArrays(this->NumberOfIterations,0);
+    // for (int i=0; i<this->NumberOfIterations; ++i,V=W)
+    //   {
+      int nComps = V->GetNumberOfComponents();
+      int dim = this->Mode==MODE_2D_XY ? 2:3;
+
+      vtkDataArray *W=V->NewInstance();
+      W->SetNumberOfComponents(nComps);
+      W->SetNumberOfTuples(outputTups);
+      W->SetName(V->GetName());
+
+      // workArrays[i] = W;
+
+      //
+      vtkFloatArray *fV=0, *fW=0;
+      vtkDoubleArray *dV=0, *dW=0;
+      if ( (fV=dynamic_cast<vtkFloatArray *>(V))!=NULL
+        && (fW=dynamic_cast<vtkFloatArray *>(W))!=NULL)
         {
         Convolution(
             inputExt.GetData(),
@@ -567,12 +568,9 @@ int vtkSQKernelConvolution::RequestData(
             fW->GetPointer(0),
             dim);
         }
-      }
-    else
-    if ( (dV=dynamic_cast<vtkDoubleArray *>(V))!=NULL
-      && (dW=dynamic_cast<vtkDoubleArray *>(W))!=NULL)
-      {
-      for (int i=0; i<this->NumberOfIterations; ++i)
+      else
+      if ( (dV=dynamic_cast<vtkDoubleArray *>(V))!=NULL
+        && (dW=dynamic_cast<vtkDoubleArray *>(W))!=NULL)
         {
         Convolution(
             inputExt.GetData(),
@@ -584,7 +582,10 @@ int vtkSQKernelConvolution::RequestData(
             dW->GetPointer(0),
             dim);
         }
-      }
+    //   }
+
+    outImData->GetPointData()->AddArray(W);
+    W->Delete();
 
     outImData->Print(cerr);
     }

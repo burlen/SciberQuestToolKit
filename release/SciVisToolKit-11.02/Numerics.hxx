@@ -391,18 +391,18 @@ void Convolution(
   // input array bounds.
   const int ni=input[1]-input[0]+1;
   const int nj=input[3]-input[2]+1;
-  const int ninj=ni*nj;
+  const int ninj=(dim==3?ni*nj:0);
 
   // output array bounds
   const int _ni=output[1]-output[0]+1;
   const int _nj=output[3]-output[2]+1;
-  const int _ninj=_ni*_nj;
+  const int _ninj=(dim==3?_ni*_nj:0);
 
   // kernel dimensions
   const int nK2=nK/2;
   const int kni=nK;
   const int knj=nK;
-  const int kninj=nK*nK;
+  const int kninj=(dim==3?nK*nK:0);
 
   // loop over output in patch coordinates (both patches are in the same space)
   for (int r=output[4]; r<=output[5]; ++r)
@@ -425,24 +425,15 @@ void Convolution(
 
         for (int c=0; c<nComp; ++c)
           {
-          // cerr << "comp=" << c << endl;
+          // cerr << "-------comp=" << c << endl;
 
           // index into output array;
           const int pi=nComp*(_k*_ninj+_j*_ni+_i)+c;
 
-          // index into input array
-          int vi = nComp*(k*ninj+j*ni+i)+c;
-
-          // index into the kernel
-          int ki = nK2*(kninj+kni+1);
-
-          // cerr << "V[" << vi << "]*K[" << ki << "]" << endl;
-
-          // start out with the center.
-          W[pi] = V[vi]*K[ki];
+          W[pi] = 0.0;
 
           // permutations to pick out the remaining kernel elements
-          int H = (dim==2?0:nK2);
+          int H=(dim==3?nK2:0);
 
           for (int h=-H; h<=H; ++h)
             {
@@ -450,16 +441,14 @@ void Convolution(
               {
               for (int f=-nK2; f<=nK2; ++f)
                 {
-                vi = nComp*((k+h)*ninj+(j+g)*ni+(i+f))+c;
-                ki = kninj*(nK2-h)+kni*(nK2-g)+(nK2-f);
-
-                // cerr << "I=" << Tuple<int>(i,j,k) << endl;
-                // cerr << "F=" << Tuple<int>(f,g,h) << endl;
-                // cerr << "K[" << ki << "]=" << K[ki] << endl;
-                // cerr << "V[" << vi << "]*K[" << ki << "]" << endl;
+                int vi = nComp*((k+h)*ninj+(j+g)*ni+(i+f))+c;
+                int ki = kninj*(nK2+h)+kni*(nK2+g)+(nK2+f);
 
                 W[pi] += V[vi]*K[ki];
-                // cerr << "W[" << pi << "]=" << W[pi] << endl;
+
+                // cerr << "V[" << Tuple<int>(i,j,k) << "->" << vi << "]=" << V[vi] << endl;
+                // cerr << "K[" << Tuple<int>(f,g,h) << "->" << ki << "]=" << K[ki] << endl;
+                // cerr << "W[" << Tuple<int>(_i,_j,_k) << "->" << pi << "]=" << W[pi] << endl;
                 }
               }
             }

@@ -101,6 +101,7 @@ set(CXX_SOURCES
   UnstructuredGridCellCopier.cxx
   vtkSQHemisphereSourceConfigurationWriter.cxx
   vtkSQHemisphereSourceConfigurationReader.cxx
+  vtkSQLog.cxx
   vtkSQMetaDataKeys.cxx
   vtkSQOOCBOVReader.cxx
   vtkSQOOCReader.cxx
@@ -293,6 +294,7 @@ if (SVTK_SHELL_SCRIPTS)
   set(SVTK_SHELL_SCRIPT_SOURCES
     "${SHELL_SCRIPT_DIR}/projxy.sh"
     "${SHELL_SCRIPT_DIR}/projxz.sh"
+    "${SHELL_SCRIPT_DIR}/pvd.sh"
     )
   install(PROGRAMS ${SVTK_SHELL_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif()
@@ -322,6 +324,10 @@ if (UNIX)
     add_executable(Slicer Slicer.cpp)
     target_link_libraries(Slicer ${MPI_LIBRARIES} SciVisToolKit)
     install(TARGETS Slicer DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+    add_executable(IOBench IOBench.cpp)
+    target_link_libraries(IOBench ${MPI_LIBRARIES} SciVisToolKit)
+    install(TARGETS IOBench DESTINATION ${CMAKE_INSTALL_PREFIX})
 
     add_executable(MagnetosphereTopoBatchPVD MagnetosphereTopoBatchPVD.cpp XMLUtils.cxx)
     target_link_libraries(MagnetosphereTopoBatchPVD ${MPI_LIBRARIES} SciVisToolKit)

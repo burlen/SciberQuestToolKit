@@ -797,15 +797,19 @@ int vtkSQBOVReader::RequestData(
   // shift to the dual grid
   subset.NodeToCell();
   // we must always have a single cell in all directions.
-  if ((subset[1]<subset[0])||(subset[3]<subset[2]))
+  /*if ((subset[1]<subset[0])||(subset[3]<subset[2]))
     {
     vtkErrorMacro("Invalid subset requested: " << subset << ".");
     return 1;
-    }
+    }*/
   // this is a hack to accomodate 2D grids.
-  if (subset[5]<subset[4])
+  for (int q=0; q<3; ++q)
     {
-    subset[5]=subset[4];
+    int qq=2*q;
+    if (subset[qq+1]<subset[qq])
+      {
+      subset[qq+1]=subset[qq];
+      }
     }
 
   // ParaView sends the update extent to inform us of the domain decomposition.
@@ -846,15 +850,19 @@ int vtkSQBOVReader::RequestData(
     // shift to dual grid
     fileExt.NodeToCell();
     // we must always have a single cell in all directions.
-    if ((fileExt[1]<fileExt[0])||(fileExt[3]<fileExt[2]))
+    /*if ((fileExt[1]<fileExt[0])||(fileExt[3]<fileExt[2]))
       {
       vtkErrorMacro("Invalid fileExt requested: " << fileExt << ".");
       return 1;
-      }
+      }*/
     // this is a hack to accomodate 2D grids.
-    if (fileExt[5]<fileExt[4])
+    for (int q=0; q<3; ++q)
       {
-      fileExt[5]=fileExt[4];
+      int qq=2*q;
+      if (subset[qq+1]<subset[qq])
+        {
+        subset[qq+1]=subset[qq];
+        }
       }
 
     // This reader can read vtkImageData, vtkRectilinearGrid, and vtkStructuredData
