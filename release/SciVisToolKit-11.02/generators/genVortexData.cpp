@@ -1,16 +1,18 @@
-#include<iostream>
+#include <iostream>
 using std::ostream;
 using std::cerr;
 using std::endl;
-#include<fstream>
+#include <fstream>
 using std::ofstream;
-#include<sstream>
+#include <sstream>
 using std::ostringstream;
-#include<cstring>
-#include<cstdlib>
-#include<cmath>
-#include<fcntl.h>
-#include<limits>
+#include <cstring>
+#include <cstdlib>
+#include <cmath>
+#include <fcntl.h>
+#include <limits>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "Tuple.hxx"
 

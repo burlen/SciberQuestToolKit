@@ -32,6 +32,7 @@ set(SM_CXX_SOURCES
   vtkSQFieldTopologySplit.cxx
   vtkSQFieldTracer.cxx
   vtkSQHemisphereSource.cxx
+  vtkSQImageGhosts.cxx
   vtkSQKernelConvolution.cxx
   vtkSQLineSource.cxx
   vtkSQCellGenerator.cxx

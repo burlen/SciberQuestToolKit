@@ -157,6 +157,7 @@ public:
   /**
   Translate the bounds by n.
   */
+  void Shift();
   void Shift(int ni, int nj, int nk);
   void Shift(int q, int n);
 
@@ -561,6 +562,21 @@ void CartesianExtent::Shift(int q, int n)
 
   this->Data[q  ]+=n;
   this->Data[q+1]+=n;
+}
+
+//-----------------------------------------------------------------------------
+inline
+void CartesianExtent::Shift()
+{
+  for (int q=0; q<3; ++q)
+    {
+    q*=2;
+
+    int n=-this->Data[q];
+
+    this->Data[q  ]+=n;
+    this->Data[q+1]+=n;
+    }
 }
 
 //-----------------------------------------------------------------------------

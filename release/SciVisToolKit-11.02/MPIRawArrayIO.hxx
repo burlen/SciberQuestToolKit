@@ -44,6 +44,116 @@ public:
     }
 };
 
+//=============================================================================
+template <>
+class DataTraits<short int>
+{
+public:
+  static MPI_Datatype Type(){
+    return MPI_SHORT;
+    }
+};
+
+//=============================================================================
+template <>
+class DataTraits<unsigned short int>
+{
+public:
+  static MPI_Datatype Type(){
+    return MPI_UNSIGNED_SHORT;
+    }
+};
+
+//=============================================================================
+template <>
+class DataTraits<int>
+{
+public:
+  static MPI_Datatype Type(){
+    return MPI_INT;
+    }
+};
+
+//=============================================================================
+template <>
+class DataTraits<unsigned int>
+{
+public:
+  static MPI_Datatype Type(){
+    return MPI_UNSIGNED;
+    }
+};
+
+//=============================================================================
+template <>
+class DataTraits<long>
+{
+public:
+  static MPI_Datatype Type(){
+    return MPI_LONG;
+    }
+};
+
+//=============================================================================
+template <>
+class DataTraits<unsigned long>
+{
+public:
+  static MPI_Datatype Type(){
+    return MPI_UNSIGNED_LONG;
+    }
+};
+
+//=============================================================================
+template <>
+class DataTraits<long long>
+{
+public:
+  static MPI_Datatype Type(){
+    return MPI_LONG_LONG;
+    }
+};
+
+//=============================================================================
+template <>
+class DataTraits<unsigned long long>
+{
+public:
+  static MPI_Datatype Type(){
+    return MPI_UNSIGNED_LONG_LONG;
+    }
+};
+
+//=============================================================================
+template <>
+class DataTraits<signed char>
+{
+public:
+  static MPI_Datatype Type(){
+    return MPI_CHAR;
+    }
+};
+
+//=============================================================================
+template <>
+class DataTraits<char>
+{
+public:
+  static MPI_Datatype Type(){
+    return MPI_CHAR;
+    }
+};
+
+//=============================================================================
+template <>
+class DataTraits<unsigned char>
+{
+public:
+  static MPI_Datatype Type(){
+    return MPI_UNSIGNED_CHAR;
+    }
+};
+
 //*****************************************************************************
 template<typename T>
 void CreateCartesianView(
@@ -97,6 +207,69 @@ void CreateCartesianView(
     sqErrorMacro(pCerr(),"MPI_Type_commit failed.");
     }
 }
+
+//*****************************************************************************
+template<typename T>
+void CreateCartesianView(
+      const CartesianExtent &domain,
+      const CartesianExtent &decomp,
+      int nComps,
+      MPI_Datatype &view)
+{
+  int iErr;
+
+  MPI_Datatype nativeType;
+  iErr=MPI_Type_contiguous(nComps,DataTraits<T>::Type(),&nativeType);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_contiguous failed.");
+    }
+
+  int domainDims[3];
+  domain.Size(domainDims);
+  int domainStart[3];
+  domain.GetStartIndex(domainStart);
+
+  int decompDims[3];
+  decomp.Size(decompDims);
+  int decompStart[3];
+  decomp.GetStartIndex(decompStart,domainStart);
+
+  unsigned long long nCells=decomp.Size();
+
+  // use a contiguous type when possible.
+  if (domain==decomp)
+    {
+    iErr=MPI_Type_contiguous(nCells,nativeType,&view);
+    if (iErr)
+      {
+      sqErrorMacro(pCerr(),"MPI_Type_contiguous failed.");
+      }
+    }
+  else
+    {
+    iErr=MPI_Type_create_subarray(
+        3,
+        domainDims,
+        decompDims,
+        decompStart,
+        MPI_ORDER_FORTRAN,
+        nativeType,
+        &view);
+    if (iErr)
+      {
+      sqErrorMacro(pCerr(),"MPI_Type_create_subarray failed.");
+      }
+    }
+  iErr=MPI_Type_commit(&view);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_commit failed.");
+    }
+
+  MPI_Type_free(&nativeType);
+}
+
 
 
 //*****************************************************************************

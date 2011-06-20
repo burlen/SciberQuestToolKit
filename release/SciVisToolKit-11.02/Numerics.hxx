@@ -368,6 +368,63 @@ void Interleave(int n, T *Vx, T *Vy, T *Vz, T* V)
     }
 }
 
+
+// input  -> input(src) patch bounds
+// output -> output(dest) patch bounds
+// V      -> input(src) data
+// W      -> output(dest) data
+// nComp  -> number of sclar components
+//*****************************************************************************
+template <typename T>
+void Copy(
+      int *input,
+      int *output,
+      T *V,
+      T *W,
+      int nComp)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int ninj=ni*nj;
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _ninj=_ni*_nj;
+
+  // loop over input in patch coordinates (both patches are in the same space)
+  for (int r=input[4]; r<=input[5]; ++r)
+    {
+    for (int q=input[2]; q<=input[3]; ++q)
+      {
+      for (int p=input[0]; p<=input[1]; ++p)
+        {
+        // output array indices
+        const int _i=p-output[0];
+        const int _j=q-output[2];
+        const int _k=r-output[4];
+        // flat index into output
+        size_t _vi=nComp*(_k*_ninj+_j*_ni+_i);
+
+        // input array indices
+        const int i=p-input[0];
+        const int j=q-input[2];
+        const int k=r-input[4];
+        // flat index into input
+        size_t vi=nComp*(k*ninj+j*ni+i);
+
+        // copy components
+        for (int c=0; c<nComp; ++c)
+          {
+          W[_vi] = V[vi];
+          }
+
+        }
+      }
+    }
+}
+
 // input  -> patch input array is defined on
 // output -> patch outpu array is defined on
 // K      -> kernel (square matrix whose sum is 1)

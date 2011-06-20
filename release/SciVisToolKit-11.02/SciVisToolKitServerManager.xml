@@ -1269,6 +1269,34 @@ Copyright 2008 SciberQuest Inc.
 <ProxyGroup name="filters">
 
     <!-- ==================================================================== -->
+    <SourceProxy
+      name="vtkSQImageGhosts"
+      class="vtkSQImageGhosts"
+      label="SQ Image Ghosts">
+
+      <Documentation
+        long_help="TODO"
+        short_help="TODO">
+      </Documentation>
+
+      <InputProperty
+        name="Input"
+        command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <Documentation>
+        </Documentation>
+      </InputProperty>
+
+    </SourceProxy>
+
+
+    <!-- ==================================================================== -->
     <SourceProxy name="vtkSQTensorGlyph" class="vtkSQTensorGlyph" label="SQ Tensor Glyphs">
 
       <Documentation
