@@ -10,6 +10,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkSQKernelConvolution.h"
 
 #include "CartesianExtent.h"
+#include "CartesianExtent.h"
 #include "postream.h"
 
 #include "vtkObjectFactory.h"
@@ -31,7 +32,7 @@ using vtkstd::string;
 
 #include "Numerics.hxx"
 
-#define vtkSQKernelConvolutionDEBUG
+// #define vtkSQKernelConvolutionDEBUG
 
 vtkCxxRevisionMacro(vtkSQKernelConvolution, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQKernelConvolution);
@@ -43,7 +44,7 @@ vtkSQKernelConvolution::vtkSQKernelConvolution()
   KernelType(KERNEL_TYPE_GAUSIAN),
   Kernel(0),
   KernelModified(1),
-  Mode(MODE_3D),
+  Mode(CartesianExtent::CartesianExtent::DIM_MODE_3D),
   NumberOfIterations(1)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
@@ -67,32 +68,6 @@ vtkSQKernelConvolution::~vtkSQKernelConvolution()
     this->Kernel=0;
     }
 }
-
-// //-----------------------------------------------------------------------------
-// int vtkSQKernelConvolution::FillInputPortInformation(
-//     int port,
-//     vtkInformation *info)
-// {
-//   #ifdef vtkSQKernelConvolutionDEBUG
-//   pCerr() << "===============================vtkSQKernelConvolution::FillInputPortInformation" << endl;
-//   #endif
-//
-//   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
-//   return 1;
-// }
-//
-// //-----------------------------------------------------------------------------
-// int vtkSQKernelConvolution::FillOutputPortInformation(
-//     int port,
-//     vtkInformation *info)
-// {
-//   #ifdef vtkSQKernelConvolutionDEBUG
-//   pCerr() << "===============================vtkSQKernelConvolution::FillOutputPortInformation" << endl;
-//   #endif
-//
-//   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
-//   return 1;
-// }
 
 //-----------------------------------------------------------------------------
 void vtkSQKernelConvolution::SetMode(int mode)
@@ -169,7 +144,7 @@ int vtkSQKernelConvolution::UpdateKernel()
     this->Kernel=0;
     }
 
-  int size = (this->Mode==MODE_3D ?
+  int size = (this->Mode==CartesianExtent::DIM_MODE_3D ?
         this->KernelWidth*this->KernelWidth*this->KernelWidth :
         this->KernelWidth*this->KernelWidth);
 
@@ -185,7 +160,7 @@ int vtkSQKernelConvolution::UpdateKernel()
     float a=1.0;
     float c=0.55;
 
-    int H=(this->Mode==MODE_3D?this->KernelWidth:1);
+    int H=(this->Mode==CartesianExtent::DIM_MODE_3D?this->KernelWidth:1);
 
     for (int k=0; k<H; ++k)
       {
@@ -193,7 +168,7 @@ int vtkSQKernelConvolution::UpdateKernel()
         {
         for (int i=0; i<this->KernelWidth; ++i)
           {
-          float x[3]={X[i],X[j],this->Mode==MODE_3D?X[k]:0.0};
+          float x[3]={X[i],X[j],this->Mode==CartesianExtent::DIM_MODE_3D?X[k]:0.0};
 
           int q = this->KernelWidth*this->KernelWidth*k+this->KernelWidth*j+i;
 
@@ -285,7 +260,7 @@ int vtkSQKernelConvolution::RequestInformation(
   // always a single layer of ghost cells available. To make it so
   // we'll take the upstream's domain and shrink it by half the 
   // kernel width.
-  int nGhost = this->KernelWidth/2;
+  int nGhosts = this->KernelWidth/2;
 
   vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
   CartesianExtent inputDomain;
@@ -293,48 +268,24 @@ int vtkSQKernelConvolution::RequestInformation(
         vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
         inputDomain.GetData());
 
-  // check for 2D input.
-  int inExt[3];
-  inputDomain.Size(inExt);
-  if (inExt[0]<this->KernelWidth)
-    {
-    this->SetMode(MODE_2D_YZ);
-    }
-  else
-  if (inExt[1]<this->KernelWidth)
-    {
-    this->SetMode(MODE_2D_XZ);
-    }
-  else
-  if (inExt[2]<this->KernelWidth)
-    {
-    this->SetMode(MODE_2D_XY);
-    }
-  else
-    {
-    this->SetMode(MODE_3D);
-    }
+  // determine the dimensionality of the input.
+  this->Mode
+    = CartesianExtent::GetDimensionMode(
+          inputDomain,
+          nGhosts);
 
-  switch (this->Mode)
-    {
-    case MODE_3D:
-      inputDomain.Grow(-nGhost);
-      break;
-
-    case MODE_2D_XY:
-      inputDomain.Grow(0,-nGhost);
-      inputDomain.Grow(1,-nGhost);
-      break;
-
-    default:
-      vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-      break;
-    }
+  // shrink the output problem domain by the requisite number of
+  // ghost cells.
+  CartesianExtent outputDomain
+    = CartesianExtent::Grow(
+          inputDomain,
+          -nGhosts,
+          this->Mode);
 
   vtkInformation* outInfo=outInfos->GetInformationObject(0);
   outInfo->Set(
         vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
-        inputDomain.GetData(),
+        outputDomain.GetData(),
         6);
 
   // other keys that need to be coppied
@@ -348,10 +299,11 @@ int vtkSQKernelConvolution::RequestInformation(
 
   #ifdef vtkSQKernelConvolutionDEBUG
   pCerr()
-    << "WHOLE_EXTENT=" << inputDomain << endl
+    << "WHOLE_EXTENT(input)=" << inputDomain << endl
+    << "WHOLE_EXTENT(output)=" << outputDomain << endl
     << "ORIGIN=" << Tuple<double>(X0,3) << endl
     << "SPACING=" << Tuple<double>(dX,3) << endl
-    << "nGhost=" << nGhost << endl;
+    << "nGhost=" << nGhosts << endl;
   #endif
 
   return 1;
@@ -359,7 +311,7 @@ int vtkSQKernelConvolution::RequestInformation(
 
 //-----------------------------------------------------------------------------
 int vtkSQKernelConvolution::RequestUpdateExtent(
-      vtkInformation * /*req*/,
+      vtkInformation *req,
       vtkInformationVector **inInfos,
       vtkInformationVector *outInfos)
 {
@@ -367,41 +319,56 @@ int vtkSQKernelConvolution::RequestUpdateExtent(
   pCerr() << "===============================vtkSQKernelConvolution::RequestUpdateExtent" << endl;
   #endif
 
-  // We will modify the extents we request from our input so
-  // that we will have a layers of ghost cells.
-  int nGhost = this->KernelWidth/2;
+  typedef vtkStreamingDemandDrivenPipeline vtkSDDPipeline;
 
   vtkInformation* outInfo=outInfos->GetInformationObject(0);
+  vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
+
+  // We will modify the extents we request from our input so
+  // that we will have a layers of ghost cells. We also pass
+  // the number of ghosts through the piece based key.
+  int nGhosts = this->KernelWidth/2;
+
+  inInfo->Set(
+        vtkSDDPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(),
+        nGhosts);
+
   CartesianExtent outputExt;
   outInfo->Get(
-        vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
+        vtkSDDPipeline::UPDATE_EXTENT(),
         outputExt.GetData());
-  switch (this->Mode)
-    {
-    case MODE_3D:
-      outputExt.Grow(nGhost);
-      break;
 
-    case MODE_2D_XY:
-      outputExt.Grow(0,nGhost);
-      outputExt.Grow(1,nGhost);
-      break;
+  CartesianExtent wholeExt;
+  inInfo->Get(
+        vtkSDDPipeline::WHOLE_EXTENT(),
+        wholeExt.GetData());
 
-    default:
-      vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-      break;
-    }
+  outputExt = CartesianExtent::Grow(
+        outputExt,
+        wholeExt,
+        nGhosts,
+        this->Mode);
 
-  vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
   inInfo->Set(
-        vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
+        vtkSDDPipeline::UPDATE_EXTENT(),
         outputExt.GetData(),
         6);
 
+  int piece
+    = outInfo->Get(vtkSDDPipeline::UPDATE_PIECE_NUMBER());
+
+  int numPieces
+    = outInfo->Get(vtkSDDPipeline::UPDATE_NUMBER_OF_PIECES());
+
+  inInfo->Set(vtkSDDPipeline::UPDATE_PIECE_NUMBER(), piece);
+  inInfo->Set(vtkSDDPipeline::UPDATE_NUMBER_OF_PIECES(), numPieces);
+  inInfo->Set(vtkSDDPipeline::EXACT_EXTENT(), 1);
+
   #ifdef vtkSQKernelConvolutionDEBUG
   pCerr()
+    << "WHOLE_EXTENT=" << wholeExt << endl
     << "UPDATE_EXTENT=" << outputExt << endl
-    << "nGhost=" << nGhost << endl;
+    << "nGhosts=" << nGhosts << endl;
   #endif
 
   return 1;
@@ -446,10 +413,17 @@ int vtkSQKernelConvolution::RequestData(
   inInfo->Get(
         vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
         inputExt.GetData());
+
+  CartesianExtent inputDom;
+  inInfo->Get(
+        vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+        inputDom.GetData());
+
   CartesianExtent outputExt;
   outInfo->Get(
         vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
         outputExt.GetData());
+
   CartesianExtent domainExt;
   outInfo->Get(
         vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
@@ -459,22 +433,9 @@ int vtkSQKernelConvolution::RequestData(
   int nGhost = this->KernelWidth/2;
 
   CartesianExtent inputBox(inputExt);
-  CartesianExtent outputBox(outputExt);
-  switch (this->Mode)
-    {
-    case MODE_3D:
-      outputBox.Grow(nGhost);
-      break;
+  CartesianExtent outputBox
+    = CartesianExtent::Grow(outputExt, nGhost, this->Mode);
 
-    case MODE_2D_XY:
-      outputBox.Grow(0,nGhost);
-      outputBox.Grow(1,nGhost);
-      break;
-
-    default:
-      vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-      break;
-    }
   if (!inputBox.Contains(outputBox))
     {
     vtkErrorMacro(
@@ -543,7 +504,7 @@ int vtkSQKernelConvolution::RequestData(
     // for (int i=0; i<this->NumberOfIterations; ++i,V=W)
     //   {
       int nComps = V->GetNumberOfComponents();
-      int dim = this->Mode==MODE_2D_XY ? 2:3;
+      int dim = this->Mode==CartesianExtent::CartesianExtent::DIM_MODE_2D_XY ? 2:3;
 
       vtkDataArray *W=V->NewInstance();
       W->SetNumberOfComponents(nComps);

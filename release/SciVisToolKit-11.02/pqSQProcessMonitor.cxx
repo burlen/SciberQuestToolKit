@@ -1054,6 +1054,13 @@ void pqSQProcessMonitor::accept()
   prop->Modified();
 
   pmProxy->UpdateVTKObjects();
+
+  // mark dirty
+  // The idea was that if it was dirty then it would be
+  // updated when the puipeline ran providing an autoomated
+  // reporting mechanism but that didn't hold true, when
+  // advancing through timesteps.
+  // this->setModified();
 }
 
 //-----------------------------------------------------------------------------
@@ -1061,8 +1068,8 @@ void pqSQProcessMonitor::UpdateServerLoad()
 {
   this->setModified();
   this->accept();
-  
-  pqRenderView* renderView = 
+
+  pqRenderView* renderView =
     qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
 
   renderView->render();

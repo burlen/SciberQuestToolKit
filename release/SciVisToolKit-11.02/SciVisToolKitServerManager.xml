@@ -3033,6 +3033,7 @@ Copyright 2008 SciberQuest Inc.
             </Documentation>
       </StringVectorProperty>
 
+    <!--
     <IntVectorProperty
         name="Mode"
         lable="Mode"
@@ -3047,6 +3048,7 @@ Copyright 2008 SciberQuest Inc.
         Select finite difference stencil.
       </Documentation>
     </IntVectorProperty>
+    -->
 
      <IntVectorProperty
         name="ComputeRotation"

@@ -12,11 +12,11 @@ Copyright 2008 SciberQuest Inc.
 #include "CartesianExtent.h"
 #include "postream.h"
 #include "Numerics.hxx"
-#include "MPIRawArrayIO.hxx"
-
+#include "GhostTransaction.h"
 
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
+typedef vtkStreamingDemandDrivenPipeline vtkSDDPipeline;
 
 #include "vtkImageData.h"
 #include "vtkRectilinearGrid.h"
@@ -26,6 +26,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkDataSet.h"
 #include "vtkFloatArray.h"
 #include "vtkDoubleArray.h"
+#include "vtkDataSetAttributes.h"
 #include "vtkPointData.h"
 #include "vtkCellData.h"
 
@@ -34,147 +35,7 @@ using vtkstd::string;
 
 #include <mpi.h>
 
-#define vtkSQImageGhostsDEBUG
-
-//=============================================================================
-class GhostTransaction
-{
-public:
-  GhostTransaction()
-      :
-    SrcRank(0),
-    DestRank(0)
-  {}
-
-  GhostTransaction(
-        int srcRank,
-        const CartesianExtent &srcExt,
-        int destRank,
-        const CartesianExtent &destExt,
-        const CartesianExtent &intExt)
-      :
-    SrcRank(srcRank),
-    SrcExt(srcExt),
-    DestRank(destRank),
-    DestExt(destExt),
-    IntExt(intExt)
-  {}
-
-  ~GhostTransaction(){}
-
-  void SetSourceRank(int rank){ this->SrcRank=rank; }
-  int GetSourceRank() const { return this->SrcRank; }
-
-  void SetSourceExtent(CartesianExtent &srcExt){ this->SrcExt=srcExt; }
-  CartesianExtent &GetSourceExtent(){ return this->SrcExt; }
-  const CartesianExtent &GetSourceExtent() const { return this->SrcExt; }
-
-  void SetDestinationRank(int rank){ this->DestRank=rank; }
-  int GetDestinationRank() const { return this->DestRank; }
-
-  void SetDestinationExtent(CartesianExtent &destExt){ this->DestExt=destExt; }
-  CartesianExtent &GetDestinationExtent(){ return this->DestExt; }
-  const CartesianExtent &GetDestinationExtent() const { return this->DestExt; }
-
-  void SetIntersectionExtent(CartesianExtent &intExt){ this->IntExt=intExt; }
-  CartesianExtent &GetIntersectionExtent(){ return this->IntExt; }
-  const CartesianExtent &GetIntersectionExtent() const { return this->IntExt; }
-
-  template<typename T>
-  int Execute(int rank, int nComps, T *srcData, T *destData);
-
-private:
-  int SrcRank;
-  CartesianExtent SrcExt;
-
-  int DestRank;
-  CartesianExtent DestExt;
-
-  CartesianExtent IntExt;
-};
-
-//-----------------------------------------------------------------------------
-template<typename T>
-int GhostTransaction::Execute(int rank, int nComps, T *srcData, T *destData)
-{
-  int iErr=0;
-
-  if (rank==this->SrcRank)
-    {
-    // sender
-    CartesianExtent srcExt=this->SrcExt;
-    srcExt.Shift(0,-this->SrcExt[0]);
-    srcExt.Shift(1,-this->SrcExt[2]);
-    srcExt.Shift(2,-this->SrcExt[4]);
-
-    CartesianExtent intExt=this->IntExt;
-    intExt.Shift(0,-this->SrcExt[0]);
-    intExt.Shift(1,-this->SrcExt[2]);
-    intExt.Shift(2,-this->SrcExt[4]);
-
-    MPI_Datatype subarray;
-    CreateCartesianView<T>(
-          srcExt,
-          intExt,
-          nComps,
-          subarray);
-
-    iErr=MPI_Send(
-          srcData,
-          1,
-          subarray,
-          this->DestRank,
-          1,
-          MPI_COMM_WORLD);
-
-    MPI_Type_free(&subarray);
-    }
-  else
-  if (rank==this->DestRank)
-    {
-    // reciever
-    CartesianExtent destExt=this->DestExt;
-    destExt.Shift(0,-this->DestExt[0]);
-    destExt.Shift(1,-this->DestExt[2]);
-    destExt.Shift(2,-this->DestExt[4]);
-
-    CartesianExtent intExt=this->IntExt;
-    intExt.Shift(0,-this->DestExt[0]);
-    intExt.Shift(1,-this->DestExt[2]);
-    intExt.Shift(2,-this->DestExt[4]);
-
-    MPI_Datatype subarray;
-    CreateCartesianView<T>(
-          destExt,
-          intExt,
-          nComps,
-          subarray);
-
-    iErr=MPI_Recv(
-          destData,
-          1,
-          subarray,
-          this->SrcRank,
-          1,
-          MPI_COMM_WORLD,
-          MPI_STATUS_IGNORE);
-
-    MPI_Type_free(&subarray);
-    }
-
-  return iErr;
-}
-
-//*****************************************************************************
-ostream &operator<<(ostream &os, const GhostTransaction &gt)
-{
-  os
-    << "(" << gt.GetSourceRank() << ", " << gt.GetSourceExtent() << ")->"
-    << "(" << gt.GetDestinationRank() << ", " << gt.GetDestinationExtent() << ") "
-    << gt.GetIntersectionExtent();
-  return os;
-}
-
+// #define vtkSQImageGhostsDEBUG
 
 vtkCxxRevisionMacro(vtkSQImageGhosts, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQImageGhosts);
@@ -185,7 +46,7 @@ vtkSQImageGhosts::vtkSQImageGhosts()
   WorldSize(1),
   WorldRank(0),
   NGhosts(0),
-  Mode(MODE_3D)
+  Mode(CartesianExtent::DIM_MODE_3D)
 {
   #ifdef vtkSQImageGhostsDEBUG
   pCerr() << "===============================vtkSQImageGhosts::vtkSQImageGhosts" << endl;
@@ -214,120 +75,68 @@ vtkSQImageGhosts::~vtkSQImageGhosts()
   #endif
 }
 
-//-----------------------------------------------------------------------------
-CartesianExtent vtkSQImageGhosts::Grow(const CartesianExtent &inputExt)
-{
-  CartesianExtent outputExt(inputExt);
-
-  switch(this->Mode)
-  {
-  case MODE_2D_XY:
-    outputExt.Grow(0,this->NGhosts);
-    outputExt.Grow(1,this->NGhosts);
-    break;
-  case MODE_2D_XZ:
-    outputExt.Grow(0,this->NGhosts);
-    outputExt.Grow(2,this->NGhosts);
-    break;
-  case MODE_2D_YZ:
-    outputExt.Grow(1,this->NGhosts);
-    outputExt.Grow(2,this->NGhosts);
-    break;
-  case MODE_3D:
-    outputExt.Grow(this->NGhosts);
-    break;
-  default:
-    vtkErrorMacro("Invalid mode " << this->Mode << ".");
-  }
-
-  outputExt &= this->ProblemDomain;
-
-  return outputExt;
-}
-
 //-------------------------------------------------------------------------
 int vtkSQImageGhosts::RequestUpdateExtent(
   vtkInformation *vtkNotUsed(request),
   vtkInformationVector **inputVector,
   vtkInformationVector *outputVector)
 {
-  // We require preceding filters to refrain from creating ghost cells.
+  #ifdef vtkSQImageGhostsDEBUG
+  pCerr() << "===============================vtkSQImageGhosts::RequestUpdateExtent" << endl;
+  #endif
 
-  vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
+  // We require preceding filters to refrain from creating ghost cells.
+  // In the case of structured extents we have to know the number of
+  // of ghosts requested so that we can shrink the update extents.
+
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
 
-  int piece, numPieces, ghostLevels;
+  int piece
+    = outInfo->Get(vtkSDDPipeline::UPDATE_PIECE_NUMBER());
 
-  piece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
-  numPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
-  ghostLevels = 0;
+  int numPieces
+  = outInfo->Get(vtkSDDPipeline::UPDATE_NUMBER_OF_PIECES());
 
-  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER(), piece);
-  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES(),
-              numPieces);
-  inInfo->Set(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(),
-              ghostLevels);
-  inInfo->Set(vtkStreamingDemandDrivenPipeline::EXACT_EXTENT(), 1);
+  CartesianExtent updateExt;
+  outInfo->Get(vtkSDDPipeline::UPDATE_EXTENT(),updateExt.GetData());
+
+
+  // gather metadata here for the pending execution.
+  this->NGhosts
+    = outInfo->Get(vtkSDDPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
+
+  this->SetMode(
+        CartesianExtent::GetDimensionMode(
+              this->ProblemDomain,
+              this->NGhosts));
+
+  // shirnk the requested extent so that the reader doesn't run
+  // again.
+  updateExt
+     = CartesianExtent::Shrink(
+          updateExt,
+          this->ProblemDomain,
+          this->NGhosts,
+          this->Mode);
+
+  vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
+
+  inInfo->Set(vtkSDDPipeline::UPDATE_EXTENT(),updateExt.GetData(),6);
+  inInfo->Set(vtkSDDPipeline::UPDATE_PIECE_NUMBER(), piece);
+  inInfo->Set(vtkSDDPipeline::UPDATE_NUMBER_OF_PIECES(), numPieces);
+  inInfo->Set(vtkSDDPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(), 0);
+  inInfo->Set(vtkSDDPipeline::EXACT_EXTENT(), 1);
+
+  #ifdef vtkSQImageGhostsDEBUG
+  pCerr()
+    << "WHOLE_EXTENT=" << this->ProblemDomain << endl
+    << "UPDATE_EXTENT=" << updateExt << endl
+    << "Mode=" << this->Mode << endl
+    << "NGhosts=" << this->NGhosts << endl;
+  #endif
 
   return 1;
 }
-
-
-// //-----------------------------------------------------------------------------
-// int vtkSQImageGhosts::FillInputPortInformation(
-//     int port,
-//     vtkInformation *info)
-// {
-//   #ifdef vtkSQImageGhostsDEBUG
-//   pCerr() << "===============================vtkSQImageGhosts::FillInputPortInformation" << endl;
-//   #endif
-//
-//   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
-//   return 1;
-// }
-//
-// //-----------------------------------------------------------------------------
-// int vtkSQImageGhosts::FillOutputPortInformation(
-//     int port,
-//     vtkInformation *info)
-// {
-//   #ifdef vtkSQImageGhostsDEBUG
-//   pCerr() << "===============================vtkSQImageGhosts::FillOutputPortInformation" << endl;
-//   #endif
-//
-//   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
-//   return 1;
-// }
-
-// //-----------------------------------------------------------------------------
-// int vtkSQImageGhosts::RequestDataObject(
-//     vtkInformation* /* request */,
-//     vtkInformationVector** inInfoVec,
-//     vtkInformationVector* outInfoVec)
-// {
-//   #ifdef vtkSQImageGhostsDEBUG
-//   pCerr() << "===============================vtkSQImageGhosts::RequestDataObject" << endl;
-//   #endif
-// 
-// 
-//   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
-//   vtkDataObject *inData=inInfo->Get(vtkDataObject::DATA_OBJECT());
-//   const char *inputType=inData->GetClassName();
-// 
-//   vtkInformation *outInfo=outInfoVec->GetInformationObject(0);
-//   vtkDataObject *outData=outInfo->Get(vtkDataObject::DATA_OBJECT());
-// 
-//   if ( !outData || !outData->IsA(inputType))
-//     {
-//     outData=inData->NewInstance();
-//     outInfo->Set(vtkDataObject::DATA_TYPE_NAME(),inputType);
-//     outInfo->Set(vtkDataObject::DATA_OBJECT(),outData);
-//     outInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(), inData->GetExtentType());
-//     outData->SetPipelineInformation(outInfo);
-//     outData->Delete();
-//     }
-//   return 1;
-// }
 
 //-----------------------------------------------------------------------------
 int vtkSQImageGhosts::RequestInformation(
@@ -343,62 +152,28 @@ int vtkSQImageGhosts::RequestInformation(
   vtkInformation* outInfo=outInfos->GetInformationObject(0);
   vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
 
-  this->NGhosts = outInfo->Get(
-        vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
-
-  this->NGhosts = 1;
-
+  // The problem domain is unchanged. We don't provide ghosts
+  // outside of the problem domain, rather we expect downstream
+  // filters to shrink the problem domain and use valid cells.
   inInfo->Get(
         vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
         this->ProblemDomain.GetData());
 
-  // The problem domain is unchanged. We don't provide ghosts
-  // outside of the problem domain, rather we expect downstream
-  // filters to shrink the problem domain and use valid cells.
   outInfo->Set(
         vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
         this->ProblemDomain.GetData(),
         6);
 
-  // Identify lower dimensional input and handle special cases.
-  // Everything but 3D is a special case.
-  int minExt = 2*this->NGhosts+1;
-  int inExt[3];
-  this->ProblemDomain.Size(inExt);
-  // 0D and 1D are disallowed
-  if ((inExt[0]<minExt) && (inExt[1]<minExt)
-    ||(inExt[0]<minExt) && (inExt[2]<minExt)
-    ||(inExt[1]<minExt) && (inExt[2]<minExt))
-    {
-    vtkErrorMacro("This filter does not support less than 2D.");
-    return 1;
-    }
-  //  Identify 2D cases
-  if (inExt[0]<minExt)
-    {
-    this->SetMode(MODE_2D_YZ);
-    }
-  else
-  if (inExt[1]<minExt)
-    {
-    this->SetMode(MODE_2D_XZ);
-    }
-  else
-  if (inExt[2]<minExt)
-    {
-    this->SetMode(MODE_2D_XY);
-    }
-  // It's 3D
-  else
-    {
-    this->SetMode(MODE_3D);
-    }
+  CartesianExtent origExt;
+  outInfo->Get(vtkSDDPipeline::UPDATE_EXTENT(),origExt.GetData());
+
 
   #ifdef vtkSQImageGhostsDEBUG
   pCerr()
     << "NGhosts=" << this->NGhosts << endl
     << "Mode=" << this->Mode << endl
-    << "WHOLE_EXTENT=" << this->ProblemDomain << endl;
+    << "WHOLE_EXTENT(intput)=" << this->ProblemDomain << endl
+    << "UPDATE_EXTENT(intput)=" << origExt << endl;
   #endif
 
   return 1;
@@ -422,6 +197,10 @@ int vtkSQImageGhosts::RequestData(
   vtkDataSet *outData
     = dynamic_cast<vtkDataSet*>(outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
+  outInfo->Set(
+        vtkDataObject::DATA_NUMBER_OF_GHOST_LEVELS(),
+        this->NGhosts);
+
   // Guard against empty input.
   if (!inData || !outData)
     {
@@ -444,25 +223,40 @@ int vtkSQImageGhosts::RequestData(
   vtkImageData *outIm = dynamic_cast<vtkImageData*>(outData);
 
   // Get the input and output extents.
-  CartesianExtent inputExt;
+  CartesianExtent inPoints;
   inInfo->Get(
         vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
-        inputExt.GetData());
+        inPoints.GetData());
 
-  CartesianExtent outputExt = this->Grow(inputExt);
+  CartesianExtent outPoints
+     = CartesianExtent::Grow(
+          inPoints,
+          this->ProblemDomain,
+          this->NGhosts,
+          this->Mode);
+
   outInfo->Set(
         vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
-        outputExt.GetData(),
+        outPoints.GetData(),
         6);
 
-  outIm->SetExtent(outputExt.GetData());
+  outIm->SetExtent(outPoints.GetData());
+
+  // work with cells, not points.
+  CartesianExtent inCells
+     = CartesianExtent::NodeToCell(inPoints,this->Mode);
+
+  CartesianExtent outCells
+     = CartesianExtent::NodeToCell(outPoints,this->Mode);
+
+  CartesianExtent domainCells
+     = CartesianExtent::NodeToCell(this->ProblemDomain,this->Mode);
 
   // gather input extents
   vector<CartesianExtent> inputExts(this->WorldSize);
   int *buffer=new int [6*this->WorldSize];
   MPI_Allgather(
-        inputExt.
-        GetData(),
+        inCells.GetData(),
         6,
         MPI_INT,
         buffer,
@@ -473,10 +267,6 @@ int vtkSQImageGhosts::RequestData(
   for (int i=0; i<this->WorldSize; ++i)
     {
     inputExts[i].Set(buffer+6*i);
-    if (this->WorldRank==0)
-      {
-      cerr << "Rank" << i << " owns " << inputExts[i] << endl;
-      }
     }
   delete [] buffer;
 
@@ -484,7 +274,12 @@ int vtkSQImageGhosts::RequestData(
   vector<GhostTransaction> transactions;
   for (int i=0; i<this->WorldSize; ++i)
     {
-    CartesianExtent destExt = this->Grow(inputExts[i]);
+    CartesianExtent destExt
+        = CartesianExtent::Grow(
+              inputExts[i],
+              domainCells,
+              this->NGhosts,
+              this->Mode);
 
     for (int j=0; j<this->WorldSize; ++j)
       {
@@ -496,21 +291,65 @@ int vtkSQImageGhosts::RequestData(
 
       if (!intExt.Empty())
         {
-        transactions.push_back(GhostTransaction(j,srcExt, i,destExt, intExt));
-        if (this->WorldRank==0)
-          {
-          cerr << transactions.back() << endl;
-          }
+        transactions.push_back(
+              GhostTransaction(
+                    j,
+                    srcExt,
+                    i,
+                    destExt,
+                    intExt));
         }
       }
     }
 
-  int nArrays = inData->GetPointData()->GetNumberOfArrays();
+  // apply transactions to point data arrays
+  vtkDataSetAttributes *inPd
+     = static_cast<vtkDataSetAttributes*>(inData->GetPointData());
+
+  vtkDataSetAttributes *outPd
+     = static_cast<vtkDataSetAttributes*>(outData->GetPointData());
+
+  this->ExecuteTransactions(
+        inPd,
+        outPd,
+        inPoints,
+        outPoints,
+        transactions,
+        true);
+
+  // apply transactions to cell data arrays
+  vtkDataSetAttributes *inCd
+    = static_cast<vtkDataSetAttributes *>(inData->GetCellData());
+
+  vtkDataSetAttributes *outCd
+    = static_cast<vtkDataSetAttributes*>(outData->GetCellData());
+
+  this->ExecuteTransactions(
+        inCd,
+        outCd,
+        inCells,
+        outCells,
+        transactions,
+        false);
+
+  return 1;
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQImageGhosts::ExecuteTransactions(
+      vtkDataSetAttributes *inputDsa,
+      vtkDataSetAttributes *outputDsa,
+      CartesianExtent inputExt,
+      CartesianExtent outputExt,
+      vector<GhostTransaction> &transactions,
+      bool pointData)
+{
+  int nArrays = inputDsa->GetNumberOfArrays();
   int nTransactions = transactions.size();
   size_t nOutputTups = outputExt.Size();
   for (int i=0; i<nArrays; ++i)
     {
-    vtkDataArray *inArray = inData->GetPointData()->GetArray(i);
+    vtkDataArray *inArray = inputDsa->GetArray(i);
     int nComps = inArray->GetNumberOfComponents();
     void *pIn = inArray->GetVoidPointer(0);
 
@@ -518,20 +357,25 @@ int vtkSQImageGhosts::RequestData(
     outArray->SetName(inArray->GetName());
     outArray->SetNumberOfComponents(nComps);
     outArray->SetNumberOfTuples(nOutputTups);
+    outputDsa->AddArray(outArray);
+    outArray->Delete();
     void *pOut = outArray->GetVoidPointer(0);
 
+    #ifdef vtkSQImageGhostsDEBUG
+    cerr << "Copying array " << inArray->GetName() << endl;
+    #endif
+
     // copy the valid data directly
-      switch(inArray->GetDataType())
-        {
-        vtkTemplateMacro(
+    switch(inArray->GetDataType())
+      {
+      vtkTemplateMacro(
             Copy<VTK_TT>(
               inputExt.GetData(),
               outputExt.GetData(),
               (VTK_TT*)pIn,
               (VTK_TT*)pOut,
               nComps));
-        }
-
+      }
 
     // execute the transactions to copy ghosts from remote processes
     for (int j=0; j<nTransactions; ++j)
@@ -545,15 +389,15 @@ int vtkSQImageGhosts::RequestData(
               this->WorldRank,
               nComps,
               (VTK_TT*)pIn,
-              (VTK_TT*)pOut));
+              (VTK_TT*)pOut,
+              pointData,
+              this->Mode));
         }
       }
 
     }
-
-
-  return 1;
 }
+
 
 //-----------------------------------------------------------------------------
 void vtkSQImageGhosts::PrintSelf(ostream& os, vtkIndent indent)

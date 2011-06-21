@@ -85,6 +85,7 @@ set(CXX_SOURCES
   FsUtils.cxx
   GDAMetaData.cxx
   GDAMetaDataKeys.cxx
+  GhostTransaction.cxx
   ImageDecomp.cxx
   IntersectionSet.cxx
   PolyDataCellCopier.cxx

@@ -417,7 +417,7 @@ void Copy(
         // copy components
         for (int c=0; c<nComp; ++c)
           {
-          W[_vi] = V[vi];
+          W[_vi+c] = V[vi+c];
           }
 
         }

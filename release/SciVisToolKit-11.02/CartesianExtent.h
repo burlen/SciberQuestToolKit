@@ -170,6 +170,73 @@ public:
 
   /// \@}
 
+
+  /// \Section Ghost Cell Manipulations \@{
+  enum {
+    DIM_MODE_INVALID=-1,
+    DIM_MODE_3D,
+    DIM_MODE_2D_XY,
+    DIM_MODE_2D_XZ,
+    DIM_MODE_2D_YZ
+    };
+
+  /**
+  Determine if we have 3D or 2D data and which plane we
+  are in.
+  */
+  static int GetDimensionMode(
+      const CartesianExtent &problemDomain,
+      int nGhosts);
+
+  /**
+  Add or remove ghost cells. If a problem domain is
+  provided then the result is clipled to be within the
+  problem domain.
+  */
+  static CartesianExtent Grow(
+      const CartesianExtent &inputExt,
+      int nGhosts,
+      int mode);
+
+  static CartesianExtent Grow(
+      const CartesianExtent &inputExt,
+      const CartesianExtent &problemDomain,
+      int nGhosts,
+      int mode);
+
+  /**
+  Remove ghost cells. If a problem domain is
+  provided the input is pinned at the domain.
+  */
+  static CartesianExtent Shrink(
+      const CartesianExtent &inputExt,
+      const CartesianExtent &problemDomain,
+      int nGhosts,
+      int mode);
+
+  static CartesianExtent Shrink(
+      const CartesianExtent &inputExt,
+      int nGhosts,
+      int mode);
+
+   /**
+   Convert from point extent to cell extent
+   while respecting the dimensionality of the data.
+   */
+   static CartesianExtent NodeToCell(
+      const CartesianExtent &inputExt,
+      int mode);
+
+   /**
+   Convert from cell extent to point extent
+   while respecting the dimensionality of the data.
+   */
+   static CartesianExtent CellToNode(
+      const CartesianExtent &inputExt,
+      int mode);
+
+  /// \@}
+
 private:
   int Data[6];
 };

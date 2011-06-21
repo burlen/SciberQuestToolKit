@@ -12,9 +12,14 @@ Copyright 2008 SciberQuest Inc.
 
 #include "vtkDataSetAlgorithm.h"
 #include "CartesianExtent.h"
+#include "GhostTransaction.h"
+
+#include <vector>
+using std::vector;
 
 class vtkInformation;
 class vtkInformationVector;
+class vtkDataSetAttributes;
 
 class vtkSQImageGhosts : public vtkDataSetAlgorithm
 {
@@ -23,18 +28,15 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQImageGhosts *New();
 
-  //BTX
-  enum {
-    MODE_3D=0,
-    MODE_2D_XY,
-    MODE_2D_XZ,
-    MODE_2D_YZ
-    };
-  //ETX
   // Description:
   // Set the mode to 2D or 3D.
   vtkSetMacro(Mode,int);
   vtkGetMacro(Mode,int);
+
+  // Description:
+  // Set the number of ghost cells.
+  vtkSetMacro(NGhosts,int);
+  vtkGetMacro(NGhosts,int);
 
 protected:
   //int FillInputPortInformation(int port, vtkInformation *info);
@@ -47,7 +49,15 @@ protected:
   virtual ~vtkSQImageGhosts();
 
 private:
-  CartesianExtent Grow(const CartesianExtent &inputExt);
+  // CartesianExtent Grow(const CartesianExtent &inputExt);
+
+  void ExecuteTransactions(
+      vtkDataSetAttributes *inDsa,
+      vtkDataSetAttributes *outDsa,
+      CartesianExtent inputExt,
+      CartesianExtent outputExt,
+      vector<GhostTransaction> &transactions,
+      bool pointData);
 
 private:
   int WorldSize;
@@ -62,3 +72,4 @@ private:
 };
 
 #endif
+

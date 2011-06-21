@@ -42,7 +42,7 @@ vtkSQVortexFilter::vtkSQVortexFilter()
   ComputeNormalizedHelicity(0),
   ComputeLambda(0),
   ComputeLambda2(1),
-  Mode(MODE_3D)
+  Mode(CartesianExtent::DIM_MODE_3D)
 {
   #ifdef vtkSQVortexFilterDEBUG
   pCerr() << "===============================vtkSQVortexFilter::vtkSQVortexFilter" << endl;
@@ -63,32 +63,6 @@ vtkSQVortexFilter::~vtkSQVortexFilter()
 
 }
 
-// //-----------------------------------------------------------------------------
-// int vtkSQVortexFilter::FillInputPortInformation(
-//     int port,
-//     vtkInformation *info)
-// {
-//   #ifdef vtkSQVortexFilterDEBUG
-//   pCerr() << "===============================vtkSQVortexFilter::FillInputPortInformation" << endl;
-//   #endif
-//
-//   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
-//   return 1;
-// }
-//
-// //-----------------------------------------------------------------------------
-// int vtkSQVortexFilter::FillOutputPortInformation(
-//     int port,
-//     vtkInformation *info)
-// {
-//   #ifdef vtkSQVortexFilterDEBUG
-//   pCerr() << "===============================vtkSQVortexFilter::FillOutputPortInformation" << endl;
-//   #endif
-//
-//   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
-//   return 1;
-// }
-
 //-----------------------------------------------------------------------------
 int vtkSQVortexFilter::RequestDataObject(
     vtkInformation* /* request */,
@@ -98,7 +72,6 @@ int vtkSQVortexFilter::RequestDataObject(
   #ifdef vtkSQVortexFilterDEBUG
   pCerr() << "===============================vtkSQVortexFilter::RequestDataObject" << endl;
   #endif
-
 
   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
   vtkDataObject *inData=inInfo->Get(vtkDataObject::DATA_OBJECT());
@@ -132,32 +105,34 @@ int vtkSQVortexFilter::RequestInformation(
 
   // We will work in a restricted problem domain so that we have
   // always a single layer of ghost cells available. To make it so
-  // we'll take the upstream's domain and shrink it by 1.
+  // we'll take the upstream's domain and shrink it by half the 
+  // kernel width.
+  int nGhosts = 1;
+
   vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
   CartesianExtent inputDomain;
   inInfo->Get(
         vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
         inputDomain.GetData());
-  switch (this->Mode)
-    {
-    case MODE_3D:
-      inputDomain.Grow(-1);
-      break;
 
-    case MODE_2D_XY:
-      inputDomain.Grow(0,-1);
-      inputDomain.Grow(1,-1);
-      break;
+  // determine the dimensionality of the input.
+  this->Mode
+    = CartesianExtent::GetDimensionMode(
+          inputDomain,
+          nGhosts);
 
-    default:
-      vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-      break;
-    }
+  // shrink the output problem domain by the requisite number of
+  // ghost cells.
+  CartesianExtent outputDomain
+    = CartesianExtent::Grow(
+          inputDomain,
+          -nGhosts,
+          this->Mode);
 
   vtkInformation* outInfo=outInfos->GetInformationObject(0);
   outInfo->Set(
         vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
-        inputDomain.GetData(),
+        outputDomain.GetData(),
         6);
 
   // other keys that need to be coppied
@@ -171,9 +146,11 @@ int vtkSQVortexFilter::RequestInformation(
 
   #ifdef vtkSQVortexFilterDEBUG
   pCerr()
-    << "WHOLE_EXTENT=" << inputDomain << endl;
-    << "ORIGIN" << Tuple<double>(X0,3) << endl;
-    << "SPACING" << Tuple<double>(dX,3) << endl;
+    << "WHOLE_EXTENT(input)=" << inputDomain << endl
+    << "WHOLE_EXTENT(output)=" << outputDomain << endl
+    << "ORIGIN=" << Tuple<double>(X0,3) << endl
+    << "SPACING=" << Tuple<double>(dX,3) << endl
+    << "nGhost=" << nGhosts << endl;
   #endif
 
   return 1;
@@ -181,7 +158,7 @@ int vtkSQVortexFilter::RequestInformation(
 
 //-----------------------------------------------------------------------------
 int vtkSQVortexFilter::RequestUpdateExtent(
-      vtkInformation * /*req*/,
+      vtkInformation *req,
       vtkInformationVector **inInfos,
       vtkInformationVector *outInfos)
 {
@@ -189,42 +166,60 @@ int vtkSQVortexFilter::RequestUpdateExtent(
   pCerr() << "===============================vtkSQVortexFilter::RequestUpdateExtent" << endl;
   #endif
 
-  // We will modify the extents we request from our input so
-  // that we will have a single layer of ghost cells.
+  typedef vtkStreamingDemandDrivenPipeline vtkSDDPipeline;
+
   vtkInformation* outInfo=outInfos->GetInformationObject(0);
+  vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
+
+  // We will modify the extents we request from our input so
+  // that we will have a layers of ghost cells. We also pass
+  // the number of ghosts through the piece based key.
+  int nGhosts = 1;
+
+  inInfo->Set(
+        vtkSDDPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(),
+        nGhosts);
+
   CartesianExtent outputExt;
   outInfo->Get(
-        vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
+        vtkSDDPipeline::UPDATE_EXTENT(),
         outputExt.GetData());
-  switch (this->Mode)
-    {
-    case MODE_3D:
-      outputExt.Grow(1);
-      break;
 
-    case MODE_2D_XY:
-      outputExt.Grow(0,1);
-      outputExt.Grow(1,1);
-      break;
+  CartesianExtent wholeExt;
+  inInfo->Get(
+        vtkSDDPipeline::WHOLE_EXTENT(),
+        wholeExt.GetData());
 
-    default:
-      vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-      break;
-    }
+  outputExt = CartesianExtent::Grow(
+        outputExt,
+        wholeExt,
+        nGhosts,
+        this->Mode);
 
-  vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
   inInfo->Set(
-        vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
+        vtkSDDPipeline::UPDATE_EXTENT(),
         outputExt.GetData(),
         6);
 
+  int piece
+    = outInfo->Get(vtkSDDPipeline::UPDATE_PIECE_NUMBER());
+
+  int numPieces
+    = outInfo->Get(vtkSDDPipeline::UPDATE_NUMBER_OF_PIECES());
+
+  inInfo->Set(vtkSDDPipeline::UPDATE_PIECE_NUMBER(), piece);
+  inInfo->Set(vtkSDDPipeline::UPDATE_NUMBER_OF_PIECES(), numPieces);
+  inInfo->Set(vtkSDDPipeline::EXACT_EXTENT(), 1);
+
   #ifdef vtkSQVortexFilterDEBUG
-  pCerr() << "UPDATE_EXTENT=" << outputExt << endl;
+  pCerr()
+    << "WHOLE_EXTENT=" << wholeExt << endl
+    << "UPDATE_EXTENT=" << outputExt << endl
+    << "nGhosts=" << nGhosts << endl;
   #endif
 
   return 1;
 }
-
 
 
 //-----------------------------------------------------------------------------
@@ -236,7 +231,6 @@ int vtkSQVortexFilter::RequestData(
   #ifdef vtkSQVortexFilterDEBUG
   pCerr() << "===============================vtkSQVortexFilter::RequestData" << endl;
   #endif
-
 
   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
   vtkDataObject *inData=inInfo->Get(vtkDataObject::DATA_OBJECT());
@@ -277,29 +271,18 @@ int vtkSQVortexFilter::RequestData(
         domainExt.GetData());
 
   // Check that we have the ghost cells that we need (more is OK).
+  int nGhost = 1;
   CartesianExtent inputBox(inputExt);
-  CartesianExtent outputBox(outputExt);
-  switch (this->Mode)
-    {
-    case MODE_3D:
-      outputBox.Grow(1);
-      break;
+  CartesianExtent outputBox
+    = CartesianExtent::Grow(outputExt, nGhost, this->Mode);
 
-    case MODE_2D_XY:
-      outputBox.Grow(0,1);
-      outputBox.Grow(1,1);
-      break;
-
-    default:
-      vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-      break;
-    }
   if (!inputBox.Contains(outputBox))
     {
     vtkErrorMacro(
       << "This filter requires ghost cells to function correctly. "
-      << "The input must conatin the output plus a layer of ghosts. "
-      << "The input is " << inputBox << ", but it must be at least "
+      << "The input must conatin the output plus " << nGhost
+      << " layers of ghosts. The input is " << inputBox
+      << ", but it must be at least "
       << outputBox << ".");
     return 1;
     }
@@ -400,7 +383,7 @@ int vtkSQVortexFilter::RequestData(
         {
         switch (this->Mode)
           {
-          case MODE_3D:
+          case CartesianExtent::DIM_MODE_3D:
             Rotation(
                 inputExt.GetData(),
                 outputExt.GetData(),
@@ -416,7 +399,7 @@ int vtkSQVortexFilter::RequestData(
                 fR->GetPointer(0));
             break;
 
-          case MODE_2D_XY:
+          case CartesianExtent::DIM_MODE_2D_XY:
             RotationXY(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fR->GetPointer(0));
             break;
 
@@ -434,7 +417,7 @@ int vtkSQVortexFilter::RequestData(
         {
         switch (this->Mode)
           {
-          case MODE_3D:
+          case CartesianExtent::DIM_MODE_3D:
             Rotation(
                 inputExt.GetData(),
                 outputExt.GetData(),
@@ -450,7 +433,7 @@ int vtkSQVortexFilter::RequestData(
                 dR->GetPointer(0));
             break;
 
-          case MODE_2D_XY:
+          case CartesianExtent::DIM_MODE_2D_XY:
             RotationXY(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dR->GetPointer(0));
             break;
 
@@ -480,11 +463,11 @@ int vtkSQVortexFilter::RequestData(
         {
         switch (this->Mode)
           {
-          case MODE_3D:
+          case CartesianExtent::DIM_MODE_3D:
             Helicity(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fH->GetPointer(0));
             break;
 
-          case MODE_2D_XY:
+          case CartesianExtent::DIM_MODE_2D_XY:
             HelicityXY(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fH->GetPointer(0));
             break;
 
@@ -499,11 +482,11 @@ int vtkSQVortexFilter::RequestData(
         {
         switch (this->Mode)
           {
-          case MODE_3D:
+          case CartesianExtent::DIM_MODE_3D:
             Helicity(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dH->GetPointer(0));
             break;
 
-          case MODE_2D_XY:
+          case CartesianExtent::DIM_MODE_2D_XY:
             HelicityXY(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dH->GetPointer(0));
             break;
 
@@ -533,11 +516,11 @@ int vtkSQVortexFilter::RequestData(
         {
         switch (this->Mode)
           {
-          case MODE_3D:
+          case CartesianExtent::DIM_MODE_3D:
             NormalizedHelicity(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fHN->GetPointer(0));
             break;
 
-          case MODE_2D_XY:
+          case CartesianExtent::DIM_MODE_2D_XY:
             NormalizedHelicityXY(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fHN->GetPointer(0));
             break;
 
@@ -552,11 +535,11 @@ int vtkSQVortexFilter::RequestData(
         {
         switch (this->Mode)
           {
-          case MODE_3D:
+          case CartesianExtent::DIM_MODE_3D:
             NormalizedHelicity(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dHN->GetPointer(0));
             break;
 
-          case MODE_2D_XY:
+          case CartesianExtent::DIM_MODE_2D_XY:
             NormalizedHelicityXY(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dHN->GetPointer(0));
             break;
 
@@ -586,11 +569,11 @@ int vtkSQVortexFilter::RequestData(
         {
         switch (this->Mode)
           {
-          case MODE_3D:
+          case CartesianExtent::DIM_MODE_3D:
             Lambda(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fL->GetPointer(0));
             break;
 
-          case MODE_2D_XY:
+          case CartesianExtent::DIM_MODE_2D_XY:
             Lambda(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fL->GetPointer(0));
             break;
 
@@ -605,11 +588,11 @@ int vtkSQVortexFilter::RequestData(
         {
         switch (this->Mode)
           {
-          case MODE_3D:
+          case CartesianExtent::DIM_MODE_3D:
             Lambda(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dL->GetPointer(0));
             break;
 
-          case MODE_2D_XY:
+          case CartesianExtent::DIM_MODE_2D_XY:
             Lambda(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dL->GetPointer(0));
             break;
 
@@ -639,11 +622,11 @@ int vtkSQVortexFilter::RequestData(
         {
         switch (this->Mode)
           {
-          case MODE_3D:
+          case CartesianExtent::DIM_MODE_3D:
             Lambda2(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fL2->GetPointer(0));
             break;
 
-          case MODE_2D_XY:
+          case CartesianExtent::DIM_MODE_2D_XY:
             Lambda2(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fL2->GetPointer(0));
             break;
 
@@ -658,11 +641,11 @@ int vtkSQVortexFilter::RequestData(
         {
         switch (this->Mode)
           {
-          case MODE_3D:
+          case CartesianExtent::DIM_MODE_3D:
             Lambda2(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dL2->GetPointer(0));
             break;
 
-          case MODE_2D_XY:
+          case CartesianExtent::DIM_MODE_2D_XY:
             Lambda2(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dL2->GetPointer(0));
             break;
 
