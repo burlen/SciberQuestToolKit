@@ -14,6 +14,16 @@ Copyright 2008 SciberQuest Inc.
 #include "MPIRawArrayIO.hxx"
 #include <mpi.h>
 
+#include <sstream>
+using std::ostringstream;
+
+#include <vector>
+using std::vector;
+
+
+#define GhostTransactionDEBUG
+
+
 /// GhostTransaction - Helper class to handle communication of ghost data
 /**
 Extents are always ionternally described in cell space. During
@@ -34,13 +44,15 @@ public:
         const CartesianExtent &srcExt,
         int destRank,
         const CartesianExtent &destExt,
-        const CartesianExtent &intExt)
+        const CartesianExtent &intExt,
+        int id)
       :
     SrcRank(srcRank),
     SrcExt(srcExt),
     DestRank(destRank),
     DestExt(destExt),
-    IntExt(intExt)
+    IntExt(intExt),
+    Id(id)
   {}
 
   ~GhostTransaction(){}
@@ -63,16 +75,24 @@ public:
   CartesianExtent &GetIntersectionExtent(){ return this->IntExt; }
   const CartesianExtent &GetIntersectionExtent() const { return this->IntExt; }
 
+  void SetTransactionId(int id){ this->Id=id; }
+  int GetTransactionId(){ return this->Id; }
+
   template<typename T>
   int Execute(
+        MPI_Comm comm,
         int rank,
         int nComps,
         T *srcData,
         T *destData,
         bool pointData,
-        int mode);
+        int dimMode,
+        vector<MPI_Request> &req,
+        int tag);
 
 private:
+  int Id;
+
   int SrcRank;
   CartesianExtent SrcExt;
 
@@ -87,17 +107,30 @@ ostream &operator<<(ostream &os, const GhostTransaction &gt);
 //-----------------------------------------------------------------------------
 template<typename T>
 int GhostTransaction::Execute(
+       MPI_Comm comm,
        int rank,
        int nComps,
        T *srcData,
        T *destData,
        bool pointData,
-       int mode)
+       int dimMode,
+       vector<MPI_Request> &req,
+       int tag)
 {
+  ostringstream oss;
+
   int iErr=0;
 
   if (rank==this->SrcRank)
     {
+    #ifdef GhostTransactionDEBUG
+    oss
+      << this->Id << " "
+      << rank << " sending " //  << this->IntExt
+      << " to " << this->DestRank << endl;
+    cerr << oss.str();
+    #endif
+
     // sender
     CartesianExtent srcExt=this->SrcExt;
     srcExt.Shift(0,-this->SrcExt[0]);
@@ -111,8 +144,8 @@ int GhostTransaction::Execute(
 
     if (pointData)
       {
-      srcExt = CartesianExtent::CellToNode(srcExt,mode);
-      intExt = CartesianExtent::CellToNode(intExt,mode);
+      srcExt = CartesianExtent::CellToNode(srcExt,dimMode);
+      intExt = CartesianExtent::CellToNode(intExt,dimMode);
       }
 
     MPI_Datatype subarray;
@@ -122,19 +155,36 @@ int GhostTransaction::Execute(
           nComps,
           subarray);
 
-    iErr=MPI_Send(
+    req.push_back(MPI_REQUEST_NULL);
+
+    iErr=MPI_Isend(
           srcData,
           1,
           subarray,
           this->DestRank,
-          1,
-          MPI_COMM_WORLD);
+          tag,
+          comm,
+          &req.back());
 
     MPI_Type_free(&subarray);
+
+    #ifdef GhostTransactionDEBUG
+    oss.str("");
+    oss << this->Id << " " << rank << " ok." << endl;
+    cerr << oss.str();
+    #endif
     }
   else
   if (rank==this->DestRank)
     {
+    #ifdef GhostTransactionDEBUG
+    oss
+      << this->Id << " "
+      << rank << " receiving " // << this->IntExt
+      << " from " << this->SrcRank << endl;
+    cerr << oss.str();
+    #endif
+
     // reciever
     CartesianExtent destExt=this->DestExt;
     destExt.Shift(0,-this->DestExt[0]);
@@ -148,8 +198,8 @@ int GhostTransaction::Execute(
 
     if (pointData)
       {
-      destExt = CartesianExtent::CellToNode(destExt,mode);
-      intExt = CartesianExtent::CellToNode(intExt,mode);
+      destExt = CartesianExtent::CellToNode(destExt,dimMode);
+      intExt = CartesianExtent::CellToNode(intExt,dimMode);
       }
 
     MPI_Datatype subarray;
@@ -159,16 +209,24 @@ int GhostTransaction::Execute(
           nComps,
           subarray);
 
-    iErr=MPI_Recv(
+    req.push_back(MPI_REQUEST_NULL);
+
+    iErr=MPI_Irecv(
           destData,
           1,
           subarray,
           this->SrcRank,
-          1,
-          MPI_COMM_WORLD,
-          MPI_STATUS_IGNORE);
+          tag,
+          comm,
+          &req.back());
 
     MPI_Type_free(&subarray);
+
+    #ifdef GhostTransactionDEBUG
+    oss.str("");
+    oss << this->Id << " " << rank << " ok." << endl;
+    cerr << oss.str();
+    #endif
     }
 
   return iErr;

@@ -548,7 +548,7 @@ int vtkSQKernelConvolution::RequestData(
     outImData->GetPointData()->AddArray(W);
     W->Delete();
 
-    outImData->Print(cerr);
+    // outImData->Print(cerr);
     }
   else
   if (isRecti)

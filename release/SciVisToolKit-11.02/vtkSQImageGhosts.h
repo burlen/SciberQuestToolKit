@@ -17,6 +17,8 @@ Copyright 2008 SciberQuest Inc.
 #include <vector>
 using std::vector;
 
+#include <mpi.h>
+
 class vtkInformation;
 class vtkInformationVector;
 class vtkDataSetAttributes;
@@ -37,6 +39,11 @@ public:
   // Set the number of ghost cells.
   vtkSetMacro(NGhosts,int);
   vtkGetMacro(NGhosts,int);
+
+  // Description:
+  // Set the communicator.
+  void SetCommunicator(MPI_Comm comm);
+  MPI_Comm GetCommunicator(){ return this->Comm; }
 
 protected:
   //int FillInputPortInformation(int port, vtkInformation *info);
@@ -65,6 +72,7 @@ private:
   int NGhosts;
   int Mode;
   CartesianExtent ProblemDomain;
+  MPI_Comm Comm;
 
 private:
   vtkSQImageGhosts(const vtkSQImageGhosts &); // Not implemented

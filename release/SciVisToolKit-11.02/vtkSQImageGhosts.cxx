@@ -43,6 +43,7 @@ vtkStandardNewMacro(vtkSQImageGhosts);
 //-----------------------------------------------------------------------------
 vtkSQImageGhosts::vtkSQImageGhosts()
     :
+  Comm(MPI_COMM_NULL),
   WorldSize(1),
   WorldRank(0),
   NGhosts(0),
@@ -59,8 +60,10 @@ vtkSQImageGhosts::vtkSQImageGhosts()
     vtkErrorMacro("MPI has not been initialized. Restart ParaView using mpiexec.");
     }
 
-  MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
-  MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
+  this->SetCommunicator(MPI_COMM_WORLD);
+
+  MPI_Comm_size(this->Comm,&this->WorldSize);
+  MPI_Comm_rank(this->Comm,&this->WorldRank);
 
 
   this->SetNumberOfInputPorts(1);
@@ -73,6 +76,32 @@ vtkSQImageGhosts::~vtkSQImageGhosts()
   #ifdef vtkSQImageGhostsDEBUG
   pCerr() << "===============================vtkSQImageGhosts::~vtkSQImageGhosts" << endl;
   #endif
+
+  this->SetCommunicator(MPI_COMM_NULL);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQImageGhosts::SetCommunicator(MPI_Comm comm)
+{
+  if (this->Comm==comm) return;
+
+  if ( this->Comm!=MPI_COMM_NULL
+    && this->Comm!=this->Comm
+    && this->Comm!=MPI_COMM_SELF)
+    {
+    MPI_Comm_free(&this->Comm);
+    }
+
+  if (comm==MPI_COMM_NULL)
+    {
+    this->Comm=MPI_COMM_NULL;
+    }
+  else
+    {
+    MPI_Comm_dup(comm,&this->Comm);
+    MPI_Comm_rank(this->Comm,&this->WorldRank);
+    MPI_Comm_size(this->Comm,&this->WorldSize);
+    }
 }
 
 //-------------------------------------------------------------------------
@@ -262,7 +291,7 @@ int vtkSQImageGhosts::RequestData(
         buffer,
         6,
         MPI_INT,
-        MPI_COMM_WORLD);
+        this->Comm);
 
   for (int i=0; i<this->WorldSize; ++i)
     {
@@ -271,6 +300,7 @@ int vtkSQImageGhosts::RequestData(
   delete [] buffer;
 
   // set up transactions
+  int id=0;
   vector<GhostTransaction> transactions;
   for (int i=0; i<this->WorldSize; ++i)
     {
@@ -281,7 +311,7 @@ int vtkSQImageGhosts::RequestData(
               this->NGhosts,
               this->Mode);
 
-    for (int j=0; j<this->WorldSize; ++j)
+    for (int j=0; j<this->WorldSize; ++j, ++id)
       {
       if (i==j) continue;
 
@@ -297,7 +327,8 @@ int vtkSQImageGhosts::RequestData(
                     srcExt,
                     i,
                     destExt,
-                    intExt));
+                    intExt,
+                    id));
         }
       }
     }
@@ -344,11 +375,15 @@ void vtkSQImageGhosts::ExecuteTransactions(
       vector<GhostTransaction> &transactions,
       bool pointData)
 {
+  static int tag=0;
+
   int nArrays = inputDsa->GetNumberOfArrays();
   int nTransactions = transactions.size();
   size_t nOutputTups = outputExt.Size();
   for (int i=0; i<nArrays; ++i)
     {
+    vector<MPI_Request> req;
+
     vtkDataArray *inArray = inputDsa->GetArray(i);
     int nComps = inArray->GetNumberOfComponents();
     void *pIn = inArray->GetVoidPointer(0);
@@ -378,7 +413,7 @@ void vtkSQImageGhosts::ExecuteTransactions(
       }
 
     // execute the transactions to copy ghosts from remote processes
-    for (int j=0; j<nTransactions; ++j)
+    for (int j=0; j<nTransactions; ++j, ++tag)
       {
       GhostTransaction &trans = transactions[j];
 
@@ -386,15 +421,19 @@ void vtkSQImageGhosts::ExecuteTransactions(
         {
         vtkTemplateMacro(
             trans.Execute<VTK_TT>(
+              this->Comm,
               this->WorldRank,
               nComps,
               (VTK_TT*)pIn,
               (VTK_TT*)pOut,
               pointData,
-              this->Mode));
+              this->Mode,
+              req,
+              tag));
         }
       }
 
+    MPI_Waitall(req.size(), &req[0], MPI_STATUSES_IGNORE);
     }
 }
 
