@@ -21,7 +21,7 @@ using std::ostringstream;
 using std::vector;
 
 
-#define GhostTransactionDEBUG
+// #define GhostTransactionDEBUG
 
 
 /// GhostTransaction - Helper class to handle communication of ghost data
