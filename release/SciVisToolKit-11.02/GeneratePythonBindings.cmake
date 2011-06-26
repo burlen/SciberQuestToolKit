@@ -20,7 +20,7 @@ macro(
     VTK_WRAP_PYTHON3(
       ${CXX_LIB_NAME}Python
       Python_SRCS
-      ${CXX_LIB_SOURCES})
+      "${CXX_LIB_SOURCES}")
 
     add_library(
       ${CXX_LIB_NAME}PythonD

@@ -5,7 +5,6 @@
 /___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
 
 Copyright 2008 SciberQuest Inc.
-
 */
 #include "vtkSQVortexFilter.h"
 
@@ -47,7 +46,6 @@ vtkSQVortexFilter::vtkSQVortexFilter()
   #ifdef vtkSQVortexFilterDEBUG
   pCerr() << "===============================vtkSQVortexFilter::vtkSQVortexFilter" << endl;
   #endif
-
 
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
@@ -220,7 +218,6 @@ int vtkSQVortexFilter::RequestUpdateExtent(
 
   return 1;
 }
-
 
 //-----------------------------------------------------------------------------
 int vtkSQVortexFilter::RequestData(
@@ -405,37 +402,16 @@ int vtkSQVortexFilter::RequestData(
       name+=V->GetName();
       H->SetName(name.c_str());
       //
-      switch (this->Mode)
+      switch(V->GetDataType())
         {
-        case CartesianExtent::DIM_MODE_3D:
-          switch(V->GetDataType())
-            {
-            vtkTemplateMacro(
-              Helicity<VTK_TT>(
-                  inputExt.GetData(),
-                  outputExt.GetData(),
-                  dX,
-                  (VTK_TT*)V->GetVoidPointer(0),
-                  (VTK_TT*)H->GetVoidPointer(0)));
-            }
-          break;
-
-        case CartesianExtent::DIM_MODE_2D_XY:
-          switch(V->GetDataType())
-            {
-            vtkTemplateMacro(
-              HelicityXY<VTK_TT>(
-                  inputExt.GetData(),
-                  outputExt.GetData(),
-                  dX,
-                  (VTK_TT*)V->GetVoidPointer(0),
-                  (VTK_TT*)H->GetVoidPointer(0)));
-            }
-          break;
-
-        default:
-          vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-          break;
+        vtkTemplateMacro(
+          Helicity<VTK_TT>(
+              inputExt.GetData(),
+              outputExt.GetData(),
+              this->Mode,
+              dX,
+              (VTK_TT*)V->GetVoidPointer(0),
+              (VTK_TT*)H->GetVoidPointer(0)));
         }
       }
 
@@ -451,37 +427,16 @@ int vtkSQVortexFilter::RequestData(
       name+=V->GetName();
       HN->SetName(name.c_str());
       //
-      switch (this->Mode)
+      switch(V->GetDataType())
         {
-        case CartesianExtent::DIM_MODE_3D:
-          switch(V->GetDataType())
-            {
-            vtkTemplateMacro(
-              NormalizedHelicity<VTK_TT>(
-                  inputExt.GetData(),
-                  outputExt.GetData(),
-                  dX,
-                  (VTK_TT*)V->GetVoidPointer(0),
-                  (VTK_TT*)HN->GetVoidPointer(0)));
-            }
-          break;
-
-        case CartesianExtent::DIM_MODE_2D_XY:
-          switch(V->GetDataType())
-            {
-            vtkTemplateMacro(
-              NormalizedHelicityXY(
-                  inputExt.GetData(),
-                  outputExt.GetData(),
-                  dX,
-                  (VTK_TT*)V->GetVoidPointer(0),
-                  (VTK_TT*)HN->GetVoidPointer(0)));
-            }
-          break;
-
-        default:
-          vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-          break;
+        vtkTemplateMacro(
+          NormalizedHelicity<VTK_TT>(
+              inputExt.GetData(),
+              outputExt.GetData(),
+              this->Mode,
+              dX,
+              (VTK_TT*)V->GetVoidPointer(0),
+              (VTK_TT*)HN->GetVoidPointer(0)));
         }
       }
 
@@ -497,37 +452,16 @@ int vtkSQVortexFilter::RequestData(
       name+=V->GetName();
       L->SetName(name.c_str());
       //
-      switch (this->Mode)
+      switch(V->GetDataType())
         {
-        case CartesianExtent::DIM_MODE_3D:
-          switch(V->GetDataType())
-            {
-            vtkTemplateMacro(
-              Lambda<VTK_TT>(
-                  inputExt.GetData(),
-                  outputExt.GetData(),
-                  dX,
-                  (VTK_TT*)V->GetVoidPointer(0),
-                  (VTK_TT*)L->GetVoidPointer(0)));
-            }
-          break;
-        /*
-        case CartesianExtent::DIM_MODE_2D_XY:
-          switch(V->GetDataType())
-            {
-            vtkTemplateMacro(
-              LambdaXY<VTK_TT>(
-                  inputExt.GetData(),
-                  outputExt.GetData(),
-                  dX,
-                  (VTK_TT*)V->GetVoidPointer(0),
-                  (VTK_TT*)L->GetVoidPointer(0)));
-             }
-          break;
-        */
-        default:
-          vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-          break;
+        vtkTemplateMacro(
+          Lambda<VTK_TT>(
+              inputExt.GetData(),
+              outputExt.GetData(),
+              this->Mode,
+              dX,
+              (VTK_TT*)V->GetVoidPointer(0),
+              (VTK_TT*)L->GetVoidPointer(0)));
         }
       }
 
@@ -543,37 +477,16 @@ int vtkSQVortexFilter::RequestData(
       name+=V->GetName();
       L2->SetName(name.c_str());
       //
-      switch (this->Mode)
+      switch(V->GetDataType())
         {
-        case CartesianExtent::DIM_MODE_3D:
-          switch(V->GetDataType())
-            {
-            vtkTemplateMacro(
-              Lambda2<VTK_TT>(
-                  inputExt.GetData(),
-                  outputExt.GetData(),
-                  dX,
-                  (VTK_TT*)V->GetVoidPointer(0),
-                  (VTK_TT*)L2->GetVoidPointer(0)));
-            }
-          break;
-        /*
-        case CartesianExtent::DIM_MODE_2D_XY:
-          switch(V->GetDataType())
-            {
-            vtkTemplateMacro(
-              Lambda2XY<VTK_TT>(
-                  inputExt.GetData(),
-                  outputExt.GetData(),
-                  dX,
-                  (VTK_TT*)V->GetVoidPointer(0),
-                  (VTK_TT*)L2->GetVoidPointer(0)));
-             }
-          break;
-        */
-        default:
-          vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-          break;
+        vtkTemplateMacro(
+          Lambda2<VTK_TT>(
+              inputExt.GetData(),
+              outputExt.GetData(),
+              this->Mode,
+              dX,
+              (VTK_TT*)V->GetVoidPointer(0),
+              (VTK_TT*)L2->GetVoidPointer(0)));
         }
       }
     // outImData->Print(cerr);
