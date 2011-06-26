@@ -20,19 +20,19 @@ FlatIndex::FlatIndex(int ni, int nj, int nk, int mode)
     {
     case CartesianExtent::DIM_MODE_2D_XZ:
       this->A = ni;
-      this->B = ni*nk;
+      this->B = 0; // ni*nk;
       this->C = 1;
       break;
 
     case CartesianExtent::DIM_MODE_2D_YZ:
       this->A = nj;
       this->B = 1;
-      this->C = nj*nk;
+      this->C = 0; // nj*nk;
       break;
 
     case CartesianExtent::DIM_MODE_3D:
     case CartesianExtent::DIM_MODE_2D_XY:
-      this->A = ni*nj;
+      this->A = 0; // ni*nj;
       this->B = ni;
       this->C = 1;
       break;

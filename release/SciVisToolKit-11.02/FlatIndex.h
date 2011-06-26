@@ -33,7 +33,6 @@ public:
   }
 
 private:
-
   int A;
   int B;
   int C;

@@ -372,45 +372,24 @@ int vtkSQVortexFilter::RequestData(
       name+=V->GetName();
       R->SetName(name.c_str());
 
-      switch (this->Mode)
+      switch(V->GetDataType())
         {
-        case CartesianExtent::DIM_MODE_3D:
-          switch(V->GetDataType())
-            {
-            vtkTemplateMacro(
-              Rotation<VTK_TT>(
-                  inputExt.GetData(),
-                  outputExt.GetData(),
-                  dX,
-                  (VTK_TT*)V->GetVoidPointer(0),
-                  (VTK_TT*)Rx->GetVoidPointer(0),
-                  (VTK_TT*)Ry->GetVoidPointer(0),
-                  (VTK_TT*)Rz->GetVoidPointer(0));
-              Interleave<VTK_TT>(
-                  outputTups,
-                  (VTK_TT*)Rx->GetVoidPointer(0),
-                  (VTK_TT*)Ry->GetVoidPointer(0),
-                  (VTK_TT*)Rz->GetVoidPointer(0),
-                  (VTK_TT*)R->GetVoidPointer(0)));
-            }
-          break;
-
-        case CartesianExtent::DIM_MODE_2D_XY:
-          switch(V->GetDataType())
-            {
-            vtkTemplateMacro(
-              RotationXY<VTK_TT>(
-                  inputExt.GetData(),
-                  outputExt.GetData(),
-                  dX,
-                  (VTK_TT*)V->GetVoidPointer(0),
-                  (VTK_TT*)R->GetVoidPointer(0)));
-            }
-          break;
-
-        default:
-          vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-          break;
+        vtkTemplateMacro(
+          Rotation<VTK_TT>(
+              inputExt.GetData(),
+              outputExt.GetData(),
+              this->Mode,
+              dX,
+              (VTK_TT*)V->GetVoidPointer(0),
+              (VTK_TT*)Rx->GetVoidPointer(0),
+              (VTK_TT*)Ry->GetVoidPointer(0),
+              (VTK_TT*)Rz->GetVoidPointer(0));
+          Interleave<VTK_TT>(
+              outputTups,
+              (VTK_TT*)Rx->GetVoidPointer(0),
+              (VTK_TT*)Ry->GetVoidPointer(0),
+              (VTK_TT*)Rz->GetVoidPointer(0),
+              (VTK_TT*)R->GetVoidPointer(0)));
         }
       }
 

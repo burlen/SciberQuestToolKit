@@ -813,17 +813,31 @@ void Divergence(
 // W      -> vector curl
 //*****************************************************************************
 template <typename T>
-void Rotation(int *input, int *output, double *dX, T *V, T *Wx, T *Wy, T *Wz)
+void Rotation(
+      int *input,
+      int *output,
+      int mode,
+      double *dX,
+      T *V,
+      T *Wx,
+      T *Wy,
+      T *Wz)
 {
   // input array bounds.
   const int ni=input[1]-input[0]+1;
   const int nj=input[3]-input[2]+1;
-  const int ninj=ni*nj;
+  const int nk=input[5]-input[4]+1;
+  FlatIndex idx(ni,nj,nk,mode);
+
+  const int iok=(ni<3?0:1);
+  const int jok=(nj<3?0:1);
+  const int kok=(nk<3?0:1);
 
   // output array bounds
   const int _ni=output[1]-output[0]+1;
   const int _nj=output[3]-output[2]+1;
-  const int _ninj=_ni*_nj;
+  const int _nk=output[5]-output[4]+1;
+  FlatIndex _idx(_ni,_nj,_nk,mode);
 
   // stencil deltas
   const double dx[3]={dX[0]*2.0,dX[1]*2.0,dX[2]*2.0};
@@ -831,34 +845,66 @@ void Rotation(int *input, int *output, double *dX, T *V, T *Wx, T *Wy, T *Wz)
   // loop over output in patch coordinates (both patches are in the same space)
   for (int r=output[4]; r<=output[5]; ++r)
     {
+    const int  k=r-input[4];
+    const int _k=r-output[4];
+
     for (int q=output[2]; q<=output[3]; ++q)
       {
+      const int  j=q-input[2];
+      const int _j=q-output[2];
+
       for (int p=output[0]; p<=output[1]; ++p)
         {
-        // output array indices
+        const int  i=p-input[0];
         const int _i=p-output[0];
-        const int _j=q-output[2];
-        const int _k=r-output[4];
-        // index into output array;
-        const int pi=_k*_ninj+_j*_ni+_i;
+
+        const int pi=_idx.Index(_i,_j,_k);
 
         // input array indices
-        const int i=p-input[0];
-        const int j=q-input[2];
-        const int k=r-input[4];
         // stencil into the input array
-        const int vilo=3*(k*ninj+j*ni+(i-1));
-        const int vihi=3*(k*ninj+j*ni+(i+1));
-        const int vjlo=3*(k*ninj+(j-1)*ni+i);
-        const int vjhi=3*(k*ninj+(j+1)*ni+i);
-        const int vklo=3*((k-1)*ninj+j*ni+i);
-        const int vkhi=3*((k+1)*ninj+j*ni+i);
+        Wx[pi]=0.0;
+        Wy[pi]=0.0;
+        Wz[pi]=0.0;
+        if (iok)
+          {
+          int vilo_y=3*idx.Index(i-1,j,k)+1;
+          int vilo_z=vilo_y+1;
 
+          int vihi_y=3*idx.Index(i+1,j,k)+1;
+          int vihi_z=vihi_y+1;
+
+          Wy[pi] -= (V[vihi_z]-V[vilo_z])/dx[0];
+          Wz[pi] += (V[vihi_y]-V[vilo_y])/dx[0];
+          }
+
+        if (jok)
+          {
+          int vjlo_x=3*idx.Index(i,j-1,k);
+          int vjlo_z=vjlo_x+2;
+
+          int vjhi_x=3*idx.Index(i,j+1,k);
+          int vjhi_z=vjhi_x+2;
+
+          Wx[pi] += (V[vjhi_z]-V[vjlo_z])/dx[1];
+          Wz[pi] -= (V[vjhi_x]-V[vjlo_x])/dx[1];
+          }
+
+        if (kok)
+          {
+          int vklo_x=3*idx.Index(i,j,k-1);
+          int vklo_y=vklo_x+1;
+
+          int vkhi_x=3*idx.Index(i,j,k+1);
+          int vkhi_y=vkhi_x+1;
+
+          Wx[pi] -= (V[vkhi_y]-V[vklo_y])/dx[2];
+          Wy[pi] += (V[vkhi_x]-V[vklo_x])/dx[2];
+          }
         //      __   ->
         //  w = \/ x V
-        Wx[pi]=(V[vjhi+2]-V[vjlo+2])/dx[1]-(V[vkhi+1]-V[vklo+1])/dx[2];
-        Wy[pi]=(V[vkhi  ]-V[vklo  ])/dx[2]-(V[vihi+2]-V[vilo+2])/dx[0];
-        Wz[pi]=(V[vihi+1]-V[vilo+1])/dx[0]-(V[vjhi  ]-V[vjlo  ])/dx[1];
+        // Wx[pi]=(V[vjhi+2]-V[vjlo+2])/dx[1]-(V[vkhi+1]-V[vklo+1])/dx[2];
+        // Wy[pi]=(V[vkhi  ]-V[vklo  ])/dx[2]-(V[vihi+2]-V[vilo+2])/dx[0];
+        // Wz[pi]=(V[vihi+1]-V[vilo+1])/dx[0]-(V[vjhi  ]-V[vjlo  ])/dx[1];
         }
       }
     }
