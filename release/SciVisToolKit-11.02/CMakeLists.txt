@@ -23,6 +23,7 @@ include(ParaViewConfig.cmake)
 include(EigenConfig.cmake)
 include(MPICHConfig.cmake)
 include(GimpConfig.cmake)
+include(GeneratePythonBindings.cmake)
 
 # Server manager wrapped sources.
 set(SM_CXX_SOURCES
@@ -82,6 +83,7 @@ set(CXX_SOURCES
   IdBlock.cxx
   FieldLine.cxx
   FieldTraceData.cxx
+  FlatIndex.cxx
   FsUtils.cxx
   GDAMetaData.cxx
   GDAMetaDataKeys.cxx
@@ -115,19 +117,19 @@ set(CXX_SOURCES
 
 if (SVTK_PROCESS_MONITOR)
   if (WIN32)
-    set(CXX_SOURCES 
+    set(CXX_SOURCES
       ${CXX_SOURCES}
       WindowsSystemInterface.cxx
       win_windirent.cxx
       )
   elseif (APPLE)
-    set(CXX_SOURCES 
+    set(CXX_SOURCES
       ${CXX_SOURCES}
       UnixSystemInterface.cxx
       OSXSystemInterface.cxx
       )
   else()
-    set(CXX_SOURCES 
+    set(CXX_SOURCES
       ${CXX_SOURCES}
       UnixSystemInterface.cxx
       LinuxSystemInterface.cxx
@@ -249,6 +251,8 @@ endif()
 
 install(TARGETS SciVisToolKit DESTINATION ${CMAKE_INSTALL_PREFIX})
 
+generate_python_bindings(SciVisToolKit ${SM_CXX_SOURCES})
+
 # GIMP scripts
 set (SVTK_POSTPROC_SCRIPTS OFF CACHE BOOL "Install post-processing scripts.")
 if ((NOT GIMP_FOUND) AND SVTK_POSTPROC_SCRIPTS)
@@ -351,4 +355,6 @@ if (SVTK_TESTING)
   target_link_libraries(TestFieldTopologyMapper SciVisToolKit ${MPI_LIBRARIES})
   install(TARGETS TestFieldTopologyMapper DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif ()
+
+
 

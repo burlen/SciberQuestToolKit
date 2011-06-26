@@ -144,9 +144,28 @@ int vtkSQKernelConvolution::UpdateKernel()
     this->Kernel=0;
     }
 
-  int size = (this->Mode==CartesianExtent::DIM_MODE_3D ?
-        this->KernelWidth*this->KernelWidth*this->KernelWidth :
-        this->KernelWidth*this->KernelWidth);
+  int nk2 = this->KernelWidth/2;
+  CartesianExtent ext(-nk2, nk2, -nk2, nk2, -nk2, nk2);
+  switch(this->Mode)
+    {
+    case CartesianExtent::DIM_MODE_2D_XY:
+      ext[4]=0;
+      ext[5]=0;
+      break;
+    case CartesianExtent::DIM_MODE_2D_XZ:
+      ext[2]=0;
+      ext[3]=0;
+      break;
+    case CartesianExtent::DIM_MODE_2D_YZ:
+      ext[0]=0;
+      ext[1]=0;
+      break;
+    case CartesianExtent::DIM_MODE_3D:
+      break;
+    }
+  this->KernelExt=ext;
+
+  int size = ext.Size();
 
   this->Kernel=new float [size];
   float kernelNorm=0.0;
@@ -497,53 +516,26 @@ int vtkSQKernelConvolution::RequestData(
       return 1;
       }
 
+    int nComps = V->GetNumberOfComponents();
 
-    /// TODO -- multiple passes require updates ghost cells!
+    vtkDataArray *W=V->NewInstance();
+    W->SetNumberOfComponents(nComps);
+    W->SetNumberOfTuples(outputTups);
+    W->SetName(V->GetName());
 
-    // vector<vtkDataArray*> workArrays(this->NumberOfIterations,0);
-    // for (int i=0; i<this->NumberOfIterations; ++i,V=W)
-    //   {
-      int nComps = V->GetNumberOfComponents();
-      int dim = this->Mode==CartesianExtent::CartesianExtent::DIM_MODE_2D_XY ? 2:3;
-
-      vtkDataArray *W=V->NewInstance();
-      W->SetNumberOfComponents(nComps);
-      W->SetNumberOfTuples(outputTups);
-      W->SetName(V->GetName());
-
-      // workArrays[i] = W;
-
-      //
-      vtkFloatArray *fV=0, *fW=0;
-      vtkDoubleArray *dV=0, *dW=0;
-      if ( (fV=dynamic_cast<vtkFloatArray *>(V))!=NULL
-        && (fW=dynamic_cast<vtkFloatArray *>(W))!=NULL)
-        {
-        Convolution(
+    switch (V->GetDataType())
+      {
+      vtkTemplateMacro(
+        Convolution<VTK_TT>(
             inputExt.GetData(),
             outputExt.GetData(),
-            this->Kernel,
-            this->KernelWidth,
-            fV->GetPointer(0),
+            this->KernelExt.GetData(),
             nComps,
-            fW->GetPointer(0),
-            dim);
-        }
-      else
-      if ( (dV=dynamic_cast<vtkDoubleArray *>(V))!=NULL
-        && (dW=dynamic_cast<vtkDoubleArray *>(W))!=NULL)
-        {
-        Convolution(
-            inputExt.GetData(),
-            outputExt.GetData(),
-            this->Kernel,
-            this->KernelWidth,
-            dV->GetPointer(0),
-            nComps,
-            dW->GetPointer(0),
-            dim);
-        }
-    //   }
+            this->Mode,
+            (VTK_TT*)V->GetVoidPointer(0),
+            (VTK_TT*)W->GetVoidPointer(0),
+            this->Kernel));
+      }
 
     outImData->GetPointData()->AddArray(W);
     W->Delete();

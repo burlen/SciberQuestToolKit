@@ -20,9 +20,7 @@ using std::ostringstream;
 #include <vector>
 using std::vector;
 
-
 // #define GhostTransactionDEBUG
-
 
 /// GhostTransaction - Helper class to handle communication of ghost data
 /**

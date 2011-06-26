@@ -23,6 +23,8 @@ using std::endl;
 using namespace Eigen;
 
 #include "Tuple.hxx"
+#include "FlatIndex.h"
+
 
 //*****************************************************************************
 template <typename T>
@@ -438,74 +440,69 @@ template <typename T>
 void Convolution(
       int *input,
       int *output,
-      float *K,
-      int nK,
-      T *V,
+      int *kernel,
       int nComp,
+      int mode,
+      T *V,
       T *W,
-      int dim)
+      float *K)
 {
   // input array bounds.
   const int ni=input[1]-input[0]+1;
   const int nj=input[3]-input[2]+1;
-  const int ninj=(dim==3?ni*nj:0);
+  const int nk=input[5]-input[4]+1;
+  FlatIndex idx(ni,nj,nk,mode);
 
   // output array bounds
   const int _ni=output[1]-output[0]+1;
   const int _nj=output[3]-output[2]+1;
-  const int _ninj=(dim==3?_ni*_nj:0);
+  const int _nk=output[5]-output[4]+1;
+  FlatIndex _idx(_ni,_nj,_nk,mode);
 
   // kernel dimensions
-  const int nK2=nK/2;
-  const int kni=nK;
-  const int knj=nK;
-  const int kninj=(dim==3?nK*nK:0);
+  const int kni=kernel[1]-kernel[0]+1;
+  const int knj=kernel[3]-kernel[2]+1;
+  const int knk=kernel[5]-kernel[4]+1;
+  FlatIndex kidx(kni,knj,knk,mode);
 
   // loop over output in patch coordinates (both patches are in the same space)
   for (int r=output[4]; r<=output[5]; ++r)
     {
+    const int _k=r-output[4];
+    const int  k=r-input[4];
+
     for (int q=output[2]; q<=output[3]; ++q)
       {
+      const int _j=q-output[2];
+      const int  j=q-input[2];
+
       for (int p=output[0]; p<=output[1]; ++p)
         {
-        // output array indices
         const int _i=p-output[0];
-        const int _j=q-output[2];
-        const int _k=r-output[4];
-
-        // input array indices
-        const int i=p-input[0];
-        const int j=q-input[2];
-        const int k=r-input[4];
-
-        // cerr << Tuple<int>(i,j,k) << " -> " << Tuple<int>(p,q,r) << endl;
+        const int _pi=_idx.Index(_i,_j,_k);
+        const int  i=p-input[0];
 
         for (int c=0; c<nComp; ++c)
           {
-          // cerr << "-------comp=" << c << endl;
-
-          // index into output array;
-          const int pi=nComp*(_k*_ninj+_j*_ni+_i)+c;
+          const int pi=nComp*_pi+c;
 
           W[pi] = 0.0;
 
-          // permutations to pick out the remaining kernel elements
-          int H=(dim==3?nK2:0);
-
-          for (int h=-H; h<=H; ++h)
+          for (int h=kernel[4]; h<=kernel[5]; ++h)
             {
-            for (int g=-nK2; g<=nK2; ++g)
+            const int kk=h-kernel[4];
+
+            for (int g=kernel[2]; g<=kernel[3]; ++g)
               {
-              for (int f=-nK2; f<=nK2; ++f)
+              const int kj=g-kernel[2];
+
+              for (int f=kernel[0]; f<=kernel[1]; ++f)
                 {
-                int vi = nComp*((k+h)*ninj+(j+g)*ni+(i+f))+c;
-                int ki = kninj*(nK2+h)+kni*(nK2+g)+(nK2+f);
+                const int ki=f-kernel[0];
+                int vi = nComp*idx.Index(i+f,j+g,k+h)+c;
+                int kii = kidx.Index(ki,kj,kk);
 
-                W[pi] += V[vi]*K[ki];
-
-                // cerr << "V[" << Tuple<int>(i,j,k) << "->" << vi << "]=" << V[vi] << endl;
-                // cerr << "K[" << Tuple<int>(f,g,h) << "->" << ki << "]=" << K[ki] << endl;
-                // cerr << "W[" << Tuple<int>(_i,_j,_k) << "->" << pi << "]=" << W[pi] << endl;
+                W[pi] += V[vi]*K[kii];
                 }
               }
             }

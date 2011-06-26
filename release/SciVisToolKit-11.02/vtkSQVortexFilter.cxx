@@ -372,75 +372,45 @@ int vtkSQVortexFilter::RequestData(
       name+=V->GetName();
       R->SetName(name.c_str());
 
-      //
-      vtkFloatArray *fV=0,*fRx=0,*fRy=0,*fRz=0,*fR=0;
-      vtkDoubleArray *dV=0, *dRx=0, *dRy=0, *dRz=0, *dR=0;
-      if ( (fV=dynamic_cast<vtkFloatArray *>(V))!=NULL
-        && (fRx=dynamic_cast<vtkFloatArray *>(Rx))!=NULL
-        && (fRy=dynamic_cast<vtkFloatArray *>(Ry))!=NULL
-        && (fRz=dynamic_cast<vtkFloatArray *>(Rz))!=NULL
-        && (fR=dynamic_cast<vtkFloatArray *>(R))!=NULL)
+      switch (this->Mode)
         {
-        switch (this->Mode)
-          {
-          case CartesianExtent::DIM_MODE_3D:
-            Rotation(
-                inputExt.GetData(),
-                outputExt.GetData(),
-                dX,
-                fV->GetPointer(0),
-                fRx->GetPointer(0),
-                fRy->GetPointer(0),
-                fRz->GetPointer(0));
-            Interleave(outputTups,
-                fRx->GetPointer(0),
-                fRy->GetPointer(0),
-                fRz->GetPointer(0),
-                fR->GetPointer(0));
-            break;
+        case CartesianExtent::DIM_MODE_3D:
+          switch(V->GetDataType())
+            {
+            vtkTemplateMacro(
+              Rotation<VTK_TT>(
+                  inputExt.GetData(),
+                  outputExt.GetData(),
+                  dX,
+                  (VTK_TT*)V->GetVoidPointer(0),
+                  (VTK_TT*)Rx->GetVoidPointer(0),
+                  (VTK_TT*)Ry->GetVoidPointer(0),
+                  (VTK_TT*)Rz->GetVoidPointer(0));
+              Interleave<VTK_TT>(
+                  outputTups,
+                  (VTK_TT*)Rx->GetVoidPointer(0),
+                  (VTK_TT*)Ry->GetVoidPointer(0),
+                  (VTK_TT*)Rz->GetVoidPointer(0),
+                  (VTK_TT*)R->GetVoidPointer(0)));
+            }
+          break;
 
-          case CartesianExtent::DIM_MODE_2D_XY:
-            RotationXY(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fR->GetPointer(0));
-            break;
+        case CartesianExtent::DIM_MODE_2D_XY:
+          switch(V->GetDataType())
+            {
+            vtkTemplateMacro(
+              RotationXY<VTK_TT>(
+                  inputExt.GetData(),
+                  outputExt.GetData(),
+                  dX,
+                  (VTK_TT*)V->GetVoidPointer(0),
+                  (VTK_TT*)R->GetVoidPointer(0)));
+            }
+          break;
 
-          default:
-            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-            break;
-          }
-        }
-      else
-      if ( (dV=dynamic_cast<vtkDoubleArray *>(V))!=NULL
-        && (dRx=dynamic_cast<vtkDoubleArray *>(Rx))!=NULL
-        && (dRy=dynamic_cast<vtkDoubleArray *>(Ry))!=NULL
-        && (dRz=dynamic_cast<vtkDoubleArray *>(Rz))!=NULL
-        && (dR=dynamic_cast<vtkDoubleArray *>(R))!=NULL)
-        {
-        switch (this->Mode)
-          {
-          case CartesianExtent::DIM_MODE_3D:
-            Rotation(
-                inputExt.GetData(),
-                outputExt.GetData(),
-                dX,
-                dV->GetPointer(0),
-                dRx->GetPointer(0),
-                dRy->GetPointer(0),
-                dRz->GetPointer(0));
-            Interleave(outputTups,
-                dRx->GetPointer(0),
-                dRy->GetPointer(0),
-                dRz->GetPointer(0),
-                dR->GetPointer(0));
-            break;
-
-          case CartesianExtent::DIM_MODE_2D_XY:
-            RotationXY(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dR->GetPointer(0));
-            break;
-
-          default:
-            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-            break;
-          }
+        default:
+          vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+          break;
         }
       }
 
@@ -456,44 +426,37 @@ int vtkSQVortexFilter::RequestData(
       name+=V->GetName();
       H->SetName(name.c_str());
       //
-      vtkFloatArray *fV=0,*fH=0;
-      vtkDoubleArray *dV=0, *dH=0;
-      if ( (fV=dynamic_cast<vtkFloatArray *>(V))!=NULL
-        && (fH=dynamic_cast<vtkFloatArray *>(H))!=NULL)
+      switch (this->Mode)
         {
-        switch (this->Mode)
-          {
-          case CartesianExtent::DIM_MODE_3D:
-            Helicity(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fH->GetPointer(0));
-            break;
+        case CartesianExtent::DIM_MODE_3D:
+          switch(V->GetDataType())
+            {
+            vtkTemplateMacro(
+              Helicity<VTK_TT>(
+                  inputExt.GetData(),
+                  outputExt.GetData(),
+                  dX,
+                  (VTK_TT*)V->GetVoidPointer(0),
+                  (VTK_TT*)H->GetVoidPointer(0)));
+            }
+          break;
 
-          case CartesianExtent::DIM_MODE_2D_XY:
-            HelicityXY(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fH->GetPointer(0));
-            break;
+        case CartesianExtent::DIM_MODE_2D_XY:
+          switch(V->GetDataType())
+            {
+            vtkTemplateMacro(
+              HelicityXY<VTK_TT>(
+                  inputExt.GetData(),
+                  outputExt.GetData(),
+                  dX,
+                  (VTK_TT*)V->GetVoidPointer(0),
+                  (VTK_TT*)H->GetVoidPointer(0)));
+            }
+          break;
 
-          default:
-            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-            break;
-          }
-        }
-      else
-      if ( (dV=dynamic_cast<vtkDoubleArray *>(V))!=NULL
-        && (dH=dynamic_cast<vtkDoubleArray *>(H))!=NULL)
-        {
-        switch (this->Mode)
-          {
-          case CartesianExtent::DIM_MODE_3D:
-            Helicity(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dH->GetPointer(0));
-            break;
-
-          case CartesianExtent::DIM_MODE_2D_XY:
-            HelicityXY(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dH->GetPointer(0));
-            break;
-
-          default:
-            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-            break;
-          }
+        default:
+          vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+          break;
         }
       }
 
@@ -509,44 +472,37 @@ int vtkSQVortexFilter::RequestData(
       name+=V->GetName();
       HN->SetName(name.c_str());
       //
-      vtkFloatArray *fV=0,*fHN=0;
-      vtkDoubleArray *dV=0, *dHN=0;
-      if ( (fV=dynamic_cast<vtkFloatArray *>(V))!=NULL
-        && (fHN=dynamic_cast<vtkFloatArray *>(HN))!=NULL)
+      switch (this->Mode)
         {
-        switch (this->Mode)
-          {
-          case CartesianExtent::DIM_MODE_3D:
-            NormalizedHelicity(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fHN->GetPointer(0));
-            break;
+        case CartesianExtent::DIM_MODE_3D:
+          switch(V->GetDataType())
+            {
+            vtkTemplateMacro(
+              NormalizedHelicity<VTK_TT>(
+                  inputExt.GetData(),
+                  outputExt.GetData(),
+                  dX,
+                  (VTK_TT*)V->GetVoidPointer(0),
+                  (VTK_TT*)HN->GetVoidPointer(0)));
+            }
+          break;
 
-          case CartesianExtent::DIM_MODE_2D_XY:
-            NormalizedHelicityXY(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fHN->GetPointer(0));
-            break;
+        case CartesianExtent::DIM_MODE_2D_XY:
+          switch(V->GetDataType())
+            {
+            vtkTemplateMacro(
+              NormalizedHelicityXY(
+                  inputExt.GetData(),
+                  outputExt.GetData(),
+                  dX,
+                  (VTK_TT*)V->GetVoidPointer(0),
+                  (VTK_TT*)HN->GetVoidPointer(0)));
+            }
+          break;
 
-          default:
-            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-            break;
-          }
-        }
-      else
-      if ( (dV=dynamic_cast<vtkDoubleArray *>(V))!=NULL
-        && (dHN=dynamic_cast<vtkDoubleArray *>(HN))!=NULL)
-        {
-        switch (this->Mode)
-          {
-          case CartesianExtent::DIM_MODE_3D:
-            NormalizedHelicity(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dHN->GetPointer(0));
-            break;
-
-          case CartesianExtent::DIM_MODE_2D_XY:
-            NormalizedHelicityXY(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dHN->GetPointer(0));
-            break;
-
-          default:
-            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-            break;
-          }
+        default:
+          vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+          break;
         }
       }
 
@@ -562,44 +518,37 @@ int vtkSQVortexFilter::RequestData(
       name+=V->GetName();
       L->SetName(name.c_str());
       //
-      vtkFloatArray *fV=0,*fL=0;
-      vtkDoubleArray *dV=0, *dL=0;
-      if ( (fV=dynamic_cast<vtkFloatArray *>(V))!=NULL
-        && (fL=dynamic_cast<vtkFloatArray *>(L))!=NULL)
+      switch (this->Mode)
         {
-        switch (this->Mode)
-          {
-          case CartesianExtent::DIM_MODE_3D:
-            Lambda(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fL->GetPointer(0));
-            break;
-
-          case CartesianExtent::DIM_MODE_2D_XY:
-            Lambda(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fL->GetPointer(0));
-            break;
-
-          default:
-            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-            break;
-          }
-        }
-      else
-      if ( (dV=dynamic_cast<vtkDoubleArray *>(V))!=NULL
-        && (dL=dynamic_cast<vtkDoubleArray *>(L))!=NULL)
-        {
-        switch (this->Mode)
-          {
-          case CartesianExtent::DIM_MODE_3D:
-            Lambda(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dL->GetPointer(0));
-            break;
-
-          case CartesianExtent::DIM_MODE_2D_XY:
-            Lambda(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dL->GetPointer(0));
-            break;
-
-          default:
-            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-            break;
-          }
+        case CartesianExtent::DIM_MODE_3D:
+          switch(V->GetDataType())
+            {
+            vtkTemplateMacro(
+              Lambda<VTK_TT>(
+                  inputExt.GetData(),
+                  outputExt.GetData(),
+                  dX,
+                  (VTK_TT*)V->GetVoidPointer(0),
+                  (VTK_TT*)L->GetVoidPointer(0)));
+            }
+          break;
+        /*
+        case CartesianExtent::DIM_MODE_2D_XY:
+          switch(V->GetDataType())
+            {
+            vtkTemplateMacro(
+              LambdaXY<VTK_TT>(
+                  inputExt.GetData(),
+                  outputExt.GetData(),
+                  dX,
+                  (VTK_TT*)V->GetVoidPointer(0),
+                  (VTK_TT*)L->GetVoidPointer(0)));
+             }
+          break;
+        */
+        default:
+          vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+          break;
         }
       }
 
@@ -615,44 +564,37 @@ int vtkSQVortexFilter::RequestData(
       name+=V->GetName();
       L2->SetName(name.c_str());
       //
-      vtkFloatArray *fV=0,*fL2=0;
-      vtkDoubleArray *dV=0, *dL2=0;
-      if ( (fV=dynamic_cast<vtkFloatArray *>(V))!=NULL
-        && (fL2=dynamic_cast<vtkFloatArray *>(L2))!=NULL)
+      switch (this->Mode)
         {
-        switch (this->Mode)
-          {
-          case CartesianExtent::DIM_MODE_3D:
-            Lambda2(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fL2->GetPointer(0));
-            break;
-
-          case CartesianExtent::DIM_MODE_2D_XY:
-            Lambda2(inputExt.GetData(),outputExt.GetData(),dX,fV->GetPointer(0),fL2->GetPointer(0));
-            break;
-
-          default:
-            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-            break;
-          }
-        }
-      else
-      if ( (dV=dynamic_cast<vtkDoubleArray *>(V))!=NULL
-        && (dL2=dynamic_cast<vtkDoubleArray *>(L2))!=NULL)
-        {
-        switch (this->Mode)
-          {
-          case CartesianExtent::DIM_MODE_3D:
-            Lambda2(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dL2->GetPointer(0));
-            break;
-
-          case CartesianExtent::DIM_MODE_2D_XY:
-            Lambda2(inputExt.GetData(),outputExt.GetData(),dX,dV->GetPointer(0),dL2->GetPointer(0));
-            break;
-
-          default:
-            vtkErrorMacro("Unsupported mode " << this->Mode << ".");
-            break;
-          }
+        case CartesianExtent::DIM_MODE_3D:
+          switch(V->GetDataType())
+            {
+            vtkTemplateMacro(
+              Lambda2<VTK_TT>(
+                  inputExt.GetData(),
+                  outputExt.GetData(),
+                  dX,
+                  (VTK_TT*)V->GetVoidPointer(0),
+                  (VTK_TT*)L2->GetVoidPointer(0)));
+            }
+          break;
+        /*
+        case CartesianExtent::DIM_MODE_2D_XY:
+          switch(V->GetDataType())
+            {
+            vtkTemplateMacro(
+              Lambda2XY<VTK_TT>(
+                  inputExt.GetData(),
+                  outputExt.GetData(),
+                  dX,
+                  (VTK_TT*)V->GetVoidPointer(0),
+                  (VTK_TT*)L2->GetVoidPointer(0)));
+             }
+          break;
+        */
+        default:
+          vtkErrorMacro("Unsupported mode " << this->Mode << ".");
+          break;
         }
       }
     // outImData->Print(cerr);

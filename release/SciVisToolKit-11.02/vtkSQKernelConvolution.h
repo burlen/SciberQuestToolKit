@@ -11,9 +11,12 @@ Copyright 2008 SciberQuest Inc.
 #define __vtkSQKernelConvolution_h
 
 #include "vtkDataSetAlgorithm.h"
+#include "CartesianExtent.h"
 
 class vtkInformation;
 class vtkInformationVector;
+
+
 
 class vtkSQKernelConvolution : public vtkDataSetAlgorithm
 {
@@ -53,8 +56,7 @@ public:
   vtkGetMacro(KernelWidth,int);
 
   // Description:
-  // Set the stencil width, must be an odd integer, bound bellow by 3
-  // and above by the size of the smallest block
+  // Set the number of itterations to apply. NOT IMPLEMENTED.
   vtkSetMacro(NumberOfIterations,int);
   vtkGetMacro(NumberOfIterations,int);
 
@@ -75,11 +77,9 @@ protected:
 private:
   int KernelWidth;
   int KernelType;
+  CartesianExtent KernelExt;
   float *Kernel;
   int KernelModified;
-  //
-  int OutputExt[6];
-  int DomainExt[6];
   //
   int Mode;
   //
