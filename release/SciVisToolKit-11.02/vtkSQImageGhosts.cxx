@@ -409,7 +409,9 @@ void vtkSQImageGhosts::ExecuteTransactions(
               outputExt.GetData(),
               (VTK_TT*)pIn,
               (VTK_TT*)pOut,
-              nComps));
+              nComps,
+              this->Mode,
+              USE_INPUT_BOUNDS));
       }
 
     // execute the transactions to copy ghosts from remote processes

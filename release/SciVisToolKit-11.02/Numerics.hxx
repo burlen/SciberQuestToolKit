@@ -377,40 +377,58 @@ void Interleave(int n, T *Vx, T *Vy, T *Vz, T* V)
 // W      -> output(dest) data
 // nComp  -> number of sclar components
 //*****************************************************************************
+#define USE_INPUT_BOUNDS true
+#define USE_OUTPUT_BOUNDS false
 template <typename T>
 void Copy(
       int *input,
       int *output,
       T *V,
       T *W,
-      int nComp)
+      int nComp,
+      int mode,
+      bool inputBounds=true)
 {
   // input array bounds.
   const int ni=input[1]-input[0]+1;
   const int nj=input[3]-input[2]+1;
-  const int ninj=ni*nj;
+  const int nk=input[5]-input[4]+1;
+  FlatIndex idx(ni,nj,nk,mode);
 
   // output array bounds
   const int _ni=output[1]-output[0]+1;
   const int _nj=output[3]-output[2]+1;
-  const int _ninj=_ni*_nj;
+  const int _nk=output[5]-output[4]+1;
+  FlatIndex _idx(_ni,_nj,_nk,mode);
+
+  // use the smaller of the input and output for
+  // loop bounds.
+  int bounds[6];
+  if (inputBounds)
+    {
+    memcpy(bounds,input,6*sizeof(int));
+    }
+  else
+    {
+    memcpy(bounds,output,6*sizeof(int));
+    }
 
   // loop over input in patch coordinates (both patches are in the same space)
-  for (int r=input[4]; r<=input[5]; ++r)
+  for (int r=bounds[4]; r<=bounds[5]; ++r)
     {
     const int _k=r-output[4];
     const int  k=r-input[4];
-    for (int q=input[2]; q<=input[3]; ++q)
+    for (int q=bounds[2]; q<=bounds[3]; ++q)
       {
       const int _j=q-output[2];
       const int  j=q-input[2];
-      for (int p=input[0]; p<=input[1]; ++p)
+      for (int p=bounds[0]; p<=bounds[1]; ++p)
         {
         const int _i=p-output[0];
         const int  i=p-input[0];
 
-        size_t _vi=nComp*(_k*_ninj+_j*_ni+_i);
-        size_t  vi=nComp*(k*ninj+j*ni+i);
+        size_t _vi=nComp*_idx.Index(_i,_j,_k);
+        size_t  vi=nComp*idx.Index(i,j,k);
 
         // copy components
         for (int c=0; c<nComp; ++c)
@@ -1022,12 +1040,6 @@ void Helicity(
         const int _i=p-output[0];
         const int  i=p-input[0];
 
-        // index into output array;
-        const int pi=_idx.Index(_i,_j,_k);
-        const int vi=3*pi;
-        const int vj=vi+1;
-        const int vk=vi+2;
-
         //      __   ->
         //  w = \/ x V
         double wx=0.0;
@@ -1068,6 +1080,12 @@ void Helicity(
           wx -= (V[vkhi_y]-V[vklo_y])/dx[2];
           wy += (V[vkhi_x]-V[vklo_x])/dx[2];
           }
+
+        const int pi=_idx.Index(_i,_j,_k);
+
+        const int vi=3*idx.Index(i,j,k);;
+        const int vj=vi+1;
+        const int vk=vj+1;
 
         //        ->  ->
         // H =  V . w
@@ -1192,12 +1210,6 @@ void NormalizedHelicity(
         const int _i=p-output[0];
         const int  i=p-input[0];
 
-        // index into output array;
-        const int pi=_idx.Index(_i,_j,_k);
-        const int vi=3*pi;
-        const int vj=vi+1;
-        const int vk=vi+2;
-
         //      __   ->
         //  w = \/ x V
         double wx=0.0;
@@ -1243,10 +1255,16 @@ void NormalizedHelicity(
         // |w|
         const double modW=sqrt(wx*wx+wy*wy+wz*wz);
 
+        const int vi=3*idx.Index(i,j,k);
+        const int vj=vi+1;
+        const int vk=vj+1;
+
         //  ->
         // |V|
         const double modV
           = sqrt(V[vi]*V[vi]+V[vj]*V[vj]+V[vk]*V[vk]);
+
+        const int pi=_idx.Index(_i,_j,_k);
 
         //         ->  ->     -> ->
         // H_n = ( V . w ) / |V||w|
@@ -1301,6 +1319,8 @@ void NormalizedHelicity(
         const int _k=r-output[4];
         // index into output array;
         const int pi=_k*_ninj+_j*_ni+_i;
+
+        // TODO vi is input pi is output
         const int vi=3*pi;
         const int vj=vi+1;
         const int vk=vi+2;
@@ -1394,15 +1414,8 @@ void Lambda(
       const int  j=q-input[2];
       for (int p=output[0]; p<=output[1]; ++p)
         {
-        // output array indices
         const int _i=p-output[0];
         const int  i=p-input[0];
-
-        // index into output array;
-        const int pi=_idx.Index(_i,_j,_k);
-        const int vi=3*pi;
-        const int vj=vi+1;
-        const int vk=vi+2;
 
         // J: gradient velocity tensor, (jacobian)
         double j11=0.0, j12=0.0, j13=0.0;
@@ -1412,7 +1425,7 @@ void Lambda(
           int vilo_y=vilo_x+1;
           int vilo_z=vilo_y+1;
 
-          int vihi_x=3*idx.Index(i+1,j,k)+1;
+          int vihi_x=3*idx.Index(i+1,j,k);
           int vihi_y=vihi_x+1;
           int vihi_z=vihi_y+1;
 
@@ -1469,13 +1482,14 @@ void Lambda(
         SelfAdjointEigenSolver<Matrix<double,3,3> >solver(HP,false);
         e=solver.eigenvalues();
 
+        const int pi=_idx.Index(_i,_j,_k);
+        const int vi=3*pi;
+        const int vj=vi+1;
+        const int vk=vj+1;
+
         L[vi]=e(0,0);
         L[vj]=e(1,0);
         L[vk]=e(2,0);
-
-        L[vi]=(L[vi]>=-1E-5&&L[vi]<=1E-5?0.0:L[vi]);
-        L[vj]=(L[vj]>=-1E-5&&L[vj]<=1E-5?0.0:L[vj]);
-        L[vk]=(L[vk]>=-1E-5&&L[vk]<=1E-5?0.0:L[vk]);
 
         slowSort(&L[vi],0,3);
         }
@@ -1612,15 +1626,8 @@ void Lambda2(
       const int  j=q-input[2];
       for (int p=output[0]; p<=output[1]; ++p)
         {
-        // output array indices
         const int _i=p-output[0];
         const int  i=p-input[0];
-
-        // index into output array;
-        const int pi=_idx.Index(_i,_j,_k);
-        const int vi=3*pi;
-        const int vj=vi+1;
-        const int vk=vi+2;
 
         // J: gradient velocity tensor, (jacobian)
         double j11=0.0, j12=0.0, j13=0.0;
@@ -1630,7 +1637,7 @@ void Lambda2(
           int vilo_y=vilo_x+1;
           int vilo_z=vilo_y+1;
 
-          int vihi_x=3*idx.Index(i+1,j,k)+1;
+          int vihi_x=3*idx.Index(i+1,j,k);
           int vihi_y=vihi_x+1;
           int vihi_z=vihi_y+1;
 
@@ -1687,10 +1694,14 @@ void Lambda2(
         SelfAdjointEigenSolver<Matrix<double,3,3> >solver(HP,false);
         e=solver.eigenvalues();  // input array bounds.
 
+        const int pi=_idx.Index(_i,_j,_k);
+        const int vi=3*pi;
+        const int vj=vi+1;
+        const int vk=vi+2;
+
         // extract lambda-2
         slowSort(e.data(),0,3);
         L2[pi]=e(1,0);
-        L2[pi]=(L2[pi]>=-1E-5&&L2[pi]<=1E-5?0.0:L2[pi]);
         }
       }
     }

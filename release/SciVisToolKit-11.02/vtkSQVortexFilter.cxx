@@ -328,6 +328,28 @@ int vtkSQVortexFilter::RequestData(
       return 1;
       }
 
+    // Copy the input field, unfortunately it's a deep copy
+    // since the input and output have different extents.
+    vtkDataArray *W=V->NewInstance();
+    outImData->GetPointData()->AddArray(W);
+    W->Delete();
+    int nCompsV=V->GetNumberOfComponents();
+    W->SetNumberOfComponents(nCompsV);
+    W->SetNumberOfTuples(outputTups);
+    W->SetName(V->GetName());
+    switch(V->GetDataType())
+      {
+      vtkTemplateMacro(
+        Copy<VTK_TT>(
+            inputExt.GetData(),
+            outputExt.GetData(),
+            (VTK_TT*)V->GetVoidPointer(0),
+            (VTK_TT*)W->GetVoidPointer(0),
+            nCompsV,
+            this->Mode,
+            USE_OUTPUT_BOUNDS));
+      }
+
     // Rotation.
     if (this->ComputeRotation)
       {
@@ -423,7 +445,7 @@ int vtkSQVortexFilter::RequestData(
       HN->Delete();
       HN->SetNumberOfComponents(1);
       HN->SetNumberOfTuples(outputTups);
-      string name("heln-");
+      string name("norm-hel-");
       name+=V->GetName();
       HN->SetName(name.c_str());
       //
