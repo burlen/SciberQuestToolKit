@@ -44,7 +44,7 @@ vtkSQKernelConvolution::vtkSQKernelConvolution()
   KernelType(KERNEL_TYPE_GAUSIAN),
   Kernel(0),
   KernelModified(1),
-  Mode(CartesianExtent::CartesianExtent::DIM_MODE_3D),
+  Mode(CartesianExtent::DIM_MODE_3D),
   NumberOfIterations(1)
 {
   #ifdef vtkSQKernelConvolutionDEBUG

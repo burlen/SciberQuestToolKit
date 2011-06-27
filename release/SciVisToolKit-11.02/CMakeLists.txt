@@ -105,7 +105,6 @@ set(CXX_SOURCES
   UnstructuredGridCellCopier.cxx
   vtkSQHemisphereSourceConfigurationWriter.cxx
   vtkSQHemisphereSourceConfigurationReader.cxx
-  vtkSQLog.cxx
   vtkSQMetaDataKeys.cxx
   vtkSQOOCBOVReader.cxx
   vtkSQOOCReader.cxx
@@ -125,12 +124,14 @@ if (SVTK_PROCESS_MONITOR)
   elseif (APPLE)
     set(CXX_SOURCES
       ${CXX_SOURCES}
+      vtkSQLog.cxx
       UnixSystemInterface.cxx
       OSXSystemInterface.cxx
       )
   else()
     set(CXX_SOURCES
       ${CXX_SOURCES}
+      vtkSQLog.cxx
       UnixSystemInterface.cxx
       LinuxSystemInterface.cxx
       )
@@ -251,7 +252,9 @@ endif()
 
 install(TARGETS SciVisToolKit DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-generate_python_bindings(SciVisToolKit ${SM_CXX_SOURCES})
+if (NOT WIN32)
+  generate_python_bindings(SciVisToolKit ${SM_CXX_SOURCES})
+endif()
 
 # GIMP scripts
 set (SVTK_POSTPROC_SCRIPTS OFF CACHE BOOL "Install post-processing scripts.")

@@ -117,7 +117,7 @@ int vtkSQPlaneSource::RequestInformation(
 //-----------------------------------------------------------------------------
 int vtkSQPlaneSource::RequestData(
       vtkInformation *req,
-      vtkInformationVector **/*inputVector*/,
+      vtkInformationVector ** /*inputVector*/,
       vtkInformationVector *outputVector)
 {
   #ifdef vtkSQPlaneSourceDEBUG

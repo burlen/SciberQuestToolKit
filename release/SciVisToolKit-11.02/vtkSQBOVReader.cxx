@@ -42,17 +42,20 @@ Copyright 2008 SciberQuest Inc.
 #include <sstream>
 using std::ostringstream;
 
-// for gethostname on windows.
+// #define vtkSQBOVReaderDEBUG
+#define vtkSQBOVReaderTIME
+
 #ifdef WIN32
+  // for gethostname on windows.
   #include <Winsock2.h>
+  // these are only usefull in terminals
+  #undef vtkSQBOVReaderTIME
+  #undef vtkSQBOVReaderDEBUG
 #endif
 
 #ifndef HOST_NAME_MAX
   #define HOST_NAME_MAX 255
 #endif
-
-// #define vtkSQBOVReaderDEBUG
-#define vtkSQBOVReaderTIME
 
 #if defined vtkSQBOVReaderTIME
   #include <sys/time.h>
