@@ -42,7 +42,7 @@ Copyright 2008 SciberQuest Inc.
 #include <sstream>
 using std::ostringstream;
 
-// #define vtkSQBOVReaderDEBUG
+#define vtkSQBOVReaderDEBUG
 #define vtkSQBOVReaderTIME
 
 #ifdef WIN32

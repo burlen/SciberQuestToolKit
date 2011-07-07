@@ -7,59 +7,62 @@
 Copyright 2008 SciberQuest Inc.
 
 */
-#include "PolyDataCellCopier.h"
+#include "UnstructuredGridCellCopier.h"
 
-#include "vtkPolyData.h"
+#include "vtkUnstructuredGrid.h"
 
-#include "SQMacros.h"
 #include "IdBlock.h"
 #include "FieldLine.h"
 #include "TerminationCondition.h"
 #include "vtkDataSet.h"
 #include "vtkPoints.h"
-#include "vtkPolyData.h"
+#include "vtkUnstructuredGrid.h"
 #include "vtkFloatArray.h"
 #include "vtkCellArray.h"
 #include "vtkUnsignedCharArray.h"
 #include "vtkIdTypeArray.h"
 
 //-----------------------------------------------------------------------------
-PolyDataCellCopier::~PolyDataCellCopier()
+UnstructuredGridCellCopier::~UnstructuredGridCellCopier()
 {
   this->ClearSource();
   this->ClearOutput();
 }
 
 //-----------------------------------------------------------------------------
-void PolyDataCellCopier::Clear()
+void UnstructuredGridCellCopier::Clear()
 {
   this->CellCopier::Clear();
-
   this->ClearSource();
   this->ClearOutput();
 }
 
 //-----------------------------------------------------------------------------
-void PolyDataCellCopier::ClearSource()
+void UnstructuredGridCellCopier::ClearSource()
 {
   if (this->SourcePts){ this->SourcePts->Delete(); }
   if (this->SourceCells){ this->SourceCells->Delete(); }
+  if (this->SourceTypes){ this->SourceTypes->Delete(); }
   this->SourcePts=0;
   this->SourceCells=0;
-  this->CellType=NONE;
+  this->SourceTypes=0;
 }
 
 //-----------------------------------------------------------------------------
-void PolyDataCellCopier::ClearOutput()
+void UnstructuredGridCellCopier::ClearOutput()
 {
   if (this->OutPts){ this->OutPts->Delete(); }
   if (this->OutCells){ this->OutCells->Delete(); }
+  if (this->OutTypes){ this->OutTypes->Delete(); }
+  if (this->OutLocs){ this->OutLocs->Delete(); }
   this->OutPts=0;
   this->OutCells=0;
+  this->OutTypes=0;
+  this->OutLocs=0;
 }
 
 //-----------------------------------------------------------------------------
-void PolyDataCellCopier::Initialize(vtkDataSet *s, vtkDataSet *o)
+void UnstructuredGridCellCopier::Initialize(vtkDataSet *s, vtkDataSet *o)
 {
   this->CellCopier::Initialize(s,o);
 
@@ -67,11 +70,11 @@ void PolyDataCellCopier::Initialize(vtkDataSet *s, vtkDataSet *o)
   this->ClearOutput();
 
   // source
-  vtkPolyData *source=dynamic_cast<vtkPolyData*>(s);
+  vtkUnstructuredGrid *source=dynamic_cast<vtkUnstructuredGrid*>(s);
   if (source==0)
     {
     sqErrorMacro(cerr,
-      "Error: Source must be polydata. " << s->GetClassName());
+       "Error: Source must be unstructured. " << s->GetClassName());
     return;
     }
 
@@ -89,88 +92,46 @@ void PolyDataCellCopier::Initialize(vtkDataSet *s, vtkDataSet *o)
     }
   this->SourcePts->Register(0);
 
-  if (source->GetNumberOfPolys())
-    {
-    this->SourceCells=source->GetPolys();
-    this->CellType=POLY;
-    }
- else
-  if (source->GetNumberOfStrips())
-    {
-    this->SourceCells=source->GetStrips();
-    this->CellType=STRIP;
-    }
- else
-  if (source->GetNumberOfLines())
-    {
-    this->SourceCells=source->GetLines();
-    this->CellType=LINE;
-    }
-  else
-  if (source->GetNumberOfVerts())
-    {
-    this->SourceCells=source->GetVerts();
-    this->CellType=VERT;
-    }
-  else
-    {
-    // this is an error because there are cells, but none of
-    // them are the type we expect.
-    sqErrorMacro(cerr,"Error: Polydata doesn't have any supported cells.");
-    return;
-    }
+  this->SourceCells=source->GetCells();
   this->SourceCells->Register(0);
 
+  this->SourceTypes=source->GetCellTypesArray();
+  this->SourceTypes->Register(0);
 
   // output
-  vtkPolyData *out=dynamic_cast<vtkPolyData*>(o);
+  vtkUnstructuredGrid *out=dynamic_cast<vtkUnstructuredGrid*>(o);
   if (out==0)
     {
-    sqErrorMacro(cerr,"Error: Out must be polydata. " << o->GetClassName());
+    sqErrorMacro(cerr,
+      "Error: Out must be unstructured grid. " << o->GetClassName());
     return;
     }
 
   vtkPoints *opts=vtkPoints::New();
   out->SetPoints(opts);
   opts->Delete();
+
   this->OutPts=dynamic_cast<vtkFloatArray*>(opts->GetData());
   this->OutPts->Register(0);
 
   this->OutCells=vtkCellArray::New();
-  switch (this->CellType)
-    {
-    case POLY:
-      out->SetPolys(this->OutCells);
-      break;
+  this->OutTypes=vtkUnsignedCharArray::New();
+  this->OutLocs=vtkIdTypeArray::New();
 
-    case STRIP:
-      out->SetStrips(this->OutCells);
-      break;
-
-    case LINE:
-      out->SetLines(this->OutCells);
-      break;
-
-    case VERT:
-      out->SetVerts(this->OutCells);
-      break;
-
-    default:
-      sqErrorMacro(cerr,"Error: Unsuported cell type.");
-      return;
-    }
+  out->SetCells(this->OutTypes,this->OutLocs,this->OutCells);
 }
 
 //-----------------------------------------------------------------------------
-int PolyDataCellCopier::Copy(IdBlock &SourceIds)
+int UnstructuredGridCellCopier::Copy(IdBlock &SourceIds)
 {
   // copy cell data
   this->CopyCellData(SourceIds);
 
+  // copy cell geometry and point data
   vtkIdType startCellId=SourceIds.first();
   vtkIdType nCellsLocal=SourceIds.size();
 
-  // Cells are sequentially acccessed (not random) so explicitly skip all cells
+  // Cells are sequentially acccessed so explicitly skip all cells
   // we aren't interested in.
   this->SourceCells->InitTraversal();
   for (vtkIdType i=0; i<startCellId; ++i)
@@ -180,30 +141,53 @@ int PolyDataCellCopier::Copy(IdBlock &SourceIds)
     this->SourceCells->GetNextCell(n,ptIds);
     }
 
-  // update the cell count before we forget (does not allocate).
-  this->OutCells->SetNumberOfCells(OutCells->GetNumberOfCells()+nCellsLocal);
-
+  // input points
   float *pSourcePts=this->SourcePts->GetPointer(0);
 
-  vtkIdTypeArray *outCells=this->OutCells->GetData();
-  vtkIdType insertLoc=outCells->GetNumberOfTuples();
+  // input types
+  unsigned char *pSourceTypes
+    = this->SourceTypes->GetPointer(startCellId);
 
+  // output points
   vtkIdType nOutPts=this->OutPts->GetNumberOfTuples();
 
-  // For each cell asigned to us we'll get its center (this is the seed point)
-  // and build corresponding cell in the output, The output only will have
-  // the cells assigned to this process.
+  // output cells
+  vtkIdTypeArray *outCells=this->OutCells->GetData();
+  vtkIdType nCellIds=outCells->GetNumberOfTuples();
+  vtkIdType nOutCells=this->OutCells->GetNumberOfCells();
+  this->OutCells->SetNumberOfCells(nOutCells+nCellsLocal);
+
+  // output cell types
+  vtkIdType endOfTypes=this->OutTypes->GetNumberOfTuples();
+  unsigned char *pOutTypes=this->OutTypes->WritePointer(endOfTypes,nCellsLocal);
+
+  // output cell locations
+  vtkIdType endOfLocs=this->OutLocs->GetNumberOfTuples();
+  vtkIdType *pOutLocs=this->OutLocs->WritePointer(endOfLocs,nCellsLocal);
+
+  // For each cell asigned
   for (vtkIdType i=0; i<nCellsLocal; ++i)
     {
-    // Get the cell that belong to us.
+    // get the cell that belong to us.
     vtkIdType nPtIds=0;
     vtkIdType *ptIds=0;
     this->SourceCells->GetNextCell(nPtIds,ptIds);
 
+    // set the new cell's location
+    *pOutLocs=nCellIds;
+    ++pOutLocs;
+
+    // copy its type.
+    *pOutTypes=*pSourceTypes;
+    ++pOutTypes;
+    ++pSourceTypes;
+
     // Get location to write new cell.
-    vtkIdType *pOutCells=outCells->WritePointer(insertLoc,nPtIds+1);
+    vtkIdType *pOutCells=outCells->WritePointer(nCellIds,nPtIds+1);
+
     // update next cell write location.
-    insertLoc+=nPtIds+1;
+    nCellIds+=nPtIds+1;
+
     // number of points in this cell
     *pOutCells=nPtIds;
     ++pOutCells;
@@ -211,6 +195,7 @@ int PolyDataCellCopier::Copy(IdBlock &SourceIds)
     // Get location to write new point. assumes we need to copy all
     // but this is wrong as there will be many duplicates. ignored.
     float *pOutPts=this->OutPts->WritePointer(3*nOutPts,3*nPtIds);
+
     // transfer from input to output (only what we own)
     for (vtkIdType j=0; j<nPtIds; ++j)
       {
@@ -220,7 +205,7 @@ int PolyDataCellCopier::Copy(IdBlock &SourceIds)
       if (this->GetUniquePointId(ptIds[j],outId))
         {
         // this point hasn't previsouly been coppied
-        // copy the coordinates.
+        // copy the point.
         pOutPts[0]=pSourcePts[idx  ];
         pOutPts[1]=pSourcePts[idx+1];
         pOutPts[2]=pSourcePts[idx+2];
@@ -234,6 +219,7 @@ int PolyDataCellCopier::Copy(IdBlock &SourceIds)
       ++pOutCells;
       }
     }
+
   // correct the length of the point array, above we assumed 
   // that all points from each cell needed to be inserted
   // and allocated that much space.
