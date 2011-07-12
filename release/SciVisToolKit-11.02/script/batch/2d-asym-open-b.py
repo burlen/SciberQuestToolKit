@@ -14,8 +14,8 @@ inputFileName       = '/scratch/00196/ux408073/2D-asymmetric-open/2d-asym-open.b
 arraysToRead        = ['b']
 # controls the time range, if the start and end time are < 0 the last step
 # is used
-startTimeStep       = 497
-endTimeStep         = 498
+startTimeStep       = -1
+endTimeStep         = -1
 
 # controls if Gaussian smoothing is applied and if so what stencil width
 # is used (must greater or equal to 3)
