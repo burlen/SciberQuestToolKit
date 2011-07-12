@@ -2,16 +2,6 @@
 
 # (C) 2010 SciberQuest Inc.
 #
-# pvserver-rc-batch.sh
-#
-# SGE batch script to start a pvserver group using it's reverse connection option.
-#
-# This script requires the follwing positional command line options:
-#
-# 1) the login node hostname
-# 2) the port number used in the reverse tunnel.
-# 3) the path to a ParaView install
-#
 
 #$ -V                                   # Inherit the submission environment
 #$ -cwd                                 # Start job in submission dir
@@ -19,7 +9,7 @@
 #$ -j y                                 # Combine stderr and stdout into stdout
 #$ -o $HOME/$JOB_NAME.out               # Name of the output file
 
-module use -a ~/modulefiles
+module use -a /home/01237/bloring/modulefiles
 module load PV3-3.10.0-icc-ompi-R
 
 USAGE="Error in usage: qsub-pvbatch.sh /path/to/paraview/install /path/to/driver.py /path/to/config.py"
