@@ -3,7 +3,7 @@
 #
 
 # output file prefix, including path, ends in _
-outputBaseFileName  = '/scratch/00196/ux408073/2D-asymmetric-open/images/lic_b_'
+outputBaseFileName  = '/scratch/00196/ux408073/2D-asymmetric-open/del/lic_b_'
 
 # image width in pixels
 outputWidth         = 1024
@@ -14,8 +14,13 @@ inputFileName       = '/scratch/00196/ux408073/2D-asymmetric-open/2d-asym-open.b
 arraysToRead        = ['b']
 # controls the time range, if the start and end time are < 0 the last step
 # is used
-startTimeStep       = -1
-endTimeStep         = -1
+startTimeStep       = 498
+endTimeStep         = 498
+
+# controls the subset read in, if any value is < 0 the extent on disk is used
+iSubset             = [-1, -1]
+jSubset             = [-1, -1]
+kSubset             = [-1, -1] 
 
 # controls if Gaussian smoothing is applied and if so what stencil width
 # is used (must greater or equal to 3)

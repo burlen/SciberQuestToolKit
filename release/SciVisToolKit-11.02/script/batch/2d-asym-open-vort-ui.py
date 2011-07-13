@@ -17,6 +17,11 @@ arraysToRead        = ['ui']
 startTimeStep       = -1
 endTimeStep         = -1
 
+# controls the subset read in, if any value is < 0 the extent on disk is used
+iSubset             = [-1, -1]
+jSubset             = [-1, -1]
+kSubset             = [-1, -1] 
+
 # controls if Gaussian smoothing is applied and if so what stencil width
 # is used (must greater or equal to 3)
 useSmoothing        = True

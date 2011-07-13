@@ -30,6 +30,10 @@ print 'config.startTimeStep'
 print config.startTimeStep  
 print 'config.endTimeStep'
 print config.endTimeStep    
+print 'config.subset'
+print config.iSubset
+print config.jSubset
+print config.kSubset
 print 'config.useSmoothing'
 print config.useSmoothing
 print 'config.smoothingWidth'
@@ -76,9 +80,34 @@ LoadPlugin(svtkPath,True,globals())
 
 # read the dataset
 bovr         = SQBOVReader(FileName=config.inputFileName)
-bovr.ISubset = bovr.GetProperty('ISubsetInfo')
-bovr.JSubset = bovr.GetProperty('JSubsetInfo')
-bovr.KSubset = bovr.GetProperty('KSubsetInfo')
+
+iExtent = bovr.GetProperty('ISubsetInfo')
+jExtent = bovr.GetProperty('JSubsetInfo')
+kExtent = bovr.GetProperty('KSubsetInfo')
+
+print 'whole extent'
+print iExtent 
+print jExtent 
+print kExtent 
+
+if (config.iSubset[0] < 0):
+  config.iSubset[0] = iExtent[0]
+if (config.iSubset[1] < 0):
+  config.iSubset[1] = iExtent[1]
+
+if (config.jSubset[0] < 0):
+  config.jSubset[0] = jExtent[0]
+if (config.jSubset[1] < 0):
+  config.jSubset[1] = jExtent[1]
+
+if (config.kSubset[0] < 0):
+  config.kSubset[0] = kExtent[0]
+if (config.kSubset[1] < 0):
+  config.kSubset[1] = kExtent[1]
+
+bovr.ISubset = config.iSubset 
+bovr.JSubset = config.jSubset
+bovr.KSubset = config.kSubset
 bovr.Arrays  = config.arraysToRead
 
 rep = Show(bovr)
@@ -87,8 +116,18 @@ rep.Representation = 'Outline'
 # run the pipeline here to get the bounds
 Render()
 
+nSteps = 0
 steps = bovr.TimestepValues
-nSteps = len(steps)
+try:
+  nSteps = len(steps)
+except:
+  nSteps = 1
+  steps = [steps]
+ 
+print "steps"
+print steps
+print "nStep"
+print nSteps
 
 bounds = bovr.GetDataInformation().GetBounds()
 bounds_dx = bounds[1] - bounds[0]
@@ -118,10 +157,11 @@ else:
   dimMode = 3
   aspect = 1.0 # TODO
 
+
 print 'extent'
-print bovr.GetProperty('ISubsetInfo')
-print bovr.GetProperty('JSubsetInfo')
-print bovr.GetProperty('KSubsetInfo')
+print config.iSubset
+print config.jSubset
+print config.kSubset
 print 'bounds'
 print bounds
 print 'dx'
