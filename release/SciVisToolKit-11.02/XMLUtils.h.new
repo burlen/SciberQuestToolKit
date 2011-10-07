@@ -1,0 +1,118 @@
+#ifndef XMLUtils_h
+#define XMLUtils_h
+
+#define REQUIRED true
+#define OPTIONAL false
+
+#include <vtkXMLElement.h>
+
+
+/// extract the value of an attribute from within the element tag
+const char *
+getAttribute(
+        vtkXMLElement *elem,
+        const char *name,
+        const char *defaultValue,
+        bool require,
+        const char *file="",
+        const char *line="");
+
+/// extract the value an attribute from within a nested element tag
+const char *
+getNestedAttribute(
+        vtkXMLDataElement *elem,
+        const char *name,
+        const char *keyAttName,
+        const char *keyAttValue,
+        const char *attName,
+        const char *defaultValue,
+        bool required,
+        const char *file="",
+        const char *line="");
+
+/// extract delimiting character from stream
+istream &
+delim(istream &s,char c);
+
+/// append values delimted by any combination of ',','\t','\n' or ' '
+template<typename T>
+void
+extractValues(
+    const string &dataStr,
+    vector<T> &data)
+{
+    istringstream ss(data);
+
+    while (ss && (ss >> ws) &&
+        delim(ss,',' ) && (ss >> std::ws) &&
+        delim(ss,'\n') && (ss >> std::ws) &&
+        delim(ss,'\t') && (ss >> std::ws))
+    {
+        T val;
+        ss >> val;
+        data.push_back(val);
+    }
+}
+
+/// append values delimted by any combination of ',','\t','\n' or ' '
+template<typename T>
+int
+extractValues(
+    vtkXMLDataElement *elem,
+    const string &xml,
+    vector<T> &data
+    )
+{
+   // expecting no nested elements
+    if (elem->GetNumberOfNestedElements()>0)
+    {
+        cerr << "Error, nested elements are not supported!" << endl;
+        return -1;
+    }
+
+    const char *elemName = elem->GetName();
+    string elemClose;
+    elemClose += "<";
+    elemClose += elemName;
+    elemClose += "/>":
+
+
+    // this gets us to opening tag
+    size_t tagAt=elem->GetXMLByteIndex();
+
+    // skip "<tag>" and locate the closing "</tag>"
+    size_t startsAt=tagAt+8;
+    size_t endsAt=xml.find(elemClose, tagAt);
+    if (endsAt==string::npos)
+    {
+        cerr << "Error, no closing tag " << elemClose << "." << endl;
+        return -1;
+    }
+
+    // read in the values
+    string text=xml.substr(startsAt,endsAt-startsAt);
+
+    cerr << endl << endl << "text=" << text << endl << endl;
+
+    istringstream ss(text);
+
+    while (ss && (ss >> ws) && 
+        delim(ss,',' ) && (ss >> ws) &&
+        delim(ss,'\n') && (ss >> ws) &&
+        delim(ss,'\t') && (ss >> ws))
+    {
+        T val;
+        ss >> val;
+        data.push_back(val);
+    }
+
+    cerr << endl << endl << data << endl << endl;
+
+    return 0;
+}
+
+
+
+
+#endif
+
