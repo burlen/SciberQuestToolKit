@@ -493,6 +493,20 @@ const char* vtkSQBOVReader::GetPointArrayName(int idx)
   return this->Reader->GetMetaData()->GetArrayName(idx);
 }
 
+//-----------------------------------------------------------------------------
+void vtkSQBOVReader::ClearPointArrayStatus()
+{
+  #if defined vtkSQBOVReaderDEBUG
+  pCerr() << "===============================ClearPointArrayStatus" << endl;
+  #endif
+
+  int nArrays=this->GetNumberOfPointArrays();
+  for (int i=0; i<nArrays; ++i)
+    {
+    const char *aName=this->GetPointArrayName(i);
+    this->SetPointArrayStatus(aName,0);
+    }
+}
 
 //----------------------------------------------------------------------------
 int vtkSQBOVReader::RequestDataObject(

@@ -85,16 +85,17 @@ void vtkSQImageGhosts::SetCommunicator(MPI_Comm comm)
 {
   if (this->Comm==comm) return;
 
-  if ( this->Comm!=MPI_COMM_NULL
-    && this->Comm!=this->Comm
-    && this->Comm!=MPI_COMM_SELF)
+  if ((this->Comm!=comm)
+    && (this->Comm!=MPI_COMM_NULL)
+    && (this->Comm!=MPI_COMM_SELF))
     {
     MPI_Comm_free(&this->Comm);
     }
 
-  if (comm==MPI_COMM_NULL)
+  if ((comm==MPI_COMM_NULL)
+    ||(comm==MPI_COMM_SELF))
     {
-    this->Comm=MPI_COMM_NULL;
+    this->Comm=comm;
     }
   else
     {

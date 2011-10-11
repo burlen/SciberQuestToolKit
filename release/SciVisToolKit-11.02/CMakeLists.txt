@@ -330,6 +330,10 @@ if (UNIX)
     target_link_libraries(MagnetosphereTopoBatch ${MPI_LIBRARIES} SciVisToolKit)
     install(TARGETS MagnetosphereTopoBatch DESTINATION ${CMAKE_INSTALL_PREFIX})
 
+    add_executable(SmoothBatch SmoothBatch.cpp XMLUtils.cxx)
+    target_link_libraries(SmoothBatch ${MPI_LIBRARIES} SciVisToolKit)
+    install(TARGETS SmoothBatch DESTINATION ${CMAKE_INSTALL_PREFIX})
+
     add_executable(Slicer Slicer.cpp)
     target_link_libraries(Slicer ${MPI_LIBRARIES} SciVisToolKit)
     install(TARGETS Slicer DESTINATION ${CMAKE_INSTALL_PREFIX})
@@ -358,6 +362,4 @@ if (SVTK_TESTING)
   target_link_libraries(TestFieldTopologyMapper SciVisToolKit ${MPI_LIBRARIES})
   install(TARGETS TestFieldTopologyMapper DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif ()
-
-
 

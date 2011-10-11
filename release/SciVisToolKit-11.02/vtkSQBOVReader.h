@@ -61,6 +61,7 @@ public:
   int GetPointArrayStatus(const char *name);
   int GetNumberOfPointArrays();
   const char* GetPointArrayName(int idx);
+  void ClearPointArrayStatus();
 
   // Description:
   // Subseting interface.

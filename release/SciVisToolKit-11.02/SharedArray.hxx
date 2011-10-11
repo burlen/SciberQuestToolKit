@@ -54,7 +54,7 @@ public:
 
 protected:
   SharedArray():Data(0),DataSize(0){}
-  virtual ~SharedArray(){ this->Resize(0); }
+  virtual ~SharedArray() { free(this->Data); }
 
 private:
   SharedArray(SharedArray &); // not implemented

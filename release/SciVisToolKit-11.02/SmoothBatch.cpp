@@ -13,6 +13,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkInformation.h"
 #include "vtkInformationDoubleVectorKey.h"
 #include "vtkSmartPointer.h"
+#include "vtkDataObject.h"
 
 #include "vtkPVXMLElement.h"
 #include "vtkPVXMLParser.h"
@@ -21,10 +22,8 @@ Copyright 2008 SciberQuest Inc.
 #include "SQMacros.h"
 #include "postream.h"
 #include "vtkSQBOVReader.h"
-#include "vtkSQFieldTracer.h"
-#include "vtkSQPlaneSource.h"
-#include "vtkSQVolumeSource.h"
-#include "vtkSQHemisphereSource.h"
+#include "vtkSQImageGhosts.h"
+#include "vtkSQKernelConvolution.h"
 #include "XMLUtils.h"
 
 #include <sstream>
@@ -76,7 +75,7 @@ int IndexOf(double value, double *values, int first, int last)
     {
     return IndexOf(value,values,mid+1,last);
     }
-  return -1;
+  return SQ_EXIT_ERROR;
 }
 
 //-----------------------------------------------------------------------------
@@ -103,9 +102,8 @@ int main(int argc, char **argv)
         << " 1) /path/to/runConfig.xml" << endl
         << " 2) /path/to/file.bov" << endl
         << " 3) /path/to/output/" << endl
-        << " 4) baseFileName" << endl
-        << " 5) startTime" << endl
-        << " 6) endTime" << endl
+        << " 4) startTime" << endl
+        << " 5) endTime" << endl
         << endl;
       }
     vtkAlgorithm::SetDefaultExecutivePrototype(0);
@@ -116,11 +114,11 @@ int main(int argc, char **argv)
   int configNameLen=0;
   char *configName=0;
 
+  int configFileLen=0;
+  char *configFile=0;
+
   int bovFileNameLen=0;
   char *bovFileName=0;
-
-  int baseNameLen=0;
-  char *baseName=0;
 
   int outputPathLen=0;
   char *outputPath=0;
@@ -130,43 +128,42 @@ int main(int argc, char **argv)
 
   if (worldRank==0)
     {
-    // read the metadat file into a buffer.
-    ifstream fs(configName);
-    if (!fs.good())
-    {
-        cerr
-          << "Error, failed to open " << configName << ".";
-        return -1;
-    }
-    // get length of the xml in file.
-    fs.seekg(0,ios::end);
-    int length=fs.tellg();
-    fs.seekg(0,ios::beg);
-
-    // allocate memory:
-    char *buffer=new char[length+1];
-    // read data as a block:
-    fs.read(buffer,length);
-    if (fs.fail()||fs.bad())
-    {
-        fs.close();
-        delete [] buffer;
-        cerr
-          << "Error, failed to read " << configName << ".";
-        return -1;
-    }
-    fs.close();
-    buffer[length]='\0';
-
-
-
-
-
     configNameLen=strlen(argv[1])+1;
     configName=(char *)malloc(configNameLen);
     strncpy(configName,argv[1],configNameLen);
     controller->Broadcast(&configNameLen,1,0);
     controller->Broadcast(configName,configNameLen,0);
+
+    // read the metadata file into a buffer.
+    ifstream fs(configName);
+    if (!fs.good())
+    {
+        sqErrorMacro(pCerr(),
+          << "Error, failed to open " << configName << ".");
+        return SQ_EXIT_ERROR;
+    }
+    // get length of the xml in file.
+    fs.seekg(0,ios::end);
+    configFileLen=fs.tellg();
+    fs.seekg(0,ios::beg);
+
+    // allocate memory:
+    configFile=(char *)malloc(configFileLen+1);
+    // read data as a block:
+    fs.read(configFile,configFileLen);
+    if (fs.fail()||fs.bad())
+    {
+        fs.close();
+        free(configFile);
+        sqErrorMacro(pCerr(),
+          << "Error, failed to read " << configName << ".");
+        return SQ_EXIT_ERROR;
+    }
+    fs.close();
+    configFile[configFileLen]='\0';
+    configFileLen+=1;
+    controller->Broadcast(&configFileLen,1,0);
+    controller->Broadcast(configFile,configFileLen,0);
 
     bovFileNameLen=strlen(argv[2])+1;
     bovFileName=(char *)malloc(bovFileNameLen);
@@ -180,18 +177,12 @@ int main(int argc, char **argv)
     controller->Broadcast(&outputPathLen,1,0);
     controller->Broadcast(outputPath,outputPathLen,0);
 
-    baseNameLen=strlen(argv[4])+1;
-    baseName=(char *)malloc(baseNameLen);
-    strncpy(baseName,argv[4],baseNameLen);
-    controller->Broadcast(&baseNameLen,1,0);
-    controller->Broadcast(baseName,baseNameLen,0);
-
     // times are optional if not provided entire series is
     // used.
-    if (argc>5)
+    if (argc>4)
       {
-      startTime=atof(argv[5]);
-      endTime=atof(argv[6]);
+      startTime=atof(argv[4]);
+      endTime=atof(argv[5]);
       }
     controller->Broadcast(&startTime,1,0);
     controller->Broadcast(&endTime,1,0);
@@ -202,6 +193,10 @@ int main(int argc, char **argv)
     configName=(char *)malloc(configNameLen);
     controller->Broadcast(configName,configNameLen,0);
 
+    controller->Broadcast(&configFileLen,1,0);
+    configFile=(char *)malloc(configFileLen);
+    controller->Broadcast(configFile,configFileLen,0);
+
     controller->Broadcast(&bovFileNameLen,1,0);
     bovFileName=(char *)malloc(bovFileNameLen);
     controller->Broadcast(bovFileName,bovFileNameLen,0);
@@ -210,28 +205,20 @@ int main(int argc, char **argv)
     outputPath=(char *)malloc(outputPathLen);
     controller->Broadcast(outputPath,outputPathLen,0);
 
-    controller->Broadcast(&baseNameLen,1,0);
-    baseName=(char *)malloc(baseNameLen);
-    controller->Broadcast(baseName,baseNameLen,0);
-
     controller->Broadcast(&startTime,1,0);
     controller->Broadcast(&endTime,1,0);
     }
 
   // read the configuration file.
-  int iErr=0;
-
-  // parse the configuration file
-  const string xml(buffer);
-  delete [] buffer;
+  const string xml(configFile);
+  free(configFile);
 
   istringstream xmls(xml);
 
   // parse the xml
-  vtkXMLDataParser *parser=vtkXMLDataParser::New();
+  vtkPVXMLParser *parser=vtkPVXMLParser::New();
   parser->SetStream(&xmls);
   parser->Parse();
-
 
   // check for the semblance of a valid configuration hierarchy
   vtkPVXMLElement *root=parser->GetRootElement();
@@ -240,8 +227,10 @@ int main(int argc, char **argv)
     sqErrorMacro(pCerr(),"Invalid XML in file " << configName << ".");
     return SQ_EXIT_ERROR;
     }
+  root->Register(0);
+  parser->Delete();
 
-  string requiredType("VortexDetectBatch");
+  string requiredType("SmoothBatch");
   const char *foundType=root->GetName();
   if (foundType==0 || foundType!=requiredType)
     {
@@ -262,42 +251,17 @@ int main(int argc, char **argv)
     return SQ_EXIT_ERROR;
     }
 
-  iErr=0;
+  vtkSQBOVReader *r=vtkSQBOVReader::New();
 
-  const char *vectorList;
-  iErr+=GetRequiredAttribute(elem,"vectors",&vectorList);
-
-  istringstream iss(vectorList);
-  vector<string> vectors;
-  while (iss.good())
-    {
-    string s;
-    iss >> s;
-    vectors.push_back(s);
-    }
-
-
-
-  int ISubset[2]={-1,-1};
-  iErr+=GetRequiredAttribute<int,2>(elem,"ISubset",ISubset);
-
-  int JSubset[2]={-1,-1};
-  iErr+=GetRequiredAttribute<int,2>(elem,"JSubset",JSubset);
-
-  int KSubset[2]={-1,-1};
-  iErr+=GetRequiredAttribute<int,2>(elem,"KSubset",KSubset);
-
+  // set MPI optimizations 
   int cb_enable=0;
-  iErr+=GetRequiredAttribute<int,1>(elem,"cb_enable",&cb_enable);
-
+  int iErr=0;
+  iErr=GetOptionalAttribute<int,1>(elem,"cb_enable",&cb_enable);
   if (iErr!=0)
     {
     sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
     return SQ_EXIT_ERROR;
     }
-
-
-  vtkSQBOVReader *r=vtkSQBOVReader::New();
 
   if (cb_enable==0)
     {
@@ -313,29 +277,98 @@ int main(int argc, char **argv)
     r->SetUseCollectiveIO(vtkSQBOVReader::HINT_AUTOMATIC);
     }
 
-  // hmmm  don't have the subset info yet...may have to move this
-  if (ISubset[0]>-1)
-    {
-    r->SetISubset(ISubset);
-    }
-  if (JSubset[0]>-1)
-    {
-    r->SetJSubset(JSubset);
-    }
-  if (KSubset[0]>-1)
-    {
-    r->SetKSubset(KSubset);
-    }
 
   r->SetUseDataSieving(vtkSQBOVReader::HINT_AUTOMATIC);
   r->SetFileName(bovFileName);
-  r->SetPointArrayStatus(vectors,1);
   if (!r->IsOpen())
     {
     return SQ_EXIT_ERROR;
     }
 
-  // earth terminator surfaces
+  // subset the data
+  // when the user passes -1, we'll use the whole extent
+  iErr=0;
+  int ISubset[2]={-1,-1};
+  iErr+=GetOptionalAttribute<int,2>(elem,"ISubset",ISubset);
+
+  int JSubset[2]={-1,-1};
+  iErr+=GetOptionalAttribute<int,2>(elem,"JSubset",JSubset);
+
+  int KSubset[2]={-1,-1};
+  iErr+=GetOptionalAttribute<int,2>(elem,"KSubset",KSubset);
+
+  if (iErr!=0)
+    {
+    sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
+    return SQ_EXIT_ERROR;
+    }
+
+  int IWholeset[2]={-1,-1};
+  r->GetISubsetRange(IWholeset);
+  if (ISubset[0]<0)
+    {
+    ISubset[0]=IWholeset[0];
+    }
+  if (ISubset[1]<0)
+    {
+    ISubset[1]=IWholeset[1];
+    }
+  r->SetISubset(ISubset[0],ISubset[1]);
+
+  int JWholeset[2]={-1,-1};
+  r->GetJSubsetRange(JWholeset);
+  if (JSubset[0]<0)
+    {
+    JSubset[0]=JWholeset[0];
+    }
+  if (JSubset[1]<0)
+    {
+    JSubset[1]=JWholeset[1];
+    }
+  r->SetJSubset(JSubset[0],JSubset[1]);
+
+  int KWholeset[2]={-1,-1};
+  r->GetKSubsetRange(KWholeset);
+  if (KSubset[0]<0)
+    {
+    KSubset[0]=KWholeset[0];
+    }
+  if (KSubset[1]<0)
+    {
+    KSubset[1]=KWholeset[1];
+    }
+  r->SetKSubset(KSubset[0],KSubset[1]);
+
+  // select arrays to process
+  // when none are provided we process all available
+  vector<string> arrays;
+  int nArrays=0;
+  elem=GetOptionalElement(elem,"arrays");
+  if (elem)
+    {
+    ExtractValues(elem->GetCharacterData(),arrays);
+    nArrays=arrays.size();
+    if (nArrays<1)
+      {
+      sqErrorMacro(pCerr(),"Error: parsing <arrays>.");
+      return SQ_EXIT_ERROR;
+      }
+    }
+  else
+    {
+    nArrays=r->GetNumberOfPointArrays();
+    for (int i=0; i<nArrays; ++i)
+      {
+      arrays.push_back(r->GetPointArrayName(i));
+      }
+    }
+
+  // set up ghost cell generator
+  vtkSQImageGhosts *ig=vtkSQImageGhosts::New();
+  ig->AddInputConnection(r->GetOutputPort(0));
+  r->Delete();
+
+  // set up kernel convolution filter
   iErr=0;
   elem=GetRequiredElement(root,"vtkSQKernelConvolution");
   if (elem==0)
@@ -343,17 +376,8 @@ int main(int argc, char **argv)
     return SQ_EXIT_ERROR;
     }
 
-  double hemiCenter[3];
-  iErr+=GetRequiredAttribute<double,3>(elem,"center",hemiCenter);
-
-  double hemiNorth[3];
-  iErr+=GetRequiredAttribute<double,3>(elem,"north",hemiNorth);
-
-  double hemiRadius;
-  iErr+=GetRequiredAttribute<double,1>(elem,"radius",&hemiRadius);
-
-  int hemiResolution;
-  iErr+=GetRequiredAttribute<int,1>(elem,"resolution",&hemiResolution);
+  int stencilWidth;
+  iErr+=GetRequiredAttribute<int,1>(elem,"stencilWidth",&stencilWidth);
 
   if (iErr!=0)
     {
@@ -361,186 +385,29 @@ int main(int argc, char **argv)
     return SQ_EXIT_ERROR;
     }
 
-  vtkSQHemisphereSource *hs=vtkSQHemisphereSource::New();
-  hs->SetCenter(hemiCenter);
-  hs->SetNorth(hemiNorth);
-  hs->SetRadius(hemiRadius);
-  hs->SetResolution(hemiResolution);
+  vtkSQKernelConvolution *kconv=vtkSQKernelConvolution::New();
+  kconv->SetKernelType(vtkSQKernelConvolution::KERNEL_TYPE_GAUSIAN);
+  kconv->SetKernelWidth(stencilWidth);
+  kconv->AddInputConnection(ig->GetOutputPort(0));
+  ig->Delete();
 
-  // seed source
-  iErr=0;
-  vtkAlgorithm *ss;
-  const char *outFileExt;
-  if ((elem=GetOptionalElement(root,"vtkSQPlaneSource"))!=NULL)
-    {
-    // 2D source
-    outFileExt=".pvtp";
-
-    double origin[3];
-    iErr+=GetRequiredAttribute<double,3>(elem,"origin",origin);
-
-    double point1[3];
-    iErr+=GetRequiredAttribute<double,3>(elem,"point1",point1);
-
-    double point2[3];
-    iErr+=GetRequiredAttribute<double,3>(elem,"point2",point2);
-
-    int resolution[2];
-    iErr+=GetRequiredAttribute<int,2>(elem,"resolution",resolution);
-
-    if (iErr!=0)
-      {
-      sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
-      return SQ_EXIT_ERROR;
-      }
-
-    vtkSQPlaneSource *ps=vtkSQPlaneSource::New();
-    ps->SetOrigin(origin);
-    ps->SetPoint1(point1);
-    ps->SetPoint2(point2);
-    ps->SetResolution(resolution);
-    ps->SetImmediateMode(0);
-    ss=ps;
-    }
-  else
-  if ((elem=GetOptionalElement(root,"vtkSQVolumeSource"))!=NULL)
-    {
-    // 3D source
-    outFileExt=".pvtu";
-
-    double origin[3];
-    iErr+=GetRequiredAttribute<double,3>(elem,"origin",origin);
-
-    double point1[3];
-    iErr+=GetRequiredAttribute<double,3>(elem,"point1",point1);
-
-    double point2[3];
-    iErr+=GetRequiredAttribute<double,3>(elem,"point2",point2);
-
-    double point3[3];
-    iErr+=GetRequiredAttribute<double,3>(elem,"point3",point3);
-
-    int resolution[3];
-    iErr+=GetRequiredAttribute<int,3>(elem,"resolution",resolution);
-
-    if (iErr!=0)
-      {
-      sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
-      return SQ_EXIT_ERROR;
-      }
-
-    vtkSQVolumeSource *vs=vtkSQVolumeSource::New();
-    vs->SetOrigin(origin);
-    vs->SetPoint1(point1);
-    vs->SetPoint2(point2);
-    vs->SetPoint3(point3);
-    vs->SetResolution(resolution);
-    vs->SetImmediateMode(0);
-    ss=vs;
-    }
-  else
-    {
-    sqErrorMacro(pCerr(),"No seed source found.");
-    return SQ_EXIT_ERROR;
-    }
-
-  // field topology mapper
-  iErr=0;
-  elem=GetRequiredElement(root,"vtkSQFieldTracer");
-  if (elem==0)
-    {
-    return SQ_EXIT_ERROR;
-    }
-
-  int integratorType;
-  iErr+=GetRequiredAttribute<int,1>(elem,"integrator_type",&integratorType);
-
-  double maxStepSize;
-  iErr+=GetRequiredAttribute<double,1>(elem,"max_step_size",&maxStepSize);
-
-  double maxArcLength;
-  iErr+=GetRequiredAttribute<double,1>(elem,"max_arc_length",&maxArcLength);
-
-  double minStepSize;
-  int maxNumberSteps;
-  double maxError;
-  if (integratorType==vtkSQFieldTracer::INTEGRATOR_RK45)
-    {
-    GetRequiredAttribute<double,1>(elem,"min_step_size",&minStepSize);
-    GetRequiredAttribute<int,1>(elem,"max_number_steps",&maxNumberSteps);
-    GetRequiredAttribute<double,1>(elem,"max_error",&maxError);
-    }
-
-  double nullThreshold;
-  GetRequiredAttribute<double,1>(elem,"null_threshold",&nullThreshold);
-
-  int dynamicScheduler;
-  GetRequiredAttribute<int,1>(elem,"dynamic_scheduler",&dynamicScheduler);
-
-  int masterBlockSize;
-  int workerBlockSize;
-  if (dynamicScheduler)
-    {
-    GetRequiredAttribute<int,1>(elem,"master_block_size",&masterBlockSize);
-    GetRequiredAttribute<int,1>(elem,"worker_block_size",&workerBlockSize);
-    }
-
-  if (iErr!=0)
-    {
-    sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
-    return SQ_EXIT_ERROR;
-    }
-
-  vtkSQFieldTracer *ftm=vtkSQFieldTracer::New();
-  ftm->SetMode(vtkSQFieldTracer::MODE_TOPOLOGY);
-  ftm->SetIntegratorType(integratorType);
-  ftm->SetMaxLineLength(maxArcLength);
-  ftm->SetMaxStep(maxStepSize);
-  if (integratorType==vtkSQFieldTracer::INTEGRATOR_RK45)
-    {
-    ftm->SetMinStep(minStepSize);
-    ftm->SetMaxNumberOfSteps(maxNumberSteps);
-    ftm->SetMaxError(maxError);
-    }
-  ftm->SetNullThreshold(nullThreshold);
-  ftm->SetUseDynamicScheduler(dynamicScheduler);
-  if (dynamicScheduler)
-    {
-    ftm->SetMasterBlockSize(masterBlockSize);
-    ftm->SetWorkerBlockSize(workerBlockSize);
-    }
-  ftm->SetSqueezeColorMap(0);
-  ftm->AddVectorInputConnection(r->GetOutputPort(0));
-  ftm->AddTerminatorInputConnection(hs->GetOutputPort(0));
-  ftm->AddTerminatorInputConnection(hs->GetOutputPort(1));
-  ftm->AddSeedPointInputConnection(ss->GetOutputPort(0));
-  ftm->SetInputArrayToProcess(
-        0,
-        0,
-        0,
-        vtkDataObject::FIELD_ASSOCIATION_POINTS,
-        vectors);
-
-  r->Delete();
-  hs->Delete();
-  ss->Delete();
 
   vtkXMLPDataSetWriter *w=vtkXMLPDataSetWriter::New();
   //w->SetDataModeToBinary();
   w->SetDataModeToAppended();
   w->SetEncodeAppendedData(0);
   w->SetCompressorTypeToNone();
-  w->AddInputConnection(0,ftm->GetOutputPort(0));
+  w->AddInputConnection(0,kconv->GetOutputPort(0));
   w->SetNumberOfPieces(worldSize);
   w->SetStartPiece(worldRank);
   w->SetEndPiece(worldRank);
   w->UpdateInformation();
   //const char *ext=w->GetDefaultFileExtension();
-  ftm->Delete();
+  kconv->Delete();
 
   // initialize for domain decomposition
   vtkStreamingDemandDrivenPipeline* exec
-    = dynamic_cast<vtkStreamingDemandDrivenPipeline*>(ftm->GetExecutive());
+    = dynamic_cast<vtkStreamingDemandDrivenPipeline*>(kconv->GetExecutive());
 
   vtkInformation *info=exec->GetOutputInformation(0);
 
@@ -549,14 +416,14 @@ int main(int argc, char **argv)
 
   // querry available times
   exec->UpdateInformation();
-  double *times=vtkStreamingDemandDrivenPipeline::TIME_STEPS()->Get(info);
+  double *timeInfo=vtkStreamingDemandDrivenPipeline::TIME_STEPS()->Get(info);
   int nTimes=vtkStreamingDemandDrivenPipeline::TIME_STEPS()->Length(info);
   if (nTimes<1)
     {
     sqErrorMacro(pCerr(),"Error: No timesteps.");
     return SQ_EXIT_ERROR;
     }
-
+  vector<double> times(timeInfo,timeInfo+nTimes);
 
   int startTimeIdx;
   int endTimeIdx;
@@ -572,14 +439,14 @@ int main(int argc, char **argv)
   else
     {
     // get indices of requested start and end times
-    startTimeIdx=IndexOf(startTime,times,0,nTimes-1);
+    startTimeIdx=IndexOf(startTime,&times[0],0,nTimes-1);
     if (startTimeIdx<0)
       {
       sqErrorMacro(pCerr(),"Invalid start time " << startTimeIdx << ".");
       return SQ_EXIT_ERROR;
       }
 
-    endTimeIdx=IndexOf(endTime,times,0,nTimes-1);
+    endTimeIdx=IndexOf(endTime,&times[0],0,nTimes-1);
     if (endTimeIdx<0)
       {
       sqErrorMacro(pCerr(),"Invalid end time " << endTimeIdx << ".");
@@ -590,29 +457,26 @@ int main(int argc, char **argv)
   if (worldRank==0)
     {
     pCerr()
-      << "Selected " 
+      << "Selected "
       << startTime << ":" << startTimeIdx
       << " to "
       << endTime << ":" << endTimeIdx
-      << endl; 
+      << endl;
     }
 
-    ostringstream fns;
-    fns
-      << outputPath
-      << "/"
-      << baseName;
+  root->Delete();
 
-    // make a directory for this dataset
-    iErr=mkdir(fns.str().c_str(),S_IRWXU|S_IXGRP);
-    if (iErr<0 && (errno!=EEXIST))
-      {
-      char *sErr=strerror(errno);
-      sqErrorMacro(pCerr(),
-          << "Failed to mkdir " << fns.str() << "." << endl
-          << "Error: " << sErr << ".");
-      return SQ_EXIT_ERROR;
-      }
+
+  // make a directory for this dataset
+  iErr=mkdir(outputPath,S_IRWXU|S_IXGRP);
+  if (iErr<0 && (errno!=EEXIST))
+    {
+    char *sErr=strerror(errno);
+    sqErrorMacro(pCerr(),
+        << "Failed to mkdir " << outputPath << "." << endl
+        << "Error: " << sErr << ".");
+    return SQ_EXIT_ERROR;
+    }
 
   /// execute
   // run the pipeline for each time step, write the
@@ -621,17 +485,21 @@ int main(int argc, char **argv)
     {
     double time=times[idx];
 
+    if (worldRank==0)
+      {
+      pCerr() << "processing time " << time << endl;
+      }
+
     exec->SetUpdateTimeStep(0,time);
 
+    // make a directory for this time step
+    ostringstream fns;
     fns.str("");
     fns
       << outputPath
       << "/"
-      << baseName
-      << "/"
-      << setfill('0') << setw(8) << time;
+      << setfill('0') << setw(8) << (unsigned int)time;
 
-    // make a directory for this time step
     iErr=mkdir(fns.str().c_str(),S_IRWXU|S_IXGRP);
     if (iErr<0 && (errno!=EEXIST))
       {
@@ -642,23 +510,59 @@ int main(int argc, char **argv)
       return SQ_EXIT_ERROR;
       }
 
-    fns
-      << "/"
-      << baseName
-      << outFileExt;
-
-    w->SetFileName(fns.str().c_str());
-    w->Write();
-
-    if (worldRank==0)
+    // loop over requested arrays
+    for (int vecIdx=0; vecIdx<nArrays; ++vecIdx)
       {
-      pCerr() << "Wrote: " << fns.str().c_str() << "." << endl;
+      const string &vecName=arrays[vecIdx];
+
+      fns.str("");
+      fns
+        << outputPath
+        << "/"
+        << setfill('0') << setw(8) << (unsigned int)time
+        << "/"
+        << vecName;
+
+      // make a directory for this vector
+      iErr=mkdir(fns.str().c_str(),S_IRWXU|S_IXGRP);
+      if (iErr<0 && (errno!=EEXIST))
+        {
+        char *sErr=strerror(errno);
+        sqErrorMacro(pCerr(),
+            << "Failed to mkdir " << fns.str() << "."
+            << "Error: " << sErr << ".");
+        return SQ_EXIT_ERROR;
+        }
+
+      r->ClearPointArrayStatus();
+      r->SetPointArrayStatus(vecName.c_str(),1);
+
+      kconv->SetInputArrayToProcess(
+            0,
+            0,
+            0,
+            vtkDataObject::FIELD_ASSOCIATION_POINTS,
+            vecName.c_str());
+
+      fns
+        << "/"
+        << vecName
+        << ".pvti";
+
+      w->SetFileName(fns.str().c_str());
+      w->Write();
+
+      if (worldRank==0)
+        {
+        pCerr() << "Wrote: " << fns.str().c_str() << "." << endl;
+        }
       }
     }
   w->Delete();
 
   free(configName);
-  free(baseName);
+  free(outputPath);
+  free(bovFileName);
 
   vtkAlgorithm::SetDefaultExecutivePrototype(0);
 

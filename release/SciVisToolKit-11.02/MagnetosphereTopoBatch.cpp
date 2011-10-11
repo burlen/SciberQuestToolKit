@@ -468,15 +468,14 @@ int main(int argc, char **argv)
   exec->SetUpdatePiece(info,worldRank);
 
   // querry available times
-  exec->UpdateInformation();
-  double *times=vtkStreamingDemandDrivenPipeline::TIME_STEPS()->Get(info);
+  double *timeInfo=vtkStreamingDemandDrivenPipeline::TIME_STEPS()->Get(info);
   int nTimes=vtkStreamingDemandDrivenPipeline::TIME_STEPS()->Length(info);
   if (nTimes<1)
     {
     sqErrorMacro(pCerr(),"Error: No timesteps.");
     return SQ_EXIT_ERROR;
     }
-
+  vector<double> times(timeInfo,timeInfo+nTimes);
 
   int startTimeIdx;
   int endTimeIdx;
@@ -492,14 +491,14 @@ int main(int argc, char **argv)
   else
     {
     // get indices of requested start and end times
-    startTimeIdx=IndexOf(startTime,times,0,nTimes-1);
+    startTimeIdx=IndexOf(startTime,&times[0],0,nTimes-1);
     if (startTimeIdx<0)
       {
       sqErrorMacro(pCerr(),"Invalid start time " << startTimeIdx << ".");
       return SQ_EXIT_ERROR;
       }
 
-    endTimeIdx=IndexOf(endTime,times,0,nTimes-1);
+    endTimeIdx=IndexOf(endTime,&times[0],0,nTimes-1);
     if (endTimeIdx<0)
       {
       sqErrorMacro(pCerr(),"Invalid end time " << endTimeIdx << ".");

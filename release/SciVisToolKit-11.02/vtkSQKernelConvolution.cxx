@@ -196,6 +196,7 @@ int vtkSQKernelConvolution::UpdateKernel()
           }
         }
       }
+    delete [] X;
     }
   else
   if (this->KernelType==KERNEL_TYPE_CONSTANT)

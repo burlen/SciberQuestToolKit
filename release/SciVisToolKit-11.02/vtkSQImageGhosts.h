@@ -58,6 +58,7 @@ protected:
 private:
   // CartesianExtent Grow(const CartesianExtent &inputExt);
 
+  //BTX
   void ExecuteTransactions(
       vtkDataSetAttributes *inDsa,
       vtkDataSetAttributes *outDsa,
@@ -65,6 +66,7 @@ private:
       CartesianExtent outputExt,
       vector<GhostTransaction> &transactions,
       bool pointData);
+  //ETX
 
 private:
   int WorldSize;
