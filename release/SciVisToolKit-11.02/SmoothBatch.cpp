@@ -26,6 +26,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkSQKernelConvolution.h"
 #include "XMLUtils.h"
 #include "DebugUtil.h"
+#include "Tuple.hxx"
 
 #include <sstream>
 using std::ostringstream;
@@ -290,57 +291,27 @@ int main(int argc, char **argv)
 
   // subset the data
   // when the user passes -1, we'll use the whole extent
+  int wholeExtent[6];
+  r->GetSubset(wholeExtent);
   iErr=0;
-  int ISubset[2]={-1,-1};
-  iErr+=GetOptionalAttribute<int,2>(elem,"ISubset",ISubset);
-
-  int JSubset[2]={-1,-1};
-  iErr+=GetOptionalAttribute<int,2>(elem,"JSubset",JSubset);
-
-  int KSubset[2]={-1,-1};
-  iErr+=GetOptionalAttribute<int,2>(elem,"KSubset",KSubset);
-
+  int subset[6]={-1,-1,-1,-1,-1,-1};
+  iErr+=GetOptionalAttribute<int,2>(elem,"ISubset",subset);
+  iErr+=GetOptionalAttribute<int,2>(elem,"JSubset",subset+2);
+  iErr+=GetOptionalAttribute<int,2>(elem,"KSubset",subset+4);
   if (iErr!=0)
     {
     sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
     return SQ_EXIT_ERROR;
     }
-
-  int IWholeset[2]={-1,-1};
-  r->GetISubsetRange(IWholeset);
-  if (ISubset[0]<0)
+  for (int i=0; i<6; ++i)
     {
-    ISubset[0]=IWholeset[0];
+    if (subset[i]<0) subset[i]=wholeExtent[i];
     }
-  if (ISubset[1]<0)
+  r->SetSubset(subset);
+  if (worldRank==0)
     {
-    ISubset[1]=IWholeset[1];
+    pCerr() << "operating on extent " << Tuple<int>(subset,6) << endl;
     }
-  r->SetISubset(ISubset[0],ISubset[1]);
-
-  int JWholeset[2]={-1,-1};
-  r->GetJSubsetRange(JWholeset);
-  if (JSubset[0]<0)
-    {
-    JSubset[0]=JWholeset[0];
-    }
-  if (JSubset[1]<0)
-    {
-    JSubset[1]=JWholeset[1];
-    }
-  r->SetJSubset(JSubset[0],JSubset[1]);
-
-  int KWholeset[2]={-1,-1};
-  r->GetKSubsetRange(KWholeset);
-  if (KSubset[0]<0)
-    {
-    KSubset[0]=KWholeset[0];
-    }
-  if (KSubset[1]<0)
-    {
-    KSubset[1]=KWholeset[1];
-    }
-  r->SetKSubset(KSubset[0],KSubset[1]);
 
   // select arrays to process
   // when none are provided we process all available
@@ -409,7 +380,7 @@ int main(int argc, char **argv)
 
   // initialize for domain decomposition
   vtkStreamingDemandDrivenPipeline* exec
-    = dynamic_cast<vtkStreamingDemandDrivenPipeline*>(r->GetExecutive());
+    = dynamic_cast<vtkStreamingDemandDrivenPipeline*>(kconv->GetExecutive());
 
   vtkInformation *info=exec->GetOutputInformation(0);
 
