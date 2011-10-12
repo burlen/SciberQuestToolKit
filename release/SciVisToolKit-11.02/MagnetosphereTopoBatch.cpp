@@ -466,6 +466,7 @@ int main(int argc, char **argv)
 
   exec->SetUpdateNumberOfPieces(info,worldSize);
   exec->SetUpdatePiece(info,worldRank);
+  exec->SetUpdateExtent(info,worldRank,worldSize,0);
 
   // querry available times
   double *timeInfo=vtkStreamingDemandDrivenPipeline::TIME_STEPS()->Get(info);

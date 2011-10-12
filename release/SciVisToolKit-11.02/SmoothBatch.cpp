@@ -25,6 +25,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkSQImageGhosts.h"
 #include "vtkSQKernelConvolution.h"
 #include "XMLUtils.h"
+#include "DebugUtil.h"
 
 #include <sstream>
 using std::ostringstream;
@@ -92,6 +93,8 @@ int main(int argc, char **argv)
   vtkCompositeDataPipeline* cexec=vtkCompositeDataPipeline::New();
   vtkAlgorithm::SetDefaultExecutivePrototype(cexec);
   cexec->Delete();
+
+  //GdbAttachRanks("xterm","0");
 
   if (argc<4)
     {
@@ -391,7 +394,6 @@ int main(int argc, char **argv)
   kconv->AddInputConnection(ig->GetOutputPort(0));
   ig->Delete();
 
-
   vtkXMLPDataSetWriter *w=vtkXMLPDataSetWriter::New();
   //w->SetDataModeToBinary();
   w->SetDataModeToAppended();
@@ -407,12 +409,13 @@ int main(int argc, char **argv)
 
   // initialize for domain decomposition
   vtkStreamingDemandDrivenPipeline* exec
-    = dynamic_cast<vtkStreamingDemandDrivenPipeline*>(kconv->GetExecutive());
+    = dynamic_cast<vtkStreamingDemandDrivenPipeline*>(r->GetExecutive());
 
   vtkInformation *info=exec->GetOutputInformation(0);
 
   exec->SetUpdateNumberOfPieces(info,worldSize);
   exec->SetUpdatePiece(info,worldRank);
+  exec->SetUpdateExtent(info,worldRank,worldSize,0);
 
   // querry available times
   exec->UpdateInformation();
@@ -465,7 +468,6 @@ int main(int argc, char **argv)
     }
 
   root->Delete();
-
 
   // make a directory for this dataset
   iErr=mkdir(outputPath,S_IRWXU|S_IXGRP);

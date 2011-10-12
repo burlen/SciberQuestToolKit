@@ -10,9 +10,9 @@
       ISubset="5120 10239"
       JSubset="-1 -1"
       KSubset="1280 2559">
-       <arrays> b ui ue </arrays>
+       <arrays> b </arrays>
   </vtkSQBOVReader>
 
-  <vtkSQKernelConvolution stencilWidth="19"/>
+  <vtkSQKernelConvolution stencilWidth="3"/>
 
 </SmoothBatch>

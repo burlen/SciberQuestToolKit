@@ -530,8 +530,9 @@ int vtkSQBOVReader::RequestDataObject(
   dataset->Delete();
 
   #if defined vtkSQBOVReaderDEBUG
-  cerr << "datasetType=" << info->Get(vtkDataObject::DATA_TYPE_NAME()) << endl;
-  cerr << "dataset=" << info->Get(vtkDataObject::DATA_OBJECT()) << endl;
+  pCerr() << "datasetType=" << info->Get(vtkDataObject::DATA_TYPE_NAME()) << endl;
+  pCerr() << "dataset=" << info->Get(vtkDataObject::DATA_OBJECT()) << endl;
+  pCerr() << "info="; info->Print(cerr);
   #endif
 
   return 1;
@@ -626,6 +627,10 @@ int vtkSQBOVReader::RequestInformation(
     //     vtkExecutive::KEYS_TO_COPY(),
     //     vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT());
 
+    #if defined vtkSQBOVReaderDEBUG
+    pCerr() << "WHOLE_EXTENT=" << Tuple<int>(wholeExtent,6) << endl;
+    #endif
+
     if (this->Reader->DataSetTypeIsImage())
       {
       double X0[3];
@@ -637,6 +642,11 @@ int vtkSQBOVReader::RequestInformation(
       this->Reader->GetMetaData()->GetSpacing(dX);
       info->Set(vtkDataObject::SPACING(),dX,3);
       // req->Append(vtkExecutive::KEYS_TO_COPY(),vtkDataObject::SPACING());
+
+      #if defined vtkSQBOVReaderDEBUG
+      pCerr() << "ORIGIN=" << Tuple<double>(X0,3) << endl;
+      pCerr() << "SPACING=" << Tuple<double>(dX,3) << endl;
+      #endif
       }
     }
 

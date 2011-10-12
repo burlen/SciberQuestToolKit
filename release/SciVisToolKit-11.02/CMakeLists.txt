@@ -80,6 +80,7 @@ set(CXX_SOURCES
   CartesianDataBlockIODescriptorIterator.cxx
   CartesianExtent.cxx
   CellCopier.cxx
+  DebugUtil.cxx
   IdBlock.cxx
   FieldLine.cxx
   FieldTraceData.cxx
