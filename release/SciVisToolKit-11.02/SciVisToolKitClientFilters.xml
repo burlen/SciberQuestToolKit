@@ -8,8 +8,9 @@ Copyright 2008 SciberQuest Inc.
 -->
 <ParaViewFilters>
 
-  <Category name="SciberQuestSciVis" menu_label="Sciber&amp;Quest" show_in_toolbar="1">
+  <Category name="SciberQuestSciVis" menu_label="Sciber&amp;Quest" show_in_toolbar="0">
     <Proxy group="filters" name="vtkSQDistributedStreamTracer"/>
+    <Proxy group="filters" name="vtkSQEdgeFilter"/>
     <Proxy group="filters" name="vtkSQFieldTopologySelect"/>
     <Proxy group="filters" name="vtkSQFieldTopologySplit"/>
     <Proxy group="filters" name="vtkSQFieldTracer"/>

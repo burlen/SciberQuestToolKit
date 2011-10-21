@@ -25,7 +25,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkSQBOVReader.h"
 #include "vtkSQBOVWriter.h"
 #include "vtkSQImageGhosts.h"
-#include "vtkSQKernelConvolution.h"
+#include "vtkSQVortexFilter.h"
 #include "FsUtils.h"
 #include "XMLUtils.h"
 #include "DebugUtil.h"
@@ -237,7 +237,7 @@ int main(int argc, char **argv)
   root->Register(0);
   parser->Delete();
 
-  string requiredType("SmoothBatch");
+  string requiredType("VortexDetectBatch");
   const char *foundType=root->GetName();
   if (foundType==0 || foundType!=requiredType)
     {
@@ -340,27 +340,52 @@ int main(int argc, char **argv)
   ig->AddInputConnection(r->GetOutputPort(0));
   r->Delete();
 
-  // set up kernel convolution filter
+  // set up vortex detect
   iErr=0;
-  elem=GetRequiredElement(root,"vtkSQKernelConvolution");
+  elem=GetRequiredElement(root,"vtkSQVortexFilter");
   if (elem==0)
     {
     return SQ_EXIT_ERROR;
     }
 
-  int stencilWidth;
-  iErr+=GetRequiredAttribute<int,1>(elem,"stencilWidth",&stencilWidth);
-
-  if (iErr!=0)
+  int passInput=0;
+  int splitComponents=0;
+  int computeRotation=0;
+  int computeHelicity=0;
+  int computeNormalizedHelicity=0;
+  int computeLambda=0;
+  int computeLambda2=0;
+  int computeDivergence=0;
+  GetOptionalAttribute<int,1>(elem,"passInput",&passInput);
+  GetOptionalAttribute<int,1>(elem,"splitComponents",&splitComponents);
+  GetOptionalAttribute<int,1>(elem,"computeRotation",&computeRotation);
+  GetOptionalAttribute<int,1>(elem,"computeHelicity",&computeHelicity);
+  GetOptionalAttribute<int,1>(elem,"computeNormalizedHelicity",&computeNormalizedHelicity);
+  GetOptionalAttribute<int,1>(elem,"computeLambda",&computeLambda);
+  GetOptionalAttribute<int,1>(elem,"computeLambda2",&computeLambda2);
+  GetOptionalAttribute<int,1>(elem,"computeDivergence",&computeDivergence);
+  if (!(
+      computeRotation ||
+      computeHelicity ||
+      computeNormalizedHelicity ||
+      computeLambda ||
+      computeLambda2 ||
+      computeDivergence))
     {
-    sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
+    sqErrorMacro(pCerr(),"Nothing to compute.");
     return SQ_EXIT_ERROR;
     }
 
-  vtkSQKernelConvolution *kconv=vtkSQKernelConvolution::New();
-  kconv->SetKernelType(vtkSQKernelConvolution::KERNEL_TYPE_GAUSIAN);
-  kconv->SetKernelWidth(stencilWidth);
-  kconv->AddInputConnection(ig->GetOutputPort(0));
+  vtkSQVortexFilter *vort=vtkSQVortexFilter::New();
+  vort->SetPassInput(passInput);
+  vort->SetSplitComponents(splitComponents);
+  vort->SetComputeRotation(computeRotation);
+  vort->SetComputeHelicity(computeHelicity);
+  vort->SetComputeNormalizedHelicity(computeNormalizedHelicity);
+  vort->SetComputeLambda(computeLambda);
+  vort->SetComputeLambda2(computeLambda2);
+  vort->SetComputeDivergence(computeDivergence);
+  vort->AddInputConnection(ig->GetOutputPort(0));
   ig->Delete();
 
   // set up the writer
@@ -415,8 +440,8 @@ int main(int argc, char **argv)
     }
 
   w->SetFileName(outputBovFileName.c_str());
-  w->AddInputConnection(0,kconv->GetOutputPort(0));
-  kconv->Delete();
+  w->AddInputConnection(0,vort->GetOutputPort(0));
+  vort->Delete();
 
   // make a directory for this dataset
   if (worldRank==0)
@@ -434,7 +459,7 @@ int main(int argc, char **argv)
 
   // initialize for domain decomposition
   vtkStreamingDemandDrivenPipeline* exec
-    = dynamic_cast<vtkStreamingDemandDrivenPipeline*>(kconv->GetExecutive());
+    = dynamic_cast<vtkStreamingDemandDrivenPipeline*>(vort->GetExecutive());
 
   vtkInformation *info=exec->GetOutputInformation(0);
 
@@ -518,7 +543,7 @@ int main(int argc, char **argv)
       r->ClearPointArrayStatus();
       r->SetPointArrayStatus(vecName.c_str(),1);
 
-      kconv->SetInputArrayToProcess(
+      vort->SetInputArrayToProcess(
             0,
             0,
             0,

@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
@@ -34,7 +34,8 @@ public:
         int i,
         MPI_Comm comm,
         MPI_Info hints,
-        const char *fileName);
+        const char *fileName,
+        int mode);
 
   MPI_File GetComponentFile(int i) const
     {
@@ -60,3 +61,4 @@ private:
 ostream &operator<<(ostream &os, const BOVVectorImage &vi);
 
 #endif
+

@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 
@@ -43,11 +43,11 @@ vtkStandardNewMacro(vtkSQImageGhosts);
 //-----------------------------------------------------------------------------
 vtkSQImageGhosts::vtkSQImageGhosts()
     :
-  Comm(MPI_COMM_NULL),
   WorldSize(1),
   WorldRank(0),
   NGhosts(0),
-  Mode(CartesianExtent::DIM_MODE_3D)
+  Mode(CartesianExtent::DIM_MODE_3D),
+  Comm(MPI_COMM_NULL)
 {
   #ifdef vtkSQImageGhostsDEBUG
   pCerr() << "===============================vtkSQImageGhosts::vtkSQImageGhosts" << endl;

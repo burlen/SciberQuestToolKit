@@ -172,7 +172,7 @@ int BOVReader::Open(const char *fileName)
   int ok=0;
   if (this->ProcId==0)
     {
-    ok=this->MetaData->OpenDataset(fileName);
+    ok=this->MetaData->OpenDataset(fileName,'r');
     if (!ok)
       {
       int nBytes=0;

@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
@@ -20,6 +20,9 @@ using namespace std;
 #ifndef WIN32
   #include <dirent.h>
   #define PATH_SEP "/"
+  #include <sys/types.h>
+  #include <sys/stat.h>
+  #include <unistd.h>
 #else
   #include "win_windirent.h"
   #define opendir win_opendir
@@ -31,6 +34,19 @@ using namespace std;
 #endif
 
 
+//******************************************************************************
+int FileExists(const char *path)
+{
+  #ifndef WIN32
+  struct stat s;
+  int iErr=stat(path,&s);
+  if (iErr==0)
+    {
+    return 1;
+    }
+  #endif
+  return 0;
+}
 
 //******************************************************************************
 int Present(const char *path, const char *fileName)
@@ -47,8 +63,6 @@ int Present(const char *path, const char *fileName)
   fclose(fp);
   return 1;
 }
-
-
 
 // Return 1 if a file is found with the prefix in the directory given by path.
 //******************************************************************************
@@ -85,6 +99,105 @@ int Represented(const char *path, const char *prefix)
     }
   //We failed to find any files starting with the given prefix
   return 0;
+}
+
+//******************************************************************************
+int ScalarRepresented(const char *path, const char *scalar)
+{
+  string prefix(scalar);
+  prefix+="_";
+
+  return Represented(path,prefix.c_str());
+}
+
+//******************************************************************************
+int VectorRepresented(const char *path, const char *vector)
+{
+  string xprefix(vector);
+  xprefix+="x_";
+
+  string yprefix(vector);
+  yprefix+="y_";
+
+  string zprefix(vector);
+  zprefix+="z_";
+
+  return
+    Represented(path,xprefix.c_str())
+    && Represented(path,yprefix.c_str())
+    && Represented(path,zprefix.c_str());
+}
+
+//******************************************************************************
+int SymetricTensorRepresented(const char *path, const char *tensor)
+{
+  string xxprefix(tensor);
+  xxprefix+="-xx_";
+
+  string xyprefix(tensor);
+  xyprefix+="-xy_";
+
+  string xzprefix(tensor);
+  xzprefix+="-xz_";
+
+  string yyprefix(tensor);
+  yyprefix+="-yy_";
+
+  string yzprefix(tensor);
+  yzprefix+="-yz_";
+
+  string zzprefix(tensor);
+  zzprefix+="-zz_";
+
+  return
+    Represented(path,xxprefix.c_str())
+    && Represented(path,xyprefix.c_str())
+    && Represented(path,xzprefix.c_str())
+    && Represented(path,yyprefix.c_str())
+    && Represented(path,yzprefix.c_str())
+    && Represented(path,zzprefix.c_str());
+}
+
+//******************************************************************************
+int TensorRepresented(const char *path, const char *tensor)
+{
+  string xxprefix(tensor);
+  xxprefix+="-xx_";
+
+  string xyprefix(tensor);
+  xyprefix+="-xy_";
+
+  string xzprefix(tensor);
+  xzprefix+="-xz_";
+
+  string yxprefix(tensor);
+  yxprefix+="-yx_";
+
+  string yyprefix(tensor);
+  yyprefix+="-yy_";
+
+  string yzprefix(tensor);
+  yzprefix+="-yz_";
+
+  string zxprefix(tensor);
+  zxprefix+="-zx_";
+
+  string zyprefix(tensor);
+  zyprefix+="-zy_";
+
+  string zzprefix(tensor);
+  zzprefix+="-zz_";
+
+  return
+    Represented(path,xxprefix.c_str())
+    && Represented(path,xyprefix.c_str())
+    && Represented(path,xzprefix.c_str())
+    && Represented(path,yxprefix.c_str())
+    && Represented(path,yyprefix.c_str())
+    && Represented(path,yzprefix.c_str())
+    && Represented(path,zxprefix.c_str())
+    && Represented(path,zyprefix.c_str())
+    && Represented(path,zzprefix.c_str());
 }
 
 // Collect the ids from a collection of files that start with

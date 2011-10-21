@@ -45,12 +45,12 @@ public:
         const CartesianExtent &intExt,
         int id)
       :
+    Id(id),
     SrcRank(srcRank),
     SrcExt(srcExt),
     DestRank(destRank),
     DestExt(destExt),
-    IntExt(intExt),
-    Id(id)
+    IntExt(intExt)
   {}
 
   ~GhostTransaction(){}

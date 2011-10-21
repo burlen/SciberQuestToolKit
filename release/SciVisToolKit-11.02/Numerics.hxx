@@ -39,6 +39,23 @@ inline double sqrt(long long x){ return sqrt((double)x); }
 inline double sqrt(unsigned long long x){ return sqrt((double)x); }
 
 //*****************************************************************************
+template<typename T>
+int fequal(T a, T b, T tol)
+{
+  T pda=fabs(a);
+  T pdb=fabs(b);
+  pda=pda<tol?tol:pda;
+  pdb=pdb<tol?tol:pdb;
+  T smaller=pda<pdb?pda:pdb;
+  T norm=fabs(b-a)/smaller;
+  if (norm<=tol)
+    {
+    return 1;
+    }
+  return 0;
+}
+
+//*****************************************************************************
 template <typename T>
 T Gaussian(T X[3], T a, T B[3], T c)
 {
@@ -350,7 +367,7 @@ bool HasNans(int *I, T *V, T *val)
 // mV -> Magnitude
 //*****************************************************************************
 template <typename T>
-void Magnitude(int *I, T *V, T *mV)
+void Magnitude(int *I, T *  V, T *  mV)
 {
   for (int k=0; k<I[2]; ++k)
     {
@@ -370,7 +387,7 @@ void Magnitude(int *I, T *V, T *mV)
 
 //*****************************************************************************
 template<typename T>
-void Interleave(int n, T *Vx, T *Vy, T *Vz, T* V)
+void Interleave(int n, T*  Vx, T*  Vy, T*  Vz, T*  V)
 {
   // take scalar components and interleve into a vector array.
   for (int i=0; i<n; ++i)
@@ -395,8 +412,8 @@ template <typename T>
 void Copy(
       int *input,
       int *output,
-      T *V,
-      T *W,
+      T*  V,
+      T*  W,
       int nComp,
       int mode,
       bool inputBounds=true)
@@ -447,7 +464,6 @@ void Copy(
           {
           W[_vi+c] = V[vi+c];
           }
-
         }
       }
     }
@@ -469,8 +485,8 @@ void Convolution(
       int *kernel,
       int nComp,
       int mode,
-      T *V,
-      T *W,
+      T*  V,
+      T*  W,
       float *K)
 {
   // input array bounds.
@@ -580,258 +596,6 @@ void DivergenceFace(int *I, double *dX, T *V, T *mV, T *div)
     }
 }
 
-//*****************************************************************************
-template <typename T>
-void Divergence(int input[6], int output[6], double dX[3], T *V, T *div)
-{
-  // input array bounds.
-  const int ni=input[1]-input[0]+1;
-  const int nj=input[3]-input[2]+1;
-  const int ninj=ni*nj;
-
-  // output array bounds
-  const int _ni=output[1]-output[0]+1;
-  const int _nj=output[3]-output[2]+1;
-  const int _ninj=_ni*_nj;
-
-  // stencil deltas
-  const double dx[3]={dX[0]*2.0,dX[1]*2.0,dX[2]*2.0};
-
-  // loop over output in patch coordinates (both patches are in the same space)
-  for (int r=output[4]; r<=output[5]; ++r)
-    {
-    for (int q=output[2]; q<=output[3]; ++q)
-      {
-      for (int p=output[0]; p<=output[1]; ++p)
-        {
-        // output array indices
-        const int _i=p-output[0];
-        const int _j=q-output[2];
-        const int _k=r-output[4];
-        // index into output array;
-        const int pi=_k*_ninj+_j*_ni+_i;
-
-        // input array indices
-        const int i=p-input[0];
-        const int j=q-input[2];
-        const int k=r-input[4];
-        // stencil into the input array
-        const int vi=3*(k*ninj+j*ni+i);
-        const int vilo=3*(k*ninj+j*ni+(i-1));
-        const int vihi=3*(k*ninj+j*ni+(i+1));
-        const int vjlo=3*(k*ninj+(j-1)*ni+i);
-        const int vjhi=3*(k*ninj+(j+1)*ni+i);
-        const int vklo=3*((k-1)*ninj+j*ni+i);
-        const int vkhi=3*((k+1)*ninj+j*ni+i);
-
-        // |V|
-        double mv=sqrt(V[vi]*V[vi]+V[vi+1]*V[vi+1]+V[vi+2]*V[vi+2]);
-
-        //        __   ->
-        //  div = \/ . V / |V|
-        div[pi]
-          =((V[vihi  ]-V[vilo  ])/dx[0]
-           +(V[vjhi+1]-V[vjlo+1])/dx[1]
-           +(V[vkhi+2]-V[vklo+2])/dx[2])/mv;
-        }
-      }
-    }
-}
-
-//*****************************************************************************
-template <typename TP, typename TD>
-void Divergence(
-      int input[6],
-      int output[6],
-      TP *x,
-      TP *y,
-      TP *z,
-      TD *V,
-      TD *div)
-{
-  // input array bounds.
-  const int ni=input[1]-input[0]+1;
-  const int nj=input[3]-input[2]+1;
-  const int ninj=ni*nj;
-
-  // output array bounds
-  const int _ni=output[1]-output[0]+1;
-  const int _nj=output[3]-output[2]+1;
-  const int _ninj=_ni*_nj;
-
-  // loop over output in patch coordinates (both patches are in the same space)
-  for (int r=output[4]; r<=output[5]; ++r)
-    {
-    for (int q=output[2]; q<=output[3]; ++q)
-      {
-      for (int p=output[0]; p<=output[1]; ++p)
-        {
-        // stencil deltas
-        const TP dx[3]
-          = {x[p+1]-x[p-1],y[q+1]-y[q-1],z[r+1]-z[r-1]};
-
-        // output array indices
-        const int _i=p-output[0];
-        const int _j=q-output[2];
-        const int _k=r-output[4];
-        // index into output array;
-        const int pi=_k*_ninj+_j*_ni+_i;
-
-        // input array indices
-        const int i=p-input[0];
-        const int j=q-input[2];
-        const int k=r-input[4];
-        // stencil into the input array
-        const int vi=3*(k*ninj+j*ni+i);
-        const int vilo=3*(k*ninj+j*ni+(i-1));
-        const int vihi=3*(k*ninj+j*ni+(i+1));
-        const int vjlo=3*(k*ninj+(j-1)*ni+i);
-        const int vjhi=3*(k*ninj+(j+1)*ni+i);
-        const int vklo=3*((k-1)*ninj+j*ni+i);
-        const int vkhi=3*((k+1)*ninj+j*ni+i);
-
-        // |V|
-        double mv=sqrt(V[vi]*V[vi]+V[vi+1]*V[vi+1]+V[vi+2]*V[vi+2]);
-
-        //        __   ->
-        //  div = \/ . V / |V|
-        div[pi]
-          =((V[vihi  ]-V[vilo  ])/dx[0]
-           +(V[vjhi+1]-V[vjlo+1])/dx[1]
-           +(V[vkhi+2]-V[vklo+2])/dx[2])/mv;
-        }
-      }
-    }
-}
-
-/// These are the vector output versions, We need to work with
-/// the components which PV doesn't currently support. Scalar
-/// output implementated below.
-// // input  -> patch input array is defined on
-// // output -> patch outpu array is defined on
-// // dX     -> grid spacing triple
-// // V      -> vector field
-// // W      -> vector curl
-// //*****************************************************************************
-// template <typename T>
-// void Rotation(int *input, int *output, double *dX, T *V, T *W)
-// {
-//   // input array bounds.
-//   const int ni=input[1]-input[0]+1;
-//   const int nj=input[3]-input[2]+1;
-//   const int ninj=ni*nj;
-// 
-//   // output array bounds
-//   const int _ni=output[1]-output[0]+1;
-//   const int _nj=output[3]-output[2]+1;
-//   const int _ninj=_ni*_nj;
-// 
-//   // stencil deltas
-//   const double dx[3]={dX[0]*2.0,dX[1]*2.0,dX[2]*2.0};
-// 
-//   // loop over output in patch coordinates (both patches are in the same space)
-//   for (int r=output[4]; r<=output[5]; ++r)
-//     {
-//     for (int q=output[2]; q<=output[3]; ++q)
-//       {
-//       for (int p=output[0]; p<=output[1]; ++p)
-//         {
-//         // output array indices
-//         const int _i=p-output[0];
-//         const int _j=q-output[2];
-//         const int _k=r-output[4];
-//         // index into output array;
-//         const int pi=_k*_ninj+_j*_ni+_i;
-//         const int vi=3*pi;
-//         const int vj=vi+1;
-//         const int vk=vi+2;
-// 
-//         // input array indices
-//         const int i=p-input[0];
-//         const int j=q-input[2];
-//         const int k=r-input[4];
-//         // stencil into the input array
-//         const int vilo=3*(k*ninj+j*ni+(i-1));
-//         const int vihi=3*(k*ninj+j*ni+(i+1));
-//         const int vjlo=3*(k*ninj+(j-1)*ni+i);
-//         const int vjhi=3*(k*ninj+(j+1)*ni+i);
-//         const int vklo=3*((k-1)*ninj+j*ni+i);
-//         const int vkhi=3*((k+1)*ninj+j*ni+i);
-// 
-//         //      __   ->
-//         //  w = \/ x V
-//         W[vi]=(V[vjhi+2]-V[vjlo+2])/dx[1]-(V[vkhi+1]-V[vklo+1])/dx[2];
-//         W[vj]=(V[vkhi  ]-V[vklo  ])/dx[2]-(V[vihi+2]-V[vilo+2])/dx[0];
-//         W[vk]=(V[vihi+1]-V[vilo+1])/dx[0]-(V[vjhi  ]-V[vjlo  ])/dx[1];
-//         }
-//       }
-//     }
-// }
-// 
-// // input  -> patch input array is defined on
-// // output -> patch outpu array is defined on
-// // x,y,z  -> coordinate arrays for stretched meshes
-// // V      -> vector field
-// // W      -> vector curl
-// //*****************************************************************************
-// template <typename TP, typename TD>
-// void Rotation(int *input, int *output, TP *x, TP *y, TP *z, TD *V, TD *W)
-// {
-//   // input array bounds.
-//   const int ni=input[1]-input[0]+1;
-//   const int nj=input[3]-input[2]+1;
-//   const int ninj=ni*nj;
-// 
-//   // output array bounds
-//   const int _ni=output[1]-output[0]+1;
-//   const int _nj=output[3]-output[2]+1;
-//   const int _ninj=_ni*_nj;
-// 
-//   // loop over output in patch coordinates (both patches are in the same space)
-//   for (int r=output[4]; r<=output[5]; ++r)
-//     {
-//     for (int q=output[2]; q<=output[3]; ++q)
-//       {
-//       for (int p=output[0]; p<=output[1]; ++p)
-//         {
-//         // stencil deltas
-//         const TP dx[3]
-//           = {x[p+1]-x[p-1],y[q+1]-y[q-1],z[r+1]-z[r-1]};
-// 
-//         // output array indices
-//         const int _i=p-output[0];
-//         const int _j=q-output[2];
-//         const int _k=r-output[4];
-// 
-//         // index into output array;
-//         const int pi=_k*_ninj+_j*_ni+_i;
-//         const int vi=3*pi;
-//         const int vj=vi+1;
-//         const int vk=vi+2;
-// 
-//         // input array indices
-//         const int i=p-input[0];
-//         const int j=q-input[2];
-//         const int k=r-input[4];
-// 
-//         // stencil into the input array
-//         const int vilo=3*(k*ninj+j*ni+(i-1));
-//         const int vihi=3*(k*ninj+j*ni+(i+1));
-//         const int vjlo=3*(k*ninj+(j-1)*ni+i);
-//         const int vjhi=3*(k*ninj+(j+1)*ni+i);
-//         const int vklo=3*((k-1)*ninj+j*ni+i);
-//         const int vkhi=3*((k+1)*ninj+j*ni+i);
-// 
-//         //      __   ->
-//         //  w = \/ x V
-//         W[vi]=(V[vjhi+2]-V[vjlo+2])/dx[1]-(V[vkhi+1]-V[vklo+1])/dx[2];
-//         W[vj]=(V[vkhi  ]-V[vklo  ])/dx[2]-(V[vihi+2]-V[vilo+2])/dx[0];
-//         W[vk]=(V[vihi+1]-V[vilo+1])/dx[0]-(V[vjhi  ]-V[vjlo  ])/dx[1];
-//         }
-//       }
-//     }
-// }
-
 // input  -> patch input array is defined on
 // output -> patch outpu array is defined on
 // dX     -> grid spacing triple
@@ -884,13 +648,13 @@ void Rotation(
         const int  i=p-input[0];
         const int _i=p-output[0];
 
-        const int pi=_idx.Index(_i,_j,_k);
+        const int _pi=_idx.Index(_i,_j,_k);
 
         //      __   ->
         //  w = \/ x V
-        Wx[pi]=0.0;
-        Wy[pi]=0.0;
-        Wz[pi]=0.0;
+        Wx[_pi]=0.0;
+        Wy[_pi]=0.0;
+        Wz[_pi]=0.0;
         if (iok)
           {
           int vilo_y=3*idx.Index(i-1,j,k)+1;
@@ -899,8 +663,8 @@ void Rotation(
           int vihi_y=3*idx.Index(i+1,j,k)+1;
           int vihi_z=vihi_y+1;
 
-          Wy[pi] -= (V[vihi_z]-V[vilo_z])/dx[0];
-          Wz[pi] += (V[vihi_y]-V[vilo_y])/dx[0];
+          Wy[_pi] -= (V[vihi_z]-V[vilo_z])/dx[0];
+          Wz[_pi] += (V[vihi_y]-V[vilo_y])/dx[0];
           }
 
         if (jok)
@@ -911,8 +675,8 @@ void Rotation(
           int vjhi_x=3*idx.Index(i,j+1,k);
           int vjhi_z=vjhi_x+2;
 
-          Wx[pi] += (V[vjhi_z]-V[vjlo_z])/dx[1];
-          Wz[pi] -= (V[vjhi_x]-V[vjlo_x])/dx[1];
+          Wx[_pi] += (V[vjhi_z]-V[vjlo_z])/dx[1];
+          Wz[_pi] -= (V[vjhi_x]-V[vjlo_x])/dx[1];
           }
 
         if (kok)
@@ -923,14 +687,9 @@ void Rotation(
           int vkhi_x=3*idx.Index(i,j,k+1);
           int vkhi_y=vkhi_x+1;
 
-          Wx[pi] -= (V[vkhi_y]-V[vklo_y])/dx[2];
-          Wy[pi] += (V[vkhi_x]-V[vklo_x])/dx[2];
+          Wx[_pi] -= (V[vkhi_y]-V[vklo_y])/dx[2];
+          Wy[_pi] += (V[vkhi_x]-V[vklo_x])/dx[2];
           }
-        //      __   ->
-        //  w = \/ x V
-        // Wx[pi]=(V[vjhi+2]-V[vjlo+2])/dx[1]-(V[vkhi+1]-V[vklo+1])/dx[2];
-        // Wy[pi]=(V[vkhi  ]-V[vklo  ])/dx[2]-(V[vihi+2]-V[vilo+2])/dx[0];
-        // Wz[pi]=(V[vihi+1]-V[vilo+1])/dx[0]-(V[vjhi  ]-V[vjlo  ])/dx[1];
         }
       }
     }
@@ -1707,9 +1466,11 @@ void Lambda2(
         e=solver.eigenvalues();  // input array bounds.
 
         const int pi=_idx.Index(_i,_j,_k);
+        /*
         const int vi=3*pi;
         const int vj=vi+1;
         const int vk=vi+2;
+        */
 
         // extract lambda-2
         slowSort(e.data(),0,3);
@@ -1788,6 +1549,458 @@ void Lambda2(int *input, int *output, TP *x, TP *y, TP *z, TD *V, TD *L2)
         slowSort(e.data(),0,3);
         L2[pi]=e(1,0);
         L2[pi]=(L2[pi]>=-1E-5&&L2[pi]<=1E-5?0.0:L2[pi]);
+        }
+      }
+    }
+}
+
+// input  -> patch input array is defined on
+// output -> patch outpu array is defined on
+// dX     -> grid spacing triple
+// V      -> vector field
+// D      -> divergence
+//*****************************************************************************
+template <typename T>
+void Divergence(
+      int *input,
+      int *output,
+      int mode,
+      double *dX,
+      T *V,
+      T *D)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int nk=input[5]-input[4]+1;
+  FlatIndex idx(ni,nj,nk,mode);
+
+  const int iok=(ni<3?0:1);
+  const int jok=(nj<3?0:1);
+  const int kok=(nk<3?0:1);
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _nk=output[5]-output[4]+1;
+  FlatIndex _idx(_ni,_nj,_nk,mode);
+
+  // stencil deltas
+  const double dx[3]={dX[0]*2.0,dX[1]*2.0,dX[2]*2.0};
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    const int  k=r-input[4];
+    const int _k=r-output[4];
+
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      const int  j=q-input[2];
+      const int _j=q-output[2];
+
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        const int  i=p-input[0];
+        const int _i=p-output[0];
+        const int _pi=_idx.Index(_i,_j,_k);
+
+        //      __   ->
+        //  D = \/ . V
+        D[_pi]=0.0;
+        if (iok)
+          {
+          int vilo_x=3*idx.Index(i-1,j,k);
+          int vihi_x=3*idx.Index(i+1,j,k);
+          D[_pi] += (V[vihi_x]-V[vilo_x])/dx[0];
+          }
+
+        if (jok)
+          {
+          int vjlo_y=3*idx.Index(i,j-1,k)+1;
+          int vjhi_y=3*idx.Index(i,j+1,k)+1;
+          D[_pi] += (V[vjhi_y]-V[vjlo_y])/dx[1];
+          }
+
+        if (kok)
+          {
+          int vklo_z=3*idx.Index(i,j,k-1)+2;
+          int vkhi_z=3*idx.Index(i,j,k+1)+2;
+          D[_pi] += (V[vkhi_z]-V[vklo_z])/dx[2];
+          }
+        }
+      }
+    }
+}
+
+// input  -> patch input array is defined on
+// output -> patch outpu array is defined on
+// dX     -> grid spacing triple
+// V      -> vector field
+// D      -> divergence
+//*****************************************************************************
+template <typename TP, typename TD>
+void Divergence(
+      int *input,
+      int *output,
+      TP *x,
+      TP *y,
+      TP *z,
+      TD *V,
+      TD *D)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int ninj=ni*nj;
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _ninj=_ni*_nj;
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        // stencil deltas
+        const TP dx[3]
+          = {x[p+1]-x[p-1],y[q+1]-y[q-1],z[r+1]-z[r-1]};
+
+        // output array indices
+        const int _i=p-output[0];
+        const int _j=q-output[2];
+        const int _k=r-output[4];
+        // index into output array;
+        const int _pi=_k*_ninj+_j*_ni+_i;
+
+        // input array indices
+        const int i=p-input[0];
+        const int j=q-input[2];
+        const int k=r-input[4];
+        // stencil into the input array
+        const int vilo=3*(k*ninj+j*ni+(i-1));
+        const int vihi=3*(k*ninj+j*ni+(i+1));
+        const int vjlo=3*(k*ninj+(j-1)*ni+i);
+        const int vjhi=3*(k*ninj+(j+1)*ni+i);
+        const int vklo=3*((k-1)*ninj+j*ni+i);
+        const int vkhi=3*((k+1)*ninj+j*ni+i);
+
+        //      __   ->
+        //  D = \/ . V
+        D[_pi]
+           = (V[vihi  ] - V[vilo  ])/dx[0]
+           + (V[vjhi+1] - V[vjlo+1])/dx[1]
+           + (V[vkhi+2] - V[vklo+2])/dx[2];
+        }
+      }
+    }
+}
+
+// input  -> patch input array is defined on
+// output -> patch outpu array is defined on
+// dX     -> grid spacing triple
+// S      -> scalar field
+// L      -> laplacian
+//*****************************************************************************
+template <typename T>
+void Laplacian(
+      int *input,
+      int *output,
+      int mode,
+      double *dX,
+      T *S,
+      T *L)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int nk=input[5]-input[4]+1;
+  FlatIndex idx(ni,nj,nk,mode);
+
+  const int iok=(ni<3?0:1);
+  const int jok=(nj<3?0:1);
+  const int kok=(nk<3?0:1);
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _nk=output[5]-output[4]+1;
+  FlatIndex _idx(_ni,_nj,_nk,mode);
+
+  // stencil deltas
+  const double dx2[3]={dX[0]*dX[0],dX[1]*dX[1],dX[2]*dX[2]};
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    const int  k=r-input[4];
+    const int _k=r-output[4];
+
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      const int  j=q-input[2];
+      const int _j=q-output[2];
+
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        const int _i=p-output[0];
+        const int _pi=_idx.Index(_i,_j,_k);
+
+        const int  i=p-input[0];
+        const int  pi=idx.Index(i,j,k);
+
+        //      __2
+        //  L = \/ S
+        L[_pi]=0.0;
+        if (iok)
+          {
+          const int ilo=idx.Index(i-1,j,k);
+          const int ihi=idx.Index(i+1,j,k);
+          L[_pi] += (S[ihi] + S[ilo] - 2.0*S[pi])/dx2[0];
+          }
+
+        if (jok)
+          {
+          const int jlo=idx.Index(i,j-1,k);
+          const int jhi=idx.Index(i,j+1,k);
+          L[_pi] += (S[jhi] + S[jlo] - 2.0*S[pi])/dx2[1];
+          }
+
+        if (kok)
+          {
+          const int klo=idx.Index(i,j,k-1);
+          const int khi=idx.Index(i,j,k+1);
+          L[_pi] += (S[khi] + S[klo] - 2.0*S[pi])/dx2[2];
+          }
+        }
+      }
+    }
+}
+
+// input  -> patch input array is defined on
+// output -> patch outpu array is defined on
+// dX     -> grid spacing triple
+// V      -> vector field
+// W      -> vector curl
+//*****************************************************************************
+template <typename TP, typename TD>
+void Laplacian(
+      int *input,
+      int *output,
+      TP *x,
+      TP *y,
+      TP *z,
+      TD *S,
+      TD *L)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int ninj=ni*nj;
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _ninj=_ni*_nj;
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        // stencil deltas
+        TP dx2[3]
+          = {x[p+1]-x[p-1],y[q+1]-y[q-1],z[r+1]-z[r-1]};
+        dx2[0]*=dx2[0];
+        dx2[1]*=dx2[1];
+        dx2[2]*=dx2[2];
+
+
+        // output array indices
+        const int _i=p-output[0];
+        const int _j=q-output[2];
+        const int _k=r-output[4];
+        // index into output array;
+        const int _pi=_k*_ninj+_j*_ni+_i;
+
+        // input array indices
+        const int i=p-input[0];
+        const int j=q-input[2];
+        const int k=r-input[4];
+        //
+        const int pi=k*ninj+j*ni+i;
+
+        // stencil into the input array
+        const int ilo=k*ninj+j*ni+(i-1);
+        const int ihi=k*ninj+j*ni+(i+1);
+        const int jlo=k*ninj+(j-1)*ni+i;
+        const int jhi=k*ninj+(j+1)*ni+i;
+        const int klo=(k-1)*ninj+j*ni+i;
+        const int khi=(k+1)*ninj+j*ni+i;
+
+        //      __2
+        //  L = \/ S
+        L[_pi]
+           = (S[ihi] + S[ilo] - 2.0*S[pi])/dx2[0]
+           + (S[jhi] + S[jlo] - 2.0*S[pi])/dx2[1]
+           + (S[khi] + S[klo] - 2.0*S[pi])/dx2[2];
+        }
+      }
+    }
+}
+
+// input  -> patch input array is defined on
+// output -> patch outpu array is defined on
+// dX     -> grid spacing triple
+// S      -> scalar field
+// G      -> gradient
+//*****************************************************************************
+template <typename T>
+void Gradient(
+      int *input,
+      int *output,
+      int mode,
+      double *dX,
+      T *S,
+      T *Gx,
+      T *Gy,
+      T *Gz)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int nk=input[5]-input[4]+1;
+  FlatIndex idx(ni,nj,nk,mode);
+
+  const int iok=(ni<3?0:1);
+  const int jok=(nj<3?0:1);
+  const int kok=(nk<3?0:1);
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _nk=output[5]-output[4]+1;
+  FlatIndex _idx(_ni,_nj,_nk,mode);
+
+  // stencil deltas
+  const double dx[3]={dX[0]*2.0,dX[1]*2.0,dX[2]*2.0};
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    const int  k=r-input[4];
+    const int _k=r-output[4];
+
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      const int  j=q-input[2];
+      const int _j=q-output[2];
+
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        const int  i=p-input[0];
+        const int _i=p-output[0];
+        const int _pi=_idx.Index(_i,_j,_k);
+
+        //      __
+        //  G = \/ S
+        Gx[_pi]=0.0;
+        Gy[_pi]=0.0;
+        Gz[_pi]=0.0;
+        if (iok)
+          {
+          int ilo=idx.Index(i-1,j,k);
+          int ihi=idx.Index(i+1,j,k);
+          Gx[_pi] = (S[ihi]-S[ilo])/dx[0];
+          }
+
+        if (jok)
+          {
+          int jlo=idx.Index(i,j-1,k);
+          int jhi=idx.Index(i,j+1,k);
+          Gy[_pi] = (S[jhi]-S[jlo])/dx[1];
+          }
+
+        if (kok)
+          {
+          int klo=idx.Index(i,j,k-1);
+          int khi=idx.Index(i,j,k+1);
+          Gz[_pi] = (S[khi]-S[klo])/dx[2];
+          }
+        }
+      }
+    }
+}
+
+// input  -> patch input array is defined on
+// output -> patch outpu array is defined on
+// dX     -> grid spacing triple
+// S      -> scalar field
+// G      -> gardient
+//*****************************************************************************
+template <typename TP, typename TD>
+void Gradient(
+      int *input,
+      int *output,
+      TP *x,
+      TP *y,
+      TP *z,
+      TD *S,
+      TD *Gx,
+      TD *Gy,
+      TD *Gz)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int ninj=ni*nj;
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _ninj=_ni*_nj;
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        // stencil deltas
+        const TP dx[3]
+          = {x[p+1]-x[p-1],y[q+1]-y[q-1],z[r+1]-z[r-1]};
+
+        // output array indices
+        const int _i=p-output[0];
+        const int _j=q-output[2];
+        const int _k=r-output[4];
+        // index into output array;
+        const int _pi=_k*_ninj+_j*_ni+_i;
+
+        // input array indices
+        const int i=p-input[0];
+        const int j=q-input[2];
+        const int k=r-input[4];
+        // stencil into the input array
+        const int ilo=k*ninj+j*ni+(i-1);
+        const int ihi=k*ninj+j*ni+(i+1);
+        const int jlo=k*ninj+(j-1)*ni+i;
+        const int jhi=k*ninj+(j+1)*ni+i;
+        const int klo=(k-1)*ninj+j*ni+i;
+        const int khi=(k+1)*ninj+j*ni+i;
+
+        //      __
+        //  G = \/ S
+        Gx[_pi] = (S[ihi]-S[ilo])/dx[0];
+        Gy[_pi] = (S[jhi]-S[jlo])/dx[1];
+        Gz[_pi] = (S[khi]-S[klo])/dx[2];
         }
       }
     }

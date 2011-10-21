@@ -497,13 +497,109 @@ int ReadDataArray(
   return 1;
 }
 
-
 /**
-NOTE: The file is a scalar, but the memory can be vector
+NOTE: The file is always a scalar, but the memory can be vector
 where file elements are seperated by a constant stride.
-WARNING it's very slow to read into a strided array if
-data seiving is off, or seive buffer is small.
+it's very slow to write from/read into a strided array
+better buffer above.
 */
+//*****************************************************************************
+template <typename T>
+int WriteDataArray(
+        MPI_File file,                 // MPI file handle
+        MPI_Info hints,                // MPI file hints
+        const CartesianExtent &domain, // entire region, dataset extents
+        const CartesianExtent &decomp, // region to be read, block extents
+        int nCompsMem,                 // stride in memory array
+        int compNoMem,                 // start offset in mem array
+        T *data)                       // pointer to a buffer to write from.
+{
+  int iErr;
+  int eStrLen=256;
+  char eStr[256]={'\0'};
+
+  // Locate our data.
+  int domainDims[3];
+  domain.Size(domainDims);
+  int decompDims[3];
+  decomp.Size(decompDims);
+  int decompStart[3];
+  decomp.GetStartIndex(decompStart);
+
+  unsigned long long nCells=decomp.Size();
+
+  // file view
+  MPI_Datatype nativeType=DataTraits<T>::Type();
+  MPI_Datatype fileView;
+  iErr=MPI_Type_create_subarray(3,
+      domainDims,
+      decompDims,
+      decompStart,
+      MPI_ORDER_FORTRAN,
+      nativeType,
+      &fileView);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_create_subarray failed.");
+    }
+  iErr=MPI_Type_commit(&fileView);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_commit failed.");
+    }
+  iErr=MPI_File_set_view(
+      file,
+      0,
+      nativeType,
+      fileView,
+      "native",
+      hints);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_File_set_view failed.");
+    }
+
+  // memory view.
+  MPI_Datatype memView;
+  if (nCompsMem==1)
+    {
+    iErr=MPI_Type_contiguous(nCells,nativeType,&memView);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_contiguous failed.");
+    }
+    }
+  else
+    {
+    iErr=MPI_Type_vector(nCells,1,nCompsMem,nativeType,&memView);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_vector failed.");
+    }
+    }
+  MPI_Type_commit(&memView);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"MPI_Type_commit failed.");
+    }
+
+  // write
+  MPI_Status status;
+  iErr=MPI_File_write_all(file,data+compNoMem,1,memView,&status);
+  MPI_Type_free(&fileView);
+  MPI_Type_free(&memView);
+  if (iErr!=MPI_SUCCESS)
+    {
+    MPI_Error_string(iErr,eStr,&eStrLen);
+    sqErrorMacro(pCerr(),
+        << "Error writing file." << endl
+        << eStr);
+    return 0;
+    }
+
+  return 1;
+}
+
 //*****************************************************************************
 template <typename T>
 int ReadDataArray(
@@ -600,7 +696,6 @@ int ReadDataArray(
 
   return 1;
 }
-
 /**
 Read the from the region defined by the file view into the
 region defined by the memory veiw.

@@ -83,12 +83,8 @@ void vtkSQLog::StartEvent(const char *event)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQLog::EndEvent(const char *event)
+void vtkSQLog::EndEvent(const char *)
 {
-  // this argument is included for better readability
-  // in caller's code.
-  (void*)event;
-
   double walle=0.0;
   timeval wallt;
   gettimeofday(&wallt,0x0);

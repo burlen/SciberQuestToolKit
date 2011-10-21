@@ -2995,8 +2995,107 @@ Copyright 2008 SciberQuest Inc.
   </SourceProxy>
 
   <!-- ==================================================================== -->
-  <SourceProxy 
-    name="vtkSQVortexFilter" 
+  <SourceProxy
+    name="vtkSQEdgeFilter"
+    class="vtkSQEdgeFilter"
+    label="SQ Edge Detect">
+    <Documentation
+      long_help="Long Documentation"
+      short_help="Short Documentation">
+      Textual Documentation.
+    </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+           <InputArrayDomain name="input_array" attribute_type="point"
+                             number_of_components="1"/>
+           <Documentation>
+             This property specifies the input.
+           </Documentation>
+      </InputProperty>
+
+      <StringVectorProperty
+         name="SelectInputVectors"
+         command="SetInputArrayToProcess"
+         number_of_elements="5"
+         element_types="0 0 0 0 2"
+         label="Scalar Field">
+            <ArrayListDomain name="array_list" attribute_type="Scalars">
+              <RequiredProperties>
+                 <Property name="Input" function="Input"/>
+              </RequiredProperties>
+            </ArrayListDomain>
+            <Documentation>
+              Identifies the scalar field on which to operate.
+            </Documentation>
+      </StringVectorProperty>
+
+     <IntVectorProperty
+        name="PassInput"
+        label="Copy input"
+        command="SetPassInput"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Deep copy the input array to the output
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="SplitComponents"
+        label="Split components"
+        command="SetSplitComponents"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Convert the result into components arrays.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeGradient"
+        label="Gradient"
+        command="SetComputeGradient"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the gradient using a centered stencil.
+        </Documentation>
+     </IntVectorProperty>
+
+      <IntVectorProperty
+        name="ComputeLaplacian"
+        label="Laplacian"
+        command="SetComputeLaplacian"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the Laplacian using a centered stencil.
+        </Documentation>
+     </IntVectorProperty>
+
+    <Hints>
+      <View type="RenderView"/>
+    </Hints>
+
+  <!-- End vtkSQEdgeFilter -->
+  </SourceProxy>
+
+  <!-- ==================================================================== -->
+  <SourceProxy
+    name="vtkSQVortexFilter"
     class="vtkSQVortexFilter"
     label="SQ Vortex Detect">
     <Documentation
@@ -3039,11 +3138,35 @@ Copyright 2008 SciberQuest Inc.
       </StringVectorProperty>
 
      <IntVectorProperty
+        name="PassInput"
+        label="Copy input"
+        command="SetPassInput"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Deep copy the input array to the output
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="SplitComponents"
+        label="Split components"
+        command="SetSplitComponents"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Convert the result into components arrays.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
         name="ComputeRotation"
         label="Rotation"
         command="SetComputeRotation"
         number_of_elements="1"
-        default_values="0">
+        default_values="1">
         <BooleanDomain name="bool" />
         <Documentation>
           Compute the rotation (curl) of the vector field using a point centered stencil.
@@ -3091,10 +3214,22 @@ Copyright 2008 SciberQuest Inc.
         label="Lambda-2"
         command="SetComputeLambda2"
         number_of_elements="1"
-        default_values="1">
+        default_values="0">
         <BooleanDomain name="bool" />
         <Documentation>
           Compute the second eigenvalue of corrected pressure hessian.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeDivergence"
+        label="Divergence"
+        command="SetComputeDivergence"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the divergence using a centered stencil.
         </Documentation>
      </IntVectorProperty>
 

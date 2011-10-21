@@ -1,7 +1,7 @@
-/*   ____    _ __           ____               __    ____
+/* ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
@@ -11,6 +11,8 @@ Copyright 2008 SciberQuest Inc.
 #include <iostream>
 using std::ostream;
 using std::endl;
+#include <ios>
+using std::ios_base;
 
 #include <sstream>
 using std::istringstream;
@@ -32,25 +34,6 @@ void ToLower(string &in)
     {
     in[i]=tolower(in[i]);
     }
-}
-
-// Parse a string for a "key", starting at offset "at" then 
-// advance past the key and attempt to convert what follows
-// in to a value of type "T". If the key isn't found, then 
-// npos is returned otherwise the position imediately following
-// the key is returned.
-//*****************************************************************************
-template <typename T>
-size_t ParseValue(string &in,size_t at, string key, T &value)
-{
-  size_t p=in.find(key,at);
-  if (p!=string::npos)
-    {
-    p+=key.size();
-    istringstream valss(in.substr(p,10));
-    valss >> value;
-    }
-  return p;
 }
 
 //-----------------------------------------------------------------------------
@@ -81,7 +64,37 @@ GDAMetaData &GDAMetaData::operator=(const GDAMetaData &other)
 }
 
 //-----------------------------------------------------------------------------
-int GDAMetaData::OpenDataset(const char *fileName)
+int GDAMetaData::OpenDataset(const char *fileName, char mode)
+{
+    if (mode=='r')
+      {
+      return this->OpenDatasetForRead(fileName);
+      }
+    else
+    if (mode=='w')
+      {
+      return this->OpenDatasetForWrite(fileName);
+      }
+    else
+      {
+      sqErrorMacro(cerr,"Invalid mode " << mode << ".");
+      }
+
+    return 0;
+}
+
+//-----------------------------------------------------------------------------
+int GDAMetaData::OpenDatasetForWrite(const char *fileName)
+{
+  this->Mode='w';
+  this->IsOpen=1;
+  this->FileName=fileName;
+  this->SetPathToBricks(StripFileNameFromPath(fileName).c_str());
+  return 1;
+}
+
+//-----------------------------------------------------------------------------
+int GDAMetaData::OpenDatasetForRead(const char *fileName)
 {
   this->IsOpen=0;
 
@@ -243,309 +256,83 @@ int GDAMetaData::OpenDataset(const char *fileName)
   //     R_MP=16.,
   //     R_obstacle_to_MP=0.57732,
 
-  // H3D scalars ...
   int nArrays=0;
-  if (Represented(path,"den_"))
+  // look for explicitly named arrays
+  size_t at;
+  at=0;
+  while (at!=string::npos)
     {
-    this->AddScalar("den");
-    ++nArrays;
-    }
-  if (Represented(path,"eta_"))
-    {
-    this->AddScalar("eta");
-    ++nArrays;
-    }
-  if (Represented(path,"tpar_"))
-    {
-    this->AddScalar("tpar");
-    ++nArrays;
-    }
-  if (Represented(path,"tperp_"))
-    {
-    this->AddScalar("tperp");
-    ++nArrays;
-    }
-  if (Represented(path,"t_"))
-    {
-    this->AddScalar("t");
-    ++nArrays;
-    }
-  if (Represented(path,"p_"))
-    {
-    this->AddScalar("p");
-    ++nArrays;
+    string scalar;
+    at=ParseValue(metaData,at,"scalar:",scalar);
+    if (at!=string::npos)
+      {
+      if (ScalarRepresented(path,scalar.c_str()))
+        {
+        this->AddScalar(scalar.c_str());
+        ++nArrays;
+        }
+      else
+        {
+        sqErrorMacro(cerr,"Named scalar " << scalar << " not present.");
+        }
+      }
     }
 
-  // VPIC scalars
-  if (Represented(path,"misc_"))
+  at=0;
+  while (at!=string::npos)
     {
-    this->AddScalar("misc");
-    ++nArrays;
-    }
-  if (Represented(path,"pe_"))
-    {
-    this->AddScalar("pe");
-    ++nArrays;
-    }
-  if (Represented(path,"pi_"))
-    {
-    this->AddScalar("pi");
-    ++nArrays;
-    }
-  if (Represented(path,"ne_"))
-    {
-    this->AddScalar("ne");
-    ++nArrays;
-    }
-  if (Represented(path,"ni_"))
-    {
-    this->AddScalar("ni");
-    ++nArrays;
-    }
-  if (Represented(path,"eeb01_"))
-    {
-    this->AddScalar("eeb01");
-    ++nArrays;
-    }
-  if (Represented(path,"eeb02_"))
-    {
-    this->AddScalar("eeb02");
-    ++nArrays;
-    }
-  if (Represented(path,"eeb03_"))
-    {
-    this->AddScalar("eeb03");
-    ++nArrays;
-    }
-  if (Represented(path,"eeb04_"))
-    {
-    this->AddScalar("eeb04");
-    ++nArrays;
-    }
-  if (Represented(path,"eeb05_"))
-    {
-    this->AddScalar("eeb05");
-    ++nArrays;
-    }
-  if (Represented(path,"eeb06_"))
-    {
-    this->AddScalar("eeb06");
-    ++nArrays;
-    }
-  if (Represented(path,"eeb07_"))
-    {
-    this->AddScalar("eeb07");
-    ++nArrays;
-    }
-  if (Represented(path,"eeb08_"))
-    {
-    this->AddScalar("eeb08");
-    ++nArrays;
-    }
-  if (Represented(path,"eeb09_"))
-    {
-    this->AddScalar("eeb09");
-    ++nArrays;
-    }
-  if (Represented(path,"eeb10_"))
-    {
-    this->AddScalar("eeb10");
-    ++nArrays;
-    }
-  if (Represented(path,"ieb01_"))
-    {
-    this->AddScalar("ieb01");
-    ++nArrays;
-    }
-  if (Represented(path,"ieb02_"))
-    {
-    this->AddScalar("ieb02");
-    ++nArrays;
-    }
-  if (Represented(path,"ieb03_"))
-    {
-    this->AddScalar("ieb03");
-    ++nArrays;
-    }
-  if (Represented(path,"ieb04_"))
-    {
-    this->AddScalar("ieb04");
-    ++nArrays;
-    }
-  if (Represented(path,"ieb05_"))
-    {
-    this->AddScalar("ieb05");
-    ++nArrays;
-    }
-  if (Represented(path,"ieb06_"))
-    {
-    this->AddScalar("ieb06");
-    ++nArrays;
-    }
-  if (Represented(path,"ieb07_"))
-    {
-    this->AddScalar("ieb07");
-    ++nArrays;
-    }
-  if (Represented(path,"ieb08_"))
-    {
-    this->AddScalar("ieb08");
-    ++nArrays;
-    }
-  if (Represented(path,"ieb09_"))
-    {
-    this->AddScalar("ieb09");
-    ++nArrays;
-    }
-  if (Represented(path,"ieb10_"))
-    {
-    this->AddScalar("ieb10");
-    ++nArrays;
+    string vector;
+    at=ParseValue(metaData,at,"vector:",vector);
+    if (at!=string::npos)
+      {
+      if (VectorRepresented(path,vector.c_str()))
+        {
+        this->AddVector(vector.c_str());
+        ++nArrays;
+        }
+      else
+        {
+        sqErrorMacro(cerr,"Named vector " << vector << " not present.");
+        }
+      }
     }
 
-  // H3D vectors
-  if (Represented(path,"bx_")
-    && Represented(path,"by_")
-    && Represented(path,"bz_"))
+  at=0;
+  while (at!=string::npos)
     {
-    this->AddVector("b");
-    ++nArrays;
+    string stensor;
+    at=ParseValue(metaData,at,"stensor:",stensor);
+    if (at!=string::npos)
+      {
+      if (SymetricTensorRepresented(path,stensor.c_str()))
+        {
+        this->AddSymetricTensor(stensor.c_str());
+        ++nArrays;
+        }
+      else
+        {
+        sqErrorMacro(cerr,"Named stensor " << stensor << " not present.");
+        }
+      }
     }
-  if (Represented(path,"ex_")
-    && Represented(path,"ey_")
-    && Represented(path,"ez_"))
+
+  at=0;
+  while (at!=string::npos)
     {
-    this->AddVector("e");
-    ++nArrays;
-    }
-  if (Represented(path,"vix_")
-    && Represented(path,"viy_")
-    && Represented(path,"viz_"))
-    {
-    this->AddVector("vi");
-    ++nArrays;
-    }
-  // 2d vector projections
-  if (Represented(path,"bpx_")
-    && Represented(path,"bpy_")
-    && Represented(path,"bpz_"))
-    {
-    this->AddVector("bp");
-    ++nArrays;
-    }
-  if (Represented(path,"epx_")
-    && Represented(path,"epy_")
-    && Represented(path,"epz_"))
-    {
-    this->AddVector("ep");
-    ++nArrays;
-    }
-  if (Represented(path,"vipx_")
-    && Represented(path,"vipy_")
-    && Represented(path,"vipz_"))
-    {
-    this->AddVector("vip");
-    ++nArrays;
-    }
- // VPIC vectors
- if (Represented(path,"vex_")
-    && Represented(path,"vey_")
-    && Represented(path,"vez_"))
-    {
-    this->AddVector("ve");
-    ++nArrays;
-    }
- if (Represented(path,"uix_")
-    && Represented(path,"uiy_")
-    && Represented(path,"uiz_"))
-    {
-    this->AddVector("ui");
-    ++nArrays;
-    }
- if (Represented(path,"uex_")
-    && Represented(path,"uey_")
-    && Represented(path,"uez_"))
-    {
-    this->AddVector("ue");
-    ++nArrays;
-    }
- if (Represented(path,"ax_")
-    && Represented(path,"ay_")
-    && Represented(path,"az_"))
-    {
-    this->AddVector("a");
-    ++nArrays;
-    }
- if (Represented(path,"jx_")
-    && Represented(path,"jy_")
-    && Represented(path,"jz_"))
-    {
-    this->AddVector("j");
-    ++nArrays;
-    }
-  // projections
- if (Represented(path,"vepx_")
-    && Represented(path,"vepy_")
-    && Represented(path,"vepz_"))
-    {
-    this->AddVector("vep");
-    ++nArrays;
-    }
- if (Represented(path,"uipx_")
-    && Represented(path,"uipy_")
-    && Represented(path,"uipz_"))
-    {
-    this->AddVector("uip");
-    ++nArrays;
-    }
- if (Represented(path,"uepx_")
-    && Represented(path,"uepy_")
-    && Represented(path,"uepz_"))
-    {
-    this->AddVector("uep");
-    ++nArrays;
-    }
- if (Represented(path,"apx_")
-    && Represented(path,"apy_")
-    && Represented(path,"apz_"))
-    {
-    this->AddVector("ap");
-    ++nArrays;
-    }
- if (Represented(path,"jpx_")
-    && Represented(path,"jpy_")
-    && Represented(path,"jpz_"))
-    {
-    this->AddVector("jp");
-    ++nArrays;
-    }
- if (Represented(path,"vmiscx_")
-    && Represented(path,"vmiscy_")
-    && Represented(path,"vmiscz_"))
-    {
-    this->AddVector("vmisc");
-    ++nArrays;
-    }
-  // VPIC tensors
-  if (Represented(path,"pe-xx_")
-    && Represented(path,"pe-xy_")
-    && Represented(path,"pe-xz_")
-    && Represented(path,"pe-yy_")
-    && Represented(path,"pe-yz_")
-    && Represented(path,"pe-zz_"))
-    {
-    this->AddSymetricTensor("pe");
-    ++nArrays;
-    }
-  if (Represented(path,"pi-xx_")
-    && Represented(path,"pi-xy_")
-    && Represented(path,"pi-xz_")
-    && Represented(path,"pi-yy_")
-    && Represented(path,"pi-yz_")
-    && Represented(path,"pi-zz_"))
-    {
-    this->AddSymetricTensor("pi");
-    ++nArrays;
+    string tensor;
+    at=ParseValue(metaData,at,"tensor:",tensor);
+    if (at!=string::npos)
+      {
+      if (SymetricTensorRepresented(path,tensor.c_str()))
+        {
+        this->AddTensor(tensor.c_str());
+        ++nArrays;
+        }
+      else
+        {
+        sqErrorMacro(cerr,"Named tensor " << tensor << " not present.");
+        }
+      }
     }
 
   // We had to find at least one brick, otherwise we have problems.
@@ -585,7 +372,9 @@ int GDAMetaData::OpenDataset(const char *fileName)
     return 0;
     }
 
+  this->Mode='r';
   this->IsOpen=1;
+  this->FileName=fileName;
 
   return 1;
 }
@@ -599,6 +388,133 @@ int GDAMetaData::CloseDataset()
   this->DipoleCenter[0]=
   this->DipoleCenter[1]=
   this->DipoleCenter[2]=0.0;
+
+  return 1;
+}
+
+//-----------------------------------------------------------------------------
+int GDAMetaData::Write()
+{
+  if (!this->IsOpen)
+    {
+    sqErrorMacro(cerr, "Can't write because file is not open.");
+    return 0;
+    }
+
+  if (this->Mode!='w')
+    {
+    sqErrorMacro(cerr, "Writing to a read only file.");
+    return 0;
+    }
+
+  // if the file exists , assume that header data is
+  // present only add array metadata. This enables
+  // building the dataset in multiple passes.
+  bool writeHeader=!FileExists(this->FileName.c_str());
+
+  ofstream os(this->FileName.c_str(),ios_base::app);
+  if (!os.good())
+    {
+    sqErrorMacro(cerr,
+      << "Failed to open " << this->FileName << " for writing.");
+    return 0;
+    }
+
+  if (writeHeader)
+    {
+    os
+      << "#################################" << endl
+      << "# SQ SciVisToolKit" << endl
+      << "# GDAMetadata version 1.0" << endl
+      << "#################################" << endl;
+
+    if (this->DataSetTypeIsImage())
+      {
+      int nCells[3];
+      this->Domain.Size(nCells);
+
+      double x0[3];
+      this->GetOrigin(x0);
+
+      double dx[3];
+      this->GetSpacing(dx);
+
+      os
+        << "nx=" << nCells[0] << ", ny=" << nCells[1] << ", nz=" << nCells[2] << endl
+        << "x0=" << x0[0] << ", y0=" << x0[1] << ", z0=" << x0[2] << endl
+        << "dx=" << dx[0] << ", dy=" << dx[1] << ", dz=" << dx[2] << endl;
+      }
+    else
+      {
+      sqErrorMacro(cerr,
+        << "Unsuported dataset type " << this->GetDataSetType());
+      return 0;
+      }
+
+    os << endl;
+    }
+
+  int nArrays=this->GetNumberOfArrays();
+  for (int i=0; i<nArrays; ++i)
+    {
+    const char *arrayName=this->GetArrayName(i);
+
+    if (!this->IsArrayActive(arrayName))
+      {
+      continue;
+      }
+
+    if (this->IsArrayScalar(arrayName))
+      {
+      os << "scalar:" << arrayName << endl;
+      }
+    else
+    if (this->IsArrayVector(arrayName))
+      {
+      os
+        << "vector:" << arrayName << endl
+        << "scalar:" << arrayName << "x" << endl
+        << "scalar:" << arrayName << "y" << endl
+        << "scalar:" << arrayName << "z" << endl;
+
+      }
+    else
+    if (this->IsArraySymetricTensor(arrayName))
+      {
+      os
+        << "stensor:" << arrayName << endl
+        << "scalar:" << arrayName << "-xx" << endl
+        << "scalar:" << arrayName << "-xy" << endl
+        << "scalar:" << arrayName << "-xz" << endl
+        << "scalar:" << arrayName << "-yy" << endl
+        << "scalar:" << arrayName << "-yz" << endl
+        << "scalar:" << arrayName << "-zz" << endl;
+      }
+    else
+    if (this->IsArrayTensor(arrayName))
+      {
+      os
+        << "tensor:" << arrayName << endl
+        << "scalar:" << arrayName << "-xx" << endl
+        << "scalar:" << arrayName << "-xy" << endl
+        << "scalar:" << arrayName << "-xz" << endl
+        << "scalar:" << arrayName << "-yx" << endl
+        << "scalar:" << arrayName << "-yy" << endl
+        << "scalar:" << arrayName << "-yz" << endl
+        << "scalar:" << arrayName << "-zx" << endl
+        << "scalar:" << arrayName << "-zy" << endl
+        << "scalar:" << arrayName << "-zz" << endl;
+      }
+    else
+      {
+      sqErrorMacro(cerr,"Unsupported array type for " << arrayName);
+      return 0;
+      }
+
+    }
+
+  os << endl;
+  os.close();
 
   return 1;
 }

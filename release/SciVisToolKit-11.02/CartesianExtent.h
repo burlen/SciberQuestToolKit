@@ -157,10 +157,10 @@ public:
   /**
   Translate the bounds by n.
   */
-  void Shift();
-  void Shift(int ni, int nj, int nk);
-  void Shift(int q, int n);
-
+  void Shift();                           // shift by low corner of this
+  void Shift(const CartesianExtent &ext); // shift by low corner of the given extent
+  void Shift(int ni, int nj, int nk);     // shift by the given amount
+  void Shift(int q, int n);               // shift by the given amount in the given direction
 
   /**
   In-place conversion from cell based to node based extent, and vise-versa.
@@ -633,16 +633,29 @@ void CartesianExtent::Shift(int q, int n)
 
 //-----------------------------------------------------------------------------
 inline
+void CartesianExtent::Shift(const CartesianExtent &other)
+{
+  for (int q=0; q<3; ++q)
+    {
+    int qq=q*2;
+    int n=-other[qq];
+
+    this->Data[qq  ]+=n;
+    this->Data[qq+1]+=n;
+    }
+}
+
+//-----------------------------------------------------------------------------
+inline
 void CartesianExtent::Shift()
 {
   for (int q=0; q<3; ++q)
     {
-    q*=2;
+    int qq=q*2;
+    int n=-this->Data[qq];
 
-    int n=-this->Data[q];
-
-    this->Data[q  ]+=n;
-    this->Data[q+1]+=n;
+    this->Data[qq  ]+=n;
+    this->Data[qq+1]+=n;
     }
 }
 

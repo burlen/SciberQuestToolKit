@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 
@@ -22,19 +22,32 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQVortexFilter *New();
 
-  // TODO documentaion
+  // Description:
+  // Deep copy input arrays to the output. A shallow copy is not possible
+  // due to the presence of ghost layers.
+  vtkSetMacro(PassInput,int);
+  vtkGetMacro(PassInput,int);
+
+  // Description:
+  // Split vector results into component arrays.
+  vtkSetMacro(SplitComponents,int);
+  vtkGetMacro(SplitComponents,int);
+
+  // Description:
+  // Compute the rotation, curl(v).
   vtkSetMacro(ComputeRotation,int);
   vtkGetMacro(ComputeRotation,int);
 
-  // TODO documentaion
+  // Description:
+  // Compute helicty, v.curl(v)
   vtkSetMacro(ComputeHelicity,int);
   vtkGetMacro(ComputeHelicity,int);
 
   // Description:
   // H_n is the cosine of the angle bteween velocity and vorticty. Near
-  // vortex core regions this angle is small. In the limiting case 
+  // vortex core regions this angle is small. In the limiting case
   // H_n -> +/-1, and a streamline pasing through this point has no
-  // curvature (straight). The sign of H_n indicates the direction of 
+  // curvature (straight). The sign of H_n indicates the direction of
   // swirl relative to bulk velocity. Vortex cores might be found by
   // tracing streamlines from H_n maxima/minima.
   vtkSetMacro(ComputeNormalizedHelicity,int);
@@ -51,9 +64,12 @@ public:
   vtkSetMacro(ComputeLambda2,int);
   vtkGetMacro(ComputeLambda2,int);
 
+  // Description:
+  // Compute the divergence on a centered stencil.
+  vtkSetMacro(ComputeDivergence,int);
+  vtkGetMacro(ComputeDivergence,int);
+
 protected:
-  //int FillInputPortInformation(int port, vtkInformation *info);
-  //int FillOutputPortInformation(int port, vtkInformation *info);
   int RequestDataObject(vtkInformation*,vtkInformationVector** inInfoVec,vtkInformationVector* outInfoVec);
   int RequestData(vtkInformation *req, vtkInformationVector **input, vtkInformationVector *output);
   int RequestUpdateExtent(vtkInformation *req, vtkInformationVector **input, vtkInformationVector *output);
@@ -63,11 +79,14 @@ protected:
 
 private:
   // controls to turn on/off array generation
+  int PassInput;
+  int SplitComponents;
   int ComputeRotation;
   int ComputeHelicity;
   int ComputeNormalizedHelicity;
   int ComputeLambda;
   int ComputeLambda2;
+  int ComputeDivergence;
 
   //
   int OutputExt[6];

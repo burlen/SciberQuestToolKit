@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <SmoothBatch>
-
 <!--
 /work2/data/2d-asym/asym2d.bov
 -->
@@ -10,9 +9,15 @@
       ISubset="5120 10239"
       JSubset="-1 -1"
       KSubset="1280 2559">
-       <arrays> b </arrays>
+       <arrays> b ui ue </arrays>
   </vtkSQBOVReader>
 
-  <vtkSQKernelConvolution stencilWidth="3"/>
+  <vtkSQKernelConvolution stencilWidth="19"/>
+
+  <vtkSQBOVWriter
+      cb_enable="1"
+      cb_buffer_size="1073741824"
+      stripe_count="160"/>
 
 </SmoothBatch>
+

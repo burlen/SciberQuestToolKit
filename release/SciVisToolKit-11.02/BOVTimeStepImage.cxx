@@ -30,6 +30,21 @@ BOVTimeStepImage::BOVTimeStepImage(
       int stepIdx,
       BOVMetaData *metaData)
 {
+  int mpiMode=0;
+  if (metaData->ReadMode())
+    {
+    mpiMode=MPI_MODE_RDONLY;
+    }
+  else
+  if (metaData->WriteMode())
+    {
+    mpiMode=MPI_MODE_WRONLY|MPI_MODE_CREATE;
+    }
+  else
+    {
+    sqErrorMacro(cerr,"Invalid mode " << metaData->GetMode());
+    }
+
   ostringstream seriesExt;
   seriesExt << "_" << stepIdx << "." << metaData->GetBrickFileExtension();
   // Open each array.
@@ -45,14 +60,14 @@ BOVTimeStepImage::BOVTimeStepImage(
     // scalar
     if (metaData->IsArrayScalar(arrayName))
       {
-      // deduce the file name from the following convention: 
+      // deduce the file name from the following convention:
       // arrayname_step.ext
       ostringstream fileName;
       fileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << seriesExt.str();
 
       // open
       BOVScalarImage *scalar
-        = new BOVScalarImage(comm,hints,fileName.str().c_str(),arrayName);
+        = new BOVScalarImage(comm,hints,fileName.str().c_str(),arrayName,mpiMode);
 
       this->Scalars.push_back(scalar);
       }
@@ -60,7 +75,7 @@ BOVTimeStepImage::BOVTimeStepImage(
     else
     if (metaData->IsArrayVector(arrayName))
       {
-      // deduce the file name from the following convention: 
+      // deduce the file name from the following convention:
       // arrayname{x,y,z}_step.ext
       ostringstream xFileName,yFileName,zFileName;
       xFileName << metaData->GetPathToBricks() << PATH_SEP << arrayName << "x" << seriesExt.str();
@@ -71,9 +86,9 @@ BOVTimeStepImage::BOVTimeStepImage(
       BOVVectorImage *vector = new BOVVectorImage;
       vector->SetName(arrayName);
       vector->SetNumberOfComponents(3);
-      vector->SetComponentFile(0,comm,hints,xFileName.str().c_str());
-      vector->SetComponentFile(1,comm,hints,yFileName.str().c_str());
-      vector->SetComponentFile(2,comm,hints,zFileName.str().c_str());
+      vector->SetComponentFile(0,comm,hints,xFileName.str().c_str(),mpiMode);
+      vector->SetComponentFile(1,comm,hints,yFileName.str().c_str(),mpiMode);
+      vector->SetComponentFile(2,comm,hints,zFileName.str().c_str(),mpiMode);
 
       this->Vectors.push_back(vector);
       }
@@ -81,7 +96,7 @@ BOVTimeStepImage::BOVTimeStepImage(
     else
     if (metaData->IsArrayTensor(arrayName))
       {
-      // deduce the file name from the following convention: 
+      // deduce the file name from the following convention:
       // arrayname{xx,xy, ... ,zz}_step.ext
       ostringstream
             xxFileName,xyFileName,xzFileName,
@@ -102,15 +117,15 @@ BOVTimeStepImage::BOVTimeStepImage(
       BOVVectorImage *tensor = new BOVVectorImage;
       tensor->SetName(arrayName);
       tensor->SetNumberOfComponents(9);
-      tensor->SetComponentFile(0,comm,hints,xxFileName.str().c_str());
-      tensor->SetComponentFile(1,comm,hints,xyFileName.str().c_str());
-      tensor->SetComponentFile(2,comm,hints,xzFileName.str().c_str());
-      tensor->SetComponentFile(3,comm,hints,yxFileName.str().c_str());
-      tensor->SetComponentFile(4,comm,hints,yyFileName.str().c_str());
-      tensor->SetComponentFile(5,comm,hints,yzFileName.str().c_str());
-      tensor->SetComponentFile(6,comm,hints,zxFileName.str().c_str());
-      tensor->SetComponentFile(7,comm,hints,zyFileName.str().c_str());
-      tensor->SetComponentFile(8,comm,hints,zzFileName.str().c_str());
+      tensor->SetComponentFile(0,comm,hints,xxFileName.str().c_str(),mpiMode);
+      tensor->SetComponentFile(1,comm,hints,xyFileName.str().c_str(),mpiMode);
+      tensor->SetComponentFile(2,comm,hints,xzFileName.str().c_str(),mpiMode);
+      tensor->SetComponentFile(3,comm,hints,yxFileName.str().c_str(),mpiMode);
+      tensor->SetComponentFile(4,comm,hints,yyFileName.str().c_str(),mpiMode);
+      tensor->SetComponentFile(5,comm,hints,yzFileName.str().c_str(),mpiMode);
+      tensor->SetComponentFile(6,comm,hints,zxFileName.str().c_str(),mpiMode);
+      tensor->SetComponentFile(7,comm,hints,zyFileName.str().c_str(),mpiMode);
+      tensor->SetComponentFile(8,comm,hints,zzFileName.str().c_str(),mpiMode);
 
       this->Tensors.push_back(tensor);
       }
@@ -136,12 +151,12 @@ BOVTimeStepImage::BOVTimeStepImage(
       BOVVectorImage *symTensor = new BOVVectorImage;
       symTensor->SetName(arrayName);
       symTensor->SetNumberOfComponents(6);
-      symTensor->SetComponentFile(0,comm,hints,xxFileName.str().c_str());
-      symTensor->SetComponentFile(1,comm,hints,xyFileName.str().c_str());
-      symTensor->SetComponentFile(2,comm,hints,xzFileName.str().c_str());
-      symTensor->SetComponentFile(3,comm,hints,yyFileName.str().c_str());
-      symTensor->SetComponentFile(4,comm,hints,yzFileName.str().c_str());
-      symTensor->SetComponentFile(5,comm,hints,zzFileName.str().c_str());
+      symTensor->SetComponentFile(0,comm,hints,xxFileName.str().c_str(),mpiMode);
+      symTensor->SetComponentFile(1,comm,hints,xyFileName.str().c_str(),mpiMode);
+      symTensor->SetComponentFile(2,comm,hints,xzFileName.str().c_str(),mpiMode);
+      symTensor->SetComponentFile(3,comm,hints,yyFileName.str().c_str(),mpiMode);
+      symTensor->SetComponentFile(4,comm,hints,yzFileName.str().c_str(),mpiMode);
+      symTensor->SetComponentFile(5,comm,hints,zzFileName.str().c_str(),mpiMode);
 
       this->SymetricTensors.push_back(symTensor);
       }

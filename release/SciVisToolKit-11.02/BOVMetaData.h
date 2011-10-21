@@ -49,12 +49,17 @@ public:
   virtual ~BOVMetaData();
 
   /**
-  Virtual copy constructor. Create a new object and copy this into it. 
+  Virtual copy constructor. Create a new object and copy this into it.
   return the copy or 0 on error. Caller to delete.
   */
   virtual BOVMetaData *Duplicate() const=0;
 
   /// \Section FileOperations \@{
+  /**
+  Return the filename of the open dataset
+  */
+  const char *GetFileName() const { return this->FileName.c_str(); }
+
   /**
   Set/Get the directory where the bricks for th eopen dataset are
   located. Valid if a metadata file has been successfully opened.
@@ -73,11 +78,11 @@ public:
   */
   //virtual const char *GetMetadataFileExtension() const =0;
 
-
   /**
-  Open the metadata file, and parse metadata. return 0 on error.
+  Open the metadata file. In read mode, 'r', parse metadata. In write
+  mode, 'w', store the filename. return 0 on error.
   */
-  virtual int OpenDataset(const char *fileName)=0;
+  virtual int OpenDataset(const char *fileName, char mode)=0;
 
   /**
   Return true if "Get" calls will succeed, i.e. there is an open metadata
@@ -86,7 +91,19 @@ public:
   virtual int IsDatasetOpen() const { return this->IsOpen; }
 
   /**
-  Close the currently open metatdata file, free any resources and set 
+  Get the mode that the file was opened in.
+  */
+  virtual char GetMode() const { return this->Mode; }
+  virtual bool ReadMode() const { return this->Mode=='r'; }
+  virtual bool WriteMode() const { return this->Mode=='w'; }
+
+  /**
+  Write the object state in the metadata format. return 0 on error.
+  */
+  virtual int Write()=0;
+
+  /**
+  Close the currently open metatdata file, free any resources and set
   the object into a default state. return 0 on error. Be sure to call
   BOVMetaData::CloseDataset().
   */
@@ -111,7 +128,6 @@ public:
   CartesianExtent GetDomain() const { return this->Domain; }
   CartesianExtent GetSubset() const { return this->Subset; }
   CartesianExtent GetDecomp() const { return this->Decomp; }
-
 
   /**
   Return a string naming the vtk dataset that is to be used to
@@ -177,7 +193,9 @@ public:
   Activate/Deactivate the named array so that it will/will not be read.
   */
   void ActivateArray(const char *name){ this->Arrays[name] |= ACTIVE_BIT; }
+  void ActivateAllArrays();
   void DeactivateArray(const char *name){ this->Arrays[name] &= ~ACTIVE_BIT; }
+  void DeactivateAllArrays();
   /// \@}
 
 
@@ -243,6 +261,11 @@ public:
   size_t GetNumberOfTimeSteps() const { return this->TimeSteps.size(); }
 
   /**
+  Clear the current timesteps
+  */
+  void ClearTimeSteps() { this->TimeSteps.clear(); }
+
+  /**
   Return the requested time step id, if a metadata file has been
   successfully opened.
   */
@@ -284,7 +307,9 @@ private:
   friend ostream &operator<<(ostream &os, const BOVMetaData &md);
 
 protected:
+  char Mode;                    // 'r' reading, 'w' writing
   int IsOpen;
+  string FileName;              // path and file name of metadata file.
   string PathToBricks;          // path to the brick files.
   CartesianExtent Domain;       // Dataset domain on disk.
   CartesianExtent Subset;       // Subset of interst to read.

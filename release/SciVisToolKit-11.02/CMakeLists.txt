@@ -28,7 +28,9 @@ include(GeneratePythonBindings.cmake)
 # Server manager wrapped sources.
 set(SM_CXX_SOURCES
   vtkSQBOVReader.cxx
+  vtkSQBOVWriter.cxx
   vtkSQDistributedStreamTracer.cxx
+  vtkSQEdgeFilter.cxx
   vtkSQFieldTopologySelect.cxx
   vtkSQFieldTopologySplit.cxx
   vtkSQFieldTracer.cxx
@@ -73,6 +75,7 @@ set(CXX_SOURCES
   BOVTimeStepImage.cxx
   BOVScalarImage.cxx
   BOVVectorImage.cxx
+  BOVWriter.cxx
   CartesianBounds.cxx
   CartesianDecomp.cxx
   CartesianDataBlock.cxx
@@ -334,6 +337,10 @@ if (UNIX)
     add_executable(SmoothBatch SmoothBatch.cpp XMLUtils.cxx)
     target_link_libraries(SmoothBatch ${MPI_LIBRARIES} SciVisToolKit)
     install(TARGETS SmoothBatch DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+    add_executable(VortexDetectBatch VortexDetectBatch.cpp XMLUtils.cxx)
+    target_link_libraries(VortexDetectBatch ${MPI_LIBRARIES} SciVisToolKit)
+    install(TARGETS VortexDetectBatch DESTINATION ${CMAKE_INSTALL_PREFIX})
 
     add_executable(Slicer Slicer.cpp)
     target_link_libraries(Slicer ${MPI_LIBRARIES} SciVisToolKit)

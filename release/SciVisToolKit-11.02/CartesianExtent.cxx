@@ -31,9 +31,9 @@ int CartesianExtent::GetDimensionMode(
   int inExt[3];
   problemDomain.Size(inExt);
   // 0D and 1D are disallowed
-  if ((inExt[0]<minExt) && (inExt[1]<minExt)
-    ||(inExt[0]<minExt) && (inExt[2]<minExt)
-    ||(inExt[1]<minExt) && (inExt[2]<minExt))
+  if (((inExt[0]<minExt) && (inExt[1]<minExt))
+    ||((inExt[0]<minExt) && (inExt[2]<minExt))
+    ||((inExt[1]<minExt) && (inExt[2]<minExt)))
     {
     sqErrorMacro(pCerr(),"This filter does not support less than 2D.");
     return DIM_MODE_INVALID;

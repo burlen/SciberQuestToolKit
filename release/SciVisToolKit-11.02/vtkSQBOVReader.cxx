@@ -2,10 +2,10 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
-*/ 
+*/
 #include "vtkSQBOVReader.h"
 
 #include "vtkObjectFactory.h"
@@ -31,6 +31,7 @@ Copyright 2008 SciberQuest Inc.
 #include "BOVTimeStepImage.h"
 #include "ImageDecomp.h"
 #include "RectilinearDecomp.h"
+#include "Numerics.hxx"
 #include "Tuple.hxx"
 #include "PrintUtils.h"
 #include "SQMacros.h"
@@ -69,22 +70,6 @@ using std::ostringstream;
 
 vtkCxxRevisionMacro(vtkSQBOVReader, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQBOVReader);
-
-// Compare two doubles.
-int fequal(double a, double b, double tol)
-{
-  double pda=fabs(a);
-  double pdb=fabs(b);
-  pda=pda<tol?tol:pda;
-  pdb=pdb<tol?tol:pdb;
-  double smaller=pda<pdb?pda:pdb;
-  double norm=fabs(b-a)/smaller;
-  if (norm<=tol)
-    {
-    return 1;
-    }
-  return 0;
-}
 
 //-----------------------------------------------------------------------------
 vtkSQBOVReader::vtkSQBOVReader()
@@ -410,7 +395,7 @@ void vtkSQBOVReader::SetPeriodicBC(int *flags)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQBOVReader::SetXHasPeriodicBC(int flag) 
+void vtkSQBOVReader::SetXHasPeriodicBC(int flag)
 {
   if (this->PeriodicBC[0]==flag)
     {
@@ -538,7 +523,6 @@ int vtkSQBOVReader::RequestDataObject(
   return 1;
 }
 
-
 //-----------------------------------------------------------------------------
 int vtkSQBOVReader::RequestInformation(
   vtkInformation*,
@@ -618,7 +602,7 @@ int vtkSQBOVReader::RequestInformation(
     // The actual read we need to populate the VTK keys with actual
     // values. The mechanics of the pipeline require that the data set
     // dimensions and whole extent key reflect the global index space
-    // of the dataset, the data set extent will have the decomposed 
+    // of the dataset, the data set extent will have the decomposed
     // index space.
     int wholeExtent[6];
     this->GetSubset(wholeExtent);
@@ -843,7 +827,7 @@ int vtkSQBOVReader::RequestData(
     }
 
   // ParaView sends the update extent to inform us of the domain decomposition.
-  // The decomp is what will be loaded by this process. 
+  // The decomp is what will be loaded by this process.
   CartesianExtent decomp;
   //int decomp[6];
   info->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),decomp.GetData());

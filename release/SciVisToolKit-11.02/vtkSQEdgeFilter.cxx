@@ -2,11 +2,11 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
 
 Copyright 2008 SciberQuest Inc.
 */
-#include "vtkSQVortexFilter.h"
+#include "vtkSQEdgeFilter.h"
 
 #include "CartesianExtent.h"
 #include "postream.h"
@@ -30,38 +30,23 @@ using vtkstd::string;
 
 #include "Numerics.hxx"
 
-//#define vtkSQVortexFilterDEBUG
-#define vtkSQVortexFilterTIME
+//#define vtkSQEdgeFilterDEBUG
 
-#ifdef WIN32
-  // these are only usefull in terminals
-  #undef vtkSQVortexFilterTIME
-  #undef vtkSQVortexFilterDEBUG
-#endif
 
-#if defined vtkSQVortexFilterTIME
-  #include <sys/time.h>
-  #include <unistd.h>
-#endif
-
-vtkCxxRevisionMacro(vtkSQVortexFilter, "$Revision: 0.0 $");
-vtkStandardNewMacro(vtkSQVortexFilter);
+vtkCxxRevisionMacro(vtkSQEdgeFilter, "$Revision: 0.0 $");
+vtkStandardNewMacro(vtkSQEdgeFilter);
 
 //-----------------------------------------------------------------------------
-vtkSQVortexFilter::vtkSQVortexFilter()
+vtkSQEdgeFilter::vtkSQEdgeFilter()
     :
   PassInput(0),
   SplitComponents(0),
-  ComputeRotation(1),
-  ComputeHelicity(0),
-  ComputeNormalizedHelicity(0),
-  ComputeLambda(0),
-  ComputeLambda2(0),
-  ComputeDivergence(0),
+  ComputeGradient(0),
+  ComputeLaplacian(0),
   Mode(CartesianExtent::DIM_MODE_3D)
 {
-  #ifdef vtkSQVortexFilterDEBUG
-  pCerr() << "===============================vtkSQVortexFilter::vtkSQVortexFilter" << endl;
+  #ifdef vtkSQEdgeFilterDEBUG
+  pCerr() << "===============================vtkSQEdgeFilter::vtkSQEdgeFilter" << endl;
   #endif
 
   this->SetNumberOfInputPorts(1);
@@ -70,22 +55,22 @@ vtkSQVortexFilter::vtkSQVortexFilter()
 }
 
 //-----------------------------------------------------------------------------
-vtkSQVortexFilter::~vtkSQVortexFilter()
+vtkSQEdgeFilter::~vtkSQEdgeFilter()
 {
-  #ifdef vtkSQVortexFilterDEBUG
-  pCerr() << "===============================vtkSQVortexFilter::~vtkSQVortexFilter" << endl;
+  #ifdef vtkSQEdgeFilterDEBUG
+  pCerr() << "===============================vtkSQEdgeFilter::~vtkSQEdgeFilter" << endl;
   #endif
 
 }
 
 //-----------------------------------------------------------------------------
-int vtkSQVortexFilter::RequestDataObject(
+int vtkSQEdgeFilter::RequestDataObject(
     vtkInformation* /* request */,
     vtkInformationVector** inInfoVec,
     vtkInformationVector* outInfoVec)
 {
-  #ifdef vtkSQVortexFilterDEBUG
-  pCerr() << "===============================vtkSQVortexFilter::RequestDataObject" << endl;
+  #ifdef vtkSQEdgeFilterDEBUG
+  pCerr() << "===============================vtkSQEdgeFilter::RequestDataObject" << endl;
   #endif
 
   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
@@ -108,13 +93,13 @@ int vtkSQVortexFilter::RequestDataObject(
 }
 
 //-----------------------------------------------------------------------------
-int vtkSQVortexFilter::RequestInformation(
+int vtkSQEdgeFilter::RequestInformation(
       vtkInformation * /*req*/,
       vtkInformationVector **inInfos,
       vtkInformationVector *outInfos)
 {
-  #ifdef vtkSQVortexFilterDEBUG
-  pCerr() << "===============================vtkSQVortexFilter::RequestInformation" << endl;
+  #ifdef vtkSQEdgeFilterDEBUG
+  pCerr() << "===============================vtkSQEdgeFilter::RequestInformation" << endl;
   #endif
   //this->Superclass::RequestInformation(req,inInfos,outInfos);
 
@@ -159,7 +144,7 @@ int vtkSQVortexFilter::RequestInformation(
   inInfo->Get(vtkDataObject::ORIGIN(),X0);
   outInfo->Set(vtkDataObject::ORIGIN(),X0,3);
 
-  #ifdef vtkSQVortexFilterDEBUG
+  #ifdef vtkSQEdgeFilterDEBUG
   pCerr()
     << "WHOLE_EXTENT(input)=" << inputDomain << endl
     << "WHOLE_EXTENT(output)=" << outputDomain << endl
@@ -172,13 +157,13 @@ int vtkSQVortexFilter::RequestInformation(
 }
 
 //-----------------------------------------------------------------------------
-int vtkSQVortexFilter::RequestUpdateExtent(
+int vtkSQEdgeFilter::RequestUpdateExtent(
       vtkInformation *req,
       vtkInformationVector **inInfos,
       vtkInformationVector *outInfos)
 {
-  #ifdef vtkSQVortexFilterDEBUG
-  pCerr() << "===============================vtkSQVortexFilter::RequestUpdateExtent" << endl;
+  #ifdef vtkSQEdgeFilterDEBUG
+  pCerr() << "===============================vtkSQEdgeFilter::RequestUpdateExtent" << endl;
   #endif
 
   typedef vtkStreamingDemandDrivenPipeline vtkSDDPipeline;
@@ -226,7 +211,7 @@ int vtkSQVortexFilter::RequestUpdateExtent(
   inInfo->Set(vtkSDDPipeline::UPDATE_NUMBER_OF_PIECES(), numPieces);
   inInfo->Set(vtkSDDPipeline::EXACT_EXTENT(), 1);
 
-  #ifdef vtkSQVortexFilterDEBUG
+  #ifdef vtkSQEdgeFilterDEBUG
   pCerr()
     << "WHOLE_EXTENT=" << wholeExt << endl
     << "UPDATE_EXTENT=" << outputExt << endl
@@ -237,20 +222,13 @@ int vtkSQVortexFilter::RequestUpdateExtent(
 }
 
 //-----------------------------------------------------------------------------
-int vtkSQVortexFilter::RequestData(
+int vtkSQEdgeFilter::RequestData(
     vtkInformation * /*req*/,
     vtkInformationVector **inInfoVec,
     vtkInformationVector *outInfoVec)
 {
-  #ifdef vtkSQVortexFilterDEBUG
-  pCerr() << "===============================vtkSQVortexFilter::RequestData" << endl;
-  #endif
-
-  #if defined vtkSQVortexFilterTIME
-  double walls=0.0;
-  timeval wallt;
-  gettimeofday(&wallt,0x0);
-  walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+  #ifdef vtkSQEdgeFilterDEBUG
+  pCerr() << "===============================vtkSQEdgeFilter::RequestData" << endl;
   #endif
 
   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
@@ -332,7 +310,7 @@ int vtkSQVortexFilter::RequestData(
     outImData->GetDimensions(outputDims);
     int outputTups=outputDims[0]*outputDims[1]*outputDims[2];
 
-    #ifdef vtkSQVortexFilterDEBUG
+    #ifdef vtkSQEdgeFilterDEBUG
     pCerr()
       << "WHOLE_EXTENT=" << domainExt << endl
       << "UPDATE_EXTENT(input)=" << inputExt << endl
@@ -377,205 +355,105 @@ int vtkSQVortexFilter::RequestData(
         }
       }
 
-    // Rotation.
-    if (this->ComputeRotation)
+    // Gradient.
+    if (this->ComputeGradient)
       {
       string name;
 
-      vtkDataArray *Rx=V->NewInstance();
-      Rx->SetNumberOfComponents(1);
-      Rx->SetNumberOfTuples(outputTups);
-      name="rot-";
+      vtkDataArray *Gx=V->NewInstance();
+      Gx->SetNumberOfComponents(1);
+      Gx->SetNumberOfTuples(outputTups);
+      name="grad-";
       name+=V->GetName();
       name+="x";
-      Rx->SetName(name.c_str());
+      Gx->SetName(name.c_str());
 
-      vtkDataArray *Ry=V->NewInstance();
-      Ry->SetNumberOfComponents(1);
-      Ry->SetNumberOfTuples(outputTups);
-      name="rot-";
+      vtkDataArray *Gy=V->NewInstance();
+      Gy->SetNumberOfComponents(1);
+      Gy->SetNumberOfTuples(outputTups);
+      name="grad-";
       name+=V->GetName();
       name+="y";
-      Ry->SetName(name.c_str());
+      Gy->SetName(name.c_str());
 
-      vtkDataArray *Rz=V->NewInstance();
-      Rz->SetNumberOfComponents(1);
-      Rz->SetNumberOfTuples(outputTups);
-      name="rot-";
+      vtkDataArray *Gz=V->NewInstance();
+      Gz->SetNumberOfComponents(1);
+      Gz->SetNumberOfTuples(outputTups);
+      name="grad-";
       name+=V->GetName();
       name+="z";
-      Rz->SetName(name.c_str());
+      Gz->SetName(name.c_str());
 
       switch(V->GetDataType())
         {
         vtkTemplateMacro(
-          Rotation<VTK_TT>(
+          Gradient<VTK_TT>(
               inputExt.GetData(),
               outputExt.GetData(),
               this->Mode,
               dX,
               (VTK_TT*)V->GetVoidPointer(0),
-              (VTK_TT*)Rx->GetVoidPointer(0),
-              (VTK_TT*)Ry->GetVoidPointer(0),
-              (VTK_TT*)Rz->GetVoidPointer(0));
+              (VTK_TT*)Gx->GetVoidPointer(0),
+              (VTK_TT*)Gy->GetVoidPointer(0),
+              (VTK_TT*)Gz->GetVoidPointer(0));
           );
         }
 
       if (this->SplitComponents)
         {
-        outImData->GetPointData()->AddArray(Rx);
-        outImData->GetPointData()->AddArray(Ry);
-        outImData->GetPointData()->AddArray(Rz);
+        outImData->GetPointData()->AddArray(Gx);
+        outImData->GetPointData()->AddArray(Gy);
+        outImData->GetPointData()->AddArray(Gz);
         }
       else
         {
-        vtkDataArray *R=V->NewInstance();
-        outImData->GetPointData()->AddArray(R);
-        R->Delete();
-        R->SetNumberOfComponents(3);
-        R->SetNumberOfTuples(outputTups);
-        name="rot-";
+        vtkDataArray *G=V->NewInstance();
+        outImData->GetPointData()->AddArray(G);
+        G->Delete();
+        G->SetNumberOfComponents(3);
+        G->SetNumberOfTuples(outputTups);
+        name="grad-";
         name+=V->GetName();
-        R->SetName(name.c_str());
+        G->SetName(name.c_str());
 
         switch(V->GetDataType())
           {
           vtkTemplateMacro(
             Interleave<VTK_TT>(
                 outputTups,
-                (VTK_TT*)Rx->GetVoidPointer(0),
-                (VTK_TT*)Ry->GetVoidPointer(0),
-                (VTK_TT*)Rz->GetVoidPointer(0),
-                (VTK_TT*)R->GetVoidPointer(0)));
+                (VTK_TT*)Gx->GetVoidPointer(0),
+                (VTK_TT*)Gy->GetVoidPointer(0),
+                (VTK_TT*)Gz->GetVoidPointer(0),
+                (VTK_TT*)G->GetVoidPointer(0)));
           }
         }
-      Rx->Delete();
-      Ry->Delete();
-      Rz->Delete();
+      Gx->Delete();
+      Gy->Delete();
+      Gz->Delete();
       }
 
-    // Helicity.
-    if (this->ComputeHelicity)
-      {
-      vtkDataArray *H=V->NewInstance();
-      outImData->GetPointData()->AddArray(H);
-      H->Delete();
-      H->SetNumberOfComponents(1);
-      H->SetNumberOfTuples(outputTups);
-      string name("hel-");
-      name+=V->GetName();
-      H->SetName(name.c_str());
-      //
-      switch(V->GetDataType())
-        {
-        vtkTemplateMacro(
-          Helicity<VTK_TT>(
-              inputExt.GetData(),
-              outputExt.GetData(),
-              this->Mode,
-              dX,
-              (VTK_TT*)V->GetVoidPointer(0),
-              (VTK_TT*)H->GetVoidPointer(0)));
-        }
-      }
-
-    // Normalized Helicity.
-    if (this->ComputeNormalizedHelicity)
-      {
-      vtkDataArray *HN=V->NewInstance();
-      outImData->GetPointData()->AddArray(HN);
-      HN->Delete();
-      HN->SetNumberOfComponents(1);
-      HN->SetNumberOfTuples(outputTups);
-      string name("norm-hel-");
-      name+=V->GetName();
-      HN->SetName(name.c_str());
-      //
-      switch(V->GetDataType())
-        {
-        vtkTemplateMacro(
-          NormalizedHelicity<VTK_TT>(
-              inputExt.GetData(),
-              outputExt.GetData(),
-              this->Mode,
-              dX,
-              (VTK_TT*)V->GetVoidPointer(0),
-              (VTK_TT*)HN->GetVoidPointer(0)));
-        }
-      }
-
-    // Lambda-1,2,3.
-    if (this->ComputeLambda)
+    // Laplacian.
+    if (this->ComputeLaplacian)
       {
       vtkDataArray *L=V->NewInstance();
       outImData->GetPointData()->AddArray(L);
       L->Delete();
-      L->SetNumberOfComponents(3);
+      L->SetNumberOfComponents(1);
       L->SetNumberOfTuples(outputTups);
-      string name("lam-");
+      string name("lapl-");
       name+=V->GetName();
       L->SetName(name.c_str());
       //
       switch(V->GetDataType())
         {
         vtkTemplateMacro(
-          Lambda<VTK_TT>(
+          Laplacian<VTK_TT>(
               inputExt.GetData(),
               outputExt.GetData(),
               this->Mode,
               dX,
               (VTK_TT*)V->GetVoidPointer(0),
               (VTK_TT*)L->GetVoidPointer(0)));
-        }
-      }
-
-    // Lambda-2.
-    if (this->ComputeLambda2)
-      {
-      vtkDataArray *L2=V->NewInstance();
-      outImData->GetPointData()->AddArray(L2);
-      L2->Delete();
-      L2->SetNumberOfComponents(1);
-      L2->SetNumberOfTuples(outputTups);
-      string name("lam2-");
-      name+=V->GetName();
-      L2->SetName(name.c_str());
-      //
-      switch(V->GetDataType())
-        {
-        vtkTemplateMacro(
-          Lambda2<VTK_TT>(
-              inputExt.GetData(),
-              outputExt.GetData(),
-              this->Mode,
-              dX,
-              (VTK_TT*)V->GetVoidPointer(0),
-              (VTK_TT*)L2->GetVoidPointer(0)));
-        }
-      }
-
-    // Divergence.
-    if (this->ComputeDivergence)
-      {
-      vtkDataArray *D=V->NewInstance();
-      outImData->GetPointData()->AddArray(D);
-      D->Delete();
-      D->SetNumberOfComponents(1);
-      D->SetNumberOfTuples(outputTups);
-      string name("div-");
-      name+=V->GetName();
-      D->SetName(name.c_str());
-      //
-      switch(V->GetDataType())
-        {
-        vtkTemplateMacro(
-          Divergence<VTK_TT>(
-              inputExt.GetData(),
-              outputExt.GetData(),
-              this->Mode,
-              dX,
-              (VTK_TT*)V->GetVoidPointer(0),
-              (VTK_TT*)D->GetVoidPointer(0)));
         }
       }
     // outImData->Print(cerr);
@@ -586,20 +464,14 @@ int vtkSQVortexFilter::RequestData(
     vtkWarningMacro("TODO : implment difference opperators on stretched grids.");
     }
 
-  #if defined vtkSQVortexFilterTIME
-  gettimeofday(&wallt,0x0);
-  double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-  pCerr() << "vtkSQVortexFilter::RequestData " << walle-walls << endl;
-  #endif
-
  return 1;
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQVortexFilter::PrintSelf(ostream& os, vtkIndent indent)
+void vtkSQEdgeFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
-  #ifdef vtkSQVortexFilterDEBUG
-  pCerr() << "===============================vtkSQVortexFilter::PrintSelf" << endl;
+  #ifdef vtkSQEdgeFilterDEBUG
+  pCerr() << "===============================vtkSQEdgeFilter::PrintSelf" << endl;
   #endif
 
   this->Superclass::PrintSelf(os,indent);

@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
@@ -16,6 +16,8 @@ Copyright 2008 SciberQuest Inc.
 //-----------------------------------------------------------------------------
 BOVMetaData::BOVMetaData()
 {
+  this->Mode = 'c';
+
   this->IsOpen=0;
 
   this->Origin[0]=
@@ -42,12 +44,14 @@ BOVMetaData::~BOVMetaData()
 //-----------------------------------------------------------------------------
 BOVMetaData &BOVMetaData::operator=(const BOVMetaData &other)
 {
-  if (this==&other) 
+  if (this==&other)
     {
     return *this;
     }
 
+  this->Mode=other.Mode;
   this->IsOpen=other.IsOpen;
+  this->FileName=other.FileName;
   this->PathToBricks=other.PathToBricks;
   this->Arrays=other.Arrays;
   this->TimeSteps=other.TimeSteps;
@@ -67,7 +71,9 @@ BOVMetaData &BOVMetaData::operator=(const BOVMetaData &other)
 //-----------------------------------------------------------------------------
 int BOVMetaData::CloseDataset()
 {
+  this->Mode='c';
   this->IsOpen=0;
+  this->FileName="";
   this->PathToBricks="";
   this->Domain.Clear();
   this->Subset.Clear();
@@ -215,9 +221,33 @@ const char *BOVMetaData::GetArrayName(size_t i) const
 }
 
 //-----------------------------------------------------------------------------
+void BOVMetaData::DeactivateAllArrays()
+{
+  int nArrays=this->GetNumberOfArrays();
+  for (int i=0; i<nArrays; ++i)
+    {
+    const char *arrayName=this->GetArrayName(i);
+    this->DeactivateArray(arrayName);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void BOVMetaData::ActivateAllArrays()
+{
+  int nArrays=this->GetNumberOfArrays();
+  for (int i=0; i<nArrays; ++i)
+    {
+    const char *arrayName=this->GetArrayName(i);
+    this->ActivateArray(arrayName);
+    }
+}
+
+//-----------------------------------------------------------------------------
 void BOVMetaData::Pack(BinaryStream &os)
 {
+  os.Pack(this->Mode);
   os.Pack(this->IsOpen);
+  os.Pack(this->FileName);
   os.Pack(this->PathToBricks);
   os.Pack(this->Domain.GetData(),6);
   os.Pack(this->Decomp.GetData(),6);
@@ -235,7 +265,9 @@ void BOVMetaData::Pack(BinaryStream &os)
 //-----------------------------------------------------------------------------
 void BOVMetaData::UnPack(BinaryStream &is)
 {
+  is.UnPack(this->Mode);
   is.UnPack(this->IsOpen);
+  is.UnPack(this->FileName);
   is.UnPack(this->PathToBricks);
   is.UnPack(this->Domain.GetData(),6);
   is.UnPack(this->Decomp.GetData(),6);
@@ -255,7 +287,9 @@ void BOVMetaData::Print(ostream &os) const
 {
   os
     << "BOVMetaData: " << this << endl
+    << "\tMode: " << this->Mode << endl
     << "\tIsOpen: " << this->IsOpen << endl
+    << "\tFileName: " << this->FileName << endl
     << "\tPathToBricks: " << this->PathToBricks << endl
     << "\tDomain: " << this->Domain << endl
     << "\tSubset: " << this->Subset << endl

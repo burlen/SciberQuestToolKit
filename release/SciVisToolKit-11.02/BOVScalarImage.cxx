@@ -11,7 +11,7 @@ Copyright 2008 SciberQuest Inc.
 #include "SQMacros.h"
 
 //-----------------------------------------------------------------------------
-MPI_File Open(MPI_Comm comm, MPI_Info hints, const char *fileName)
+MPI_File Open(MPI_Comm comm, MPI_Info hints, const char *fileName, int mode)
 {
   MPI_File file=0;
   int iErr;
@@ -21,7 +21,7 @@ MPI_File Open(MPI_Comm comm, MPI_Info hints, const char *fileName)
   iErr=MPI_File_open(
       comm,
       const_cast<char *>(fileName),
-      MPI_MODE_RDONLY,
+      mode,
       hints,
       &file);
   if (iErr!=MPI_SUCCESS)
@@ -39,9 +39,10 @@ MPI_File Open(MPI_Comm comm, MPI_Info hints, const char *fileName)
 BOVScalarImage::BOVScalarImage(
     MPI_Comm comm,
     MPI_Info hints,
-    const char *fileName)
+    const char *fileName,
+    int mode)
 {
-  this->File=Open(comm,hints,fileName);
+  this->File=Open(comm,hints,fileName,mode);
   this->FileName=fileName;
 }
 
@@ -50,9 +51,10 @@ BOVScalarImage::BOVScalarImage(
       MPI_Comm comm,
       MPI_Info hints,
       const char *fileName,
-      const char *name)
+      const char *name,
+      int mode)
 {
-  this->File=Open(comm,hints,fileName);
+  this->File=Open(comm,hints,fileName,mode);
   this->FileName=fileName;
   this->Name=name;
 }

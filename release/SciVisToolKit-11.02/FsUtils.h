@@ -23,15 +23,19 @@ using std::ios;
 #include <sstream>
 using std::istringstream;
 
-
 #ifndef WIN32
   #define PATH_SEP "/"
 #else
   #define PATH_SEP "\\"
 #endif
 
+int FileExists(const char *path);
 int Present(const char *path, const char *file);
 int Represented(const char *path, const char *prefix);
+int ScalarRepresented(const char *path, const char *prefix);
+int VectorRepresented(const char *path, const char *prefix);
+int SymetricTensorRepresented(const char *path, const char *prefix);
+int TensorRepresented(const char *path, const char *prefix);
 int GetSeriesIds(const char *path, const char *prefix, vector<int> &ids);
 string StripFileNameFromPath(const string fileName);
 string StripExtensionFromFileName(const string fileName);
@@ -77,8 +81,9 @@ size_t LoadBin(const char *fileName, size_t dlen, T *buffer)
   return dlen;
 }
 
-
-//*****************************************************************************
+/**
+*/
+// ****************************************************************************
 template<typename T>
 int NameValue(vector<string> &lines, string name, T &value)
 {
@@ -97,5 +102,27 @@ int NameValue(vector<string> &lines, string name, T &value)
   return 0;
 }
 
+/**
+Parse a string for a "key", starting at offset "at" then
+advance past the key and attempt to convert what follows
+in to a value of type "T". If the key isn't found, then
+npos is returned otherwise the position imediately following
+the key is returned.
+*/
+// ****************************************************************************
+template <typename T>
+size_t ParseValue(string &in,size_t at, string key, T &value)
+{
+  size_t p=in.find(key,at);
+  if (p!=string::npos)
+    {
+    const int winLen=64; // num chars to include in value conversion
+    p+=key.size();
+    istringstream valss(in.substr(p,winLen));
+    valss >> value;
+    }
+  return p;
+}
 
 #endif
+

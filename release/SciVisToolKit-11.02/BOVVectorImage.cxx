@@ -34,7 +34,8 @@ void BOVVectorImage::SetComponentFile(
         int i,
         MPI_Comm comm,
         MPI_Info hints,
-        const char *fileName)
+        const char *fileName,
+        int mode)
 {
   BOVScalarImage *oldComp = this->ComponentFiles[i];
 
@@ -43,7 +44,7 @@ void BOVVectorImage::SetComponentFile(
     delete oldComp;
     }
 
-  this->ComponentFiles[i] = new BOVScalarImage(comm,hints,fileName);
+  this->ComponentFiles[i] = new BOVScalarImage(comm,hints,fileName,mode);
 }
 
 //-----------------------------------------------------------------------------
@@ -94,3 +95,4 @@ ostream &operator<<(ostream &os, const BOVVectorImage &vi)
 
   return os;
 }
+

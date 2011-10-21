@@ -53,7 +53,9 @@ public:
   Open the metadata file, and parse metadata.
   return 0 on error.
   */
-  virtual int OpenDataset(const char *fileName);
+  virtual int OpenDataset(const char *fileName, char mode);
+  virtual int OpenDatasetForRead(const char *fileName);
+  virtual int OpenDatasetForWrite(const char *fileName);
 
   /**
   Free any resources and set the object into a default
@@ -70,6 +72,11 @@ public:
     {
     return "gda";
     }
+
+  /**
+  Write the object state in the metadata format. return 0 on error.
+  */
+  virtual int Write();
 
   /**
   Return the file extension used by metadata files.
