@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<SmoothBatch>
+
+  <vtkSQBOVReader
+      cb_enable="1"
+      ISubset="-1 -1"
+      JSubset="-1 -1"
+      KSubset="-1 -1">
+       <!-- <arrays> b ui ue </arrays>-->
+       <arrays> b </arrays>
+  </vtkSQBOVReader>
+
+  <vtkSQKernelConvolution stencilWidth="3"/>
+
+  <vtkSQBOVWriter
+      cb_enable="1"
+      cb_buffer_size="1073741824"
+      stripe_count="160"/>
+
+</SmoothBatch>
+
