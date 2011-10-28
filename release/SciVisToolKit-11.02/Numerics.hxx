@@ -385,9 +385,81 @@ void Magnitude(int *I, T *  V, T *  mV)
     }
 }
 
+// Magnitude of a vector
+//*****************************************************************************
+template <typename T>
+void Magnitude(
+      int *output,
+      T __restrict__ *V,
+      T __restrict__ *mV)
+{
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _nk=output[5]-output[4]+1;
+  const int _n=_ni*_nj*_nk;
+
+  for (int q=0; q<_ni; ++q)
+    {
+    const int qq=3*q;
+    mV[q] = sqrt(V[qq]*V[qq]+V[qq+1]+V[qq+1]+V[qq+2]*V[qq+2]);
+    }
+}
+
+// Normalize vector
+//*****************************************************************************
+template <typename T>
+void Normalize(
+      int *extent,
+      T *V)
+{
+  const int _ni=extent[1]-extent[0]+1;
+  const int _nj=extent[3]-extent[2]+1;
+  const int _nk=extent[5]-extent[4]+1;
+  const int _n=_ni*_nj*_nk;
+
+  for (int q=0; q<_ni; ++q)
+    {
+    const int qq=3*q;
+    T mV = 1.0/sqrt(V[qq]*V[qq]+V[qq+1]+V[qq+1]+V[qq+2]*V[qq+2]);
+    V[qq]*=mV;
+    V[qq+1]*=mV;
+    V[qq+2]*=mV;
+    }
+}
+
+
+// Scale a vector by another
+//*****************************************************************************
+template <typename T>
+void ScaleVector(
+      int *output,
+      T *V,
+      int nComps,
+      T *sV)
+{
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _nk=output[5]-output[4]+1;
+  const int _n=_ni*_nj*_nk;
+
+  for (int q=0; q<_ni; ++q)
+    {
+    const int qq=nComps*q;
+    for (int r=0; r<nComps; ++r)
+      {
+      V[qq+r] /= sV[q];
+      }
+    }
+}
+
 //*****************************************************************************
 template<typename T>
-void Interleave(int n, T*  Vx, T*  Vy, T*  Vz, T*  V)
+void Interleave(
+      int n,
+      T * __restrict__  Vx,
+      T * __restrict__  Vy,
+      T * __restrict__  Vz,
+      T * __restrict__  V)
 {
   // take scalar components and interleve into a vector array.
   for (int i=0; i<n; ++i)
@@ -399,6 +471,36 @@ void Interleave(int n, T*  Vx, T*  Vy, T*  Vz, T*  V)
     }
 }
 
+//*****************************************************************************
+template<typename T>
+void Interleave(
+      int n,
+      T * __restrict__  Vxx,
+      T * __restrict__  Vxy,
+      T * __restrict__  Vxz,
+      T * __restrict__  Vyx,
+      T * __restrict__  Vyy,
+      T * __restrict__  Vyz,
+      T * __restrict__  Vzx,
+      T * __restrict__  Vzy,
+      T * __restrict__  Vzz,
+      T * __restrict__  V)
+{
+  // take scalar components and interleve into a vector array.
+  for (int i=0; i<n; ++i)
+    {
+    int ii=9*i;
+    V[ii  ]=Vxx[i];
+    V[ii+1]=Vxy[i];
+    V[ii+2]=Vxz[i];
+    V[ii+3]=Vyx[i];
+    V[ii+4]=Vyy[i];
+    V[ii+5]=Vyz[i];
+    V[ii+6]=Vzx[i];
+    V[ii+7]=Vzy[i];
+    V[ii+8]=Vzz[i];
+    }
+}
 
 // input  -> input(src) patch bounds
 // output -> output(dest) patch bounds
@@ -2001,6 +2103,252 @@ void Gradient(
         Gx[_pi] = (S[ihi]-S[ilo])/dx[0];
         Gy[_pi] = (S[jhi]-S[jlo])/dx[1];
         Gz[_pi] = (S[khi]-S[klo])/dx[2];
+        }
+      }
+    }
+}
+
+// input  -> patch input array is defined on
+// output -> patch outpu array is defined on
+// dX     -> grid spacing triple
+// V      -> vector field
+// J      -> vector gradient (Jaccobian)
+//*****************************************************************************
+template <typename T>
+void Jacobian(
+      int *input,
+      int *output,
+      int mode,
+      double *dX,
+      T *V,
+      T *Jxx,
+      T *Jxy,
+      T *Jxz,
+      T *Jyx,
+      T *Jyy,
+      T *Jyz,
+      T *Jzx,
+      T *Jzy,
+      T *Jzz)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int nk=input[5]-input[4]+1;
+  FlatIndex idx(ni,nj,nk,mode);
+
+  const int iok=(ni<3?0:1);
+  const int jok=(nj<3?0:1);
+  const int kok=(nk<3?0:1);
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _nk=output[5]-output[4]+1;
+  FlatIndex _idx(_ni,_nj,_nk,mode);
+
+  // stencil deltas
+  const double dx[3]={dX[0]*2.0,dX[1]*2.0,dX[2]*2.0};
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    const int  k=r-input[4];
+    const int _k=r-output[4];
+
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      const int  j=q-input[2];
+      const int _j=q-output[2];
+
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        const int  i=p-input[0];
+        const int _i=p-output[0];
+
+        const int _pi=_idx.Index(_i,_j,_k);
+
+        // J: gradient velocity tensor, (jacobian)
+        Jxx[_pi]=0.0;
+        Jxy[_pi]=0.0;
+        Jxz[_pi]=0.0;
+        if (iok)
+          {
+          int vilo_x=3*idx.Index(i-1,j,k);
+          int vilo_y=vilo_x+1;
+          int vilo_z=vilo_y+1;
+
+          int vihi_x=3*idx.Index(i+1,j,k);
+          int vihi_y=vihi_x+1;
+          int vihi_z=vihi_y+1;
+
+          Jxx[_pi] = (V[vihi_x]-V[vilo_x])/dx[0];;
+          Jxy[_pi] = (V[vihi_y]-V[vilo_y])/dx[0];;
+          Jxz[_pi] = (V[vihi_z]-V[vilo_z])/dx[0];;
+          }
+
+        Jyx[_pi]=0.0;
+        Jyy[_pi]=0.0;
+        Jyz[_pi]=0.0;
+        if (jok)
+          {
+          int vjlo_x=3*idx.Index(i,j-1,k);
+          int vjlo_y=vjlo_x+1;
+          int vjlo_z=vjlo_y+1;
+
+          int vjhi_x=3*idx.Index(i,j+1,k);
+          int vjhi_y=vjhi_x+1;
+          int vjhi_z=vjhi_y+1;
+
+          Jyx[_pi] = (V[vjhi_x]-V[vjlo_x])/dx[1];;
+          Jyy[_pi] = (V[vjhi_y]-V[vjlo_y])/dx[1];;
+          Jyz[_pi] = (V[vjhi_z]-V[vjlo_z])/dx[1];;
+          }
+
+        Jzx[_pi]=0.0;
+        Jzy[_pi]=0.0;
+        Jzz[_pi]=0.0;
+        if (kok)
+          {
+          int vklo_x=3*idx.Index(i,j,k-1);
+          int vklo_y=vklo_x+1;
+          int vklo_z=vklo_y+1;
+
+          int vkhi_x=3*idx.Index(i,j,k+1);
+          int vkhi_y=vkhi_x+1;
+          int vkhi_z=vkhi_y+1;
+
+          Jxx[_pi] = (V[vkhi_x]-V[vklo_x])/dx[2];;
+          Jxy[_pi] = (V[vkhi_y]-V[vklo_y])/dx[2];;
+          Jxz[_pi] = (V[vkhi_z]-V[vklo_z])/dx[2];;
+          }
+        }
+      }
+    }
+}
+
+
+
+
+// input  -> patch input array is defined on
+// output -> patch outpu array is defined on
+// dX     -> grid spacing triple
+// V      -> vector field
+// M      -> matrix arrays
+// W      -> result
+//*****************************************************************************
+template <typename T>
+void VectorMatrixMul(
+      int *input,
+      int *output,
+      T *V,
+      T *Mxx,
+      T *Mxy,
+      T *Mxz,
+      T *Myx,
+      T *Myy,
+      T *Myz,
+      T *Mzx,
+      T *Mzy,
+      T *Mzz,
+      T *W)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int nk=input[5]-input[4]+1;
+  FlatIndex idx(ni,nj,nk,mode);
+
+  const int iok=(ni<3?0:1);
+  const int jok=(nj<3?0:1);
+  const int kok=(nk<3?0:1);
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _nk=output[5]-output[4]+1;
+  FlatIndex _idx(_ni,_nj,_nk,mode);
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    const int  k=r-input[4];
+    const int _k=r-output[4];
+
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      const int  j=q-input[2];
+      const int _j=q-output[2];
+
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        const int  i=p-input[0];
+        const int _i=p-output[0];
+
+        const int _pi=_idx.Index(_i,_j,_k);
+        const int  pi= 3*idx.Index( i, j, k);
+
+        W[pi  ] = V[pi  ]*Mxx[_pi] + V[pi+1]*Myx[_pi] + V[pi+2]*Mzx[_pi];
+        W[pi+1] = V[pi+1]*Mxy[_pi] + V[pi+1]*Myy[_pi] + V[pi+2]*Myz[_pi];
+        W[pi+2] = V[pi+2]*Mxz[_pi] + V[pi+1]*Myz[_pi] + V[pi+2]*Mzz[_pi];
+        }
+      }
+    }
+}
+
+// input  -> patch input array is defined on
+// output -> patch outpu array is defined on
+// V      -> vector field
+// M      -> matrix arrays
+// W      -> result
+//*****************************************************************************
+template <typename T>
+void Normalize(
+      int *input,
+      int *output,
+      T *V,
+      T *W)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int nk=input[5]-input[4]+1;
+  FlatIndex idx(ni,nj,nk,mode);
+
+  const int iok=(ni<3?0:1);
+  const int jok=(nj<3?0:1);
+  const int kok=(nk<3?0:1);
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _nk=output[5]-output[4]+1;
+  FlatIndex _idx(_ni,_nj,_nk,mode);
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    const int  k=r-input[4];
+    const int _k=r-output[4];
+
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      const int  j=q-input[2];
+      const int _j=q-output[2];
+
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        const int  i=p-input[0];
+        const int _i=p-output[0];
+
+        const int _pi=_idx.Index(_i,_j,_k);
+        const int  pi= 3*idx.Index( i, j, k);
+
+        T mv = sqrt(V[pi]*V[pi]+V[pi+1]*V[pi+1]+V[pi+2]*V[pi+2]);
+
+        W[pi  ] /= mv;
+        W[pi+1] /= mv;
+        W[pi+2] /= mv;
         }
       }
     }

@@ -578,6 +578,359 @@ int vtkSQVortexFilter::RequestData(
               (VTK_TT*)D->GetVoidPointer(0)));
         }
       }
+
+    // Gradient.
+    if (this->ComputeGradient)
+      {
+      string name;
+
+      vtkDataArray *Gxx=V->NewInstance();
+      Gxx->SetNumberOfComponents(1);
+      Gxx->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="xx";
+      Gxx->SetName(name.c_str());
+
+      vtkDataArray *Gxy=V->NewInstance();
+      Gxy->SetNumberOfComponents(1);
+      Gxy->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="xy";
+      Gxy->SetName(name.c_str());
+
+      vtkDataArray *Gxz=V->NewInstance();
+      Gxz->SetNumberOfComponents(1);
+      Gxz->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="xz";
+      Gxz->SetName(name.c_str());
+
+      vtkDataArray *Gyx=V->NewInstance();
+      Gyx->SetNumberOfComponents(1);
+      Gyx->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="yx";
+      Gyx->SetName(name.c_str());
+
+      vtkDataArray *Gyy=V->NewInstance();
+      Gyy->SetNumberOfComponents(1);
+      Gyy->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="yy";
+      Gyy->SetName(name.c_str());
+
+      vtkDataArray *Gyz=V->NewInstance();
+      Gyz->SetNumberOfComponents(1);
+      Gyz->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="yz";
+      Gyz->SetName(name.c_str());
+
+      vtkDataArray *Gzx=V->NewInstance();
+      Gzx->SetNumberOfComponents(1);
+      Gzx->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="zx";
+      Gzx->SetName(name.c_str());
+
+      vtkDataArray *Gzy=V->NewInstance();
+      Gzy->SetNumberOfComponents(1);
+      Gzy->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="zy";
+      Gzy->SetName(name.c_str());
+
+      vtkDataArray *Gzz=V->NewInstance();
+      Gzz->SetNumberOfComponents(1);
+      Gzz->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="zz";
+      Gzz->SetName(name.c_str());
+
+      switch(V->GetDataType())
+        {
+        vtkTemplateMacro(
+          Gradient<VTK_TT>(
+              inputExt.GetData(),
+              outputExt.GetData(),
+              this->Mode,
+              dX,
+              (VTK_TT*)V->GetVoidPointer(0),
+              (VTK_TT*)Gxx->GetVoidPointer(0),
+              (VTK_TT*)Gxy->GetVoidPointer(0),
+              (VTK_TT*)Gxz->GetVoidPointer(0),
+              (VTK_TT*)Gyx->GetVoidPointer(0),
+              (VTK_TT*)Gyy->GetVoidPointer(0),
+              (VTK_TT*)Gyz->GetVoidPointer(0),
+              (VTK_TT*)Gzx->GetVoidPointer(0),
+              (VTK_TT*)Gzy->GetVoidPointer(0),
+              (VTK_TT*)Gzz->GetVoidPointer(0));
+          );
+        }
+
+      if (this->SplitComponents)
+        {
+        outImData->GetPointData()->AddArray(Gxx);
+        outImData->GetPointData()->AddArray(Gxy);
+        outImData->GetPointData()->AddArray(Gxz);
+        outImData->GetPointData()->AddArray(Gyx);
+        outImData->GetPointData()->AddArray(Gyy);
+        outImData->GetPointData()->AddArray(Gyz);
+        outImData->GetPointData()->AddArray(Gzx);
+        outImData->GetPointData()->AddArray(Gzy);
+        outImData->GetPointData()->AddArray(Gzz);
+        }
+      else
+        {
+        vtkDataArray *R=V->NewInstance();
+        outImData->GetPointData()->AddArray(R);
+        G->Delete();
+        G->SetNumberOfComponents(3);
+        G->SetNumberOfTuples(outputTups);
+        name="grad-";
+        name+=V->GetName();
+        G->SetName(name.c_str());
+
+        switch(V->GetDataType())
+          {
+          vtkTemplateMacro(
+            Interleave<VTK_TT>(
+                outputTups,
+                (VTK_TT*)Gxx->GetVoidPointer(0),
+                (VTK_TT*)Gxy->GetVoidPointer(0),
+                (VTK_TT*)Gxz->GetVoidPointer(0),
+                (VTK_TT*)Gyx->GetVoidPointer(0),
+                (VTK_TT*)Gyy->GetVoidPointer(0),
+                (VTK_TT*)Gyz->GetVoidPointer(0),
+                (VTK_TT*)Gzx->GetVoidPointer(0),
+                (VTK_TT*)Gzy->GetVoidPointer(0),
+                (VTK_TT*)Gzz->GetVoidPointer(0),
+                (VTK_TT*)G->GetVoidPointer(0)));
+          }
+        }
+      Gxx->Delete();
+      Gxy->Delete();
+      Gxz->Delete();
+      Gyx->Delete();
+      Gyy->Delete();
+      Gyz->Delete();
+      Gzx->Delete();
+      Gzy->Delete();
+      Gzz->Delete();
+      }
+
+    // Gardient-tensor diagnostic.
+    if (this->ComputeGradientDiagnostic)
+      {
+      string name;
+
+      vtkDataArray *Gxx=V->NewInstance();
+      Gxx->SetNumberOfComponents(1);
+      Gxx->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="xx";
+      Gxx->SetName(name.c_str());
+
+      vtkDataArray *Gxy=V->NewInstance();
+      Gxy->SetNumberOfComponents(1);
+      Gxy->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="xy";
+      Gxy->SetName(name.c_str());
+
+      vtkDataArray *Gxz=V->NewInstance();
+      Gxz->SetNumberOfComponents(1);
+      Gxz->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="xz";
+      Gxz->SetName(name.c_str());
+
+      vtkDataArray *Gyx=V->NewInstance();
+      Gyx->SetNumberOfComponents(1);
+      Gyx->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="yx";
+      Gyx->SetName(name.c_str());
+
+      vtkDataArray *Gyy=V->NewInstance();
+      Gyy->SetNumberOfComponents(1);
+      Gyy->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="yy";
+      Gyy->SetName(name.c_str());
+
+      vtkDataArray *Gyz=V->NewInstance();
+      Gyz->SetNumberOfComponents(1);
+      Gyz->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="yz";
+      Gyz->SetName(name.c_str());
+
+      vtkDataArray *Gzx=V->NewInstance();
+      Gzx->SetNumberOfComponents(1);
+      Gzx->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="zx";
+      Gzx->SetName(name.c_str());
+
+      vtkDataArray *Gzy=V->NewInstance();
+      Gzy->SetNumberOfComponents(1);
+      Gzy->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="zy";
+      Gzy->SetName(name.c_str());
+
+      vtkDataArray *Gzz=V->NewInstance();
+      Gzz->SetNumberOfComponents(1);
+      Gzz->SetNumberOfTuples(outputTups);
+      name="grad-";
+      name+=V->GetName();
+      name+="zz";
+      Gzz->SetName(name.c_str());
+
+      vtkDataArray *W=V->NewInstance();
+      W->SetNumberOfComponents(3);
+      W->SetNumberOfTuples(outputTups);
+      name="mag(";
+      name+=V->GetName();
+      name=".grad(";
+      name+=V->GetName();
+      name+="))/mag(";
+      name+=V->GetName();
+      name+=")";
+      W->SetName(name.c_str());
+
+      switch(V->GetDataType())
+        {
+        vtkTemplateMacro(
+          Gradient<VTK_TT>(
+              inputExt.GetData(),
+              outputExt.GetData(),
+              this->Mode,
+              dX,
+              (VTK_TT*)V->GetVoidPointer(0),
+              (VTK_TT*)Gxx->GetVoidPointer(0),
+              (VTK_TT*)Gxy->GetVoidPointer(0),
+              (VTK_TT*)Gxz->GetVoidPointer(0),
+              (VTK_TT*)Gyx->GetVoidPointer(0),
+              (VTK_TT*)Gyy->GetVoidPointer(0),
+              (VTK_TT*)Gyz->GetVoidPointer(0),
+              (VTK_TT*)Gzx->GetVoidPointer(0),
+              (VTK_TT*)Gzy->GetVoidPointer(0),
+              (VTK_TT*)Gzz->GetVoidPointer(0));
+
+          VectorMatrixMul<VTK_TT>(
+              inputExt.GetData(),
+              outputExt.GetData(),
+              (VTK_TT*)V->GetVoidPointer(0),
+              (VTK_TT*)Gxx->GetVoidPointer(0),
+              (VTK_TT*)Gxy->GetVoidPointer(0),
+              (VTK_TT*)Gxz->GetVoidPointer(0),
+              (VTK_TT*)Gyx->GetVoidPointer(0),
+              (VTK_TT*)Gyy->GetVoidPointer(0),
+              (VTK_TT*)Gyz->GetVoidPointer(0),
+              (VTK_TT*)Gzx->GetVoidPointer(0),
+              (VTK_TT*)Gzy->GetVoidPointer(0),
+              (VTK_TT*)Gzz->GetVoidPointer(0),
+              (VTK_TT*)W->GetVoidPointer(0));
+
+          Magnitude<VTK_TT>(
+              (VTK_TT*)W->GetPointer(0));
+
+          );
+        }
+
+      if (this->SplitComponents)
+        {
+        outImData->GetPointData()->AddArray(Gxx);
+        outImData->GetPointData()->AddArray(Gxy);
+        outImData->GetPointData()->AddArray(Gxz);
+        outImData->GetPointData()->AddArray(Gyx);
+        outImData->GetPointData()->AddArray(Gyy);
+        outImData->GetPointData()->AddArray(Gyz);
+        outImData->GetPointData()->AddArray(Gzx);
+        outImData->GetPointData()->AddArray(Gzy);
+        outImData->GetPointData()->AddArray(Gzz);
+        }
+      else
+        {
+        vtkDataArray *R=V->NewInstance();
+        outImData->GetPointData()->AddArray(R);
+        G->Delete();
+        G->SetNumberOfComponents(3);
+        G->SetNumberOfTuples(outputTups);
+        name="grad-";
+        name+=V->GetName();
+        G->SetName(name.c_str());
+
+        switch(V->GetDataType())
+          {
+          vtkTemplateMacro(
+            Interleave<VTK_TT>(
+                outputTups,
+                (VTK_TT*)Gxx->GetVoidPointer(0),
+                (VTK_TT*)Gxy->GetVoidPointer(0),
+                (VTK_TT*)Gxz->GetVoidPointer(0),
+                (VTK_TT*)Gyx->GetVoidPointer(0),
+                (VTK_TT*)Gyy->GetVoidPointer(0),
+                (VTK_TT*)Gyz->GetVoidPointer(0),
+                (VTK_TT*)Gzx->GetVoidPointer(0),
+                (VTK_TT*)Gzy->GetVoidPointer(0),
+                (VTK_TT*)Gzz->GetVoidPointer(0),
+                (VTK_TT*)G->GetVoidPointer(0)));
+          }
+        }
+      Gxx->Delete();
+      Gxy->Delete();
+      Gxz->Delete();
+      Gyx->Delete();
+      Gyy->Delete();
+      Gyz->Delete();
+      Gzx->Delete();
+      Gzy->Delete();
+      Gzz->Delete();
+      }
+
+    if (this->GradientTensorDiagnostic)
+      {
+      vtkDataArray *H=V->NewInstance();
+      outImData->GetPointData()->AddArray(H);
+      H->Delete();
+      H->SetNumberOfComponents(1);
+      H->SetNumberOfTuples(outputTups);
+      string name("hel-");
+      name+=V->GetName();
+      H->SetName(name.c_str());
+      //
+      switch(V->GetDataType())
+        {
+        vtkTemplateMacro(
+          Helicity<VTK_TT>(
+              inputExt.GetData(),
+              outputExt.GetData(),
+              this->Mode,
+              dX,
+              (VTK_TT*)V->GetVoidPointer(0),
+              (VTK_TT*)H->GetVoidPointer(0)));
+        }
+      }
     // outImData->Print(cerr);
     }
   else
