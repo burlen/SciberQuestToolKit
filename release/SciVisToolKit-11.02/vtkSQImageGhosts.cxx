@@ -36,6 +36,13 @@ using vtkstd::string;
 #include <mpi.h>
 
 // #define vtkSQImageGhostsDEBUG
+#define vtkSQImageGhostsTIME
+
+#if defined vtkSQImageGhostsTIME
+  #include <sys/time.h>
+  #include <unistd.h>
+#endif
+
 
 vtkCxxRevisionMacro(vtkSQImageGhosts, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQImageGhosts);
@@ -219,6 +226,16 @@ int vtkSQImageGhosts::RequestData(
   pCerr() << "===============================vtkSQImageGhosts::RequestData" << endl;
   #endif
 
+  #if defined vtkSQBOVWriterTIME
+  timeval wallt;
+  double walls=0.0;
+  if (this->WorldRank==0)
+    {
+    gettimeofday(&wallt,0x0);
+    walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+    }
+  #endif
+
   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
   vtkDataSet *inData
     = dynamic_cast<vtkDataSet*>(inInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -363,6 +380,15 @@ int vtkSQImageGhosts::RequestData(
         outCells,
         transactions,
         false);
+
+  #if defined vtkSQBOVWriterTIME
+  if (this->WorldRank==0)
+    {
+    gettimeofday(&wallt,0x0);
+    double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+    pCerr() << "vtkSQBOVWriter::RequestData " << walle-walls << endl;
+    }
+  #endif
 
   return 1;
 }
