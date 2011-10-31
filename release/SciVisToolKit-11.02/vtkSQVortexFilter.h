@@ -69,6 +69,23 @@ public:
   vtkSetMacro(ComputeDivergence,int);
   vtkGetMacro(ComputeDivergence,int);
 
+
+  // Description:
+  // Compute the vector gradient on a centered stencil.
+  vtkSetMacro(ComputeGradient,int);
+  vtkGetMacro(ComputeGradient,int);
+
+  // Description:
+  // Compute the eigenvalue diagnostic of Haimes and Kenworth.
+  vtkSetMacro(ComputeEigenvalueDiagnostic,int);
+  vtkGetMacro(ComputeEigenvalueDiagnostic,int);
+
+  // Description:
+  // Compute the vector gradient on a centered stencil.
+  vtkSetMacro(ComputeGradientDiagnostic,int);
+  vtkGetMacro(ComputeGradientDiagnostic,int);
+
+
 protected:
   int RequestDataObject(vtkInformation*,vtkInformationVector** inInfoVec,vtkInformationVector* outInfoVec);
   int RequestData(vtkInformation *req, vtkInformationVector **input, vtkInformationVector *output);
@@ -87,6 +104,9 @@ private:
   int ComputeLambda;
   int ComputeLambda2;
   int ComputeDivergence;
+  int ComputeGradient;
+  int ComputeEigenvalueDiagnostic;
+  int ComputeGradientDiagnostic;
 
   //
   int OutputExt[6];

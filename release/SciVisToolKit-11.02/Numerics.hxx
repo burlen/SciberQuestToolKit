@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
@@ -19,9 +19,12 @@ using std::endl;
 #endif
 
 #include <cmath>
+#include <complex>
+using std::complex;
 
-#include<Eigen/Core>
-#include<Eigen/QR>
+//#include<Eigen/Core>
+//#include<Eigen/QR>
+#include<Eigen/Eigenvalues> 
 using namespace Eigen;
 
 #include "Tuple.hxx"
@@ -37,6 +40,20 @@ inline double sqrt(long x){ return sqrt((double)x); }
 inline double sqrt(unsigned long x){ return sqrt((double)x); }
 inline double sqrt(long long x){ return sqrt((double)x); }
 inline double sqrt(unsigned long long x){ return sqrt((double)x); }
+
+//*****************************************************************************
+template<typename T>
+bool IsReal(complex<T> &c, T eps=1.0e-6)
+{
+  return (fabs(imag(c)) < eps);
+}
+
+//*****************************************************************************
+template<typename T>
+bool IsComplex(complex<T> &c, T eps=1.0e-6)
+{
+  return (fabs(imag(c)) >= eps);
+}
 
 //*****************************************************************************
 template<typename T>
@@ -142,7 +159,6 @@ void linspace(Ti X0[3], Ti X1[3], int n, To *X)
     X+=3;
     }
 }
-
 
 //*****************************************************************************
 template <typename T>
@@ -389,82 +405,30 @@ void Magnitude(int *I, T *  V, T *  mV)
 //*****************************************************************************
 template <typename T>
 void Magnitude(
-      int *output,
+      size_t n,
       T __restrict__ *V,
       T __restrict__ *mV)
 {
-  const int _ni=output[1]-output[0]+1;
-  const int _nj=output[3]-output[2]+1;
-  const int _nk=output[5]-output[4]+1;
-  const int _n=_ni*_nj*_nk;
-
-  for (int q=0; q<_ni; ++q)
+  for (size_t q=0; q<n; ++q)
     {
     const int qq=3*q;
     mV[q] = sqrt(V[qq]*V[qq]+V[qq+1]+V[qq+1]+V[qq+2]*V[qq+2]);
     }
 }
 
-// Normalize vector
-//*****************************************************************************
-template <typename T>
-void Normalize(
-      int *extent,
-      T *V)
-{
-  const int _ni=extent[1]-extent[0]+1;
-  const int _nj=extent[3]-extent[2]+1;
-  const int _nk=extent[5]-extent[4]+1;
-  const int _n=_ni*_nj*_nk;
-
-  for (int q=0; q<_ni; ++q)
-    {
-    const int qq=3*q;
-    T mV = 1.0/sqrt(V[qq]*V[qq]+V[qq+1]+V[qq+1]+V[qq+2]*V[qq+2]);
-    V[qq]*=mV;
-    V[qq+1]*=mV;
-    V[qq+2]*=mV;
-    }
-}
-
-
-// Scale a vector by another
-//*****************************************************************************
-template <typename T>
-void ScaleVector(
-      int *output,
-      T *V,
-      int nComps,
-      T *sV)
-{
-  const int _ni=output[1]-output[0]+1;
-  const int _nj=output[3]-output[2]+1;
-  const int _nk=output[5]-output[4]+1;
-  const int _n=_ni*_nj*_nk;
-
-  for (int q=0; q<_ni; ++q)
-    {
-    const int qq=nComps*q;
-    for (int r=0; r<nComps; ++r)
-      {
-      V[qq+r] /= sV[q];
-      }
-    }
-}
-
 //*****************************************************************************
 template<typename T>
 void Interleave(
-      int n,
+      size_t n,
       T * __restrict__  Vx,
       T * __restrict__  Vy,
       T * __restrict__  Vz,
       T * __restrict__  V)
 {
   // take scalar components and interleve into a vector array.
-  for (int i=0; i<n; ++i)
+  for (size_t i=0; i<n; ++i)
     {
-    int ii=3*i;
+    size_t ii=3*i;
     V[ii  ]=Vx[i];
     V[ii+1]=Vy[i];
     V[ii+2]=Vz[i];
@@ -2115,7 +2079,7 @@ void Gradient(
 // J      -> vector gradient (Jaccobian)
 //*****************************************************************************
 template <typename T>
-void Jacobian(
+void Gradient(
       int *input,
       int *output,
       int mode,
@@ -2168,7 +2132,7 @@ void Jacobian(
 
         const int _pi=_idx.Index(_i,_j,_k);
 
-        // J: gradient velocity tensor, (jacobian)
+        // J: gradient tensor, (jacobian)
         Jxx[_pi]=0.0;
         Jxy[_pi]=0.0;
         Jxz[_pi]=0.0;
@@ -2227,9 +2191,6 @@ void Jacobian(
     }
 }
 
-
-
-
 // input  -> patch input array is defined on
 // output -> patch outpu array is defined on
 // dX     -> grid spacing triple
@@ -2241,6 +2202,7 @@ template <typename T>
 void VectorMatrixMul(
       int *input,
       int *output,
+      int mode,
       T *V,
       T *Mxx,
       T *Mxy,
@@ -2258,10 +2220,6 @@ void VectorMatrixMul(
   const int nj=input[3]-input[2]+1;
   const int nk=input[5]-input[4]+1;
   FlatIndex idx(ni,nj,nk,mode);
-
-  const int iok=(ni<3?0:1);
-  const int jok=(nj<3?0:1);
-  const int kok=(nk<3?0:1);
 
   // output array bounds
   const int _ni=output[1]-output[0]+1;
@@ -2288,9 +2246,9 @@ void VectorMatrixMul(
         const int _pi=_idx.Index(_i,_j,_k);
         const int  pi= 3*idx.Index( i, j, k);
 
-        W[pi  ] = V[pi  ]*Mxx[_pi] + V[pi+1]*Myx[_pi] + V[pi+2]*Mzx[_pi];
-        W[pi+1] = V[pi+1]*Mxy[_pi] + V[pi+1]*Myy[_pi] + V[pi+2]*Myz[_pi];
-        W[pi+2] = V[pi+2]*Mxz[_pi] + V[pi+1]*Myz[_pi] + V[pi+2]*Mzz[_pi];
+        W[_pi  ] = V[pi  ]*Mxx[_pi] + V[pi+1]*Myx[_pi] + V[pi+2]*Mzx[_pi];
+        W[_pi+1] = V[pi+1]*Mxy[_pi] + V[pi+1]*Myy[_pi] + V[pi+2]*Myz[_pi];
+        W[_pi+2] = V[pi+2]*Mxz[_pi] + V[pi+1]*Myz[_pi] + V[pi+2]*Mzz[_pi];
         }
       }
     }
@@ -2299,13 +2257,13 @@ void VectorMatrixMul(
 // input  -> patch input array is defined on
 // output -> patch outpu array is defined on
 // V      -> vector field
-// M      -> matrix arrays
 // W      -> result
 //*****************************************************************************
 template <typename T>
 void Normalize(
       int *input,
       int *output,
+      int mode,
       T *V,
       T *W)
 {
@@ -2314,10 +2272,6 @@ void Normalize(
   const int nj=input[3]-input[2]+1;
   const int nk=input[5]-input[4]+1;
   FlatIndex idx(ni,nj,nk,mode);
-
-  const int iok=(ni<3?0:1);
-  const int jok=(nj<3?0:1);
-  const int kok=(nk<3?0:1);
 
   // output array bounds
   const int _ni=output[1]-output[0]+1;
@@ -2346,13 +2300,205 @@ void Normalize(
 
         T mv = sqrt(V[pi]*V[pi]+V[pi+1]*V[pi+1]+V[pi+2]*V[pi+2]);
 
-        W[pi  ] /= mv;
-        W[pi+1] /= mv;
-        W[pi+2] /= mv;
+        W[_pi  ] /= mv;
+        W[_pi+1] /= mv;
+        W[_pi+2] /= mv;
         }
       }
     }
 }
+
+//*****************************************************************************
+template <typename T>
+void EigenvalueDiagnostic(
+      int *input,
+      int *output,
+      int mode,
+      double *dX,
+      T *V,
+      T *L)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int nk=input[5]-input[4]+1;
+  FlatIndex idx(ni,nj,nk,mode);
+
+  const int iok=(ni<3?0:1);
+  const int jok=(nj<3?0:1);
+  const int kok=(nk<3?0:1);
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _nk=output[5]-output[4]+1;
+  FlatIndex _idx(_ni,_nj,_nk,mode);
+
+  // stencil deltas
+  const double dx[3]={dX[0]*2.0,dX[1]*2.0,dX[2]*2.0};
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    const int _k=r-output[4];
+    const int  k=r-input[4];
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      const int _j=q-output[2];
+      const int  j=q-input[2];
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        const int _i=p-output[0];
+        const int  i=p-input[0];
+
+        // J: gradient velocity tensor, (jacobian)
+        double j11=0.0, j12=0.0, j13=0.0;
+        if (iok)
+          {
+          int vilo_x=3*idx.Index(i-1,j,k);
+          int vilo_y=vilo_x+1;
+          int vilo_z=vilo_y+1;
+
+          int vihi_x=3*idx.Index(i+1,j,k);
+          int vihi_y=vihi_x+1;
+          int vihi_z=vihi_y+1;
+
+          j11=(V[vihi_x]-V[vilo_x])/dx[0];
+          j12=(V[vihi_y]-V[vilo_y])/dx[0];
+          j13=(V[vihi_z]-V[vilo_z])/dx[0];
+          }
+
+        double j21=0.0, j22=0.0, j23=0.0;
+        if (jok)
+          {
+          int vjlo_x=3*idx.Index(i,j-1,k);
+          int vjlo_y=vjlo_x+1;
+          int vjlo_z=vjlo_y+1;
+
+          int vjhi_x=3*idx.Index(i,j+1,k);
+          int vjhi_y=vjhi_x+1;
+          int vjhi_z=vjhi_y+1;
+
+          j21=(V[vjhi_x]-V[vjlo_x])/dx[1];
+          j22=(V[vjhi_y]-V[vjlo_y])/dx[1];
+          j23=(V[vjhi_z]-V[vjlo_z])/dx[1];
+          }
+
+        double j31=0.0, j32=0.0, j33=0.0;
+        if (kok)
+          {
+          int vklo_x=3*idx.Index(i,j,k-1);
+          int vklo_y=vklo_x+1;
+          int vklo_z=vklo_y+1;
+
+          int vkhi_x=3*idx.Index(i,j,k+1);
+          int vkhi_y=vkhi_x+1;
+          int vkhi_z=vkhi_y+1;
+
+          j31=(V[vkhi_x]-V[vklo_x])/dx[2];
+          j32=(V[vkhi_y]-V[vklo_y])/dx[2];
+          j33=(V[vkhi_z]-V[vklo_z])/dx[2];
+          }
+
+        Matrix<double,3,3> J;
+        J <<
+          j11, j12, j13,
+          j21, j22, j23,
+          j31, j32, j33;
+
+        // compute eigen values, lambda
+        Matrix<complex<double>,3,1> e;
+        EigenSolver<Matrix<double,3,3> >solver(J,false);
+        e=solver.eigenvalues();
+
+        complex<double> &e1 = e(0);
+        complex<double> &e2 = e(1);
+        complex<double> &e3 = e(2);
+
+        // see Haimes, and Kenwright VGT and Feature Extraction fig 2
+        // 0 - repelling node
+        // 1 - type 1 saddle
+        // 2 - type 2 saddle
+        // 3 - attracting node
+        // 4 - repelling spiral
+        // 5 - type 1 saddle spiral
+        // 6 - type 2 saddle spiral
+        // 7 - attracting spiral
+        const int pi=_idx.Index(_i,_j,_k);
+        if (IsComplex(e1)||IsComplex(e2)||IsComplex(e3))
+          {
+          // spiral flow
+          // one real , one conjugate pair
+
+          int realIdx;
+          int imagIdx1;
+          int imagIdx2;
+
+          if (IsReal(e1))
+            {
+            realIdx=0;
+            imagIdx1=1;
+            imagIdx2=2;
+            }
+          else
+          if (IsReal(e2))
+            {
+            realIdx=1;
+            imagIdx1=0;
+            imagIdx2=2;
+            }
+          else
+          if (IsReal(e3))
+            {
+            realIdx=2;
+            imagIdx1=0;
+            imagIdx2=1;
+            }
+          else
+            {
+            cerr << "No real eigne value." << endl;
+            return;
+            }
+
+          bool attracting=(real(e(realIdx))<0.0);
+          bool type1=(imag(e(imagIdx1))<0.0);
+
+          if (type1 && attracting)
+            {
+            L[pi]=7;
+            }
+          else
+          if (!type1 && attracting)
+            {
+            L[pi]=5;
+            }
+          else
+          if (type1 && !attracting)
+            {
+            L[pi]=6;
+            }
+          else
+          if (!type1 && !attracting)
+            {
+            L[pi]=4;
+            }
+          }
+        else
+          {
+          // three real
+          int nAttracting=0;
+          for (int i=0; i<3; ++i)
+            {
+            if (real(e(i))<0.0) ++nAttracting;
+            }
+          L[pi]=nAttracting;
+          }
+        }
+      }
+    }
+}
+
+
 
 #endif
 

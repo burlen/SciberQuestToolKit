@@ -3233,6 +3233,43 @@ Copyright 2008 SciberQuest Inc.
         </Documentation>
      </IntVectorProperty>
 
+     <IntVectorProperty
+        name="ComputeGradient"
+        label="Gradient"
+        command="SetComputeGradient"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the gradient tensor on a centered stencil.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeEigenvalueDiagnostic"
+        label="Eigenvalue diagnostic"
+        command="SetComputeEigenvalueDiagnostic"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Eigenvalue diagnostic of Haimes and Kenwright.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeGradientDiagnostic"
+        label="Bill's diagnostic"
+        command="SetComputeGradientDiagnostic"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          bill's metric.
+        </Documentation>
+     </IntVectorProperty>
+
+
     <Hints>
       <View type="RenderView"/>
     </Hints>

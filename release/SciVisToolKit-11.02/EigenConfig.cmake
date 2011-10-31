@@ -4,18 +4,17 @@
 # |                                                                           |
 # +---------------------------------------------------------------------------+
 
-set(Eigen_DIR 
-  ${CMAKE_CURRENT_SOURCE_DIR}/eigen-2.0.12/
+set(Eigen_DIR
+  ${CMAKE_CURRENT_SOURCE_DIR}/eigen-3.0.3/eigen-eigen-3.0.3
   CACHE FILEPATH
-  "Path to Eigen 2 install.")
+  "Path to Eigen install.")
 
 if (NOT EXISTS ${Eigen_DIR})
   message(FATAL_ERROR
   "Set Eigen_DIR to the path to your Eigen install." )
 endif ()
 
-include_directories(${Eigen_DIR}/include/eigen2/)
-
+include_directories(${Eigen_DIR})
 
 # On Nautilus gcc intrinsics are found if
 # we don't add an include for the intel intrinsics.
