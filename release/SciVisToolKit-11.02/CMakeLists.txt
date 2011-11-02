@@ -27,6 +27,7 @@ include(GeneratePythonBindings.cmake)
 
 # Server manager wrapped sources.
 set(SM_CXX_SOURCES
+  vtkSC11DemoReader.cxx
   vtkSQBOVReader.cxx
   vtkSQBOVWriter.cxx
   vtkSQDistributedStreamTracer.cxx

@@ -240,9 +240,9 @@ Copyright 2008 SciberQuest Inc.
     </IntVectorProperty>
 
     <!-- Meta Flag -->
-    <IntVectorProperty 
-        name="MetaRead" 
-        command="SetMetaRead" 
+    <IntVectorProperty
+        name="MetaRead"
+        command="SetMetaRead"
         number_of_elements="1"
         default_values="0">
       <BooleanDomain name="bool"/>
@@ -254,7 +254,7 @@ Copyright 2008 SciberQuest Inc.
     </IntVectorProperty>
     <Hints>
       <Property name="MetaRead" show="0"/>
-      <ReaderFactory extensions="bov" file_description="Brick-Of-Values files." />
+      <ReaderFactory extensions="bov" file_description="MPI-I/O brick-of-values." />
       <View type="RenderView"/>
     </Hints>
   </SourceProxy>
@@ -317,16 +317,16 @@ Copyright 2008 SciberQuest Inc.
     </StringVectorProperty>
 
     <!-- Subset selection -->
-    <IntVectorProperty 
+    <IntVectorProperty
         name="ISubsetInfo"
         command="GetISubsetRange"
         information_only="1">
       <SimpleIntInformationHelper/>
     </IntVectorProperty>
-    <IntVectorProperty 
+    <IntVectorProperty
         name="ISubset"
         command="SetISubset"
-        number_of_elements="2" 
+        number_of_elements="2"
         default_values="1 0"
         animateable="0"
         information_property="ISubsetInfo" >
@@ -603,7 +603,44 @@ Copyright 2008 SciberQuest Inc.
 
     <Hints>
       <Property name="MetaRead" show="0"/>
-      <ReaderFactory extensions="bovm" file_description="Brick-Of-Values files." />
+      <ReaderFactory extensions="bovm" file_description="MPI-I/O brick-of-values (Meta Reader)." />
+    </Hints>
+  </SourceProxy>
+
+  <!--========================================================================-->
+  <SourceProxy
+      name="vtkSC11DemoReader"
+      class="vtkSC11DemoReader"
+      label="SC11 Demo Reader">
+    <Documentation
+        short_help="SC11 Demo reader.">
+        long_help="SC11 Demo reader"
+    </Documentation>
+
+    <!-- File Name -->
+    <StringVectorProperty
+        name="FileName"
+        animateable="0"
+        command="SetFileName"
+        number_of_elements="1">
+    <FileListDomain name="files"/>
+    <Documentation>
+      This property specifies the file name for the reader.
+    </Documentation>
+    </StringVectorProperty>
+    <!-- Time Steps -->
+    <DoubleVectorProperty
+        name="TimestepValues"
+        information_only="1">
+      <TimeStepsInformationHelper/>
+      <Documentation>
+      Available timestep values.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <Hints>
+      <ReaderFactory extensions="sc11" file_description="SC11 Demo" />
+      <View type="RenderView"/>
     </Hints>
   </SourceProxy>
 

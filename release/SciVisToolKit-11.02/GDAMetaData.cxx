@@ -26,16 +26,6 @@ using std::ostringstream;
 #include "SQMacros.h"
 #include "Tuple.hxx"
 
-//*****************************************************************************
-void ToLower(string &in)
-{
-  size_t n=in.size();
-  for (size_t i=0; i<n; ++i)
-    {
-    in[i]=tolower(in[i]);
-    }
-}
-
 //-----------------------------------------------------------------------------
 GDAMetaData::GDAMetaData()
 {

@@ -33,6 +33,15 @@ using namespace std;
   #define PATH_SEP "\\"
 #endif
 
+//*****************************************************************************
+void ToLower(string &in)
+{
+  size_t n=in.size();
+  for (size_t i=0; i<n; ++i)
+    {
+    in[i]=tolower(in[i]);
+    }
+}
 
 //******************************************************************************
 int FileExists(const char *path)
