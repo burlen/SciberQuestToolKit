@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
@@ -27,6 +27,23 @@ using std::string;
 #include <sstream>
 using std::ostringstream;
 
+class vtkSQLog;
+class LogBuffer;
+
+//=============================================================================
+class vtkSQLogDestructor
+{
+public:
+  vtkSQLogDestructor() : Log(0) {}
+  ~vtkSQLogDestructor();
+
+  void SetLog(vtkSQLog *log){ this->Log=log; }
+
+private:
+  vtkSQLog *Log;
+};
+
+//=============================================================================
 class vtkSQLog : public vtkObject
 {
 public:
@@ -35,38 +52,77 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
+  // Set the rank who writes.
+  vtkSetMacro(WriterRank,int);
+  vtkGetMacro(WriterRank,int);
+
+  // Description:
+  // Set the filename that is used during write when the object
+  // is used as a singleton. If nothing is set the default is
+  // ROOT_RANKS_PID.log
+  vtkSetStringMacro(FileName);
+  vtkGetStringMacro(FileName);
+
+  // Description:
   // The log works as an event stack. EventStart pushes the
   // event identifier and its start time onto the stack. EventEnd
   // pops the most recent event time and identifier computes the
   // ellapsed time and adds an entry to the log recording the
   // event, it's start and end times, and its ellapsed time.
+  // EndEventSynch includes a barrier before the measurement.
   void StartEvent(const char *event);
   void EndEvent(const char *event);
+  void EndEventSynch(const char *event);
 
+  // Description:
+  // Insert text into the log.
+  vtkSQLog &operator<<(const char *s);
+
+  /*
   // Description:
   // Add to the log.
   template<typename T>
   vtkSQLog &operator<<(const T& data)
     {
-    this->Log << data;
+    *this->Log << data;
     return *this;
     }
 
   // Description:
   // Get the log contents.
-  const char *GetLog() const { return this->Log.str().c_str(); }
+  const char *GetLog() const { return this->Log->GetData(); }
   ostream &GetLogStream(){ return this->Log; }
+  */
 
   // Description:
   // Clear the log.
-  void Initialize(){ this->Log.str(""); }
+  void Clear();
 
   // Description:
-  // Write the log contents to a file. This is a collective
-  // call. Each ranks log data is gathered to the writer rank
-  // process and combined in process order for transfer to
-  // the named file.
-  int WriteLog(int writerRank, const char *fileName);
+  // When an object is finished writing data to the log
+  // object it must call Update to send the data to the writer
+  // rank.
+  // This ensures that all data is transfered to the root before
+  // MPI_Finalize is called while allowing the write to occur
+  // after Mpi_finalize. Note: This is a collective call.
+  void Update();
+
+  // Description:
+  // Write the log contents to a file.
+  int Write();
+
+  // Description:
+  // The log class implements the singleton patern. It's optional.
+  // When used this way when objects are finished with the log they
+  // are required to call Update to push the local changes to the
+  // root. When the root is destroyed the data is written to disk.
+  static vtkSQLog *GetGlobalInstance();
+
+  // Description:
+  // If enabled(default) and used as a singleton the log will write
+  // it's contents to disk during program termination.
+  vtkSetMacro(WriteOnClose,int);
+  vtkGetMacro(WriteOnClose,int);
 
 protected:
   vtkSQLog();
@@ -79,11 +135,18 @@ private:
 private:
   int WorldRank;
   int WorldSize;
-
-  ostringstream Log;
-
+  int WriterRank;
+  char *FileName;
+  int WriteOnClose;
   vector<double> StartTime;
+  #if defined vtkSQLogDEBUG
   vector<string> EventId;
+  #endif
+
+  LogBuffer *Log;
+
+  static vtkSQLog *GlobalInstance;
+  static vtkSQLogDestructor GlobalInstanceDestructor;
 };
 
 #endif

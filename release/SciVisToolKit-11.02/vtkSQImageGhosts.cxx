@@ -39,8 +39,7 @@ using vtkstd::string;
 #define vtkSQImageGhostsTIME
 
 #if defined vtkSQImageGhostsTIME
-  #include <sys/time.h>
-  #include <unistd.h>
+  #include "vtkSQLog.h"
 #endif
 
 
@@ -225,15 +224,9 @@ int vtkSQImageGhosts::RequestData(
   #ifdef vtkSQImageGhostsDEBUG
   pCerr() << "===============================vtkSQImageGhosts::RequestData" << endl;
   #endif
-
-  #if defined vtkSQBOVWriterTIME
-  timeval wallt;
-  double walls=0.0;
-  if (this->WorldRank==0)
-    {
-    gettimeofday(&wallt,0x0);
-    walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-    }
+  #if defined vtkSQImageGhostsTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("vtkSQImageGhosts::RequestData");
   #endif
 
   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
@@ -381,13 +374,8 @@ int vtkSQImageGhosts::RequestData(
         transactions,
         false);
 
-  #if defined vtkSQBOVWriterTIME
-  if (this->WorldRank==0)
-    {
-    gettimeofday(&wallt,0x0);
-    double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-    pCerr() << "vtkSQBOVWriter::RequestData " << walle-walls << endl;
-    }
+  #if defined vtkSQImageGhostsTIME
+  log->EndEvent("vtkSQImageGhosts::RequestData");
   #endif
 
   return 1;

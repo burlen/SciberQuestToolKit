@@ -39,6 +39,19 @@ using std::ostringstream;
   #define PATH_SEP "/"
 #endif
 
+#define BOVReaderTIME
+
+#ifdef WIN32
+  // these are only usefull in terminals
+  #undef BOVReaderTIME
+  #undef BOVReaderDEBUG
+#endif
+
+#if defined BOVReaderTIME
+  #include "vtkSQLog.h"
+#endif
+
+
 //-----------------------------------------------------------------------------
 BOVReader::BOVReader()
       :
@@ -161,6 +174,11 @@ int BOVReader::Close()
 //-----------------------------------------------------------------------------
 int BOVReader::Open(const char *fileName)
 {
+  #if defined BOVReaderTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("BOVReader::Open");
+  #endif
+
   if (this->MetaData==0)
     {
     sqErrorMacro(cerr,"No MetaData object.");
@@ -202,6 +220,10 @@ int BOVReader::Open(const char *fileName)
       this->MetaData->UnPack(str);
       }
     }
+
+  #if defined BOVReaderTIME
+  log->EndEvent("BOVReader::Open");
+  #endif
 
   return ok;
 }
@@ -248,6 +270,11 @@ int BOVReader::ReadScalarArray(
       const BOVScalarImageIterator &it,
       vtkDataSet *grid)
 {
+  #if defined BOVReaderTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("BOVReader::ReadScalarArray");
+  #endif
+
   const CartesianExtent &decomp=this->MetaData->GetDecomp();
   const size_t nCells=decomp.Size();
 
@@ -261,8 +288,7 @@ int BOVReader::ReadScalarArray(
   float *pfa=fa->GetPointer(0);
 
   // read
-  return
-    ReadDataArray(
+  int ok=ReadDataArray(
           it.GetFile(),
           this->Hints,
           this->MetaData->GetDomain(),
@@ -270,6 +296,12 @@ int BOVReader::ReadScalarArray(
           1,
           0,
           pfa);
+
+  #if defined BOVReaderTIME
+  log->EndEvent("BOVReader::ReadScalarArray");
+  #endif
+
+  return ok;
 }
 
 //-----------------------------------------------------------------------------
@@ -278,6 +310,11 @@ int BOVReader::ReadScalarArray(
       const CartesianDataBlockIODescriptor *descr,
       vtkDataSet *grid)
 {
+  #if defined BOVReaderTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("BOVReader::ReadScalarArray");
+  #endif
+
   const CartesianExtent &memExt=descr->GetMemExtent();
   size_t nPts=memExt.Size();
 
@@ -307,6 +344,10 @@ int BOVReader::ReadScalarArray(
       }
     }
 
+  #if defined BOVReaderTIME
+  log->EndEvent("BOVReader::ReadScalarArray");
+  #endif
+
   return 1;
 }
 
@@ -315,6 +356,11 @@ int BOVReader::ReadVectorArray(
       const BOVArrayImageIterator &it,
       vtkDataSet *grid)
 {
+  #if defined BOVReaderTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("BOVReader::ReadVectorArray");
+  #endif
+
   // Memory requirements:
   // The vtk data is nComps*sizeof(component file).
   // The intermediate buffer is sizeof(component file).
@@ -364,6 +410,10 @@ int BOVReader::ReadVectorArray(
 
   free(buf);
 
+  #if defined BOVReaderTIME
+  log->EndEvent("BOVReader::ReadVectorArray");
+  #endif
+
   return 1;
 }
 
@@ -373,6 +423,11 @@ int BOVReader::ReadVectorArray(
       const CartesianDataBlockIODescriptor *descr,
       vtkDataSet *grid)
 {
+  #if defined BOVReaderTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("BOVReader::ReadVectorArray");
+  #endif
+
   const CartesianExtent &memExt=descr->GetMemExtent();
   size_t nPts=memExt.Size();
 
@@ -419,6 +474,10 @@ int BOVReader::ReadVectorArray(
 
   free(buf);
 
+  #if defined BOVReaderTIME
+  log->EndEvent("BOVReader::ReadVectorArray");
+  #endif
+
   return 1;
 }
 
@@ -427,6 +486,11 @@ int BOVReader::ReadSymetricTensorArray(
       const BOVArrayImageIterator &it,
       vtkDataSet *grid)
 {
+  #if defined BOVReaderTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("BOVReader::SymetricTensorArray");
+  #endif
+
   // Memory requirements:
   // The vtk data is nComps*sizeof(component file).
   // The intermediate buffer is sizeof(component file).
@@ -488,6 +552,10 @@ int BOVReader::ReadSymetricTensorArray(
       }
     }
 
+  #if defined BOVReaderTIME
+  log->EndEvent("BOVReader::ReadSymetricTensorArray");
+  #endif
+
   return 1;
 }
 
@@ -497,6 +565,11 @@ int BOVReader::ReadSymetricTensorArray(
       const CartesianDataBlockIODescriptor *descr,
       vtkDataSet *grid)
 {
+  #if defined BOVReaderTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("BOVReader::SymetricTensorArray");
+  #endif
+
   const CartesianExtent &memExt=descr->GetMemExtent();
   size_t nPts=memExt.Size();
 
@@ -555,12 +628,21 @@ int BOVReader::ReadSymetricTensorArray(
       }
     }
 
+  #if defined BOVReaderTIME
+  log->EndEvent("BOVReader::ReadSymetricTensorArray");
+  #endif
+
   return 1;
 }
 
 //-----------------------------------------------------------------------------
 BOVTimeStepImage *BOVReader::OpenTimeStep(int stepNo)
 {
+  #if defined BOVReaderTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("BOVReader::OpenTimeStep");
+  #endif
+
   if (!(this->MetaData && this->MetaData->IsDatasetOpen()))
     {
     sqErrorMacro(cerr,
@@ -569,8 +651,14 @@ BOVTimeStepImage *BOVReader::OpenTimeStep(int stepNo)
     return 0;
     }
 
-  return
-    new BOVTimeStepImage(this->Comm,this->Hints,stepNo,this->GetMetaData());
+  BOVTimeStepImage *image
+    = new BOVTimeStepImage(this->Comm,this->Hints,stepNo,this->GetMetaData());
+
+  #if defined BOVReaderTIME
+  log->EndEvent("BOVReader::OpenTimeStep");
+  #endif
+
+  return image;
 }
 
 //-----------------------------------------------------------------------------
@@ -587,6 +675,11 @@ int BOVReader::ReadTimeStep(
       vtkDataSet *grid,
       vtkAlgorithm *alg)
 {
+  #if defined BOVReaderTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("BOVReader::ReadTimeStep");
+  #endif
+
   double progInc=0.70/step->GetNumberOfImages();
   double prog=0.25;
   if(alg)alg->UpdateProgress(prog);
@@ -643,8 +736,11 @@ int BOVReader::ReadTimeStep(
     if(alg)alg->UpdateProgress(prog);
     }
 
-  return 1;
+  #if defined BOVReaderTIME
+  log->EndEvent("BOVReader::ReadTimeStep");
+  #endif
 
+  return 1;
 }
 
 //-----------------------------------------------------------------------------
@@ -653,6 +749,11 @@ int BOVReader::ReadTimeStep(
       vtkDataSet *grid,
       vtkAlgorithm *alg)
 {
+  #if defined BOVReaderTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("BOVReader::ReadTimeStep");
+  #endif
+
   double progInc=0.70/step->GetNumberOfImages();
   double prog=0.25;
   if(alg)alg->UpdateProgress(prog);
@@ -709,12 +810,21 @@ int BOVReader::ReadTimeStep(
     if(alg)alg->UpdateProgress(prog);
     }
 
+  #if defined BOVReaderTIME
+  log->EndEvent("BOVReader::ReadTimeStep");
+  #endif
+
   return 1;
 }
 
 //-----------------------------------------------------------------------------
 int BOVReader::ReadMetaTimeStep(int stepIdx, vtkDataSet *grid, vtkAlgorithm *alg)
 {
+  #if defined BOVReaderTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("BOVReader::ReadMetaTimeStep");
+  #endif
+
   if (!(this->MetaData && this->MetaData->IsDatasetOpen()))
     {
     sqErrorMacro(cerr,"Cannot read because the dataset is not open.");
@@ -792,6 +902,10 @@ int BOVReader::ReadMetaTimeStep(int stepIdx, vtkDataSet *grid, vtkAlgorithm *alg
     prog+=progInc;
     if(alg)alg->UpdateProgress(prog);
     }
+
+  #if defined BOVReaderTIME
+  log->EndEvent("BOVReader::ReadMetaTimeStep");
+  #endif
 
   return 1;
 }

@@ -57,8 +57,7 @@ using std::ostringstream;
 #endif
 
 #if defined vtkSQBOVWriterTIME
-  #include <sys/time.h>
-  #include <unistd.h>
+  #include "vtkSQLog.h"
 #endif
 
 // disbale warning about passing string literals.
@@ -158,16 +157,11 @@ void vtkSQBOVWriter::SetFileName(const char* _arg)
 {
   #if defined vtkSQBOVWriterDEBUG
   pCerr() << "===============================SetFileName" << endl;
-  pCerr() << "Set FileName from " << safeio(this->FileName) << " to " << safeio(_arg) << "." << endl;
+  pCerr() << "Set FileName " << safeio(_arg) << "." << endl;
   #endif
   #if defined vtkSQBOVWriterTIME
-  double walls=0.0;
-  timeval wallt;
-  if (this->WorldRank==0)
-    {
-    gettimeofday(&wallt,0x0);
-    walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-    }
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("vtkSQBOVWriter::SetFileName");
   #endif
 
   vtkDebugMacro(<< this->GetClassName() << ": setting FileName to " << (_arg?_arg:"(null)"));
@@ -215,13 +209,7 @@ void vtkSQBOVWriter::SetFileName(const char* _arg)
   this->Modified();
 
   #if defined vtkSQBOVWriterTIME
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (this->WorldRank==0)
-    {
-    gettimeofday(&wallt,0x0);
-    double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-    pCerr() << "vtkSQBOVWriter::SetFileName " << walle-walls << endl;
-    }
+  log->EndEvent("vtkSQBOVWriter::SetFileName");
   #endif
 }
 
@@ -458,82 +446,8 @@ int vtkSQBOVWriter::RequestUpdateExtent(
   #endif
 
   return 1;
-
-
-/*
-  vtkDataSet* input
-    = dynamic_cast<vtkDataSet*>(this->GetExecutive()->GetInputData(0,0));
-
-  // Our WriteExtent becomes the WholeExtent of the file.
-  this->ExtentTranslator->SetWholeExtent(input->GetWholeExtent());
-  this->ExtentTranslator->SetNumberOfPieces(this->NumberOfPieces);
-  this->ExtentTranslator->SetPiece(piece);
-  this->ExtentTranslator->PieceToExtent();
-
-
-
-
-
-
-  vtkInformation* inInfo = 
-    this->GetExecutive()->GetInputInformation(0, 0);
-  inInfo->Set(
-    vtkSDDPipeline::UPDATE_EXTENT(), 
-    this->ExtentTranslator->GetExtent(),
-    6);
-
-*/
-
-/*
-  // We will modify the extents we request from our input so
-  // that we will have a layers of ghost cells. We also pass
-  // the number of ghosts through the piece based key.
-  int nGhosts = this->KernelWidth/2;
-
-  inInfo->Set(
-        vtkSDDPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS(),
-        nGhosts);
-
-  CartesianExtent outputExt;
-  outInfo->Get(
-        vtkSDDPipeline::UPDATE_EXTENT(),
-        outputExt.GetData());
-
-  CartesianExtent wholeExt;
-  inInfo->Get(
-        vtkSDDPipeline::WHOLE_EXTENT(),
-        wholeExt.GetData());
-
-  outputExt = CartesianExtent::Grow(
-        outputExt,
-        wholeExt,
-        nGhosts,
-        this->Mode);
-
-  inInfo->Set(
-        vtkSDDPipeline::UPDATE_EXTENT(),
-        outputExt.GetData(),
-        6);
-
-  int piece
-    = outInfo->Get(vtkSDDPipeline::UPDATE_PIECE_NUMBER());
-
-  int numPieces
-    = outInfo->Get(vtkSDDPipeline::UPDATE_NUMBER_OF_PIECES());
-
-  inInfo->Set(vtkSDDPipeline::UPDATE_PIECE_NUMBER(), piece);
-  inInfo->Set(vtkSDDPipeline::UPDATE_NUMBER_OF_PIECES(), numPieces);
-  inInfo->Set(vtkSDDPipeline::EXACT_EXTENT(), 1);
-
-  #ifdef vtkSQKernelConvolutionDEBUG
-  pCerr()
-    << "WHOLE_EXTENT=" << wholeExt << endl
-    << "UPDATE_EXTENT=" << outputExt << endl
-    << "nGhosts=" << nGhosts << endl;
-  #endif
-*/
-
 }
+
 //----------------------------------------------------------------------------
 int vtkSQBOVWriter::RequestDataObject(
       vtkInformation* /*req*/,
@@ -543,25 +457,6 @@ int vtkSQBOVWriter::RequestDataObject(
   #if defined vtkSQBOVWriterDEBUG
   pCerr() << "===============================RequestDataObject" << endl;
   #endif
-
-  /*
-  vtkInformation* info=outInfos->GetInformationObject(0);
-
-  vtkDataObject *dataset=this->Writer->GetDataSet();
-
-  info->Set(vtkDataObject::DATA_TYPE_NAME(),this->Writer->GetDataSetType());
-  info->Set(vtkDataObject::DATA_EXTENT_TYPE(),VTK_3D_EXTENT);
-  info->Set(vtkDataObject::DATA_OBJECT(),dataset);
-
-  dataset->SetPipelineInformation(info);
-  dataset->Delete();
-
-  #if defined vtkSQBOVWriterDEBUG
-  pCerr() << "datasetType=" << info->Get(vtkDataObject::DATA_TYPE_NAME()) << endl;
-  pCerr() << "dataset=" << info->Get(vtkDataObject::DATA_OBJECT()) << endl;
-  pCerr() << "info="; info->Print(cerr);
-  #endif
-  */
 
   return 1;
 }
@@ -629,13 +524,8 @@ int vtkSQBOVWriter::RequestData(
   pCerr() << "===============================RequestData" << endl;
   #endif
   #if defined vtkSQBOVWriterTIME
-  timeval wallt;
-  double walls=0.0;
-  if (this->WorldRank==0)
-    {
-    gettimeofday(&wallt,0x0);
-    walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-    }
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("vtkSQBOVWriter::RequestData");
   #endif
 
   BOVMetaData *md=this->Writer->GetMetaData();
@@ -802,12 +692,7 @@ int vtkSQBOVWriter::RequestData(
   #endif
 
   #if defined vtkSQBOVWriterTIME
-  if (this->WorldRank==0)
-    {
-    gettimeofday(&wallt,0x0);
-    double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-    pCerr() << "vtkSQBOVWriter::RequestData " << walle-walls << endl;
-    }
+  log->EndEvent("vtkSQBOVWriter::RequestData");
   #endif
 
   return 1;

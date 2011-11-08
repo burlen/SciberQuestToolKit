@@ -102,3 +102,4 @@ ostream &operator<<(ostream &os, const BOVScalarImage &si)
 
   return os;
 }
+

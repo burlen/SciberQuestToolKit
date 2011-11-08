@@ -33,16 +33,10 @@ using vtkstd::string;
 #include "Numerics.hxx"
 
 // #define vtkSQKernelConvolutionDEBUG
-
-#ifdef WIN32
-  // these are only usefull in terminals
-  #undef vtkSQKernelConvolutionTIME
-  #undef vtkSQKernelConvolutionDEBUG
-#endif
+#define vtkSQKernelConvolutionTIME
 
 #if defined vtkSQKernelConvolutionTIME
-  #include <sys/time.h>
-  #include <unistd.h>
+  #include "vtkSQLog.h"
 #endif
 
 vtkCxxRevisionMacro(vtkSQKernelConvolution, "$Revision: 0.0 $");
@@ -416,10 +410,8 @@ int vtkSQKernelConvolution::RequestData(
   #endif
 
   #if defined vtkSQKernelConvolutionTIME
-  double walls=0.0;
-  timeval wallt;
-  gettimeofday(&wallt,0x0);
-  walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("vtkSQKernelConvolution::RequestData");
   #endif
 
   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
@@ -568,9 +560,7 @@ int vtkSQKernelConvolution::RequestData(
     }
 
   #if defined vtkSQKernelConvolutionTIME
-  gettimeofday(&wallt,0x0);
-  double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-  pCerr() << "vtkSQKernelConvolution::RequestData " << walle-walls << endl;
+  log->EndEvent("vtkSQKernelConvolution::RequestData");
   #endif
 
  return 1;

@@ -6,10 +6,10 @@
       ISubset="5120 10239"
       JSubset="-1 -1"
       KSubset="-1 -1">
-       <arrays> b ui ue </arrays>
+       <arrays> b </arrays>
   </vtkSQBOVReader>
 
-  <vtkSQKernelConvolution stencilWidth="19"/>
+  <vtkSQKernelConvolution stencilWidth="03"/>
 
   <vtkSQBOVWriter
       cb_enable="1"

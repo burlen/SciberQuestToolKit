@@ -26,6 +26,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkSQBOVWriter.h"
 #include "vtkSQImageGhosts.h"
 #include "vtkSQKernelConvolution.h"
+#include "vtkSQLog.h"
 #include "FsUtils.h"
 #include "XMLUtils.h"
 #include "DebugUtil.h"
@@ -117,6 +118,10 @@ int main(int argc, char **argv)
     return SQ_EXIT_ERROR;
     }
 
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("SmoothBatch::TotalRunTime");
+  log->StartEvent("SmoothBatch::Initialize");
+
   // distribute the configuration file name and time range
   int configNameLen=0;
   char *configName=0;
@@ -186,13 +191,24 @@ int main(int argc, char **argv)
 
     // times are optional if not provided entire series is
     // used.
+    const char *startTimeStr="";
+    const char *endTimeStr="";
     if (argc>4)
       {
       startTime=atof(argv[4]);
       endTime=atof(argv[5]);
+
+      startTimeStr=argv[4];
+      endTimeStr=argv[5];
       }
     controller->Broadcast(&startTime,1,0);
     controller->Broadcast(&endTime,1,0);
+
+    *log
+      << "# " << configName << "\n"
+      << "# " << bovFileName << "\n"
+      << "# " << outputPath << "\n"
+      << "# " << startTimeStr << " " << endTimeStr << "\n";
     }
   else
     {
@@ -495,6 +511,7 @@ int main(int argc, char **argv)
     }
 
   root->Delete();
+  log->EndEvent("SmoothBatch::Initialize");
 
   /// execute
   // run the pipeline for each time step, write the
@@ -502,6 +519,12 @@ int main(int argc, char **argv)
   for (int idx=startTimeIdx,q=0; idx<=endTimeIdx; ++idx,++q)
     {
     double time=times[idx];
+
+    ostringstream oss;
+    oss << idx << ":" << time;
+    string stepEventLabel("SmoothBatch::ProcessTimeStep_");
+    stepEventLabel+=oss.str();
+    log->StartEvent(stepEventLabel.c_str());
 
     if (worldRank==0)
       {
@@ -514,6 +537,10 @@ int main(int argc, char **argv)
     for (int vecIdx=0; vecIdx<nArrays; ++vecIdx)
       {
       const string &vecName=arrays[vecIdx];
+
+      string arrayEventLabel("SmoothBatch::ProcessArray_");
+      arrayEventLabel += vecName;
+      log->StartEvent(arrayEventLabel.c_str());
 
       r->ClearPointArrayStatus();
       r->SetPointArrayStatus(vecName.c_str(),1);
@@ -531,7 +558,11 @@ int main(int argc, char **argv)
         {
         pCerr() << "Wrote " << vecName << endl;
         }
+
+      log->EndEvent(arrayEventLabel.c_str());
       }
+
+      log->EndEvent(stepEventLabel.c_str());
     }
 
   w->WriteMetaData();
@@ -540,6 +571,12 @@ int main(int argc, char **argv)
   free(configName);
   free(outputPath);
   free(bovFileName);
+
+  log->EndEvent("SmoothBatch::TotalRunTime");
+
+  log->SetFileName("SmoothBatch.log");
+  log->Update();
+  log->Write();
 
   vtkAlgorithm::SetDefaultExecutivePrototype(0);
 

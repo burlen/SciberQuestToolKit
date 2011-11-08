@@ -54,13 +54,12 @@ using std::ostringstream;
   #undef vtkSQBOVReaderDEBUG
 #endif
 
-#ifndef HOST_NAME_MAX
-  #define HOST_NAME_MAX 255
+#if defined vtkSQBOVReaderTIME
+  #include "vtkSQLog.h"
 #endif
 
-#if defined vtkSQBOVReaderTIME
-  #include <sys/time.h>
-  #include <unistd.h>
+#ifndef HOST_NAME_MAX
+  #define HOST_NAME_MAX 255
 #endif
 
 // disbale warning about passing string literals.
@@ -214,19 +213,13 @@ void vtkSQBOVReader::SetFileName(const char* _arg)
 {
   #if defined vtkSQBOVReaderDEBUG
   pCerr() << "===============================SetFileName" << endl;
-  pCerr() << "Set FileName from " << safeio(this->FileName) << " to " << safeio(_arg) << "." << endl;
+  pCerr() << "Set FileName " << safeio(_arg) << "." << endl;
   #endif
   #if defined vtkSQBOVReaderTIME
-  double walls=0.0;
-  timeval wallt;
-  if (this->WorldRank==0)
-    {
-    gettimeofday(&wallt,0x0);
-    walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-    }
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("vtkSQBOVReader::SetFileName");
   #endif
 
-  vtkDebugMacro(<< this->GetClassName() << ": setting FileName to " << (_arg?_arg:"(null)"));
   if (this->FileName == NULL && _arg == NULL) { return;}
   if (this->FileName && _arg && (!strcmp(this->FileName,_arg))) { return;}
   if (this->FileName) { delete [] this->FileName; }
@@ -280,13 +273,7 @@ void vtkSQBOVReader::SetFileName(const char* _arg)
   this->Modified();
 
   #if defined vtkSQBOVReaderTIME
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (this->WorldRank==0)
-    {
-    gettimeofday(&wallt,0x0);
-    double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-    pCerr() << "vtkSQBOVReader::SetFileName " << walle-walls << endl;
-    }
+  log->EndEvent("vtkSQBOVReader::SetFileName");
   #endif
 }
 
@@ -606,7 +593,10 @@ int vtkSQBOVReader::RequestInformation(
     // index space.
     int wholeExtent[6];
     this->GetSubset(wholeExtent);
-    info->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),wholeExtent,6);
+    info->Set(
+      vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+      wholeExtent,
+      6);
     // req->Append(
     //     vtkExecutive::KEYS_TO_COPY(),
     //     vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT());
@@ -649,9 +639,16 @@ int vtkSQBOVReader::RequestInformation(
   #endif
 
   // Set available time steps on pipeline.
-  info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),&times[0],times.size());
+  info->Set(
+    vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
+    &times[0],
+    times.size());
+
   double timeRange[2]={times[0],times[times.size()-1]};
-  info->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(),timeRange,2);
+  info->Set(
+    vtkStreamingDemandDrivenPipeline::TIME_RANGE(),
+    timeRange,
+    2);
 
   return 1;
 }
@@ -747,13 +744,8 @@ int vtkSQBOVReader::RequestData(
   pCerr() << "===============================RequestData" << endl;
   #endif
   #if defined vtkSQBOVReaderTIME
-  timeval wallt;
-  double walls=0.0;
-  if (this->WorldRank==0)
-    {
-    gettimeofday(&wallt,0x0);
-    walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-    }
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("vtkSQBOVReader::RequestData");
   #endif
 
   vtkInformation *info=outInfos->GetInformationObject(0);
@@ -1192,12 +1184,7 @@ int vtkSQBOVReader::RequestData(
   #endif
 
   #if defined vtkSQBOVReaderTIME
-  if (this->WorldRank==0)
-    {
-    gettimeofday(&wallt,0x0);
-    double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-    pCerr() << "vtkSQBOVReader::RequestData " << walle-walls << endl;
-    }
+  log->EndEvent("vtkSQBOVReader::RequestData");
   #endif
 
   return 1;

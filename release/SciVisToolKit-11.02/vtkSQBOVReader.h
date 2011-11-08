@@ -79,6 +79,13 @@ public:
   vtkGetVector2Macro(KSubsetRange,int);
 
   // Description:
+  // Set the grid spacing multiplication factor. If 1 then grid
+  // spacing on file is used. If greater than 1 dataset is down
+  // sampled.
+  vtkSetMacro(GridSpacingFactor,double);
+  vtkGetMacro(GridSpacingFactor,double);
+
+  // Description:
   // Time domain discovery interface.
   int GetNumberOfTimeSteps();
   void GetTimeSteps(double *times);
@@ -190,6 +197,7 @@ private:
   int ISubsetRange[2];     // bounding extents of the subset
   int JSubsetRange[2];
   int KSubsetRange[2];
+  double GridSpacingFactor;// factor for down sampling.
   int MetaRead;            // flag indicating type of read meta or actual
   int PeriodicBC[3];       // flag indicating which directions have periodic BC
   int NGhosts;             // number of ghosts cells to load (ooc only)

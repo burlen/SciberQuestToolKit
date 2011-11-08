@@ -34,14 +34,11 @@ using vtkstd::string;
 #define vtkSQVortexFilterTIME
 
 #ifdef WIN32
-  // these are only usefull in terminals
-  #undef vtkSQVortexFilterTIME
   #undef vtkSQVortexFilterDEBUG
 #endif
 
 #if defined vtkSQVortexFilterTIME
-  #include <sys/time.h>
-  #include <unistd.h>
+  #include<vtkSQLog.h>
 #endif
 
 vtkCxxRevisionMacro(vtkSQVortexFilter, "$Revision: 0.0 $");
@@ -249,10 +246,8 @@ int vtkSQVortexFilter::RequestData(
   #endif
 
   #if defined vtkSQVortexFilterTIME
-  double walls=0.0;
-  timeval wallt;
-  gettimeofday(&wallt,0x0);
-  walls=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("vtkSQVortexFilter::RequestData");
   #endif
 
   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
@@ -358,6 +353,9 @@ int vtkSQVortexFilter::RequestData(
     // since the input and output have different extents.
     if (this->PassInput)
       {
+      #if defined vtkSQVortexFilterTIME
+      log->StartEvent("vtkSQVortexFilter::PassInput");
+      #endif
       vtkDataArray *W=V->NewInstance();
       outImData->GetPointData()->AddArray(W);
       W->Delete();
@@ -377,11 +375,17 @@ int vtkSQVortexFilter::RequestData(
               this->Mode,
               USE_OUTPUT_BOUNDS));
         }
+      #if defined vtkSQVortexFilterTIME
+      log->EndEvent("vtkSQVortexFilter::PassInput");
+      #endif
       }
 
     // Rotation.
     if (this->ComputeRotation)
       {
+      #if defined vtkSQVortexFilterTIME
+      log->StartEvent("vtkSQVortexFilter::Rotation");
+      #endif
       string name;
 
       vtkDataArray *Rx=V->NewInstance();
@@ -454,11 +458,17 @@ int vtkSQVortexFilter::RequestData(
       Rx->Delete();
       Ry->Delete();
       Rz->Delete();
+      #if defined vtkSQVortexFilterTIME
+      log->EndEvent("vtkSQVortexFilter::Rotation");
+      #endif
       }
 
     // Helicity.
     if (this->ComputeHelicity)
       {
+      #if defined vtkSQVortexFilterTIME
+      log->StartEvent("vtkSQVortexFilter::Helicicty");
+      #endif
       vtkDataArray *H=V->NewInstance();
       outImData->GetPointData()->AddArray(H);
       H->Delete();
@@ -479,11 +489,17 @@ int vtkSQVortexFilter::RequestData(
               (VTK_TT*)V->GetVoidPointer(0),
               (VTK_TT*)H->GetVoidPointer(0)));
         }
+      #if defined vtkSQVortexFilterTIME
+      log->EndEvent("vtkSQVortexFilter::Helicity");
+      #endif
       }
 
     // Normalized Helicity.
     if (this->ComputeNormalizedHelicity)
       {
+      #if defined vtkSQVortexFilterTIME
+      log->StartEvent("vtkSQVortexFilter::NormalizedHelicty");
+      #endif
       vtkDataArray *HN=V->NewInstance();
       outImData->GetPointData()->AddArray(HN);
       HN->Delete();
@@ -504,11 +520,17 @@ int vtkSQVortexFilter::RequestData(
               (VTK_TT*)V->GetVoidPointer(0),
               (VTK_TT*)HN->GetVoidPointer(0)));
         }
+      #if defined vtkSQVortexFilterTIME
+      log->EndEvent("vtkSQVortexFilter::NormaizedHelicty");
+      #endif
       }
 
     // Lambda-1,2,3.
     if (this->ComputeLambda)
       {
+      #if defined vtkSQVortexFilterTIME
+      log->StartEvent("vtkSQVortexFilter::Lambda123");
+      #endif
       vtkDataArray *L=V->NewInstance();
       outImData->GetPointData()->AddArray(L);
       L->Delete();
@@ -529,11 +551,17 @@ int vtkSQVortexFilter::RequestData(
               (VTK_TT*)V->GetVoidPointer(0),
               (VTK_TT*)L->GetVoidPointer(0)));
         }
+      #if defined vtkSQVortexFilterTIME
+      log->EndEvent("vtkSQVortexFilter::Lambda123");
+      #endif
       }
 
     // Lambda-2.
     if (this->ComputeLambda2)
       {
+      #if defined vtkSQVortexFilterTIME
+      log->StartEvent("vtkSQVortexFilter::Lambda2");
+      #endif
       vtkDataArray *L2=V->NewInstance();
       outImData->GetPointData()->AddArray(L2);
       L2->Delete();
@@ -554,11 +582,17 @@ int vtkSQVortexFilter::RequestData(
               (VTK_TT*)V->GetVoidPointer(0),
               (VTK_TT*)L2->GetVoidPointer(0)));
         }
+      #if defined vtkSQVortexFilterTIME
+      log->EndEvent("vtkSQVortexFilter::Lambda2");
+      #endif
       }
 
     // Divergence.
     if (this->ComputeDivergence)
       {
+      #if defined vtkSQVortexFilterTIME
+      log->StartEvent("vtkSQVortexFilter::Divergence");
+      #endif
       vtkDataArray *D=V->NewInstance();
       outImData->GetPointData()->AddArray(D);
       D->Delete();
@@ -579,11 +613,17 @@ int vtkSQVortexFilter::RequestData(
               (VTK_TT*)V->GetVoidPointer(0),
               (VTK_TT*)D->GetVoidPointer(0)));
         }
+      #if defined vtkSQVortexFilterTIME
+      log->EndEvent("vtkSQVortexFilter::Divergence");
+      #endif
       }
 
     // Gradient.
     if (this->ComputeGradient)
       {
+      #if defined vtkSQVortexFilterTIME
+      log->StartEvent("vtkSQVortexFilter::Gradient");
+      #endif
       string name;
 
       vtkDataArray *Gxx=V->NewInstance();
@@ -728,11 +768,17 @@ int vtkSQVortexFilter::RequestData(
       Gzx->Delete();
       Gzy->Delete();
       Gzz->Delete();
+      #if defined vtkSQVortexFilterTIME
+      log->EndEvent("vtkSQVortexFilter::Gradient");
+      #endif
       }
 
     // EigenvalueDiagnostic.
     if (this->ComputeEigenvalueDiagnostic)
       {
+      #if defined vtkSQVortexFilterTIME
+      log->StartEvent("vtkSQVortexFilter::EigenvalueDiagnostic");
+      #endif
       vtkDataArray *D=V->NewInstance();
       outImData->GetPointData()->AddArray(D);
       D->Delete();
@@ -753,11 +799,17 @@ int vtkSQVortexFilter::RequestData(
               (VTK_TT*)V->GetVoidPointer(0),
               (VTK_TT*)D->GetVoidPointer(0)));
         }
+      #if defined vtkSQVortexFilterTIME
+      log->EndEvent("vtkSQVortexFilter::EigenvalueDiagnostic");
+      #endif
       }
 
     // Gardient-tensor diagnostic.
     if (this->ComputeGradientDiagnostic)
       {
+      #if defined vtkSQVortexFilterTIME
+      log->StartEvent("vtkSQVortexFilter::GradientDiagnostic");
+      #endif
       string name;
 
       vtkDataArray *Gxx=V->NewInstance();
@@ -908,6 +960,9 @@ int vtkSQVortexFilter::RequestData(
       Gzx->Delete();
       Gzy->Delete();
       Gzz->Delete();
+      #if defined vtkSQVortexFilterTIME
+      log->EndEvent("vtkSQVortexFilter::GradientDiagnostic");
+      #endif
       }
 
     // outImData->Print(cerr);
@@ -919,9 +974,7 @@ int vtkSQVortexFilter::RequestData(
     }
 
   #if defined vtkSQVortexFilterTIME
-  gettimeofday(&wallt,0x0);
-  double walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
-  pCerr() << "vtkSQVortexFilter::RequestData " << walle-walls << endl;
+  log->EndEvent("vtkSQVortexFilter::RequestData");
   #endif
 
  return 1;
