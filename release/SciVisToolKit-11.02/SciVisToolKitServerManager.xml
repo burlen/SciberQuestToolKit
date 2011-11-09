@@ -1328,7 +1328,7 @@ Copyright 2008 SciberQuest Inc.
      </InputProperty>
 
      <StringVectorProperty
-       name="DummyFileListDomain"
+       name="ADummyFileListDomain"
        command="SetDummyFileListDomain"
        number_of_elements="1"
        default_values="">
@@ -1340,6 +1340,7 @@ Copyright 2008 SciberQuest Inc.
 
      <StringVectorProperty
        name="BWDataFile"
+       label="Bandwidth File"
        command="SetBWDataFile"
        number_of_elements="1"
        default_values="">
@@ -1351,6 +1352,7 @@ Copyright 2008 SciberQuest Inc.
 
      <StringVectorProperty
        name="TimeDataFile"
+       label="Time File"
        command="SetTimeDataFile"
        number_of_elements="1"
        default_values="">
