@@ -1305,6 +1305,75 @@ Copyright 2008 SciberQuest Inc.
 
 <ProxyGroup name="filters">
 
+   <!-- ==================================================================== -->
+   <SourceProxy
+     name="SC11DemoAnnotation"
+     class="vtkSC11DemoAnnotation"
+     label="SC11 Demo Annotation">
+
+     <Documentation>
+       SC11 Demo Annotations.
+     </Documentation>
+
+     <InputProperty
+         name="Input"
+         command="SetInputConnection">
+       <ProxyGroupDomain name="groups">
+         <Group name="sources"/>
+         <Group name="filters"/>
+       </ProxyGroupDomain>
+       <Documentation>
+         This property specifies the input dataset.
+       </Documentation>
+     </InputProperty>
+
+     <StringVectorProperty
+       name="DummyFileListDomain"
+       command="SetDummyFileListDomain"
+       number_of_elements="1"
+       default_values="">
+       <FileListDomain name="files"/>
+       <Documentation>
+         pv hides the first file list domain.
+       </Documentation>
+     </StringVectorProperty>
+
+     <StringVectorProperty
+       name="BWDataFile"
+       command="SetBWDataFile"
+       number_of_elements="1"
+       default_values="">
+       <FileListDomain name="files"/>
+       <Documentation>
+        path to the file conatining bandwidth data
+       </Documentation>
+     </StringVectorProperty>
+
+     <StringVectorProperty
+       name="TimeDataFile"
+       command="SetTimeDataFile"
+       number_of_elements="1"
+       default_values="">
+       <FileListDomain name="files"/>
+       <Documentation>
+        path to the file conatining bandwidth data
+       </Documentation>
+     </StringVectorProperty>
+
+    <OutputPort name="Bandwidth"  index="0" />
+    <OutputPort name="Time"       index="1" />
+
+     <Hints>
+       <Visibility replace_input="0" />
+       <OutputPort name="Bandwidth" index="0" type="text" />
+       <OutputPort name="Time" index="1" type="text" />
+     </Hints>
+
+   <!-- End of SC11DemoAnnotation -->
+   </SourceProxy>
+
+
+
     <!-- ==================================================================== -->
     <SourceProxy
       name="vtkSQImageGhosts"
