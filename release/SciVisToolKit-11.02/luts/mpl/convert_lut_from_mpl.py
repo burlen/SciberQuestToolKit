@@ -49,7 +49,7 @@ names=f_names.readlines()
 f_names.close()
 
 f_all=open('all_mpl_cmaps.xml','w')
-f_all.write('<doc>')
+f_all.write('<doc>\n')
 
 for name in names:
   name=name.split()[0]
@@ -57,7 +57,7 @@ for name in names:
   m=mpl.get_cmap(name)
   write_cmap(m,256,name,f_all)
 
-f_all.write('</doc>')
+f_all.write('</doc>\n')
 f_all.close();
 
 

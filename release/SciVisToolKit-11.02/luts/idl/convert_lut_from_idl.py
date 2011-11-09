@@ -10,7 +10,7 @@ names=f_names.readlines()
 f_names.close()
 
 f_all=open('all_idl_cmaps.xml','w')
-f_all.write('<doc>')
+f_all.write('<doc>\n')
 
 q=0
 for name in names:
@@ -47,6 +47,6 @@ for name in names:
   f_all.write('</ColorMap>\n')
   f_lut.close()
 
-f_all.write('</doc>')
+f_all.write('</doc>\n')
 f_all.close()
 
