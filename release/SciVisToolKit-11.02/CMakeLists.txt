@@ -206,6 +206,15 @@ if(PARAVIEW_BUILD_QT_GUI)
   set(_IFACES ${_IFACES} ${IFACES})
   set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
+  QT4_WRAP_CPP(MOC_SRCS pqSC11DemoReader.h)
+  ADD_PARAVIEW_OBJECT_PANEL(
+    IFACES IFACE_SRCS
+    CLASS_NAME pqSC11DemoReader
+    XML_NAME vtkSC11DemoReader
+    XML_GROUP sources)
+  set(_IFACES ${_IFACES} ${IFACES})
+  set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+
   if (SVTK_PROCESS_MONITOR)
     message(STATUS "Building process monitor ui.")
     QT4_WRAP_CPP(MOC_SRCS pqSQProcessMonitor.h)
@@ -224,6 +233,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     ${MOC_SRCS}
     ${UI_SRCS}
     ${_IFACE_SRCS}
+    pqSC11DemoReader.cxx
     pqSQBOVMetaReader.cxx
     pqSQFieldTracer.cxx
     pqSQHemisphereSource.cxx

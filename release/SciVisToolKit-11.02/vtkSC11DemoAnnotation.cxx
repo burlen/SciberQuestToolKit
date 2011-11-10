@@ -22,7 +22,7 @@
 #include "vtkTable.h"
 
 #include "PrintUtils.h"
-
+#include "FsUtils.h"
 
 #include <fstream>
 using std::fstream;
@@ -52,9 +52,19 @@ vtkSC11DemoAnnotation::vtkSC11DemoAnnotation()
     InBWComm(0),
     DummyFileListDomain(0),
     BWDataFile(0),
+    TimeStepFile(0),
     TimeDataFile(0)
 {
   this->SetNumberOfOutputPorts(2);
+
+  int ok=0;
+  MPI_Initialized(&ok);
+  if (!ok)
+    {
+    vtkErrorMacro(
+      "This filter requires MPI, restart pvserver using mpiexec.");
+    return;
+    }
 
   MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
   MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
@@ -132,7 +142,7 @@ vtkSC11DemoAnnotation::~vtkSC11DemoAnnotation()
 {
   this->SetDummyFileListDomain(0);
   this->SetBWDataFile(0);
-  this->SetTimeDataFile(0);
+  this->SetTimeStepFile(0);
 
   if (this->InBWComm)
     {
@@ -158,6 +168,38 @@ int vtkSC11DemoAnnotation::FillOutputPortInformation(
   return 1;
 }
 
+//-----------------------------------------------------------------------------
+void vtkSC11DemoAnnotation::SetTimeDataFile(const char* _arg)
+{
+  if (this->TimeDataFile == NULL && _arg == NULL) { return;}
+  if (this->TimeDataFile && _arg && (!strcmp(this->TimeDataFile,_arg))) { return;}
+  if (this->TimeDataFile) { delete [] this->TimeDataFile; }
+  if (_arg)
+    {
+    size_t n = strlen(_arg) + 1;
+    char *cp1 =  new char[n];
+    const char *cp2 = (_arg);
+    this->TimeDataFile = cp1;
+    do { *cp1++ = *cp2++; } while ( --n );
+    }
+  else
+    {
+    this->TimeDataFile = NULL;
+    }
+  this->Modified();
+
+  this->TimeData.clear();
+
+  if (this->TimeDataFile && strlen(this->TimeDataFile))
+    {
+    int nRead=LoadLines(this->TimeDataFile,this->TimeData);
+    if (nRead<1)
+      {
+      vtkErrorMacro("Failed to read TimeData from " << this->TimeDataFile);
+      }
+    }
+}
+
 //----------------------------------------------------------------------------
 int vtkSC11DemoAnnotation::RequestData(
     vtkInformation* vtkNotUsed(request),
@@ -178,12 +220,13 @@ int vtkSC11DemoAnnotation::RequestData(
   string bwData;
   if (this->InBWComm)
     {
-    if (this->BWDataFile)
+    if (this->BWDataFile && strlen(this->BWDataFile))
       {
       ifstream bwFile(this->BWDataFile);
       if (!bwFile.good())
         {
         vtkErrorMacro("Failed to open " << this->BWDataFile);
+        return 1;
         }
 
       int bwCommSize;
@@ -204,14 +247,17 @@ int vtkSC11DemoAnnotation::RequestData(
         ostringstream oss;
         oss
           << setw(1) << "+" << setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl
-          << setw(1) << "|" << setw(half1Width) << setfill(' ') << right << "Bandwidth" << setw(half2Width+1) << right << "|"  << endl
+          << setw(1) << "|"
+          << setw(half1Width) << setfill(' ') << right << "Bandwidth"
+          << setw(half2Width+1) << right << "|"
+          << endl
           << setw(1) << "+" << setw(width) << setfill('-') << "-" << setw(1) << "+" << endl;
         for (int i=0; i<bwCommSize; ++i)
           {
           oss
             << setw(1) << "|" << setw(col1Width) << setfill(' ') << left << this->Hosts[i]
             << setw(col2Width) << setfill(' ') << right << setprecision(5) << allBw[i]
-            << setw(col3Width) << setfill(' ') << left << " GB/sec"
+            << setw(col3Width) << setfill(' ') << left << " Gb/sec"
             << setw(1) << "|"  << endl;
           bwTotal+=allBw[i];
           }
@@ -219,7 +265,7 @@ int vtkSC11DemoAnnotation::RequestData(
           << setw(1) << "+" <<  setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl
           << setw(1) << "|" << setw(col1Width) << setfill(' ') << " "
           << setw(col2Width) << setfill(' ') << right << setprecision(5) << bwTotal
-          << setw(col3Width) << setfill(' ') << left <<  " GB/sec"
+          << setw(col3Width) << setfill(' ') << left <<  " Gb/sec"
           << setw(1) << "|" << endl
           << setw(1) << "+" <<  setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl;
 
@@ -229,31 +275,44 @@ int vtkSC11DemoAnnotation::RequestData(
     }
 
   // only rank 0 needs time data
-  char buffer[1024];
-  string timeData("t=");
+  string timeData;
   if (this->WorldRank==0)
     {
-    memset(buffer,0,1024);
-    if (this->TimeDataFile)
+    if (this->TimeStepFile && strlen(this->TimeStepFile))
       {
-      ifstream timeFile(this->TimeDataFile);
-      if (timeFile.good())
+      int step=0;
+      ifstream timeFile(this->TimeStepFile);
+      if (!timeFile.good())
         {
-        timeFile.getline(buffer,1024);
-        timeFile.close();
+        vtkErrorMacro("Failed to open " << this->TimeStepFile);
+        return 1;
+        }
+      timeFile >> step;
+      timeFile.close();
 
-        ostringstream oss;
+      ostringstream oss;
+      oss
+        << setw(1) << "+" <<  setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl;
+
+      if (step<this->TimeData.size())
+        {
         oss
-          << setw(1) << "+" <<  setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl
-          << setw(1) << "|" <<  setw(width) << setfill(' ') << buffer << setw(1) << "|" <<  endl
-          << setw(1) << "+" <<  setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl;
-
-        timeData=oss.str();
+          << setw(1) << "|"
+          <<  setw(width) << setfill(' ') << this->TimeData[step]
+          << setw(1) << "|" <<  endl;
         }
       else
         {
-        vtkErrorMacro("Failed to open " << this->TimeDataFile);
+        oss
+          << setw(1) << "|"
+          <<  setw(width) << setfill(' ') << step
+          << setw(1) << "|" <<  endl;
         }
+
+      oss
+        << setw(1) << "+" <<  setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl;
+
+      timeData=oss.str();
       }
     }
 

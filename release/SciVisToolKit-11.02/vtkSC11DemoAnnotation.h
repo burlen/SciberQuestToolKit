@@ -41,8 +41,13 @@ public:
   vtkGetStringMacro(BWDataFile);
 
   // Description
+  // Get/Set the time step file
+  vtkSetStringMacro(TimeStepFile);
+  vtkGetStringMacro(TimeStepFile);
+
+  // Description
   // Get/Set the time data file
-  vtkSetStringMacro(TimeDataFile);
+  void SetTimeDataFile(const char *filename);
   vtkGetStringMacro(TimeDataFile);
 
   // Description
@@ -74,7 +79,11 @@ private:
 
   char *DummyFileListDomain;
   char *BWDataFile;
+  char *TimeStepFile;
   char *TimeDataFile;
+  //BTX
+  vector<string> TimeData;
+  //ETX
 
 private:
   vtkSC11DemoAnnotation(const vtkSC11DemoAnnotation&); // Not implemented

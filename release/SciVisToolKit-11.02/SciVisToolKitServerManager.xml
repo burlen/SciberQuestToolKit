@@ -638,9 +638,29 @@ Copyright 2008 SciberQuest Inc.
       </Documentation>
     </DoubleVectorProperty>
 
+    <!-- Subset selection -->
+    <IntVectorProperty
+        name="DirtyValueInfo"
+        command="GetDirtyValue"
+        information_only="1">
+      <SimpleIntInformationHelper/>
+    </IntVectorProperty>
+    <IntVectorProperty
+        name="DirtyValue"
+        command="SetDirtyValue"
+        number_of_elements="1"
+        default_values="0"
+        animateable="0"
+        information_property="DirtyValueInfo" >
+      <Documentation>
+        Using this to force pipeline execution.
+      </Documentation>
+    </IntVectorProperty>
+
     <Hints>
       <ReaderFactory extensions="sc11" file_description="SC11 Demo" />
       <View type="RenderView"/>
+      <Property name="DirtyValue" show="0"/>
     </Hints>
   </SourceProxy>
 
@@ -1352,13 +1372,25 @@ Copyright 2008 SciberQuest Inc.
 
      <StringVectorProperty
        name="TimeDataFile"
-       label="Time File"
+       label="Time Data File"
        command="SetTimeDataFile"
        number_of_elements="1"
        default_values="">
        <FileListDomain name="files"/>
        <Documentation>
-        path to the file conatining bandwidth data
+        path to the file conatining strings to use in place of time step
+       </Documentation>
+     </StringVectorProperty>
+
+     <StringVectorProperty
+       name="TimeStepFile"
+       label="Time Step File"
+       command="SetTimeStepFile"
+       number_of_elements="1"
+       default_values="">
+       <FileListDomain name="files"/>
+       <Documentation>
+        path to the file containing the time step
        </Documentation>
      </StringVectorProperty>
 

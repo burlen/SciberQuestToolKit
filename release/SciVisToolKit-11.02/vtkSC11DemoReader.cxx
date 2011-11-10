@@ -64,6 +64,7 @@ vtkSC11DemoReader::vtkSC11DemoReader()
   this->FileName=0;
   this->MetaData=new SC11DemoMetaData;
   this->Reader=new SC11DemoReader;
+  this->DirtyValue=-1;
 
   int mpiOk=0;
   MPI_Initialized(&mpiOk);

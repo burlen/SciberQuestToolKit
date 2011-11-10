@@ -59,6 +59,11 @@ public:
   int GetNumberOfTimeSteps();
   void GetTimeSteps(double *times);
 
+  //Description:
+  // Used to force a render.
+  vtkSetMacro(DirtyValue,int);
+  vtkGetMacro(DirtyValue,int);
+
 protected:
   /// Pipeline internals.
   int RequestDataObject(vtkInformation*,vtkInformationVector**,vtkInformationVector*);
@@ -76,6 +81,7 @@ private:
   char *FileName;
   SC11DemoMetaData *MetaData;
   SC11DemoReader *Reader;
+  int DirtyValue;
 };
 
 #endif
