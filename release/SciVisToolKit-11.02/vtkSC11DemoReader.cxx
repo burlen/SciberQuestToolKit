@@ -24,6 +24,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkMultiProcessController.h"
 #include "vtkMPIController.h"
 
+#include "vtkSC11DemoExtentTranslator.h"
 #include "SC11DemoMetaData.h"
 #include "SC11DemoReader.h"
 #include "Tuple.hxx"
@@ -37,7 +38,7 @@ Copyright 2008 SciberQuest Inc.
 #include <sstream>
 using std::ostringstream;
 
-// #define vtkSC11DemoReaderDEBUG
+//#define vtkSC11DemoReaderDEBUG
 #define vtkSC11DemoReaderTIME
 
 #if defined vtkSC11DemoReaderTIME
@@ -49,6 +50,7 @@ using std::ostringstream;
 #if !defined(__INTEL_COMPILER) && defined(__GNUG__)
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 #endif
+
 
 vtkCxxRevisionMacro(vtkSC11DemoReader, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSC11DemoReader);
@@ -157,7 +159,7 @@ void vtkSC11DemoReader::SetFileName(const char* _arg)
         md->GetPathToBricks(),
         md->GetBrickExtension(),
         md->GetScalarName(),
-        md->GetExtent());
+        md->GetFileExtent());
   if (iErr)
     {
     sqErrorMacro(pCerr(),"Failed to map brick.");
@@ -222,7 +224,7 @@ int vtkSC11DemoReader::RequestDataObject(
 
 //-----------------------------------------------------------------------------
 int vtkSC11DemoReader::RequestInformation(
-  vtkInformation*,
+  vtkInformation *req,
   vtkInformationVector**,
   vtkInformationVector* outInfos)
 {
@@ -231,15 +233,17 @@ int vtkSC11DemoReader::RequestInformation(
   #endif
 
   SC11DemoMetaData *md=this->MetaData;
+  SC11DemoReader *r=this->Reader;
 
   vtkInformation *info=outInfos->GetInformationObject(0);
 
-  CartesianExtent wholeExt(md->GetExtent());
-  wholeExt.NodeToCell();
+  // domain extent
+  CartesianExtent domain(md->GetMemoryExtent());
+  domain.CellToNode();
 
   info->Set(
     vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
-    wholeExt.GetData(),
+    domain.GetData(),
     6);
 
   double X0[3]={0.0,0.0,0.0};
@@ -248,6 +252,7 @@ int vtkSC11DemoReader::RequestInformation(
   double dX[3]={1.0,1.0,1.0};
   info->Set(vtkDataObject::SPACING(),dX,3);
 
+  // time
   int nSteps=md->GetNumberOfTimeSteps();
   vector<double> times(nSteps,0.0);
   for (int i=0; i<nSteps; ++i)
@@ -266,9 +271,28 @@ int vtkSC11DemoReader::RequestInformation(
     timeRange,
     2);
 
+  // specialized translator for our decomp
+  CartesianExtent subset(r->GetMemoryExtent());
+  subset.CellToNode();
+
+  typedef vtkStreamingDemandDrivenPipeline vtkSDDPType;
+  vtkSDDPType* sddp=dynamic_cast<vtkSDDPType*>(this->GetExecutive());
+
+  vtkSC11DemoExtentTranslator *et
+    = dynamic_cast<vtkSC11DemoExtentTranslator*>(sddp->GetExtentTranslator(info));
+  if (!et)
+    {
+    et=vtkSC11DemoExtentTranslator::New();
+    et->SetWholeExtent(domain);
+    et->SetUpdateExtent(subset);
+    sddp->SetExtentTranslator(info,et);
+    et->Delete();
+    }
+
   #if defined vtkSC11DemoReaderDEBUG
   pCerr()
-    << "WHOLE_EXTENT=" << Tuple<int>(md->GetExtent(),6) << endl
+    << "WHOLE_EXTENT=" << domain << endl
+    << "UPDATE_EXTENT=" << subset << endl
     << "ORIGIN=" << Tuple<double>(X0,3) << endl
     << "SPACING=" << Tuple<double>(dX,3) << endl
     << "TIMES=" << times << endl;
@@ -304,7 +328,6 @@ int vtkSC11DemoReader::RequestData(
     return 1;
     }
 
-
   SC11DemoMetaData *md=this->MetaData;
   SC11DemoReader *r=this->Reader;
 
@@ -325,21 +348,21 @@ int vtkSC11DemoReader::RequestData(
       1);
     }
 
+  // Configure the output.
   // get the requested update extent, change it to what we
   // really have.
-  CartesianExtent decompReq;
+  CartesianExtent reqDecomp;
   info->Get(
     vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
-    decompReq.GetData());
+    reqDecomp.GetData());
 
-  CartesianExtent decomp(r->GetExtent());
-  decomp.NodeToCell();
+  CartesianExtent decomp(r->GetMemoryExtent());
+  decomp.CellToNode();
   info->Set(
     vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
     decomp.GetData(),
     6);
 
-  // other grid attributes
   double dX[3];
   info->Get(vtkDataObject::SPACING(),dX);
 
@@ -349,9 +372,7 @@ int vtkSC11DemoReader::RequestData(
   int nPoints[3];
   decomp.Size(nPoints);
 
-  // Configure the output.
   vtkImageData *idds=dynamic_cast<vtkImageData*>(output);
-  idds->SetDimensions(nPoints);
   idds->SetOrigin(X0);
   idds->SetSpacing(dX);
   idds->SetExtent(decomp.GetData());
@@ -359,7 +380,9 @@ int vtkSC11DemoReader::RequestData(
   // pass in the array
   vtkFloatArray *scalar=vtkFloatArray::New();
   scalar->SetName(md->GetScalarName());
-  scalar->SetArray(r->GetData(), r->GetDataSize(), 1, 0);
+
+  r->CopyTo(scalar);
+
   idds->GetPointData()->AddArray(scalar);
   scalar->Delete();
 
@@ -367,7 +390,7 @@ int vtkSC11DemoReader::RequestData(
   idds->Print(cerr);
 
   pCerr()
-    << "UPDATE_EXTENT(requested)=" << decompReq << endl
+    << "UPDATE_EXTENT(requested)=" << reqDecomp << endl
     << "UPDATE_EXTENT(actual)=" << decomp << endl;
   #endif
 

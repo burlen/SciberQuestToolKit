@@ -77,7 +77,19 @@ public:
              << " dimensions not found. Expected nx=N, ny=M, nz=P.");
         goto RANK_0_PARSE_ERROR;
         }
-      this->Extent.Set(0,nx-1,0,ny-1,0,nz-1);
+
+      // strategy:
+      // cell centered data on disk needs to be
+      // put on a point centered grid, we reduce
+      // by one in x and y, shift and duplicate a
+      // slab in z for each piece.
+      this->FileExtent.Set(0,nx-1,0,ny-1,0,nz-1);
+      this->MemoryExtent.Set(this->FileExtent);
+      this->MemoryExtent[1]-=1;
+      this->MemoryExtent[3]-=1;
+
+      cerr << "FileExtent=" << this->FileExtent << endl;
+      cerr << "MemoryExtent=" << this->MemoryExtent << endl;
 
       int nSteps;
       if (ParseValue(metaData,0,"nsteps=",nSteps)==string::npos)
@@ -127,6 +139,9 @@ public:
     return 0;
 
 RANK_0_PARSE_ERROR:
+    // this prevents a deadlock in the case that the
+    // file is invalid , does not exist , or other
+    // i/o error occurs.
     int nBytes=0;
     MPI_Bcast(&nBytes,1,MPI_INT,0,MPI_COMM_WORLD);
     return -1;
@@ -138,7 +153,7 @@ RANK_0_PARSE_ERROR:
     this->PathToBricks="";
     this->BrickExtension="";
     this->ScalarName="";
-    this->Extent.Clear();
+    this->FileExtent.Clear();
     this->NTimeSteps=0;
   }
 
@@ -146,7 +161,8 @@ RANK_0_PARSE_ERROR:
   const char *GetPathToBricks(){ return this->PathToBricks.c_str(); }
   const char *GetBrickExtension(){ return this->BrickExtension.c_str(); }
   const char *GetScalarName(){ return this->ScalarName.c_str(); }
-  int *GetExtent(){ return this->Extent.GetData(); }
+  CartesianExtent &GetFileExtent(){ return this->FileExtent; }
+  CartesianExtent &GetMemoryExtent(){ return this->MemoryExtent; }
   int GetNumberOfTimeSteps(){ return this->NTimeSteps; }
   double GetTimeForStep(int i){ return (double)i; }
 
@@ -157,7 +173,8 @@ RANK_0_PARSE_ERROR:
       << "PathToBricks=" << this->PathToBricks << endl
       << "BrickExtension=" << this->BrickExtension << endl
       << "ScalarName=" << this->ScalarName << endl
-      << "Extent=" << this->Extent << endl;
+      << "FileExtent=" << this->FileExtent << endl
+      << "MemoryExtent=" << this->MemoryExtent << endl;
   }
 
 private:
@@ -166,7 +183,8 @@ private:
     os.Pack(this->FileName);
     os.Pack(this->PathToBricks);
     os.Pack(this->ScalarName);
-    os.Pack(this->Extent.GetData(),6);
+    os.Pack(this->FileExtent.GetData(),6);
+    os.Pack(this->MemoryExtent.GetData(),6);
     os.Pack(this->NTimeSteps);
   }
 
@@ -175,7 +193,8 @@ private:
     os.UnPack(this->FileName);
     os.UnPack(this->PathToBricks);
     os.UnPack(this->ScalarName);
-    os.UnPack(this->Extent.GetData(),6);
+    os.UnPack(this->FileExtent.GetData(),6);
+    os.UnPack(this->MemoryExtent.GetData(),6);
     os.UnPack(this->NTimeSteps);
   }
 
@@ -186,7 +205,8 @@ private:
   string PathToBricks;      // Path to brick files
   string BrickExtension;    // file extension for bricks
   string ScalarName;        //
-  CartesianExtent Extent;   // Extent of the entire dataset
+  CartesianExtent FileExtent;   // cell extent of the entire dataset as it is on disk
+  CartesianExtent MemoryExtent; // cell extent of the entire dataset as it is in memory
   int NTimeSteps;           //
 };
 

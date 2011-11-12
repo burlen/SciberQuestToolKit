@@ -38,7 +38,11 @@ public:
       FileName(""),
       Handle(-1),
       Data(0),
-      DataSize(0)
+      Size(0),
+      SlabSize(0),
+      DataSize(0),
+      Nxy(0),
+      Nz(0)
   {
     MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
     MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
@@ -50,7 +54,7 @@ public:
         const char *brickPath,
         const char *brickExt,
         const char *scalarName,
-        int *extent)
+        CartesianExtent fileExtent)
   {
     if (this->Data)
       {
@@ -78,56 +82,57 @@ public:
       return -1;
       }
 
-    // compute the slice offset
+    // calculate the in memory extent
     struct stat s;
     fstat(this->Handle, &s);
-    this->DataSize=s.st_size/sizeof(float);
+    this->Size=s.st_size;                    // dataset size in bytes
+    this->DataSize=this->Size/sizeof(float); // dataset size in floats
+
+    pCerr() << "FileExtent=" << fileExtent << endl;
 
     int nx[3];
-    CartesianExtent fileExtent(extent);
     fileExtent.Size(nx);
-    size_t nxy=nx[0]*nx[1];
-    int nz=this->DataSize/nxy;
-    int r=this->DataSize%nxy;
-    if (r)
-      {
-      // expect evenly divisible into xy slabs.
-      sqErrorMacro(
-        pCerr(),
-        << "Invalid file size " << s.st_size << " for " << this->FileName);
-      }
+    this->Nxy=nx[0]*nx[1];                   // n pts per slab on disk and in memory
+    this->SlabSize=this->Nxy*sizeof(float);  // slab size in bytes on disk and in memory
+    this->Nz=this->DataSize/this->Nxy;       // n slabs on disk, *NOT* in memory
 
-    int *nzs=0;
-    int *zofs=0;
-    int zof;
+    //pCerr() << "SanityCheck=" << ((this->DataSize%this->Nxy)==0) << endl;
+
+    unsigned long ncz=this->Nz;
+    unsigned long *nczs=0;
+    unsigned long *czofs=0;
+    unsigned long czof;
     if (this->WorldRank==0)
       {
-      nzs=(int*)malloc(this->WorldSize*sizeof(int));
-      MPI_Gather(&nz,1,MPI_INT,nzs,1,MPI_INT,0,MPI_COMM_WORLD);
+      nczs=(unsigned long*)malloc(this->WorldSize*sizeof(unsigned long));
+      MPI_Gather(&ncz,1,MPI_UNSIGNED_LONG,nczs,1,MPI_UNSIGNED_LONG,0,MPI_COMM_WORLD);
 
-      zofs=(int*)malloc(this->WorldSize*sizeof(int));
-      zofs[0]=0;
+      czofs=(unsigned long*)malloc(this->WorldSize*sizeof(unsigned long));
+      czofs[0]=0;
       for (int i=1; i<this->WorldSize; ++i)
         {
-        zofs[i]=zofs[i-1]+nzs[i-1]-1;
+        czofs[i]=czofs[i-1]+nczs[i-1];
         }
-      MPI_Scatter(zofs,1,MPI_INT,&zof,1,MPI_INT,0,MPI_COMM_WORLD);
-      free(nzs);
-      free(zofs);
+      MPI_Scatter(czofs,1,MPI_UNSIGNED_LONG,&czof,1,MPI_UNSIGNED_LONG,0,MPI_COMM_WORLD);
+      free(nczs);
+      free(czofs);
       }
     else
       {
-      MPI_Gather(&nz,1,MPI_INT,nzs,1,MPI_INT,0,MPI_COMM_WORLD);
-      MPI_Scatter(zofs,1,MPI_INT,&zof,1,MPI_INT,0,MPI_COMM_WORLD);
+      MPI_Gather(&ncz,1,MPI_UNSIGNED_LONG,nczs,1,MPI_UNSIGNED_LONG,0,MPI_COMM_WORLD);
+      MPI_Scatter(czofs,1,MPI_UNSIGNED_LONG,&czof,1,MPI_UNSIGNED_LONG,0,MPI_COMM_WORLD);
       }
 
-    // local extent
-    this->Extent=fileExtent;
-    this->Extent.GetData()[4]=zof;
-    this->Extent.GetData()[5]=zof+nz;
+    this->MemoryExtent=fileExtent;
+    this->MemoryExtent[1]-=1;           // move cell data to points
+    this->MemoryExtent[3]-=1;           // move cell data to points
+    this->MemoryExtent[4]=czof;         // keep number of cells
+    this->MemoryExtent[5]=czof+ncz-1;
+
+    cerr << "MemoryExtent=" << this->MemoryExtent << endl;
 
     // mmap file
-    this->Data=(float*)mmap(0,s.st_size,PROT_READ,MAP_PRIVATE,this->Handle,0);
+    this->Data=(float*)mmap(0,this->Size,PROT_READ,MAP_PRIVATE,this->Handle,0);
     if ((void*)this->Data==(void*)-1)
       {
       int eno=errno;
@@ -140,13 +145,19 @@ public:
     return 0;
   }
 
+  ///
   void Close()
   {
     if (this->Data)
       {
-      munmap(this->Data, this->DataSize*sizeof(float));
+      munmap(this->Data,this->Size);
       this->Data=0;
+      this->Size=0;
+      this->SlabSize=0;
       this->DataSize=0;
+      this->Nxy=0;
+      this->Nz=0;
+      this->MemoryExtent.Clear();
       }
     if (this->Handle>=0)
       {
@@ -155,10 +166,40 @@ public:
       }
   }
 
+  ///
   float *GetData(){ return this->Data; }
+
+  ///
+  size_t GetSize(){ return this->Size; }
+  ///
   size_t GetDataSize(){ return this->DataSize; }
 
-  int *GetExtent(){ return this->Extent.GetData(); }
+  ///
+  CartesianExtent &GetMemoryExtent(){ return this->MemoryExtent; }
+
+  ///
+  void CopyTo(vtkFloatArray *fa)
+  {
+    CartesianExtent pointExt(this->MemoryExtent);
+    pointExt.CellToNode();
+    size_t nPoints=pointExt.Size();
+
+    //cerr
+    //  << "SanityCheck="
+    //  << ((nPoints*sizeof(float))==(this->Size+this->SlabSize))
+    //  << endl;
+
+    fa->SetNumberOfComponents(1);
+    fa->SetNumberOfTuples(nPoints);
+    float *pFa=fa->GetPointer(0);
+    // hack to work around the way the data is split on disk.
+    // first slab is duplicated. This is what would occur if you
+    // ran the cell to point filter on cell data, however the
+    // following is hella faster.
+    memcpy(pFa,this->Data,this->SlabSize);
+    pFa+=this->Nxy;
+    memcpy(pFa,this->Data,this->Size);
+  }
 
   void Print(ostream &os)
   {
@@ -168,8 +209,12 @@ public:
       << "FileName=" <<  this->FileName << endl
       << "Handle=" << this->Handle << endl
       << "Data=" << this->Data << endl
+      << "Size=" << this->Size << endl
+      << "SlabSize=" << this->SlabSize << endl
       << "DataSize=" << this->DataSize << endl
-      << "Extent=" << this->Extent << endl;
+      << "Nxy=" << this->Nxy << endl
+      << "Nz=" << this->Nz << endl
+      << "MemoryExtent=" << this->MemoryExtent << endl;
   }
 
 private:
@@ -178,8 +223,12 @@ private:
   string FileName;
   int Handle;
   float *Data;
-  size_t DataSize;
-  CartesianExtent Extent; // Extent of my piece.
+  unsigned long Size;       // number of bytes in mapped region
+  unsigned long SlabSize;   // number of bytes in a slab
+  unsigned long DataSize;   // number of floats in mapped region
+  unsigned long Nxy;        // point slab size in floats
+  unsigned long Nz;         // point slab count
+  CartesianExtent MemoryExtent;   // Extent of my piece.
 };
 
 #endif

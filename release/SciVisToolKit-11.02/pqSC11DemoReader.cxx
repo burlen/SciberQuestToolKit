@@ -30,7 +30,10 @@ Copyright on 2008 SciberQuest Inc.
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QPushButton>
 #include <QDebug>
+#include <QSettings>
+
 
 #include <iostream>
 using std::cerr;
@@ -67,90 +70,181 @@ pqSC11DemoReader::pqSC11DemoReader(
   vlayout->addWidget(this->RunButton);
 
   QHBoxLayout *hlayout;
+  QLabel *label;
+  const int labelHSize=100;
+  const int labelVSize=12;
   // still frames count
   hlayout=new QHBoxLayout;
-  hlayout->addWidget(new QLabel("Timer Interval:"));
+  label=new QLabel("Timer Interval:");
+  label->setMinimumSize(labelHSize,labelVSize);
+  hlayout->addWidget(label);
 
   this->TimerInterval=new QSpinBox;
   this->TimerInterval->setMinimum(0);
   this->TimerInterval->setMaximum(100000);
-  this->TimerInterval->setValue(500);
   hlayout->addWidget(this->TimerInterval);
+  hlayout->addStretch();
 
   vlayout->addLayout(hlayout);
 
   // still frames count
   hlayout=new QHBoxLayout;
-  hlayout->addWidget(new QLabel("Still Frames:"));
+  label=new QLabel("Still Frames:");
+  label->setMinimumSize(labelHSize,labelVSize);
+  hlayout->addWidget(label);
 
   this->StillFrames=new QSpinBox;
   this->StillFrames->setMinimum(0);
   this->StillFrames->setMaximum(100000);
-  this->StillFrames->setValue(10);
   hlayout->addWidget(this->StillFrames);
+  hlayout->addStretch();
 
   vlayout->addLayout(hlayout);
 
   // rotate frames count
   hlayout=new QHBoxLayout;
-  hlayout->addWidget(new QLabel("Rotate Frames:"));
+  hlayout=new QHBoxLayout;
+  label=new QLabel("Rotate Frames:");
+  label->setMinimumSize(labelHSize,labelVSize);
+  hlayout->addWidget(label);
 
   this->RotateFrames=new QSpinBox;
   this->RotateFrames->setMinimum(0);
   this->RotateFrames->setMaximum(100000);
-  this->RotateFrames->setValue(100);
   hlayout->addWidget(this->RotateFrames);
+  hlayout->addStretch();
 
   vlayout->addLayout(hlayout);
 
   // camera radius
   hlayout=new QHBoxLayout;
-  hlayout->addWidget(new QLabel("Camera Radius:"));
+  hlayout=new QHBoxLayout;
+  label=new QLabel("Camera Radius:");
+  label->setMinimumSize(labelHSize,labelVSize);
+  hlayout->addWidget(label);
 
   this->CamRadius=new QLineEdit;
   this->CamRadius->setValidator(new QDoubleValidator(this->CamRadius));
-  this->CamRadius->setText("2000");
   hlayout->addWidget(this->CamRadius);
+  hlayout->addStretch();
 
   vlayout->addLayout(hlayout);
 
   // camera radius
   hlayout=new QHBoxLayout;
-  hlayout->addWidget(new QLabel("Camera Height:"));
+  hlayout=new QHBoxLayout;
+  label=new QLabel("Camera Height:");
+  label->setMinimumSize(labelHSize,labelVSize);
+  hlayout->addWidget(label);
 
   this->CamHeight=new QLineEdit;
   this->CamHeight->setValidator(new QDoubleValidator(this->CamHeight));
-  this->CamHeight->setText("3000");
   hlayout->addWidget(this->CamHeight);
+  hlayout->addStretch();
 
   vlayout->addLayout(hlayout);
 
   // camera focal point
   hlayout=new QHBoxLayout;
-  hlayout->addWidget(new QLabel("Focal Point:"));
+  hlayout=new QHBoxLayout;
+  label=new QLabel("Focal Point:");
+  label->setMinimumSize(labelHSize,labelVSize);
+  hlayout->addWidget(label);
 
   this->FocalX=new QLineEdit;
   this->FocalX->setValidator(new QDoubleValidator(this->FocalX));
-  this->FocalX->setText("0");
   hlayout->addWidget(this->FocalX);
 
   this->FocalY=new QLineEdit;
   this->FocalY->setValidator(new QDoubleValidator(this->FocalY));
-  this->FocalY->setText("0");
   hlayout->addWidget(this->FocalY);
 
   this->FocalZ=new QLineEdit;
   this->FocalZ->setValidator(new QDoubleValidator(this->FocalZ));
-  this->FocalZ->setText("0");
   hlayout->addWidget(this->FocalZ);
+  hlayout->addStretch();
 
   vlayout->addLayout(hlayout);
 
+  // initialize button
+  hlayout=new QHBoxLayout;
+  QPushButton *initButton=new QPushButton("Initialize");
+  QObject::connect(
+        initButton,
+        SIGNAL(released()),
+        this,
+        SLOT(Initialize()));
+  hlayout->addWidget(initButton);
+  hlayout->addStretch();
+
+  vlayout->addLayout(hlayout);
+
+  //
   QWidget *w=new QWidget(this);
   w->setLayout(vlayout);
-
   this->layout()->addWidget(w);
 
+  // initialize from last used values
+  this->Restore();
+}
+
+//-----------------------------------------------------------------------------
+pqSC11DemoReader::~pqSC11DemoReader()
+{
+  this->Save();
+}
+
+//-----------------------------------------------------------------------------
+void pqSC11DemoReader::Restore()
+{
+  QStringList defaults;
+  defaults
+       << "500"  // timer interval
+       << "10"   // still frames
+       << "100"  // rotate frames
+       << "3000" // camera radius
+       << "2000" // camera height
+       << "511.5" << "511.5" << "0.0"; // focal point
+
+  QSettings settings("LBNL","SC11Demo");
+
+  QStringList defs=settings.value("SC11DemoReader/defaults",defaults).toStringList();
+
+  this->TimerInterval->setValue(defs.at(0).toInt());
+  this->StillFrames->setValue(defs.at(1).toInt());
+  this->RotateFrames->setValue(defs.at(2).toInt());
+  this->CamRadius->setText(defs.at(3));
+  this->CamHeight->setText(defs.at(4));
+  this->FocalX->setText(defs.at(5));
+  this->FocalY->setText(defs.at(6));
+  this->FocalZ->setText(defs.at(7));
+}
+
+//-----------------------------------------------------------------------------
+void pqSC11DemoReader::Save()
+{
+  QStringList defs;
+
+  defs
+    << QString("%1").arg(this->TimerInterval->value())
+    << QString("%1").arg(this->StillFrames->value())
+    << QString("%1").arg(this->RotateFrames->value())
+    << this->CamRadius->text()
+    << this->CamHeight->text()
+    << this->FocalX->text()
+    << this->FocalY->text()
+    << this->FocalZ->text();
+
+  QSettings settings("LBNL","SC11Demo");
+  settings.setValue("SC11DemoReader/defaults",defs);
+}
+
+//-----------------------------------------------------------------------------
+void pqSC11DemoReader::Initialize()
+{
+  this->RenderState=RENDER_STILL;
+  this->Frame=0;
+  this->RotateRender();
 }
 
 //-----------------------------------------------------------------------------
@@ -191,7 +285,6 @@ void pqSC11DemoReader::UpdateReader()
   switch (this->RenderState)
     {
     case RENDER_STILL:
-      this->StillRender();
       nFrames=this->StillFrames->text().toInt();
       if (this->Frame>nFrames)
         {
@@ -200,12 +293,12 @@ void pqSC11DemoReader::UpdateReader()
         }
       else
         {
+        this->StillRender();
         this->Frame+=1;
         }
       break;
 
     case RENDER_ROTATE:
-      this->RotateRender();
       nFrames=this->RotateFrames->text().toInt();
       if (this->Frame>nFrames)
         {
@@ -214,6 +307,7 @@ void pqSC11DemoReader::UpdateReader()
         }
       else
         {
+        this->RotateRender();
         this->Frame+=1;
         }
       break;
@@ -314,6 +408,9 @@ void pqSC11DemoReader::accept()
   cerr << ":::::::::::::::::::::::::::::::accept" << endl;
   #endif
 
+  this->pqAutoGeneratedObjectPanel::accept();
+  this->pqNamedObjectPanel::accept();
+
   vtkSMProxy* pmProxy=this->referenceProxy()->getProxy();
 
   vtkSMIntVectorProperty *dviProp
@@ -321,7 +418,7 @@ void pqSC11DemoReader::accept()
   pmProxy->UpdatePropertyInformation(dviProp);
   int dv=dviProp->GetElement(0);
 
-  dv=dv!=0?1:0;
+  dv=(dv==0?1:0);
 
   vtkSMIntVectorProperty *dvProp
     = dynamic_cast<vtkSMIntVectorProperty*>(pmProxy->GetProperty("DirtyValue"));
@@ -330,6 +427,5 @@ void pqSC11DemoReader::accept()
 
   pmProxy->UpdateVTKObjects();
 
-  this->pqAutoGeneratedObjectPanel::accept();
 }
 
