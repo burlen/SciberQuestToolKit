@@ -50,8 +50,6 @@ void vtkSC11DemoExtentTranslator::SetUpdateExtent(CartesianExtent &ext)
     {
     int ii=6*i;
     this->UpdateExtent[i].Set(allUpdateExt+ii);
-
-    pCerr() << " uext[i]=" << this->UpdateExtent[i] << endl;
     }
 }
 

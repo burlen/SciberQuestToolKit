@@ -118,9 +118,6 @@ vtkSC11DemoAnnotation::vtkSC11DemoAnnotation()
     }
   MPI_Bcast(&commRanks[0],nCommRanks,MPI_INT,0,MPI_COMM_WORLD);
 
-  cerr << "nCommRanks=" << nCommRanks << endl;
-  cerr << "CommRanks=" << commRanks << endl;
-
   // build a communicator for the gathering of bw data
   MPI_Group worldGroup;
   MPI_Group newGroup;
@@ -133,7 +130,6 @@ vtkSC11DemoAnnotation::vtkSC11DemoAnnotation()
   if (it!=commRanks.end())
     {
     this->InBWComm=1;
-    cerr << this->WorldRank << " is in " << endl;
     }
 }
 
