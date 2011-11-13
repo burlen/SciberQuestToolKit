@@ -183,7 +183,6 @@ pqSC11DemoReader::pqSC11DemoReader(
   QWidget *w=new QWidget(this);
   w->setLayout(vlayout);
   this->layout()->addWidget(w);
-
   // initialize from last used values
   this->Restore();
 }
@@ -346,7 +345,10 @@ void pqSC11DemoReader::RotateRender()
   cerr << ":::::::::::::::::::::::::::::::MotionRender" << endl;
   #endif
 
-  double dt=2.0*3.141592/this->RotateFrames->text().toDouble();
+  double nFrames=this->RotateFrames->text().toDouble();
+
+  double dt=((nFrames<1)? 0.0 : 2.0*3.141592/nFrames);
+
   double t=this->Frame*dt;
   double r=this->CamRadius->text().toDouble();
   double h=this->CamHeight->text().toDouble();

@@ -1394,6 +1394,21 @@ Copyright 2008 SciberQuest Inc.
        </Documentation>
      </StringVectorProperty>
 
+    <IntVectorProperty
+        name="BWMode"
+        lable="BW Mode"
+        command="SetMode"
+        number_of_elements="1"
+        default_values="0" >
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="AGGREGATE"/>
+        <Entry value="1" text="SINGLE_RANK"/>
+      </EnumerationDomain>
+      <Documentation>
+        Display aggregated bandwidth  across all hosts, or a single number from rank 0.
+      </Documentation>
+    </IntVectorProperty>
+
     <OutputPort name="Bandwidth"  index="0" />
     <OutputPort name="Time"       index="1" />
 

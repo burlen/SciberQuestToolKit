@@ -153,7 +153,9 @@ void vtkSC11DemoReader::SetFileName(const char* _arg)
     md->Print(cerr);
     return;
     }
+  #if defined vtkSC11DemoReaderDEBUG
   md->Print(cerr);
+  #endif
 
   iErr=this->Reader->Open(
         md->GetPathToBricks(),
@@ -166,7 +168,9 @@ void vtkSC11DemoReader::SetFileName(const char* _arg)
     md->Print(cerr);
     this->Reader->Print(cerr);
     }
+  #if defined vtkSC11DemoReaderDEBUG
   this->Reader->Print(cerr);
+  #endif
 
   #if defined vtkSC11DemoReaderTIME
   gettimeofday(&wallt,0x0);
