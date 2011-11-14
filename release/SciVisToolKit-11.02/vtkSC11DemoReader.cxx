@@ -39,7 +39,7 @@ Copyright 2008 SciberQuest Inc.
 using std::ostringstream;
 
 //#define vtkSC11DemoReaderDEBUG
-#define vtkSC11DemoReaderTIME
+//#define vtkSC11DemoReaderTIME
 
 #if defined vtkSC11DemoReaderTIME
   #include <sys/time.h>
