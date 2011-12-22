@@ -58,6 +58,13 @@ CUDAConvolutionDriver::CUDAConvolutionDriver()
 //-----------------------------------------------------------------------------
 int CUDAConvolutionDriver::SetDeviceId(int deviceId)
 {
+  #ifdef CUDAConvolutionDriverDEBUG
+  pCerr()
+    << "===============CUDAConvolutionDriver::SetDeviceId" << endl
+    << deviceId << endl;
+
+  #endif
+
   this->DeviceId=deviceId;
   cudaError_t ierr=cudaSetDevice(deviceId);
   if (ierr)
@@ -184,7 +191,7 @@ int CUDAConvolutionDriver::Convolution(
     }
 
   #ifdef CUDAConvolutionDriverDEBUG
-  pCerr() << "wnijk=" << wnijk << endl
+  pCerr() << "wnijk=" << wnijk << endl;
   pCerr() << "WarpsPerBlock=" << this->WarpsPerBlock << endl;
   pCerr() << "WarpSize=" << this->WarpSize << endl;
   pCerr() << "blockGridMaxMax=(" << this->BlockGridMax[0] << ", " << this->BlockGridMax[1] << ", " << this->BlockGridMax[2] << ")" << endl;
