@@ -81,6 +81,7 @@ vtkSQBOVWriter::vtkSQBOVWriter()
   this->UseCollectiveIO=HINT_DISABLED;
   this->NumberOfIONodes=0;
   this->CollectBufferSize=0;
+  this->UseDirectIO=HINT_AUTOMATIC;
   this->UseDeferredOpen=HINT_DEFAULT;
   this->UseDataSieving=HINT_AUTOMATIC;
   this->SieveBufferSize=0;
@@ -332,6 +333,22 @@ void vtkSQBOVWriter::SetMPIFileHints()
     MPI_Info_set(hints,"cb_nodes",const_cast<char *>(os.str().c_str()));
     }
 
+  switch (this->UseDirectIO)
+    {
+    case HINT_DEFAULT:
+      // do nothing, it's up to implementation.
+      break;
+    case HINT_DISABLED:
+      MPI_Info_set(hints,"direct_write","false");
+      break;
+    case HINT_ENABLED:
+      MPI_Info_set(hints,"direct_write","true");
+      break;
+    default:
+      vtkErrorMacro("Invalid value for UseDirectIO.");
+      break;
+    }
+
   switch (this->UseDeferredOpen)
     {
     case HINT_DEFAULT:
@@ -353,7 +370,7 @@ void vtkSQBOVWriter::SetMPIFileHints()
     ostringstream os;
     os << this->CollectBufferSize;
     MPI_Info_set(hints,"cb_buffer_size",const_cast<char *>(os.str().c_str()));
-    MPI_Info_set(hints,"striping_unit", const_cast<char *>(os.str().c_str()));
+    //MPI_Info_set(hints,"striping_unit", const_cast<char *>(os.str().c_str()));
     }
 
   switch (this->UseDataSieving)

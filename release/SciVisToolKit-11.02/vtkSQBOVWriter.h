@@ -87,6 +87,9 @@ public:
   vtkSetMacro(CollectBufferSize,int);
   vtkGetMacro(CollectBufferSize,int);
 
+  vtkSetMacro(UseDirectIO,int);
+  vtkGetMacro(UseDirectIO,int);
+
   vtkSetMacro(UseDeferredOpen,int);
   vtkGetMacro(UseDeferredOpen,int);
 
@@ -133,6 +136,7 @@ private:
   int WorldSize;           // number of processes
   char HostName[5];        // short host name where this process runs
   int UseCollectiveIO;     // Turn on/off collective IO
+  int UseDirectIO;         // 
   int NumberOfIONodes;     // Number of aggregator for CIO
   int CollectBufferSize;   // Gather buffer size (if small IO is staged).
   int UseDeferredOpen;     // Turn on/off deffered open (only agg.'s open)

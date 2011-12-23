@@ -115,7 +115,7 @@ unsigned long LinuxSystemInterface::GetVmSwap()
 }
 
 //-----------------------------------------------------------------------------
-unsigned long LinuxSystemInterface::GetStatusField(const char *name)
+long LinuxSystemInterface::GetStatusField(const char *name)
 {
   // load a fresh copy of /proc/self/status get the value from name
   // value pairs there in

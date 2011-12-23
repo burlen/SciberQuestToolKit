@@ -406,8 +406,8 @@ void Magnitude(int *I, T *  V, T *  mV)
 template <typename T>
 void Magnitude(
       size_t n,
-      T __restrict__ *V,
-      T __restrict__ *mV)
+      T * __restrict__ V,
+      T * __restrict__ mV)
 {
   for (size_t q=0; q<n; ++q)
     {

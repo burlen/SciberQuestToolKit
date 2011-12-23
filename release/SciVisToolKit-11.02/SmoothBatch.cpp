@@ -414,30 +414,6 @@ int main(int argc, char **argv)
   kconv->SetNumberOfMPIRanksToUseCUDA(numberOfMPIRanksToUseCUDA);
   if (numberOfMPIRanksToUseCUDA)
     {
-    /*
-    kconv->SetEnableCUDA(1);
-
-    int cudaDevice=0;
-    GetOptionalAttribute<int,1>(elem,"cudaDevice",&cudaDevice);
-    if (cudaDevice)
-      {
-      kconv->SetCUDADeviceId(cudaDevice);
-      }
-
-    int numberOfCUDABlocks=0;
-    GetOptionalAttribute<int,1>(elem,"numberOfCUDABlocks",&numberOfCUDABlocks);
-    if (numberOfCUDABlocks)
-      {
-      kconv->SetNumberOfCUDABlocks(numberOfCUDABlocks);
-      }
-
-    int numberOfCUDAThreads=0;
-    GetOptionalAttribute<int,1>(elem,"numberOfCUDAThreads",&numberOfCUDAThreads);
-    if (numberOfCUDAThreads)
-      {
-      kconv->SetNumberOfCUDAThreads(numberOfCUDAThreads);
-      }
-    */
     int numberOfActiveCUDADevices=1;
     GetOptionalAttribute<int,1>(elem,"numberOfActiveCUDADevices",&numberOfActiveCUDADevices);
     kconv->SetNumberOfActiveCUDADevices(numberOfActiveCUDADevices);
@@ -466,9 +442,6 @@ int main(int argc, char **argv)
     if (worldRank==0)
       {
       *log
-        //<< "#   cudaDevice=" << cudaDevice << "\n"
-        //<< "#   numberOfCUDABlocks=" << numberOfCUDABlocks << "\n"
-        //<< "#   numberOfCUDAThreads=" << numberOfCUDAThreads << "\n"
         << "#   numberOfActiveCUDADevices=" << numberOfActiveCUDADevices << "\n"
         << "#   numberOfWarpsPerCUDABlock=" << numberOfWarpsPerCUDABlock << "\n"
         << "#   kernelCUDAMemType=" << kernelCUDAMemType << "\n"
@@ -500,10 +473,6 @@ int main(int argc, char **argv)
     {
     w->SetStripeCount(stripe_count);
     }
-  else
-    {
-    w->SetStripeCount(160);
-    }
 
   int stripe_size=0;
   GetOptionalAttribute<int,1>(elem,"stripe_size",&stripe_size);
@@ -512,20 +481,30 @@ int main(int argc, char **argv)
     w->SetStripeSize(stripe_size);
     }
 
-  cb_enable=0;
+  w->SetUseCollectiveIO(vtkSQBOVWriter::HINT_AUTOMATIC);
+  cb_enable=-1;
   GetOptionalAttribute<int,1>(elem,"cb_enable",&cb_enable);
   if (cb_enable==0)
     {
     w->SetUseCollectiveIO(vtkSQBOVWriter::HINT_DISABLED);
     }
   else
-  if (cb_enable>0)
+  if (cb_enable==1)
     {
     w->SetUseCollectiveIO(vtkSQBOVWriter::HINT_ENABLED);
     }
-  else
+
+  w->SetUseDirectIO(vtkSQBOVWriter::HINT_DEFAULT);
+  int direct_io=-1;
+  GetOptionalAttribute<int,1>(elem,"direct_io",&direct_io);
+  if (direct_io==0)
     {
-    w->SetUseCollectiveIO(vtkSQBOVWriter::HINT_AUTOMATIC);
+    w->SetUseDirectIO(vtkSQBOVWriter::HINT_DISABLED);
+    }
+  else
+  if (direct_io==1)
+    {
+    w->SetUseDirectIO(vtkSQBOVWriter::HINT_ENABLED);
     }
 
   w->SetFileName(outputBovFileName.c_str());
@@ -540,6 +519,7 @@ int main(int argc, char **argv)
       << "#   stripe_count=" << stripe_count << "\n"
       << "#   stripe_size=" << stripe_size << "\n"
       << "#   cb_enable=" << cb_enable << "\n"
+      << "#   direct_io=" << direct_io << "\n"
       << "\n";
     }
 

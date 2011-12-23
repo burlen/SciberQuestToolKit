@@ -44,7 +44,7 @@ public:
   unsigned long GetVmSwap();
 
 private:
-  unsigned long GetStatusField(const char *name);
+  long GetStatusField(const char *name);
 
 private:
   unsigned long MemoryTotal;
