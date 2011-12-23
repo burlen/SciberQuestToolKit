@@ -83,7 +83,7 @@ public:
   // Description:
   // Set the CUDA device id. This is done automatically when
   // SetNumberOfActiveDevices is called.
-  void SetCUDADeviceId(int deviceId);
+  int SetCUDADeviceId(int deviceId);
   vtkGetMacro(CUDADeviceId,int);
 
   // Description:

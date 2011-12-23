@@ -11,6 +11,7 @@ Copyright 2008 SciberQuest Inc.
 
 #include <iostream>
 using std::ostream;
+using std::cerr;
 
 /**
 Helper that prints rank of caller and returns cerr.

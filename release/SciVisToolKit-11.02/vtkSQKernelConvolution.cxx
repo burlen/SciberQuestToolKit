@@ -22,6 +22,7 @@ Copyright 2008 SciberQuest Inc.
 #include "CartesianExtent.h"
 #include "CUDAConvolutionDriver.h"
 #include "postream.h"
+#include "SQMacros.h"
 
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
@@ -37,6 +38,12 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkPointData.h"
 #include "vtkCellData.h"
 
+#ifdef WIN32
+  #include <Winsock2.h>
+#else
+  #include <unistd.h>
+#endif
+
 #include <vtkstd/string>
 using vtkstd::string;
 #include <vtkstd/map>
@@ -45,7 +52,6 @@ using vtkstd::map;
 using vtkstd::vector;
 #include <vtkstd/utility>
 using vtkstd::pair;
-
 
 #include <mpi.h>
 
@@ -77,22 +83,8 @@ vtkSQKernelConvolution::vtkSQKernelConvolution()
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
 
-  this->CUDADeviceRange[0]=0;
-  this->CUDADeviceRange[1]=0;
-
-  this->CUDADriver=new CUDAConvolutionDriver;
-  this->CUDADriver->SetNumberOfWarpsPerBlock(1);
-  this->NumberOfCUDADevices=this->CUDADriver->GetNumberOfDevices();
-  if (this->NumberOfCUDADevices)
-    {
-    this->SetCUDADeviceId(0);
-    this->CUDADeviceRange[1]=this->NumberOfCUDADevices-1;
-    }
-  this->SetNumberOfActiveCUDADevices(this->NumberOfCUDADevices);
-
-  this->HostRank=0;
-  this->HostSize=1;
-
+  // may be a parallel run, we need to determine how
+  // many of the ranks are running on each host.
   int mpiOk=0;
   MPI_Initialized(&mpiOk);
   if (mpiOk)
@@ -102,8 +94,6 @@ vtkSQKernelConvolution::vtkSQKernelConvolution()
     MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
     MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
 
-    // may be a parallel run, we need to determine how
-    // many of the ranks are running on each host.
     const int hostNameLen=512;
     char hostName[hostNameLen]={'\0'};
     gethostname(hostName,hostNameLen);
@@ -184,6 +174,24 @@ vtkSQKernelConvolution::vtkSQKernelConvolution()
       free(hostRanks);
       }
     }
+
+  this->CUDADeviceRange[0]=0;
+  this->CUDADeviceRange[1]=0;
+
+  this->CUDADriver=new CUDAConvolutionDriver;
+  this->CUDADriver->SetNumberOfWarpsPerBlock(1);
+  this->NumberOfCUDADevices=this->CUDADriver->GetNumberOfDevices();
+  if (this->NumberOfCUDADevices)
+    {
+    int ierr=this->SetCUDADeviceId(0);
+    if (ierr)
+      {
+      sqErrorMacro(pCerr(),"Failed to select CUDA device 0.");
+      return;
+      }
+    this->CUDADeviceRange[1]=this->NumberOfCUDADevices-1;
+    }
+  this->SetNumberOfActiveCUDADevices(this->NumberOfCUDADevices);
 
   #ifdef vtkSQKernelConvolutionDEBUG
   pCerr() << "HostSize=" << this->HostSize << endl;
@@ -320,7 +328,7 @@ void vtkSQKernelConvolution::SetNumberOfActiveCUDADevices(int nActive)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQKernelConvolution::SetCUDADeviceId(int deviceId)
+int vtkSQKernelConvolution::SetCUDADeviceId(int deviceId)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
   pCerr()
@@ -330,12 +338,13 @@ void vtkSQKernelConvolution::SetCUDADeviceId(int deviceId)
   #endif
   if (this->CUDADeviceId==deviceId)
     {
-    return;
+    return 0;
     }
 
-  this->CUDADeviceId=deviceId;
-  this->CUDADriver->SetDeviceId(deviceId);
   this->Modified();
+  this->CUDADeviceId=deviceId;
+
+  return this->CUDADriver->SetDeviceId(deviceId);
 }
 
 //-----------------------------------------------------------------------------

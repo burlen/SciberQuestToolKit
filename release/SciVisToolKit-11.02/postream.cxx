@@ -7,8 +7,14 @@
 Copyright 2008 SciberQuest Inc.
 */
 #include "postream.h"
+
+#ifdef WIN32
+  #include <Winsock2.h>
+#else
+  #include <unistd.h>
+#endif
+
 #include <mpi.h>
-using std::cerr;
 
 //-----------------------------------------------------------------------------
 ostream &pCerr()
@@ -16,7 +22,11 @@ ostream &pCerr()
   int WorldRank;
   MPI_Comm_rank(MPI_COMM_WORLD,&WorldRank);
 
-  cerr << "[" << WorldRank << "] ";
+  char host[256]={'\0'};
+  gethostname(host,256);
+
+  cerr << "[" << host << ":" << WorldRank << "] ";
 
   return cerr;
 }
+

@@ -18,8 +18,8 @@
      kernelCUDAMemoryType="0"/>
 
   <vtkSQBOVWriter
-      direct_io="1"
-      cb_enable="0"
+      direct_io="0"
+      cb_enable="1"
       cb_buffer_size="0"
       stripe_count="0"/>
 

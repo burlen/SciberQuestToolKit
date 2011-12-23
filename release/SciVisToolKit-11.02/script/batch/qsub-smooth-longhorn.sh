@@ -47,8 +47,10 @@ fi
 END_TIME=$1
 
 module use -a /home/01237/bloring/modulefiles
-module load PV3-3.10.0-icc-ompi-R
-module load SVTK-PV3-3.10.0-icc-ompi-R
+module load PV3-3.12.0-R-IM
+module load cuda/4.0
+#module load PV3-3.10.0-icc-ompi-R
+#module load SVTK-PV3-3.10.0-icc-ompi-R
 
 MTB_EXE=`which SmoothBatch`
 echo "MTB_EXE=$MTB_EXE"
@@ -58,6 +60,8 @@ echo "OUTPUT_PATH=$OUTPUT_PATH"
 echo "BASE_NAME=$BASE_NAME"
 echo "START_TIME=$START_TIME"
 echo "END_TIME=$END_TIME"
+
+date
 
 IBRUN_PATH=/share/sge6.2/default/pe_scripts
 

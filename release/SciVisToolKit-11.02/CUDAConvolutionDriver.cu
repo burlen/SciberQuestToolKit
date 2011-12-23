@@ -65,11 +65,19 @@ int CUDAConvolutionDriver::SetDeviceId(int deviceId)
 
   #endif
 
+  if (deviceId>=this->NDevices)
+    {
+    sqErrorMacro(
+      pCerr(),
+      << "Attempt to select invalid device "
+      << deviceId << " of " << this->NDevices);
+    }
+
   this->DeviceId=deviceId;
   cudaError_t ierr=cudaSetDevice(deviceId);
   if (ierr)
     {
-    CUDAErrorMacro(cerr,ierr,"Failed to select device " << deviceId);
+    CUDAErrorMacro(pCerr(),ierr,"Failed to select device " << deviceId);
     return -1;
     }
 
