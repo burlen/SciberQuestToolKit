@@ -13,6 +13,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkDataSetAlgorithm.h"
 #include "CartesianExtent.h"
 
+class vtkPVXMLElement;
 class vtkInformation;
 class vtkInformationVector;
 class CUDAConvolutionDriver;
@@ -25,6 +26,11 @@ public:
   vtkTypeRevisionMacro(vtkSQKernelConvolution,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQKernelConvolution *New();
+
+
+  // Description:
+  // Initialize the filter from an xml document.
+  int Initialize(vtkPVXMLElement *root);
 
   //BTX
   enum {

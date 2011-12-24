@@ -29,6 +29,7 @@ Copyright 2008 SciberQuest Inc.
 
 //BTX
 class BOVWriter;
+class vtkPVXMLElement;
 class vtkInformationStringKey;
 class vtkInformationDoubleKey;
 class vtkInformationDoubleVectorKey;
@@ -42,6 +43,10 @@ public:
   static vtkSQBOVWriter *New();
   vtkTypeRevisionMacro(vtkSQBOVWriter,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
+
+  // Description:
+  // Initialize the writer from an xml document.
+  int Initialize(vtkPVXMLElement *elem);
 
   // Description:
   // Get/Set the file to write. Setting the file name opens

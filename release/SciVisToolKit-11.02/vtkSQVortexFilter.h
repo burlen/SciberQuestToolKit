@@ -5,13 +5,13 @@
 /___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
-
 */
 #ifndef __vtkSQVortexFilter_h
 #define __vtkSQVortexFilter_h
 
 #include "vtkDataSetAlgorithm.h"
 
+class vtkPVXMLElement;
 class vtkInformation;
 class vtkInformationVector;
 
@@ -21,6 +21,10 @@ public:
   vtkTypeRevisionMacro(vtkSQVortexFilter,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQVortexFilter *New();
+
+  // Description:
+  // Initialize from an xml document.
+  int Initialize(vtkPVXMLElement *root);
 
   // Description:
   // Deep copy input arrays to the output. A shallow copy is not possible
@@ -69,7 +73,6 @@ public:
   vtkSetMacro(ComputeDivergence,int);
   vtkGetMacro(ComputeDivergence,int);
 
-
   // Description:
   // Compute the vector gradient on a centered stencil.
   vtkSetMacro(ComputeGradient,int);
@@ -84,7 +87,6 @@ public:
   // Compute the vector gradient on a centered stencil.
   vtkSetMacro(ComputeGradientDiagnostic,int);
   vtkGetMacro(ComputeGradientDiagnostic,int);
-
 
 protected:
   int RequestDataObject(vtkInformation*,vtkInformationVector** inInfoVec,vtkInformationVector* outInfoVec);

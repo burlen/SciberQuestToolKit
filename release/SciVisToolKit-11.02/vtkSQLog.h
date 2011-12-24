@@ -71,8 +71,11 @@ public:
   // event, it's start and end times, and its ellapsed time.
   // EndEventSynch includes a barrier before the measurement.
   void StartEvent(const char *event);
+  void StartEvent(int rank, const char *event);
   void EndEvent(const char *event);
+  void EndEvent(int rank, const char *event);
   void EndEventSynch(const char *event);
+  void EndEventSynch(int rank, const char *event);
 
   // Description:
   // Insert text into the log header on the writer rank.

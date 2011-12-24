@@ -120,8 +120,8 @@ int main(int argc, char **argv)
     }
 
   vtkSQLog *log=vtkSQLog::GetGlobalInstance();
-  log->StartEvent("SmoothBatch::TotalRunTime");
-  log->StartEvent("SmoothBatch::Initialize");
+  log->StartEvent(0,"SmoothBatch::TotalRunTime");
+  log->StartEvent(0,"SmoothBatch::Initialize");
 
   // distribute the configuration file name and time range
   int configNameLen=0;
@@ -204,13 +204,6 @@ int main(int argc, char **argv)
       }
     controller->Broadcast(&startTime,1,0);
     controller->Broadcast(&endTime,1,0);
-
-    *log
-      << "# configName=" << configName << "\n"
-      << "# bovFileName=" << bovFileName << "\n"
-      << "# outputPath=" << outputPath << "\n"
-      << "# timeRange=" << startTimeStr << " " << endTimeStr << "\n"
-      << "\n";
     }
   else
     {
@@ -233,6 +226,13 @@ int main(int argc, char **argv)
     controller->Broadcast(&startTime,1,0);
     controller->Broadcast(&endTime,1,0);
     }
+
+  *log
+    << "# configName=" << configName << "\n"
+    << "# bovFileName=" << bovFileName << "\n"
+    << "# outputPath=" << outputPath << "\n"
+    << "# timeRange=" << startTime << " " << endTime << "\n"
+    << "\n";
 
   // read the configuration file.
   const string xml(configFile);
@@ -270,258 +270,50 @@ int main(int argc, char **argv)
   vtkPVXMLElement *elem;
   int iErr=0;
 
-  // reader
-  elem=GetRequiredElement(root,"vtkSQBOVReader");
-  if (elem==0)
-    {
-    return SQ_EXIT_ERROR;
-    }
-
-  vtkSQBOVReader *r=vtkSQBOVReader::New();
-  r->SetUseDataSieving(vtkSQBOVReader::HINT_AUTOMATIC);
-
-  int cb_enable=0;
-  GetOptionalAttribute<int,1>(elem,"cb_enable",&cb_enable);
-  if (cb_enable==0)
-    {
-    r->SetUseCollectiveIO(vtkSQBOVReader::HINT_DISABLED);
-    }
-  else
-  if (cb_enable>0)
-    {
-    r->SetUseCollectiveIO(vtkSQBOVReader::HINT_ENABLED);
-    }
-  else
-    {
-    r->SetUseCollectiveIO(vtkSQBOVReader::HINT_AUTOMATIC);
-    }
-
-  int cb_buffer_size=0;
-  GetOptionalAttribute<int,1>(elem,"cb_buffer_size",&cb_buffer_size);
-  if (cb_buffer_size)
-    {
-    r->SetCollectBufferSize(cb_buffer_size);
-    }
-
-  r->SetFileName(bovFileName);
-  if (!r->IsOpen())
-    {
-    return SQ_EXIT_ERROR;
-    }
-
-  // subset the data
-  // when the user passes -1, we'll use the whole extent
-  int wholeExtent[6];
-  r->GetSubset(wholeExtent);
-  iErr=0;
-  int subset[6]={-1,-1,-1,-1,-1,-1};
-  GetOptionalAttribute<int,2>(elem,"ISubset",subset);
-  GetOptionalAttribute<int,2>(elem,"JSubset",subset+2);
-  GetOptionalAttribute<int,2>(elem,"KSubset",subset+4);
-  for (int i=0; i<6; ++i)
-    {
-    if (subset[i]<0) subset[i]=wholeExtent[i];
-    }
-  r->SetSubset(subset);
-
-  if (worldRank==0)
-    {
-    pCerr() << "operating on extent " << Tuple<int>(subset,6) << endl;
-    }
-
-  // select arrays to process
-  // when none are provided we process all available
+  // set up reader
   vector<string> arrays;
-  int nArrays=0;
-  elem=GetOptionalElement(elem,"arrays");
-  if (elem)
+  vtkSQBOVReader *r=vtkSQBOVReader::New();
+  iErr=r->Initialize(root,bovFileName,arrays);
+  if (iErr)
     {
-    ExtractValues(elem->GetCharacterData(),arrays);
-    nArrays=arrays.size();
-    if (nArrays<1)
-      {
-      sqErrorMacro(pCerr(),"Error: parsing <arrays>.");
-      return SQ_EXIT_ERROR;
-      }
-    }
-  else
-    {
-    nArrays=r->GetNumberOfPointArrays();
-    for (int i=0; i<nArrays; ++i)
-      {
-      const char * arrayName=r->GetPointArrayName(i);
-      arrays.push_back(arrayName);
-      }
-    }
-
-  if (worldRank==0)
-    {
-    *log
-      << "# ::vtkSQBOVReader" << "\n"
-      << "#   cb_enable=" << cb_enable << "\n"
-      << "#   cb_buffer_size=" << cb_buffer_size << "\n"
-      << "#   wholeExtent=" << Tuple<int>(wholeExtent,6) << "\n"
-      << "#   subsetExtent=" << Tuple<int>(subset,6) << "\n";
-    for (int i=0; i<nArrays; ++i)
-      {
-      *log << "#   arrayName_" << i << "=" << arrays[i] << "\n";
-      }
-    *log << "\n";
+    sqErrorMacro(pCerr(),"Failed to initialize reader.");
+    return SQ_EXIT_ERROR;
     }
 
   // set up ghost cell generator
   vtkSQImageGhosts *ig=vtkSQImageGhosts::New();
+  iErr=ig->Initialize(root);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"Failed to initialize ghost generator.");
+    return SQ_EXIT_ERROR;
+    }
   ig->AddInputConnection(r->GetOutputPort(0));
   r->Delete();
-  if (worldRank==0)
-    {
-    *log
-      << "# ::vtkSQImageGhosts" << "\n"
-      << "\n";
-    }
 
   // set up kernel convolution filter
-  iErr=0;
-  elem=GetRequiredElement(root,"vtkSQKernelConvolution");
-  if (elem==0)
-    {
-    return SQ_EXIT_ERROR;
-    }
-
-  int stencilWidth;
-  iErr=GetRequiredAttribute<int,1>(elem,"stencilWidth",&stencilWidth);
-  if (iErr!=0)
-    {
-    sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
-    return SQ_EXIT_ERROR;
-    }
-
   vtkSQKernelConvolution *kconv=vtkSQKernelConvolution::New();
-  kconv->SetKernelType(vtkSQKernelConvolution::KERNEL_TYPE_GAUSIAN);
-  kconv->SetKernelWidth(stencilWidth);
+  iErr=kconv->Initialize(root);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"Failed to initialize kernel convolution filter.");
+    return SQ_EXIT_ERROR;
+    }
   kconv->AddInputConnection(ig->GetOutputPort(0));
   ig->Delete();
 
-  int numberOfMPIRanksToUseCUDA=0;
-  GetOptionalAttribute<int,1>(elem,"numberOfMPIRanksToUseCUDA",&numberOfMPIRanksToUseCUDA);
-  if (worldRank==0)
-    {
-    *log
-      << "# ::vtkSQKernelConvolution" << "\n"
-      << "#   stencilWidth=" << stencilWidth << "\n"
-      << "#   numberOfMPIRanksToUseCUDA=" << numberOfMPIRanksToUseCUDA << "\n";
-    }
-  kconv->SetNumberOfMPIRanksToUseCUDA(numberOfMPIRanksToUseCUDA);
-  if (numberOfMPIRanksToUseCUDA)
-    {
-    int numberOfActiveCUDADevices=1;
-    GetOptionalAttribute<int,1>(elem,"numberOfActiveCUDADevices",&numberOfActiveCUDADevices);
-    kconv->SetNumberOfActiveCUDADevices(numberOfActiveCUDADevices);
-
-    int numberOfWarpsPerCUDABlock=0;
-    GetOptionalAttribute<int,1>(elem,"numberOfWarpsPerCUDABlock",&numberOfWarpsPerCUDABlock);
-    if (numberOfWarpsPerCUDABlock)
-      {
-      kconv->SetNumberOfWarpsPerCUDABlock(numberOfWarpsPerCUDABlock);
-      }
-
-    int kernelCUDAMemType=-1;
-    GetOptionalAttribute<int,1>(elem,"kernelCUDAMemoryType",&kernelCUDAMemType);
-    if (kernelCUDAMemType>=0)
-      {
-      kconv->SetKernelCUDAMemoryType(kernelCUDAMemType);
-      }
-
-    int inputCUDAMemType=-1;
-    GetOptionalAttribute<int,1>(elem,"inputCUDAMemoryType",&inputCUDAMemType);
-    if (inputCUDAMemType>=0)
-      {
-      kconv->SetInputCUDAMemoryType(inputCUDAMemType);
-      }
-
-    if (worldRank==0)
-      {
-      *log
-        << "#   numberOfActiveCUDADevices=" << numberOfActiveCUDADevices << "\n"
-        << "#   numberOfWarpsPerCUDABlock=" << numberOfWarpsPerCUDABlock << "\n"
-        << "#   kernelCUDAMemType=" << kernelCUDAMemType << "\n"
-        << "#   inputCUDAMemType=" << inputCUDAMemType << "\n"
-        << "\n";
-      }
-    }
-
   // set up the writer
-  elem=GetRequiredElement(root,"vtkSQBOVWriter");
-  if (elem==0)
-    {
-    return SQ_EXIT_ERROR;
-    }
-
   string outputBovFileName=outputPath+StripPathFromFileName(bovFileName);
   vtkSQBOVWriter *w=vtkSQBOVWriter::New();
-
-  cb_buffer_size=0;
-  GetOptionalAttribute<int,1>(elem,"cb_buffer_size",&cb_buffer_size);
-  if (cb_buffer_size)
+  iErr=w->Initialize(root);
+  if (iErr)
     {
-    w->SetCollectBufferSize(cb_buffer_size);
+    sqErrorMacro(pCerr(),"Failed to initialize writer.");
+    return SQ_EXIT_ERROR;
     }
-
-  int stripe_count=0;
-  GetOptionalAttribute<int,1>(elem,"stripe_count",&stripe_count);
-  if (stripe_count)
-    {
-    w->SetStripeCount(stripe_count);
-    }
-
-  int stripe_size=0;
-  GetOptionalAttribute<int,1>(elem,"stripe_size",&stripe_size);
-  if (stripe_size)
-    {
-    w->SetStripeSize(stripe_size);
-    }
-
-  w->SetUseCollectiveIO(vtkSQBOVWriter::HINT_AUTOMATIC);
-  cb_enable=-1;
-  GetOptionalAttribute<int,1>(elem,"cb_enable",&cb_enable);
-  if (cb_enable==0)
-    {
-    w->SetUseCollectiveIO(vtkSQBOVWriter::HINT_DISABLED);
-    }
-  else
-  if (cb_enable==1)
-    {
-    w->SetUseCollectiveIO(vtkSQBOVWriter::HINT_ENABLED);
-    }
-
-  w->SetUseDirectIO(vtkSQBOVWriter::HINT_DEFAULT);
-  int direct_io=-1;
-  GetOptionalAttribute<int,1>(elem,"direct_io",&direct_io);
-  if (direct_io==0)
-    {
-    w->SetUseDirectIO(vtkSQBOVWriter::HINT_DISABLED);
-    }
-  else
-  if (direct_io==1)
-    {
-    w->SetUseDirectIO(vtkSQBOVWriter::HINT_ENABLED);
-    }
-
   w->SetFileName(outputBovFileName.c_str());
   w->AddInputConnection(0,kconv->GetOutputPort(0));
   kconv->Delete();
-
-  if (worldRank==0)
-    {
-    *log
-      << "# ::vtkSQBOVWriter" << "\n"
-      << "#   cb_buffer_size=" << cb_buffer_size << "\n"
-      << "#   stripe_count=" << stripe_count << "\n"
-      << "#   stripe_size=" << stripe_size << "\n"
-      << "#   cb_enable=" << cb_enable << "\n"
-      << "#   direct_io=" << direct_io << "\n"
-      << "\n";
-    }
 
   // make a directory for this dataset
   if (worldRank==0)
@@ -600,7 +392,11 @@ int main(int argc, char **argv)
     }
 
   root->Delete();
-  log->EndEvent("SmoothBatch::Initialize");
+
+  // this barrier makes sure that directory for results exists before any
+  // one actually tries to use it.
+  MPI_Barrier(MPI_COMM_WORLD);
+  log->EndEvent(0,"SmoothBatch::Initialize");
 
   /// execute
   // run the pipeline for each time step, write the
@@ -611,9 +407,9 @@ int main(int argc, char **argv)
 
     ostringstream oss;
     oss << idx << ":" << time;
-    string stepEventLabel("SmoothBatch::ProcessTimeStep_");
-    stepEventLabel+=oss.str();
-    log->StartEvent(stepEventLabel.c_str());
+    //string stepEventLabel("SmoothBatch::ProcessTimeStep_");
+    //stepEventLabel+=oss.str();
+    //log->StartEvent(stepEventLabel.c_str());
 
     if (worldRank==0)
       {
@@ -623,13 +419,14 @@ int main(int argc, char **argv)
     exec->SetUpdateTimeStep(0,time);
 
     // loop over requested arrays
+    int nArrays=arrays.size();
     for (int vecIdx=0; vecIdx<nArrays; ++vecIdx)
       {
       const string &vecName=arrays[vecIdx];
 
-      string arrayEventLabel("SmoothBatch::ProcessArray_");
-      arrayEventLabel += vecName;
-      log->StartEvent(arrayEventLabel.c_str());
+      //string arrayEventLabel("SmoothBatch::ProcessArray_");
+      //arrayEventLabel += vecName;
+      //log->StartEvent(arrayEventLabel.c_str());
 
       r->ClearPointArrayStatus();
       r->SetPointArrayStatus(vecName.c_str(),1);
@@ -648,10 +445,10 @@ int main(int argc, char **argv)
         pCerr() << "Wrote " << vecName << endl;
         }
 
-      log->EndEvent(arrayEventLabel.c_str());
+      //log->EndEvent(arrayEventLabel.c_str());
       }
 
-      log->EndEvent(stepEventLabel.c_str());
+      //log->EndEvent(stepEventLabel.c_str());
     }
 
   w->WriteMetaData();
@@ -661,7 +458,9 @@ int main(int argc, char **argv)
   free(outputPath);
   free(bovFileName);
 
-  log->EndEvent("SmoothBatch::TotalRunTime");
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  log->EndEvent(0,"SmoothBatch::TotalRunTime");
 
   log->SetFileName("SmoothBatch.log");
   log->Update();

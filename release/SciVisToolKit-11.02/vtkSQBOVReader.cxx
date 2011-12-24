@@ -23,6 +23,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkMultiProcessController.h"
 #include "vtkMPIController.h"
+#include "vtkPVXMLElement.h"
 
 #include "vtkSQOOCReader.h"
 #include "vtkSQOOCBOVReader.h"
@@ -33,6 +34,7 @@ Copyright 2008 SciberQuest Inc.
 #include "RectilinearDecomp.h"
 #include "Numerics.hxx"
 #include "Tuple.hxx"
+#include "XMLUtils.h"
 #include "PrintUtils.h"
 #include "SQMacros.h"
 #include "minmax.h"
@@ -192,6 +194,105 @@ void vtkSQBOVReader::Clear()
   this->SieveBufferSize=0;
   this->Reader->Close();
 }
+
+//-----------------------------------------------------------------------------
+int vtkSQBOVReader::Initialize(
+      vtkPVXMLElement *root,
+      const char *fileName,
+      vector<string> &arrays)
+{
+  vtkPVXMLElement *elem=GetRequiredElement(root,"vtkSQBOVReader");
+  if (elem==0)
+    {
+    sqErrorMacro(pCerr(),"Element for vtkSQBOVReader not present.");
+    return -1;
+    }
+
+  this->SetUseDataSieving(vtkSQBOVReader::HINT_AUTOMATIC);
+
+  this->SetUseCollectiveIO(vtkSQBOVReader::HINT_AUTOMATIC);
+  int cb_enable=0;
+  GetOptionalAttribute<int,1>(elem,"cb_enable",&cb_enable);
+  if (cb_enable==0)
+    {
+    this->SetUseCollectiveIO(vtkSQBOVReader::HINT_DISABLED);
+    }
+  else
+  if (cb_enable>0)
+    {
+    this->SetUseCollectiveIO(vtkSQBOVReader::HINT_ENABLED);
+    }
+
+  int cb_buffer_size=0;
+  GetOptionalAttribute<int,1>(elem,"cb_buffer_size",&cb_buffer_size);
+  if (cb_buffer_size)
+    {
+    this->SetCollectBufferSize(cb_buffer_size);
+    }
+
+  this->SetFileName(fileName);
+  if (!this->IsOpen())
+    {
+    sqErrorMacro(pCerr(),"Failed to open " << fileName);
+    return -1;
+    }
+
+  // subset the data
+  // when the user passes -1, we'll use the whole extent
+  int wholeExtent[6];
+  this->GetSubset(wholeExtent);
+  int subset[6]={-1,-1,-1,-1,-1,-1};
+  GetOptionalAttribute<int,2>(elem,"ISubset",subset);
+  GetOptionalAttribute<int,2>(elem,"JSubset",subset+2);
+  GetOptionalAttribute<int,2>(elem,"KSubset",subset+4);
+  for (int i=0; i<6; ++i)
+    {
+    if (subset[i]<0) subset[i]=wholeExtent[i];
+    }
+  this->SetSubset(subset);
+
+  // select arrays to process
+  // when none are provided we process all available
+  int nArrays=0;
+  elem=GetOptionalElement(elem,"arrays");
+  if (elem)
+    {
+    ExtractValues(elem->GetCharacterData(),arrays);
+    nArrays=arrays.size();
+    if (nArrays<1)
+      {
+      sqErrorMacro(pCerr(),"Error: parsing <arrays>.");
+      return -1;
+      }
+    }
+  else
+    {
+    nArrays=this->GetNumberOfPointArrays();
+    for (int i=0; i<nArrays; ++i)
+      {
+      const char * arrayName=this->GetPointArrayName(i);
+      arrays.push_back(arrayName);
+      }
+    }
+
+  #if defined vtkSQBOVReaderTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  *log
+    << "# ::vtkSQBOVReader" << "\n"
+    << "#   cb_enable=" << cb_enable << "\n"
+    << "#   cb_buffer_size=" << cb_buffer_size << "\n"
+    << "#   wholeExtent=" << Tuple<int>(wholeExtent,6) << "\n"
+    << "#   subsetExtent=" << Tuple<int>(subset,6) << "\n";
+  for (int i=0; i<nArrays; ++i)
+    {
+    *log << "#   arrayName_" << i << "=" << arrays[i] << "\n";
+    }
+  *log << "\n";
+  #endif
+
+  return 0;
+}
+
 
 //-----------------------------------------------------------------------------
 int vtkSQBOVReader::CanReadFile(const char *file)

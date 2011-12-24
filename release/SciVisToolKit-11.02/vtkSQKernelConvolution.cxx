@@ -21,6 +21,7 @@ Copyright 2008 SciberQuest Inc.
 #include "CartesianExtent.h"
 #include "CartesianExtent.h"
 #include "CUDAConvolutionDriver.h"
+#include "XMLUtils.h"
 #include "postream.h"
 #include "SQMacros.h"
 
@@ -217,6 +218,88 @@ vtkSQKernelConvolution::~vtkSQKernelConvolution()
     delete this->CUDADriver;
     this->CUDADriver=0;
     }
+}
+
+//-----------------------------------------------------------------------------
+int vtkSQKernelConvolution::Initialize(vtkPVXMLElement *root)
+{
+  #ifdef vtkSQKernelConvolutionDEBUG
+  pCerr() << "===============================vtkSQKernelConvolution::Initialize" << endl;
+  #endif
+
+  vtkPVXMLElement *elem=GetRequiredElement(root,"vtkSQKernelConvolution");
+  if (elem==0)
+    {
+    sqErrorMacro(pCerr(),"Element for vtkSQKernelConvolution is not present.");
+    return -1;
+    }
+
+  int stencilWidth=0;
+  GetOptionalAttribute<int,1>(elem,"stencilWidth",&stencilWidth);
+  if (stencilWidth>2)
+    {
+    this->SetKernelWidth(stencilWidth);
+    }
+
+  int kernelType=-1;
+  GetOptionalAttribute<int,1>(elem,"kernelType",&kernelType);
+  if (kernelType>=0)
+    {
+    this->SetKernelType(kernelType);
+    }
+
+  int numberOfMPIRanksToUseCUDA=0;
+  GetOptionalAttribute<int,1>(elem,"numberOfMPIRanksToUseCUDA",&numberOfMPIRanksToUseCUDA);
+
+  #if defined vtkSQKernelConvolutionTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  *log
+    << "# ::vtkSQKernelConvolution" << "\n"
+    << "#   stencilWidth=" << stencilWidth << "\n"
+    << "#   numberOfMPIRanksToUseCUDA=" << numberOfMPIRanksToUseCUDA << "\n";
+  #endif
+
+  if (numberOfMPIRanksToUseCUDA)
+    {
+    this->SetNumberOfMPIRanksToUseCUDA(numberOfMPIRanksToUseCUDA);
+
+    int numberOfActiveCUDADevices=1;
+    GetOptionalAttribute<int,1>(elem,"numberOfActiveCUDADevices",&numberOfActiveCUDADevices);
+    this->SetNumberOfActiveCUDADevices(numberOfActiveCUDADevices);
+
+    int numberOfWarpsPerCUDABlock=0;
+    GetOptionalAttribute<int,1>(elem,"numberOfWarpsPerCUDABlock",&numberOfWarpsPerCUDABlock);
+    if (numberOfWarpsPerCUDABlock)
+      {
+      this->SetNumberOfWarpsPerCUDABlock(numberOfWarpsPerCUDABlock);
+      }
+
+    int kernelCUDAMemType=-1;
+    GetOptionalAttribute<int,1>(elem,"kernelCUDAMemoryType",&kernelCUDAMemType);
+    if (kernelCUDAMemType>=0)
+      {
+      this->SetKernelCUDAMemoryType(kernelCUDAMemType);
+      }
+
+    int inputCUDAMemType=-1;
+    GetOptionalAttribute<int,1>(elem,"inputCUDAMemoryType",&inputCUDAMemType);
+    if (inputCUDAMemType>=0)
+      {
+      this->SetInputCUDAMemoryType(inputCUDAMemType);
+      }
+
+    #if defined vtkSQKernelConvolutionTIME
+    vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+    *log
+      << "#   numberOfActiveCUDADevices=" << numberOfActiveCUDADevices << "\n"
+      << "#   numberOfWarpsPerCUDABlock=" << numberOfWarpsPerCUDABlock << "\n"
+      << "#   kernelCUDAMemType=" << kernelCUDAMemType << "\n"
+      << "#   inputCUDAMemType=" << inputCUDAMemType << "\n"
+      << "\n";
+    #endif
+    }
+
+  return 0;
 }
 
 //-----------------------------------------------------------------------------

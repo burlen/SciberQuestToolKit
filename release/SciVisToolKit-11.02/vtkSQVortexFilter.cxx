@@ -9,6 +9,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkSQVortexFilter.h"
 
 #include "CartesianExtent.h"
+#include "XMLUtils.h"
 #include "postream.h"
 
 #include "vtkObjectFactory.h"
@@ -24,6 +25,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkDoubleArray.h"
 #include "vtkPointData.h"
 #include "vtkCellData.h"
+#include "vtkPVXMLElement.h"
 
 #include <vtkstd/string>
 using vtkstd::string;
@@ -65,7 +67,6 @@ vtkSQVortexFilter::vtkSQVortexFilter()
 
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
-
 }
 
 //-----------------------------------------------------------------------------
@@ -74,7 +75,88 @@ vtkSQVortexFilter::~vtkSQVortexFilter()
   #ifdef vtkSQVortexFilterDEBUG
   pCerr() << "===============================vtkSQVortexFilter::~vtkSQVortexFilter" << endl;
   #endif
+}
 
+//-----------------------------------------------------------------------------
+int vtkSQVortexFilter::Initialize(vtkPVXMLElement *root)
+{
+  #ifdef vtkSQVortexFilterDEBUG
+  pCerr() << "===============================vtkSQVortexFilter::Initialize" << endl;
+  #endif
+
+  vtkPVXMLElement *elem=GetRequiredElement(root,"vtkSQVortexFilter");
+  if (elem==0)
+    {
+    sqErrorMacro(pCerr(),"Element for vtkSQVortexFilter is not present.");
+    return -1;
+    }
+
+  int passInput=0;
+  GetOptionalAttribute<int,1>(elem,"passInput",&passInput);
+  this->SetPassInput(passInput);
+
+  int splitComponents=0;
+  GetOptionalAttribute<int,1>(elem,"splitComponents",&splitComponents);
+  this->SetSplitComponents(splitComponents);
+
+  int computeRotation=0;
+  GetOptionalAttribute<int,1>(elem,"computeRotation",&computeRotation);
+  this->SetComputeRotation(computeRotation);
+
+  int computeHelicity=0;
+  GetOptionalAttribute<int,1>(elem,"computeHelicity",&computeHelicity);
+  this->SetComputeHelicity(computeHelicity);
+
+  int computeNormalizedHelicity=0;
+  GetOptionalAttribute<int,1>(elem,"computeNormalizedHelicity",&computeNormalizedHelicity);
+  this->SetComputeNormalizedHelicity(computeNormalizedHelicity);
+
+  int computeLambda=0;
+  GetOptionalAttribute<int,1>(elem,"computeLambda",&computeLambda);
+  this->SetComputeLambda(computeLambda);
+
+  int computeLambda2=0;
+  GetOptionalAttribute<int,1>(elem,"computeLambda2",&computeLambda2);
+  this->SetComputeLambda2(computeLambda2);
+
+  int computeDivergence=0;
+  GetOptionalAttribute<int,1>(elem,"computeDivergence",&computeDivergence);
+  this->SetComputeDivergence(computeDivergence);
+
+  int computeGradient=0;
+  GetOptionalAttribute<int,1>(elem,"computeGradient",&computeGradient);
+  this->SetComputeGradient(computeGradient);
+
+  if (!(
+      computeRotation ||
+      computeHelicity ||
+      computeNormalizedHelicity ||
+      computeLambda ||
+      computeLambda2 ||
+      computeDivergence ||
+      computeGradient
+      ))
+    {
+    sqErrorMacro(pCerr(),"Nothing to compute.");
+    }
+
+  #if defined vtkSQVortexFilterTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  *log
+    << "# ::vtkSQVortexFilter" << "\n"
+    << "#   passInput=" << passInput << "\n"
+    << "#   splitComponents=" << splitComponents << "\n"
+    << "#   computeRotation=" << computeRotation << "\n"
+    << "#   computeHelicity=" << computeHelicity << "\n"
+    << "#   computeNormalizedHelicity=" << computeNormalizedHelicity << "\n"
+    << "#   computeLambda=" << computeLambda << "\n"
+    << "#   computeLambda2=" << computeLambda2 << "\n"
+    << "#   computeDivergence=" << computeDivergence << "\n"
+    << "#   computeGradient=" << computeGradient << "\n"
+    << "\n";
+  #endif
+
+  return 0;
 }
 
 //-----------------------------------------------------------------------------

@@ -340,6 +340,13 @@ void vtkSQLog::Clear()
 }
 
 //-----------------------------------------------------------------------------
+void vtkSQLog::StartEvent(int rank, const char *event)
+{
+  if (this->WorldRank!=rank) return;
+  this->StartEvent(event);
+}
+
+//-----------------------------------------------------------------------------
 void vtkSQLog::StartEvent(const char *event)
 {
   double walls=0.0;
@@ -352,6 +359,13 @@ void vtkSQLog::StartEvent(const char *event)
   #endif
 
   this->StartTime.push_back(walls);
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQLog::EndEvent(int rank, const char *event)
+{
+  if (this->WorldRank!=rank) return;
+  this->EndEvent(event);
 }
 
 //-----------------------------------------------------------------------------
@@ -385,6 +399,14 @@ void vtkSQLog::EndEvent(const char *event)
   this->EventId.pop_back();
   #endif
 
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQLog::EndEventSynch(int rank, const char *event)
+{
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (this->WorldRank!=rank) return;
+  this->EndEvent(event);
 }
 
 //-----------------------------------------------------------------------------

@@ -47,10 +47,12 @@ fi
 END_TIME=$1
 
 module use -a /home/01237/bloring/modulefiles
-module load PV3-3.10.0-icc-ompi-R
-module load SVTK-PV3-3.10.0-icc-ompi-R
+module load PV3-3.12.0-R-IM
+module load cuda/4.0
+#module load PV3-3.10.0-icc-ompi-R
+#module load SVTK-PV3-3.10.0-icc-ompi-R
 
-MTB_EXE=`which SmoothBatch`
+MTB_EXE=`which VortexDetectBatch`
 echo "MTB_EXE=$MTB_EXE"
 echo "CONFIG_FILE=$CONFIG_FILE"
 echo "BOV_FILE=$BOV_FILE"

@@ -120,6 +120,7 @@ set(CXX_SOURCES
   vtkSQPlaneSourceConfigurationReader.cxx
   vtkSQVolumeSourceConfigurationWriter.cxx
   vtkSQVolumeSourceConfigurationReader.cxx
+  XMLUtils.cxx
   )
 
 if (SVTK_PROCESS_MONITOR)
@@ -364,15 +365,15 @@ if (UNIX)
     add_executable(genzero genzero.cpp)
     install(TARGETS genzero DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-    add_executable(MagnetosphereTopoBatch MagnetosphereTopoBatch.cpp XMLUtils.cxx)
+    add_executable(MagnetosphereTopoBatch MagnetosphereTopoBatch.cpp)
     target_link_libraries(MagnetosphereTopoBatch ${MPI_LIBRARIES} SciVisToolKit)
     install(TARGETS MagnetosphereTopoBatch DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-    add_executable(SmoothBatch SmoothBatch.cpp XMLUtils.cxx)
+    add_executable(SmoothBatch SmoothBatch.cpp)
     target_link_libraries(SmoothBatch ${MPI_LIBRARIES} SciVisToolKit)
     install(TARGETS SmoothBatch DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-    add_executable(VortexDetectBatch VortexDetectBatch.cpp XMLUtils.cxx)
+    add_executable(VortexDetectBatch VortexDetectBatch.cpp)
     target_link_libraries(VortexDetectBatch ${MPI_LIBRARIES} SciVisToolKit)
     install(TARGETS VortexDetectBatch DESTINATION ${CMAKE_INSTALL_PREFIX})
 
@@ -384,7 +385,7 @@ if (UNIX)
     #target_link_libraries(IOBench ${MPI_LIBRARIES} SciVisToolKit)
     #install(TARGETS IOBench DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-    add_executable(MagnetosphereTopoBatchPVD MagnetosphereTopoBatchPVD.cpp XMLUtils.cxx)
+    add_executable(MagnetosphereTopoBatchPVD MagnetosphereTopoBatchPVD.cpp)
     target_link_libraries(MagnetosphereTopoBatchPVD ${MPI_LIBRARIES} SciVisToolKit)
     install(TARGETS MagnetosphereTopoBatchPVD DESTINATION ${CMAKE_INSTALL_PREFIX})
 

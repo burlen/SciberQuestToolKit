@@ -29,7 +29,7 @@ typedef vtkStreamingDemandDrivenPipeline vtkSDDPipeline;
 #include "vtkDataSetAttributes.h"
 #include "vtkPointData.h"
 #include "vtkCellData.h"
-
+#include "vtkPVXMLElement.h"
 #include <vtkstd/string>
 using vtkstd::string;
 
@@ -84,6 +84,18 @@ vtkSQImageGhosts::~vtkSQImageGhosts()
   #endif
 
   this->SetCommunicator(MPI_COMM_NULL);
+}
+
+//-----------------------------------------------------------------------------
+int vtkSQImageGhosts::Initialize(vtkPVXMLElement *root)
+{
+  #if defined vtkSQImageGhostsTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  *log
+    << "# ::vtkSQImageGhosts" << "\n"
+    << "\n";
+  #endif
+  return 0;
 }
 
 //-----------------------------------------------------------------------------

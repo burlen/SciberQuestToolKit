@@ -25,12 +25,14 @@ typedef vtkStreamingDemandDrivenPipeline vtkSDDPipeline;
 #include "vtkMultiProcessController.h"
 #include "vtkMPIController.h"
 #include "vtkExtentTranslator.h"
+#include "vtkPVXMLElement.h"
 
 #include "BOVWriter.h"
 #include "GDAMetaData.h"
 #include "BOVTimeStepImage.h"
 #include "Numerics.hxx"
 #include "Tuple.hxx"
+#include "XMLUtils.h"
 #include "PrintUtils.h"
 #include "SQMacros.h"
 #include "minmax.h"
@@ -151,6 +153,78 @@ void vtkSQBOVWriter::Clear()
   this->StripeSize=0;
   this->StripeCount=0;
   this->Writer->Close();
+}
+
+//-----------------------------------------------------------------------------
+int vtkSQBOVWriter::Initialize(vtkPVXMLElement *root)
+{
+  vtkPVXMLElement *elem=GetRequiredElement(root,"vtkSQBOVWriter");
+  if (elem==0)
+    {
+    sqErrorMacro(pCerr(),"Element for vtkSQBOVWriter was not present.");
+    return -1;
+    }
+
+  int cb_buffer_size=0;
+  GetOptionalAttribute<int,1>(elem,"cb_buffer_size",&cb_buffer_size);
+  if (cb_buffer_size)
+    {
+    this->SetCollectBufferSize(cb_buffer_size);
+    }
+
+  int stripe_count=0;
+  GetOptionalAttribute<int,1>(elem,"stripe_count",&stripe_count);
+  if (stripe_count)
+    {
+    this->SetStripeCount(stripe_count);
+    }
+
+  int stripe_size=0;
+  GetOptionalAttribute<int,1>(elem,"stripe_size",&stripe_size);
+  if (stripe_size)
+    {
+    this->SetStripeSize(stripe_size);
+    }
+
+  this->SetUseCollectiveIO(HINT_AUTOMATIC);
+  int cb_enable=-1;
+  GetOptionalAttribute<int,1>(elem,"cb_enable",&cb_enable);
+  if (cb_enable==0)
+    {
+    this->SetUseCollectiveIO(HINT_DISABLED);
+    }
+  else
+  if (cb_enable==1)
+    {
+    this->SetUseCollectiveIO(HINT_ENABLED);
+    }
+
+  this->SetUseDirectIO(HINT_DEFAULT);
+  int direct_io=-1;
+  GetOptionalAttribute<int,1>(elem,"direct_io",&direct_io);
+  if (direct_io==0)
+    {
+    this->SetUseDirectIO(HINT_DISABLED);
+    }
+  else
+  if (direct_io==1)
+    {
+    this->SetUseDirectIO(HINT_ENABLED);
+    }
+
+  #if defined vtkSQBOVWriterTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  *log
+    << "# ::vtkSQBOVWriter" << "\n"
+    << "#   cb_buffer_size=" << cb_buffer_size << "\n"
+    << "#   stripe_count=" << stripe_count << "\n"
+    << "#   stripe_size=" << stripe_size << "\n"
+    << "#   cb_enable=" << cb_enable << "\n"
+    << "#   direct_io=" << direct_io << "\n"
+    << "\n";
+  #endif
+
+  return 0;
 }
 
 //-----------------------------------------------------------------------------

@@ -21,11 +21,16 @@ Copyright 2008 SciberQuest Inc.
 
 #include "vtkDataSetAlgorithm.h"
 
-// define this for cerr status.
+#include <vector>
+using std::vector;
+#include <string>
+using std::string;
+
 // #define vtkSQBOVReaderDEBUG
 
 //BTX
 class BOVReader;
+class vtkPVXMLElement;
 class vtkInformationStringKey;
 class vtkInformationDoubleKey;
 class vtkInformationDoubleVectorKey;
@@ -39,6 +44,17 @@ public:
   static vtkSQBOVReader *New();
   vtkTypeRevisionMacro(vtkSQBOVReader,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
+
+  // Description:
+  // Iitialize the reader from an XML document. You also need to
+  // pass in the bov file name so that subsetting and array selection
+  // can be applied which has to occur after the file has been opened.
+  //BTX
+  int Initialize(
+        vtkPVXMLElement *root,
+        const char *fileName,
+        vector<string> &arrays);
+  //ETX
 
   // Description:
   // Get/Set the file to read. Setting the file name opens

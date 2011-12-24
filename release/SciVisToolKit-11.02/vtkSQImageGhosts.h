@@ -22,6 +22,7 @@ using std::vector;
 class vtkInformation;
 class vtkInformationVector;
 class vtkDataSetAttributes;
+class vtkPVXMLElement;
 
 class vtkSQImageGhosts : public vtkDataSetAlgorithm
 {
@@ -29,6 +30,10 @@ public:
   vtkTypeRevisionMacro(vtkSQImageGhosts,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQImageGhosts *New();
+
+  // Description:
+  // Initialize from an xml document.
+  int Initialize(vtkPVXMLElement *root);
 
   // Description:
   // Set the mode to 2D or 3D.

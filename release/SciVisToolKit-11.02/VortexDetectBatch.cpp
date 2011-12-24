@@ -119,8 +119,8 @@ int main(int argc, char **argv)
     }
 
   vtkSQLog *log=vtkSQLog::GetGlobalInstance();
-  log->StartEvent("VortexDetectBatch::TotalRunTime");
-  log->StartEvent("VortexDetectBatch::Initialize");
+  log->StartEvent(0,"VortexDetectBatch::TotalRunTime");
+  log->StartEvent(0,"VortexDetectBatch::Initialize");
 
   // distribute the configuration file name and time range
   int configNameLen=0;
@@ -203,12 +203,6 @@ int main(int argc, char **argv)
       }
     controller->Broadcast(&startTime,1,0);
     controller->Broadcast(&endTime,1,0);
-
-    *log
-      << "# " << configName << "\n"
-      << "# " << bovFileName << "\n"
-      << "# " << outputPath << "\n"
-      << "# " << startTimeStr << " " << endTimeStr << "\n";
     }
   else
     {
@@ -231,6 +225,12 @@ int main(int argc, char **argv)
     controller->Broadcast(&startTime,1,0);
     controller->Broadcast(&endTime,1,0);
     }
+
+  *log
+    << "# " << configName << "\n"
+    << "# " << bovFileName << "\n"
+    << "# " << outputPath << "\n"
+    << "# " << startTime << " " << endTime << "\n";
 
   // read the configuration file.
   const string xml(configFile);
@@ -268,193 +268,37 @@ int main(int argc, char **argv)
   vtkPVXMLElement *elem;
   int iErr=0;
 
-  // reader
-  elem=GetRequiredElement(root,"vtkSQBOVReader");
-  if (elem==0)
-    {
-    return SQ_EXIT_ERROR;
-    }
-
-  vtkSQBOVReader *r=vtkSQBOVReader::New();
-  r->SetUseDataSieving(vtkSQBOVReader::HINT_AUTOMATIC);
-
-  int cb_enable=0;
-  GetOptionalAttribute<int,1>(elem,"cb_enable",&cb_enable);
-  if (cb_enable==0)
-    {
-    r->SetUseCollectiveIO(vtkSQBOVReader::HINT_DISABLED);
-    }
-  else
-  if (cb_enable>0)
-    {
-    r->SetUseCollectiveIO(vtkSQBOVReader::HINT_ENABLED);
-    }
-  else
-    {
-    r->SetUseCollectiveIO(vtkSQBOVReader::HINT_AUTOMATIC);
-    }
-
-  int cb_buffer_size=0;
-  GetOptionalAttribute<int,1>(elem,"cb_buffer_size",&cb_buffer_size);
-  if (cb_buffer_size)
-    {
-    r->SetCollectBufferSize(cb_buffer_size);
-    }
-
-  r->SetFileName(bovFileName);
-  if (!r->IsOpen())
-    {
-    return SQ_EXIT_ERROR;
-    }
-
-  // subset the data
-  // when the user passes -1, we'll use the whole extent
-  int wholeExtent[6];
-  r->GetSubset(wholeExtent);
-  iErr=0;
-  int subset[6]={-1,-1,-1,-1,-1,-1};
-  GetOptionalAttribute<int,2>(elem,"ISubset",subset);
-  GetOptionalAttribute<int,2>(elem,"JSubset",subset+2);
-  GetOptionalAttribute<int,2>(elem,"KSubset",subset+4);
-  for (int i=0; i<6; ++i)
-    {
-    if (subset[i]<0) subset[i]=wholeExtent[i];
-    }
-  r->SetSubset(subset);
-
-  if (worldRank==0)
-    {
-    pCerr() << "operating on extent " << Tuple<int>(subset,6) << endl;
-    }
-
-  // select arrays to process
-  // when none are provided we process all available
+  // set up the reader
   vector<string> arrays;
-  int nArrays=0;
-  elem=GetOptionalElement(elem,"arrays");
-  if (elem)
+  vtkSQBOVReader *r=vtkSQBOVReader::New();
+  iErr=r->Initialize(root,bovFileName,arrays);
+  if (iErr)
     {
-    ExtractValues(elem->GetCharacterData(),arrays);
-    nArrays=arrays.size();
-    if (nArrays<1)
-      {
-      sqErrorMacro(pCerr(),"Error: parsing <arrays>.");
-      return SQ_EXIT_ERROR;
-      }
-    }
-  else
-    {
-    nArrays=r->GetNumberOfPointArrays();
-    for (int i=0; i<nArrays; ++i)
-      {
-      arrays.push_back(r->GetPointArrayName(i));
-      }
+    sqErrorMacro(pCerr(),"Failed to initialize reader.");
+    return SQ_EXIT_ERROR;
     }
 
   // set up ghost cell generator
   vtkSQImageGhosts *ig=vtkSQImageGhosts::New();
+  iErr=ig->Initialize(root);
+  if (iErr)
+    {
+    sqErrorMacro(pCerr(),"Failed to initialize ghost generator.");
+    return SQ_EXIT_ERROR;
+    }
   ig->AddInputConnection(r->GetOutputPort(0));
   r->Delete();
 
   // set up vortex detect
-  iErr=0;
-  elem=GetRequiredElement(root,"vtkSQVortexFilter");
-  if (elem==0)
-    {
-    return SQ_EXIT_ERROR;
-    }
-
-  int passInput=0;
-  int splitComponents=0;
-  int computeRotation=0;
-  int computeHelicity=0;
-  int computeNormalizedHelicity=0;
-  int computeLambda=0;
-  int computeLambda2=0;
-  int computeDivergence=0;
-  GetOptionalAttribute<int,1>(elem,"passInput",&passInput);
-  GetOptionalAttribute<int,1>(elem,"splitComponents",&splitComponents);
-  GetOptionalAttribute<int,1>(elem,"computeRotation",&computeRotation);
-  GetOptionalAttribute<int,1>(elem,"computeHelicity",&computeHelicity);
-  GetOptionalAttribute<int,1>(elem,"computeNormalizedHelicity",&computeNormalizedHelicity);
-  GetOptionalAttribute<int,1>(elem,"computeLambda",&computeLambda);
-  GetOptionalAttribute<int,1>(elem,"computeLambda2",&computeLambda2);
-  GetOptionalAttribute<int,1>(elem,"computeDivergence",&computeDivergence);
-  if (!(
-      computeRotation ||
-      computeHelicity ||
-      computeNormalizedHelicity ||
-      computeLambda ||
-      computeLambda2 ||
-      computeDivergence))
-    {
-    sqErrorMacro(pCerr(),"Nothing to compute.");
-    return SQ_EXIT_ERROR;
-    }
-
   vtkSQVortexFilter *vort=vtkSQVortexFilter::New();
-  vort->SetPassInput(passInput);
-  vort->SetSplitComponents(splitComponents);
-  vort->SetComputeRotation(computeRotation);
-  vort->SetComputeHelicity(computeHelicity);
-  vort->SetComputeNormalizedHelicity(computeNormalizedHelicity);
-  vort->SetComputeLambda(computeLambda);
-  vort->SetComputeLambda2(computeLambda2);
-  vort->SetComputeDivergence(computeDivergence);
+  vort->Initialize(root);
   vort->AddInputConnection(ig->GetOutputPort(0));
   ig->Delete();
 
   // set up the writer
-  elem=GetRequiredElement(root,"vtkSQBOVWriter");
-  if (elem==0)
-    {
-    return SQ_EXIT_ERROR;
-    }
-
   string outputBovFileName=outputPath+StripPathFromFileName(bovFileName);
   vtkSQBOVWriter *w=vtkSQBOVWriter::New();
-
-  cb_buffer_size=0;
-  GetOptionalAttribute<int,1>(elem,"cb_buffer_size",&cb_buffer_size);
-  if (cb_buffer_size)
-    {
-    w->SetCollectBufferSize(cb_buffer_size);
-    }
-
-  int stripe_count=0;
-  GetOptionalAttribute<int,1>(elem,"stripe_count",&stripe_count);
-  if (stripe_count)
-    {
-    w->SetStripeCount(stripe_count);
-    }
-  else
-    {
-    w->SetStripeCount(160);
-    }
-
-  int stripe_size=0;
-  GetOptionalAttribute<int,1>(elem,"stripe_size",&stripe_size);
-  if (stripe_size)
-    {
-    w->SetStripeSize(stripe_size);
-    }
-
-  cb_enable=0;
-  GetOptionalAttribute<int,1>(elem,"cb_enable",&cb_enable);
-  if (cb_enable==0)
-    {
-    w->SetUseCollectiveIO(vtkSQBOVWriter::HINT_DISABLED);
-    }
-  else
-  if (cb_enable>0)
-    {
-    w->SetUseCollectiveIO(vtkSQBOVWriter::HINT_ENABLED);
-    }
-  else
-    {
-    w->SetUseCollectiveIO(vtkSQBOVWriter::HINT_AUTOMATIC);
-    }
-
+  w->Initialize(root);
   w->SetFileName(outputBovFileName.c_str());
   w->AddInputConnection(0,vort->GetOutputPort(0));
   vort->Delete();
@@ -536,7 +380,9 @@ int main(int argc, char **argv)
     }
 
   root->Delete();
-  log->EndEvent("VortexDetectBatch::Initialize");
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  log->EndEvent(0,"VortexDetectBatch::Initialize");
 
   /// execute
   // run the pipeline for each time step, write the
@@ -550,22 +396,23 @@ int main(int argc, char **argv)
       pCerr() << "processing time " << time << endl;
       }
 
-    ostringstream oss;
-    oss << idx << ":" << time;
-    string stepEventLabel("VortexDetectBatch::ProcessTimeStep_");
-    stepEventLabel+=oss.str();
-    log->StartEvent(stepEventLabel.c_str());
+    //ostringstream oss;
+    //oss << idx << ":" << time;
+    //string stepEventLabel("VortexDetectBatch::ProcessTimeStep_");
+    //stepEventLabel+=oss.str();
+    //log->StartEvent(stepEventLabel.c_str());
 
     exec->SetUpdateTimeStep(0,time);
 
     // loop over requested arrays
+    int nArrays=arrays.size();
     for (int vecIdx=0; vecIdx<nArrays; ++vecIdx)
       {
       const string &vecName=arrays[vecIdx];
 
-      string arrayEventLabel("VortexDetectBatch::ProcessArray_");
-      arrayEventLabel += vecName;
-      log->StartEvent(arrayEventLabel.c_str());
+      //string arrayEventLabel("VortexDetectBatch::ProcessArray_");
+      //arrayEventLabel += vecName;
+      //log->StartEvent(arrayEventLabel.c_str());
 
       r->ClearPointArrayStatus();
       r->SetPointArrayStatus(vecName.c_str(),1);
@@ -584,10 +431,9 @@ int main(int argc, char **argv)
         pCerr() << "Wrote " << vecName << endl;
         }
 
-      log->EndEvent(arrayEventLabel.c_str());
+      //log->EndEvent(arrayEventLabel.c_str());
       }
-
-    log->EndEvent(stepEventLabel.c_str());
+    //log->EndEvent(stepEventLabel.c_str());
     }
 
   w->WriteMetaData();
@@ -597,7 +443,8 @@ int main(int argc, char **argv)
   free(outputPath);
   free(bovFileName);
 
-  log->EndEvent("VortexDetectBatch::TotalRunTime");
+  MPI_Barrier(MPI_COMM_WORLD);
+  log->EndEvent(0,"VortexDetectBatch::TotalRunTime");
 
   log->SetFileName("VortexDetectBatch.log");
   log->Update();

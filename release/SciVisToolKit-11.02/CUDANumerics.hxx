@@ -25,7 +25,7 @@ using std::vector;
 __global__
 void hello(float f)
 {
-  printf("Hello %i %i\n",gridDim.x,threadIdx.x);
+  //printf("Hello %i %i\n",gridDim.x,threadIdx.x);
 }
 
 /**
