@@ -15,6 +15,10 @@ Copyright 2008 SciberQuest Inc.
 #include <vector>
 using std::vector;
 
+#include <algorithm>
+using std::min;
+using std::max;
+
 #include<iostream>
 using std::cerr;
 using std::endl;
@@ -26,7 +30,6 @@ using std::string;
 using std::ostringstream;
 
 #include "vtkIntArray.h"
-#include "minmax.h"
 
 /**
 /// Class that manages color assignement operation for insterection sets.

@@ -26,6 +26,10 @@ include(GimpConfig.cmake)
 include(GeneratePythonBindings.cmake)
 include(CUDAConfig.cmake)
 
+set(SVTK_LIB_INSTALL_PATH
+  "${CMAKE_INSTALL_PREFIX}/lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}"
+  )
+
 # Server manager wrapped sources.
 set(SM_CXX_SOURCES
   vtkSC11DemoAnnotation.cxx
@@ -157,10 +161,23 @@ if (CUDA_FOUND)
   message(STATUS "CUDA_NVCC_DEBUG_FLAGS=${CUDA_NVCC_DEBUG_FLAGS}")
   message(STATUS "CUDA_NVCC_RELEASE_FLAGS=${CUDA_NVCC_FLAGS}")
   set(CU_SOURCES CUDAConvolutionDriver.cu)
+  set_property(
+    SOURCE ${CU_SOURCES}
+    APPEND PROPERTY COMPILE_DEFINITIONS SVTK_CUDA
+    )
   CUDA_ADD_LIBRARY(CUDAConvolutionDriver ${CU_SOURCES})
-  install(TARGETS CUDAConvolutionDriver DESTINATION ${CMAKE_INSTALL_PREFIX})
-
+  install(TARGETS CUDAConvolutionDriver DESTINATION ${SVTK_LIB_INSTALL_PATH})
   CUDA_BUILD_CLEAN_TARGET()
+
+else()
+
+  set(CXX_SOURCES
+    ${CXX_SOURCES}
+    CUDAConvolutionDriver.cxx
+    )
+
+  message(STATUS "CXX_SOURCE=${CXX_SOURCES}")
+
 endif()
 
 if(PARAVIEW_BUILD_QT_GUI)
@@ -289,7 +306,7 @@ if (WIN32 AND SVTK_PROCESS_MONITOR)
   target_link_libraries(SciVisToolKit Psapi)
 endif()
 
-install(TARGETS SciVisToolKit DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(TARGETS SciVisToolKit DESTINATION ${SVTK_LIB_INSTALL_PATH})
 
 if (NOT WIN32)
   generate_python_bindings(SciVisToolKit ${SM_CXX_SOURCES})
@@ -316,22 +333,25 @@ if (GIMP_FOUND AND SVTK_POSTPROC_SCRIPTS)
     "${POSTPROC_SCRIPT_DIR}/png2mp4.sh"
     )
   install(FILES ${SVTK_GIMP_SCM_SOURCES} DESTINATION ${GIMP_SCRIPT_PATH})
-  install(PROGRAMS ${SVTK_GIMP_SH_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX})
+  install(PROGRAMS ${SVTK_GIMP_SH_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()
 
 # batch scripts
-set(SVTK_BATCH_SCRIPTS OFF CACHE BOOL "Install batch submission scripts.")
-if (SVTK_BATCH_SCRIPTS)
-  message(STATUS "Installing batch scripts.")
-  set(BATCH_SCRIPT_DIR "${PROJECT_SOURCE_DIR}/script/batch/")
-  set(SVTK_BATCH_SCRIPT_SOURCES
-    "${BATCH_SCRIPT_DIR}/qsub-gentp-longhorn.sh"
-    "${BATCH_SCRIPT_DIR}/qsub-mtopo-longhorn.sh"
-    "${BATCH_SCRIPT_DIR}/qsub-pvserver-fc-batch-longhorn.sh"
-    "${BATCH_SCRIPT_DIR}/qsub-pvserver-rc-batch-longhorn.sh"
-    "${BATCH_SCRIPT_DIR}/qsub-test4-topo-3d-pleiades.sh"
-    )
-  install(PROGRAMS ${SVTK_BATCH_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX})
+set(BATCH_SCRIPT_DIR "${PROJECT_SOURCE_DIR}/script/batch/")
+set(SVTK_BATCH_SCRIPTS_ALL OFF CACHE BOOL "Install all batchscripts")
+
+set(SVTK_BATCH_SCRIPTS_NAUTILUS OFF CACHE BOOL "Install scripts for Nautilus")
+if (SVTK_BATCH_SCRIPTS_NAUTILUS or SVTK_BATCH_SCRIPTS_ALL)
+  message(STATUS "Installing batch scripts for Nautilus.")
+  file(GLOB SVTK_BATCH_SCRIPT_SOURCES RELATIVE script/batch/ "*nautilus*")
+  install(PROGRAMS ${SVTK_BATCH_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+endif()
+
+set(SVTK_BATCH_SCRIPTS_LONGHORN OFF CACHE BOOL "Install scripts for Longhorn")
+if (SVTK_BATCH_SCRIPTS_LONGHORN or SVTK_BATCH_SCRIPTS_ALL)
+  message(STATUS "Installing batch scripts for Longhorn.")
+  file(GLOB SVTK_BATCH_SCRIPT_SOURCES RELATIVE script/batch/ "*lonhorn*")
+  install(PROGRAMS ${SVTK_BATCH_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()
 
 # shell scripts
@@ -344,7 +364,7 @@ if (SVTK_SHELL_SCRIPTS)
     "${SHELL_SCRIPT_DIR}/projxz.sh"
     "${SHELL_SCRIPT_DIR}/pvd.sh"
     )
-  install(PROGRAMS ${SVTK_SHELL_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX})
+  install(PROGRAMS ${SVTK_SHELL_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()
 
 # command line utilities
@@ -360,26 +380,26 @@ if (UNIX)
 
     add_executable(gentp gentp.cpp FsUtils.cxx)
     target_link_libraries(gentp ${MPI_LIBRARIES})
-    install(TARGETS gentp DESTINATION ${CMAKE_INSTALL_PREFIX})
+    install(TARGETS gentp DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
     add_executable(genzero genzero.cpp)
-    install(TARGETS genzero DESTINATION ${CMAKE_INSTALL_PREFIX})
+    install(TARGETS genzero DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
     add_executable(MagnetosphereTopoBatch MagnetosphereTopoBatch.cpp)
     target_link_libraries(MagnetosphereTopoBatch ${MPI_LIBRARIES} SciVisToolKit)
-    install(TARGETS MagnetosphereTopoBatch DESTINATION ${CMAKE_INSTALL_PREFIX})
+    install(TARGETS MagnetosphereTopoBatch DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
     add_executable(SmoothBatch SmoothBatch.cpp)
     target_link_libraries(SmoothBatch ${MPI_LIBRARIES} SciVisToolKit)
-    install(TARGETS SmoothBatch DESTINATION ${CMAKE_INSTALL_PREFIX})
+    install(TARGETS SmoothBatch DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
     add_executable(VortexDetectBatch VortexDetectBatch.cpp)
     target_link_libraries(VortexDetectBatch ${MPI_LIBRARIES} SciVisToolKit)
-    install(TARGETS VortexDetectBatch DESTINATION ${CMAKE_INSTALL_PREFIX})
+    install(TARGETS VortexDetectBatch DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
     add_executable(Slicer Slicer.cpp)
     target_link_libraries(Slicer ${MPI_LIBRARIES} SciVisToolKit)
-    install(TARGETS Slicer DESTINATION ${CMAKE_INSTALL_PREFIX})
+    install(TARGETS Slicer DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
     #add_executable(IOBench IOBench.cpp)
     #target_link_libraries(IOBench ${MPI_LIBRARIES} SciVisToolKit)
@@ -387,7 +407,7 @@ if (UNIX)
 
     add_executable(MagnetosphereTopoBatchPVD MagnetosphereTopoBatchPVD.cpp)
     target_link_libraries(MagnetosphereTopoBatchPVD ${MPI_LIBRARIES} SciVisToolKit)
-    install(TARGETS MagnetosphereTopoBatchPVD DESTINATION ${CMAKE_INSTALL_PREFIX})
+    install(TARGETS MagnetosphereTopoBatchPVD DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
   endif()
 endif()
@@ -403,6 +423,6 @@ if (SVTK_TESTING)
   add_definitions("-DMPICH_IGNORE_CXX_SEEK")
   add_executable(TestFieldTopologyMapper TestFieldTopologyMapper.cpp)
   target_link_libraries(TestFieldTopologyMapper SciVisToolKit ${MPI_LIBRARIES})
-  install(TARGETS TestFieldTopologyMapper DESTINATION ${CMAKE_INSTALL_PREFIX})
+  install(TARGETS TestFieldTopologyMapper DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif ()
 

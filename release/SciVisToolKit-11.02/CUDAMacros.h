@@ -10,6 +10,7 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __CUDAMacros_h
 #define __CUDAMacros_h
 
+#if defined SVTK_CUDA
 #include <cuda.h>
 
 #include <iomanip>
@@ -26,6 +27,9 @@ using std::cerr;
       << __FILE__ << ", line " << __LINE__ << endl  \
       << cudaGetErrorString(eno) << endl            \
       << "" estr << endl;
+#else
+#define CUDAErrorMacro(os,eno,estr)
+#endif
 
 #endif
 

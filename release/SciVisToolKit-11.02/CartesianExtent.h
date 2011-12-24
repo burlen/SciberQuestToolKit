@@ -9,7 +9,9 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __CartesianExtent_h
 #define __CartesianExtent_h
 
-#include "minmax.h"
+#include <algorithm>
+using std::min;
+using std::max;
 
 #include <iostream>
 using std::ostream;

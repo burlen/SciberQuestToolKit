@@ -60,9 +60,12 @@ Copyright 2008 SciberQuest Inc.
 #include "PoincareMapData.h"
 #include "Tuple.hxx"
 #include "postream.h"
-#include "minmax.h"
 
 #include <mpi.h>
+
+#include <algorithm>
+using std::min;
+using std::max;
 
 // #define vtkSQImageGhostsDEBUG
 #define vtkSQFieldTracerTIME

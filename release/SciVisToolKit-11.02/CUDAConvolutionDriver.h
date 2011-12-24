@@ -10,13 +10,17 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __CUDAConvolutionDriver_h
 #define __CUDAConvolutionDriver_h
 
-#include "cuda.h"
+#include "SQExport.h"
+
+#include <algorithm>
+using std::min;
+using std::max;
 
 class vtkDataArray;
 class CartesianExtent;
 
 /// CUDAConvolutionDriver - Interface to the CUDA kernel
-class CUDAConvolutionDriver
+class SQ_EXPORT CUDAConvolutionDriver
 {
 public:
   ///
@@ -44,13 +48,13 @@ public:
   unsigned int GetNumberOfThreads(){ return this->NThreads; }
   void SetNumberOfThreads(unsigned int nThreads)
   {
-    this->NThreads=min(nThreads,this->MaxThreads);
+    this->NThreads=std::min(nThreads,this->MaxThreads);
   }
   ///
   unsigned int GetNumberOfBlocks(){ return this->NBlocks; }
   void SetNumberOfBlocks(unsigned int nBlocks)
   {
-    this->NBlocks=min(nBlocks,this->MaxBlocks);
+    this->NBlocks=std::min(nBlocks,this->MaxBlocks);
   }
 
   /**
@@ -60,7 +64,7 @@ public:
   unsigned int GetNumberOfWarpsPerBlock(){ return this->WarpsPerBlock; }
   void SetNumberOfWarpsPerBlock(unsigned int warpsPerBlock)
   {
-    this->WarpsPerBlock=min(warpsPerBlock,this->MaxWarpsPerBlock);
+    this->WarpsPerBlock=std::min(warpsPerBlock,this->MaxWarpsPerBlock);
   }
 
   /**

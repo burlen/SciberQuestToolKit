@@ -53,6 +53,9 @@ using vtkstd::map;
 using vtkstd::vector;
 #include <vtkstd/utility>
 using vtkstd::pair;
+#include <vtkstd/algorithm>
+using vtkstd::min;
+using vtkstd::max;
 
 #include <mpi.h>
 
@@ -381,7 +384,7 @@ void vtkSQKernelConvolution::SetNumberOfActiveCUDADevices(int nActive)
   #endif
 
   //nActive=max(0,nActive);
-  nActive=min(nActive,this->NumberOfCUDADevices);
+  nActive=vtkstd::min(nActive,this->NumberOfCUDADevices);
   if (nActive==this->NumberOfActiveCUDADevices)
     {
     return;

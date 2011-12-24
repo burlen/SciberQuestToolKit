@@ -44,7 +44,10 @@ Copyright 2008 SciberQuest Inc.
 #include "IdBlock.h"
 #include "Numerics.hxx"
 #include "Tuple.hxx"
-#include "minmax.h"
+
+#include <algorithm>
+using std::min;
+using std::max;
 
 #include <set>
 using std::set;

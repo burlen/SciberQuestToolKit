@@ -30,10 +30,13 @@ Copyright 2008 SciberQuest Inc.
 #include "Tuple.hxx"
 #include "PrintUtils.h"
 #include "SQMacros.h"
-#include "minmax.h"
 #include "postream.h"
 
 #include <mpi.h>
+
+#include <algorithm>
+using std::min;
+using std::max;
 
 #include <sstream>
 using std::ostringstream;

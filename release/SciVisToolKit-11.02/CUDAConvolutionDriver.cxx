@@ -14,6 +14,7 @@ Copyright 2008 SciberQuest Inc.
 #include "CartesianExtent.h"
 #include "SQMacros.h"
 #include "postream.h"
+#include "vtkDataArray.h"
 
 #if defined SVTK_CUDA
   #include "CUDAGlobalMemoryManager.hxx"
@@ -23,8 +24,6 @@ Copyright 2008 SciberQuest Inc.
   #include <cuda.h>
   #include <cuda_runtime.h>
 #endif
-
-#include "vtkDataArray.h"
 
 #include <iostream>
 using std::cerr;
@@ -63,19 +62,11 @@ int CUDAConvolutionDriver::SetDeviceId(int deviceId)
     << deviceId << endl;
   #endif
   #if defined SVTK_CUDA
-  if (deviceId>=this->NDevices)
-    {
-    sqErrorMacro(
-      pCerr(),
-      << "Attempt to select invalid device "
-      << deviceId << " of " << this->NDevices);
-    }
-
   this->DeviceId=deviceId;
   cudaError_t ierr=cudaSetDevice(deviceId);
   if (ierr)
     {
-    CUDAErrorMacro(pCerr(),ierr,"Failed to select device " << deviceId);
+    CUDAErrorMacro(cerr,ierr,"Failed to select device " << deviceId);
     return -1;
     }
 

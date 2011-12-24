@@ -9,7 +9,9 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __CartesianBounds_h
 #define __CartesianBounds_h
 
-#include "minmax.h"
+#include <algorithm>
+using std::min;
+using std::max;
 
 #include <cmath>
 #include <iostream>

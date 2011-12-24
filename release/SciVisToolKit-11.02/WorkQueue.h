@@ -10,8 +10,10 @@ Copyright 2008 SciberQuest Inc.
 #define __WorkQueue_h
 
 #include "IdBlock.h"
-#include "minmax.h"
 
+#include <algorithm>
+using std::min;
+using std::max;
 
 /// Partitions a contiguous set of indices on demand.
 class WorkQueue
