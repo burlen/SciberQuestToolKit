@@ -18,8 +18,9 @@
   -->
   <vtkSQKernelConvolution
       stencilWidth="19"
-      numberOfMPIRanksToUseCUDA="-1"
-      numberOfActiveCUDADevices="-1"
+      CPUDriverOptimization="1"
+      numberOfMPIRanksToUseCUDA="0"
+      numberOfActiveCUDADevices="0"
       numberOfWarpsPerCUDABlock="8"
       inputCUDAMemoryType="2"
       kernelCUDAMemoryType="0"/>

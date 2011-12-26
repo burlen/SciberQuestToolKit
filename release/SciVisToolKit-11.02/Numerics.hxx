@@ -691,7 +691,6 @@ void Convolution(
     }
 }
 
-
 /**
 This implementation is written so that adjacent threads access adjacent
 memory locations. This requires that vtk vectors/tensors etc be split.
@@ -710,10 +709,100 @@ void ScalarConvolution2D(
       T * __restrict__ W,
       float * __restrict__ K)
 {
+  // get a tuple from the current flat index in the output
+  // index space
+  for (unsigned long wi=0; wi<wnij; ++wi)
+    {
+    unsigned long i,j;
+    j=wi/wni;
+    i=wi-j*wni;
+
+    // compute using the aligned buffers
+    float w=0.0f;
+    for (unsigned long g=0; g<kni; ++g)
+      {
+      unsigned long b=kni*g;
+      unsigned long q=vni*(j+g)+i;
+      for (unsigned long f=0; f<kni; ++f)
+        {
+        unsigned long vi=q+f;
+        unsigned long ki=b+f;
+        w+=V[vi]*K[ki];
+        }
+      }
+    W[wi]=w;
+    }
+}
+
+//*****************************************************************************
+template<typename T>
+void ScalarConvolution3D(
+      unsigned long vni,
+      unsigned long vnij,
+      unsigned long wni,
+      unsigned long wnij,
+      unsigned long wnijk,
+      unsigned long kni,
+      unsigned long knij,
+      unsigned long knijk,
+      unsigned long nGhost,
+      T * __restrict__ V,
+      T * __restrict__ W,
+      float * __restrict__ K)
+{
+  // visit each output element
+  for (unsigned long wi=0; wi<wnijk; ++wi)
+    {
+    unsigned long i,j,k;
+    k=wi/wnij;
+    j=(wi-k*wnij)/wni;
+    i=wi-k*wnij-j*wni;
+
+    // compute convolution
+    float w=0.0f;
+    for (unsigned long h=0; h<kni; ++h)
+      {
+      unsigned long c=knij*h;
+      unsigned long r=vnij*(k+h);
+      for (unsigned long g=0; g<kni; ++g)
+        {
+        unsigned long b=c+kni*g;
+        unsigned long q=r+vni*(j+g)+i;
+        for (unsigned long f=0; f<kni; ++f)
+          {
+          unsigned long ki=b+f;
+          unsigned long vi=q+f;
+
+          w+=V[vi]*K[ki];
+          }
+        }
+      }
+
+    W[wi]=w;
+    }
+}
+
+/*
+this vectorized version is slightly SLOWER than then unoptimized version
+
+//*****************************************************************************
+template<typename T>
+void ScalarConvolution2D(
+      //int worldRank,
+      unsigned long vni,
+      unsigned long wni,
+      unsigned long wnij,
+      unsigned long kni,
+      unsigned long knij,
+      unsigned long nGhost,
+      T * __restrict__ V,
+      T * __restrict__ W,
+      float * __restrict__ K)
+{
   // buffers for vectorized inner loop
   unsigned long knij4=knij+4-knij%4;
   unsigned long knij4b=knij4*sizeof(float);
-  float *aK=0;
+  float * __restrict__ aK=0;
   posix_memalign((void**)&aK,16,knij4b);
   memset(aK,0,knij4b);
   for (unsigned long ki=0; ki<knij; ++ki)
@@ -721,7 +810,7 @@ void ScalarConvolution2D(
     aK[ki]=K[ki];
     }
 
-  float *aV=0;
+  float * __restrict__ aV=0;
   posix_memalign((void**)&aV,16,knij4b);
   memset(aV,0,knij4b);
 
@@ -750,8 +839,9 @@ void ScalarConvolution2D(
     float w=0.0f;
     for (unsigned long ki=0; ki<knij4; ++ki)
       {
-      w+=aV[ki]*aK[ki];
+      w=w+aV[ki]*aK[ki];
       }
+
     W[wi]=w;
     }
 
@@ -759,7 +849,7 @@ void ScalarConvolution2D(
   free(aK);
 }
 
-//*****************************************************************************
+// ****************************************************************************
 template<typename T>
 void ScalarConvolution3D(
       unsigned long vni,
@@ -778,7 +868,7 @@ void ScalarConvolution3D(
   // buffers for vectorized inner loop
   unsigned long knijk4=knijk+4-knijk%4;
   unsigned long knijk4b=knijk4*sizeof(float);
-  float *aK=0;
+  float * __restrict__ aK=0;
   posix_memalign((void**)&aK,16,knijk4b);
   memset(aK,0,knijk4b);
   for (unsigned long ki=0; ki<knijk; ++ki)
@@ -786,7 +876,7 @@ void ScalarConvolution3D(
     aK[ki]=K[ki];
     }
 
-  float *aV=0;
+  float * __restrict__ aV=0;
   posix_memalign((void**)&aV,16,knijk4b);
   memset(aV,0,knijk4b);
 
@@ -800,13 +890,13 @@ void ScalarConvolution3D(
 
     // move input data into aligned buffer
     unsigned long avi=0;
-    for (long h=0; h<kni; ++h)
+    for (unsigned long h=0; h<kni; ++h)
       {
       unsigned long r=vnij*(k+h);
-      for (long g=0; g<kni; ++g)
+      for (unsigned long g=0; g<kni; ++g)
         {
         unsigned long q=r+vni*(j+g)+i;
-        for (long f=0; f<kni; ++f)
+        for (unsigned long f=0; f<kni; ++f)
           {
           unsigned long vi=q+f;
 
@@ -820,7 +910,7 @@ void ScalarConvolution3D(
     float w=0.0f;
     for (unsigned long ki=0; ki<knijk4; ++ki)
       {
-      w+=aV[ki]*aK[ki];
+      w=w+aV[ki]*aK[ki];
       }
 
     W[wi]=w;
@@ -829,6 +919,7 @@ void ScalarConvolution3D(
   free(aV);
   free(aK);
 }
+*/
 
 //*****************************************************************************
 template <typename T>

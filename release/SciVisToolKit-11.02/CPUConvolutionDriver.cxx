@@ -126,7 +126,7 @@ int CPUConvolutionDriver::Convolution(
           {
           vector<float*> sV(nComp,0);
           vector<float*> sW(nComp,0);
-          for (int q=0; q<nComp; ++q)
+          for (unsigned long q=0; q<nComp; ++q)
             {
             posix_memalign((void**)&sV[q],16,vnijk*sizeof(float));
             posix_memalign((void**)&sW[q],16,wnijk*sizeof(float));
@@ -137,7 +137,7 @@ int CPUConvolutionDriver::Convolution(
           Split<float>(vnijk,hV,sV);
 
           // apply convolution 
-          for (int q=0; q<nComp; ++q)
+          for (unsigned long q=0; q<nComp; ++q)
             {
             if ((mode==CartesianExtent::DIM_MODE_2D_XY)
               ||(mode==CartesianExtent::DIM_MODE_2D_XZ)
@@ -177,7 +177,7 @@ int CPUConvolutionDriver::Convolution(
           Interleave(wnijk,sW,hW);
 
           // clean up
-          for (int q=0; q<nComp; ++q)
+          for (unsigned long q=0; q<nComp; ++q)
             {
             free(sW[q]);
             free(sV[q]);

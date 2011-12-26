@@ -66,20 +66,20 @@ vtkStandardNewMacro(vtkSQKernelConvolution);
 //-----------------------------------------------------------------------------
 vtkSQKernelConvolution::vtkSQKernelConvolution()
     :
-  WorldRank(0),
   WorldSize(1),
-  HostRank(0),
+  WorldRank(0),
   HostSize(1),
+  HostRank(0),
   KernelWidth(3),
   KernelType(KERNEL_TYPE_GAUSIAN),
   Kernel(0),
   KernelModified(1),
   Mode(CartesianExtent::DIM_MODE_3D),
-  EnableCUDA(0),
   NumberOfCUDADevices(0),
   NumberOfActiveCUDADevices(0),
   CUDADeviceId(-1),
-  NumberOfMPIRanksToUseCUDA(0)
+  NumberOfMPIRanksToUseCUDA(0),
+  EnableCUDA(0)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
   pCerr() << "===============================vtkSQKernelConvolution::vtkSQKernelConvolution" << endl;
