@@ -296,7 +296,11 @@ int main(int argc, char **argv)
   ig->Delete();
 
   // set up the writer
-  string outputBovFileName=outputPath+StripPathFromFileName(bovFileName);
+  string outputBovFileName
+    = outputPath + string("/") +
+        StripExtensionFromFileName(StripPathFromFileName(bovFileName)) +
+          "_vd.bov";
+
   vtkSQBOVWriter *w=vtkSQBOVWriter::New();
   w->Initialize(root);
   w->SetFileName(outputBovFileName.c_str());

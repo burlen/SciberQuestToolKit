@@ -6,10 +6,11 @@
       ISubset="-1 -1"
       JSubset="-1 -1"
       KSubset="-1 -1">
-       <arrays> ui b </arrays>
+       <arrays> ne </arrays>
   </vtkSQBOVReader>
 
    <vtkSQKernelConvolution
+     kernelType="0"
      stencilWidth="19"
      numberOfMPIRanksToUseCUDA="0"
      numberOfActiveCUDADevices="0"

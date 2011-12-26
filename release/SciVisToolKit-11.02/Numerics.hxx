@@ -692,6 +692,144 @@ void Convolution(
 }
 
 
+/**
+This implementation is written so that adjacent threads access adjacent
+memory locations. This requires that vtk vectors/tensors etc be split.
+*/
+//*****************************************************************************
+template<typename T>
+void ScalarConvolution2D(
+      //int worldRank,
+      unsigned long vni,
+      unsigned long wni,
+      unsigned long wnij,
+      unsigned long kni,
+      unsigned long knij,
+      unsigned long nGhost,
+      T * __restrict__ V,
+      T * __restrict__ W,
+      float * __restrict__ K)
+{
+  // buffers for vectorized inner loop
+  unsigned long knij4=knij+4-knij%4;
+  unsigned long knij4b=knij4*sizeof(float);
+  float *aK=0;
+  posix_memalign((void**)&aK,16,knij4b);
+  memset(aK,0,knij4b);
+  for (unsigned long ki=0; ki<knij; ++ki)
+    {
+    aK[ki]=K[ki];
+    }
+
+  float *aV=0;
+  posix_memalign((void**)&aV,16,knij4b);
+  memset(aV,0,knij4b);
+
+  // get a tuple from the current flat index in the output
+  // index space
+  for (unsigned long wi=0; wi<wnij; ++wi)
+    {
+    unsigned long i,j;
+    j=wi/wni;
+    i=wi-j*wni;
+
+    // move input elements to the aligned buffer
+    unsigned long avi=0;
+    for (unsigned long g=0; g<kni; ++g)
+      {
+      unsigned long q=vni*(j+g)+i;
+      for (unsigned long f=0; f<kni; ++f)
+        {
+        unsigned long vi=q+f;
+        aV[avi]=V[vi];
+        ++avi;
+        }
+      }
+
+    // compute using the aligned buffers
+    float w=0.0f;
+    for (unsigned long ki=0; ki<knij4; ++ki)
+      {
+      w+=aV[ki]*aK[ki];
+      }
+    W[wi]=w;
+    }
+
+  free(aV);
+  free(aK);
+}
+
+//*****************************************************************************
+template<typename T>
+void ScalarConvolution3D(
+      unsigned long vni,
+      unsigned long vnij,
+      unsigned long wni,
+      unsigned long wnij,
+      unsigned long wnijk,
+      unsigned long kni,
+      unsigned long knij,
+      unsigned long knijk,
+      unsigned long nGhost,
+      T * __restrict__ V,
+      T * __restrict__ W,
+      float * __restrict__ K)
+{
+  // buffers for vectorized inner loop
+  unsigned long knijk4=knijk+4-knijk%4;
+  unsigned long knijk4b=knijk4*sizeof(float);
+  float *aK=0;
+  posix_memalign((void**)&aK,16,knijk4b);
+  memset(aK,0,knijk4b);
+  for (unsigned long ki=0; ki<knijk; ++ki)
+    {
+    aK[ki]=K[ki];
+    }
+
+  float *aV=0;
+  posix_memalign((void**)&aV,16,knijk4b);
+  memset(aV,0,knijk4b);
+
+  // visit each output element
+  for (unsigned long wi=0; wi<wnijk; ++wi)
+    {
+    unsigned long i,j,k;
+    k=wi/wnij;
+    j=(wi-k*wnij)/wni;
+    i=wi-k*wnij-j*wni;
+
+    // move input data into aligned buffer
+    unsigned long avi=0;
+    for (long h=0; h<kni; ++h)
+      {
+      unsigned long r=vnij*(k+h);
+      for (long g=0; g<kni; ++g)
+        {
+        unsigned long q=r+vni*(j+g)+i;
+        for (long f=0; f<kni; ++f)
+          {
+          unsigned long vi=q+f;
+
+          aV[avi]=V[vi];
+          ++avi;
+          }
+        }
+      }
+
+    // compute convolution
+    float w=0.0f;
+    for (unsigned long ki=0; ki<knijk4; ++ki)
+      {
+      w+=aV[ki]*aK[ki];
+      }
+
+    W[wi]=w;
+    }
+
+  free(aV);
+  free(aK);
+}
+
 //*****************************************************************************
 template <typename T>
 void DivergenceFace(int *I, double *dX, T *V, T *mV, T *div)

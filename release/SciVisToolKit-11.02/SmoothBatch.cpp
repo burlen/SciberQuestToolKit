@@ -303,7 +303,13 @@ int main(int argc, char **argv)
   ig->Delete();
 
   // set up the writer
-  string outputBovFileName=outputPath+StripPathFromFileName(bovFileName);
+  ostringstream bovId;
+  bovId << "_sm_" << kconv->GetKernelWidth() << ".bov";
+  string outputBovFileName
+    = outputPath +
+        StripExtensionFromFileName(StripPathFromFileName(bovFileName)) +
+          bovId.str();
+
   vtkSQBOVWriter *w=vtkSQBOVWriter::New();
   iErr=w->Initialize(root);
   if (iErr)

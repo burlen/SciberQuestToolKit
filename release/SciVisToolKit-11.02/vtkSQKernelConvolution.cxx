@@ -20,6 +20,7 @@ Copyright 2008 SciberQuest Inc.
 #include "Tuple.hxx"
 #include "CartesianExtent.h"
 #include "CartesianExtent.h"
+#include "CPUConvolutionDriver.h"
 #include "CUDAConvolutionDriver.h"
 #include "XMLUtils.h"
 #include "postream.h"
@@ -86,6 +87,7 @@ vtkSQKernelConvolution::vtkSQKernelConvolution()
 
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
+
 
   // may be a parallel run, we need to determine how
   // many of the ranks are running on each host.
@@ -179,6 +181,10 @@ vtkSQKernelConvolution::vtkSQKernelConvolution()
       }
     }
 
+  // inti cpu driver
+  this->CPUDriver=new CPUConvolutionDriver;
+
+  // inti cuda driver
   this->CUDADeviceRange[0]=0;
   this->CUDADeviceRange[1]=0;
 
@@ -216,11 +222,8 @@ vtkSQKernelConvolution::~vtkSQKernelConvolution()
     this->Kernel=0;
     }
 
-  if (this->CUDADriver)
-    {
-    delete this->CUDADriver;
-    this->CUDADriver=0;
-    }
+  delete this->CPUDriver;
+  delete this->CUDADriver;
 }
 
 //-----------------------------------------------------------------------------
@@ -251,6 +254,13 @@ int vtkSQKernelConvolution::Initialize(vtkPVXMLElement *root)
     this->SetKernelType(kernelType);
     }
 
+  int CPUDriverOptimization=-1;
+  GetOptionalAttribute<int,1>(elem,"CPUDriverOptimization",&CPUDriverOptimization);
+  if (CPUDriverOptimization>=0)
+    {
+    this->SetCPUDriverOptimization(CPUDriverOptimization);
+    }
+
   int numberOfMPIRanksToUseCUDA=0;
   GetOptionalAttribute<int,1>(elem,"numberOfMPIRanksToUseCUDA",&numberOfMPIRanksToUseCUDA);
 
@@ -259,6 +269,8 @@ int vtkSQKernelConvolution::Initialize(vtkPVXMLElement *root)
   *log
     << "# ::vtkSQKernelConvolution" << "\n"
     << "#   stencilWidth=" << stencilWidth << "\n"
+    << "#   kernelType=" << kernelType << "\n"
+    << "#   CPUDriverOptimization=" << CPUDriverOptimization << "\n"
     << "#   numberOfMPIRanksToUseCUDA=" << numberOfMPIRanksToUseCUDA << "\n";
   #endif
 
@@ -303,6 +315,24 @@ int vtkSQKernelConvolution::Initialize(vtkPVXMLElement *root)
     }
 
   return 0;
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQKernelConvolution::SetCPUDriverOptimization(int opt)
+{
+  #ifdef vtkSQKernelConvolutionDEBUG
+  pCerr()
+    << "===============================vtkSQKernelConvolution::SetCPUDriverOptimization"
+    << " " << opt << endl;
+  #endif
+  this->CPUDriver->SetOptimization(opt);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+int vtkSQKernelConvolution::GetCPUDriverOptimization()
+{
+  return this->CPUDriver->GetOptimization();
 }
 
 //-----------------------------------------------------------------------------
@@ -966,19 +996,15 @@ int vtkSQKernelConvolution::RequestData(
       #ifdef vtkSQKernelConvolutionDEBUG
       pCerr() << "using the CPU" << endl;
       #endif
-      switch (V->GetDataType())
-        {
-        vtkTemplateMacro(
-          Convolution<VTK_TT>(
-              inputExt.GetData(),
-              outputExt.GetData(),
-              this->KernelExt.GetData(),
-              nComps,
-              this->Mode,
-              (VTK_TT*)V->GetVoidPointer(0),
-              (VTK_TT*)W->GetVoidPointer(0),
-              this->Kernel));
-        }
+      this->CPUDriver->Convolution(
+          inputExt,
+          outputExt,
+          this->KernelExt,
+          nGhost,
+          this->Mode,
+          V,
+          W,
+          this->Kernel);
       }
 
     outImData->GetPointData()->AddArray(W);

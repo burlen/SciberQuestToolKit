@@ -12,6 +12,7 @@ Copyright 2008 SciberQuest Inc.
 #include "CUDAConvolutionDriver.h"
 
 #include "CartesianExtent.h"
+#include "MemOrder.hxx"
 #include "SQMacros.h"
 #include "postream.h"
 

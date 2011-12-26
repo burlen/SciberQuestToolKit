@@ -16,6 +16,7 @@ Copyright 2008 SciberQuest Inc.
 class vtkPVXMLElement;
 class vtkInformation;
 class vtkInformationVector;
+class CPUConvolutionDriver;
 class CUDAConvolutionDriver;
 
 // .DESCRIPTION
@@ -110,6 +111,12 @@ public:
   void SetInputCUDAMemoryType(int memType);
   int GetInputCUDAMemoryType();
 
+  // Description:
+  // Select a set of optimization for code running on the
+  // CPU.
+  void SetCPUDriverOptimization(int opt);
+  int GetCPUDriverOptimization();
+
 protected:
   //int FillInputPortInformation(int port, vtkInformation *info);
   //int FillOutputPortInformation(int port, vtkInformation *info);
@@ -147,6 +154,7 @@ private:
   int NumberOfMPIRanksToUseCUDA;
   int EnableCUDA;
   //
+  CPUConvolutionDriver *CPUDriver;
   CUDAConvolutionDriver *CUDADriver;
 
 private:

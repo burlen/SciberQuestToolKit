@@ -91,6 +91,7 @@ set(CXX_SOURCES
   CartesianDataBlockIODescriptorIterator.cxx
   CartesianExtent.cxx
   CellCopier.cxx
+  CPUConvolutionDriver.cxx
   DebugUtil.cxx
   IdBlock.cxx
   FieldLine.cxx

@@ -111,7 +111,8 @@ int GDAMetaData::OpenDatasetForRead(const char *fileName)
   free(metaDataBuffer); // TODO use string's memory directly
 
   // Parse
-  ToLower(metaData);
+
+  //ToLower(metaData);
 
   // We are expecting are nx,ny, and nz in the header for all
   // mesh types.

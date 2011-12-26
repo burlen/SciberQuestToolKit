@@ -9,23 +9,22 @@ Copyright 2008 SciberQuest Inc.
 
 //#define CUDAConvolutionDEBUG
 
-//#include "CUDAFlatIndex.h"
-//#include "CUDATupleIndex.h"
 #include "CUDAThreadedIterator.h"
 #include "CUDA3DDecomp.h"
 
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include <vector>
-using std::vector;
-
-//#include "stdio.h"
+#ifdef CUDAConvolutionDEBUG
+  #include "stdio.h"
+#endif
 
 __global__
 void hello(float f)
 {
-  //printf("Hello %i %i\n",gridDim.x,threadIdx.x);
+  #ifdef CUDAConvolutionDEBUG
+  printf("Hello %i %i\n",gridDim.x,threadIdx.x);
+  #endif
 }
 
 /**
@@ -39,87 +38,6 @@ texture memory reference for input data arrays
 */
 texture<float,2> gV2;
 texture<float,3> gV3;
-
-//*****************************************************************************
-template<typename T>
-void Split(
-      size_t n,
-      int nComp,
-      T * __restrict__  V,
-      T * __restrict__  W)
-{
-  // reorder a vtk vector array into three contiguous
-  // scalar components
-  for (size_t i=0; i<n; ++i)
-    {
-    size_t ii=nComp*i;
-    for (int q=0; q<nComp; ++q)
-      {
-      size_t qq=n*q;
-      W[qq+i]=V[ii+q];
-    }
-  }
-}
-
-//*****************************************************************************
-template<typename T>
-void Interleave(
-      size_t n,
-      int nComp,
-      T * __restrict__  W,
-      T * __restrict__  V)
-{
-  // take an irray that has been ordered contiguously by component
-  // and interleave
-  for (size_t i=0; i<n; ++i)
-    {
-    size_t ii=nComp*i;
-    for (int q=0; q<nComp; ++q)
-      {
-      size_t qq=n*q;
-      V[ii+q]=W[qq+i];
-    }
-  }
-}
-
-//*****************************************************************************
-template<typename T>
-void Split(
-      size_t n,
-      T * __restrict__ V,
-      vector<T*> &W)
-{
-  // reorder a vtk vector array into contiguous
-  // scalar components
-  int nComp=W.size();
-  for (size_t i=0; i<n; ++i)
-    {
-    size_t ii=nComp*i;
-    for (int q=0; q<nComp; ++q)
-      {
-      W[q][i]=V[ii+q];
-      }
-    }
-}
-
-//*****************************************************************************
-template<typename T>
-void Interleave(
-      size_t n,
-      vector<T *> &W,
-      T * __restrict__  V)
-{
-  // interleave array in contiguous component order
-  int nComp=W.size();
-  for (size_t i=0; i<n; ++i)
-    {
-    size_t ii=nComp*i;
-    for (int q=0; q<nComp; ++q)
-      {
-      V[ii+q]=W[q][i];
-    }
-  }
-}
 
 /**
 This implementation is written so that adjacent threads access adjacent
