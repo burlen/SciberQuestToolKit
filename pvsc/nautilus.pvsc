@@ -1,0 +1,177 @@
+<Servers>
+
+  <!-- nautilus-x11 -->
+  <Server name="Nautilus-X11" resource="csrc://">
+    <CommandStartup>
+      <Options>
+        <Option name="REMOTE_USER" label="user name" save="true">
+          <String default="TG_USER"/>
+        </Option>
+        <Option name="PV_SERVER_PORT" label="tunnel port" save="true">
+          <Range type="int" min="1" max="65535" step="1" default="11111"/>
+        </Option>
+        <!--
+        <Option name="REMOTE_PORT" label="remote port" save="true">
+          <Range type="int" min="1" max="65535" step="1" default="11111"/>
+        </Option>
+        -->
+        <Option name="NCPUS" label="number of processes" save="true">
+          <Range type="int" min="1" max="4" step="1" default="1"/>
+        </Option>
+        <Option name="NGPUS" label="number of processes" save="true">
+          <Range type="int" min="1" max="2" step="1" default="1"/>
+        </Option>
+        <Option name="MEM" label="memory per process" save="true">
+          <Enumeration default="4">
+            <Entry value="4"  label=" 4 GB"/>
+            <Entry value="8"  label=" 8 GB"/>
+            <Entry value="16" label="16 GB"/>
+            <Entry value="32" label="32 GB"/>
+            <Entry value="64" label="64 GB"/>
+            <Entry value="128" label="128 GB"/>
+            <Entry value="256" label="256 GB"/>
+            <Entry value="512" label="512 GB"/>
+          </Enumeration>
+        </Option>
+        <Option name="WALLTIME" label="job wall time" save="true">
+          <String default="HH:MM:SS"/>
+        </Option>
+        <Option name="ACCOUNT" label="teragrid account" save="true">
+          <String default="TG_ACCOUNT"/>
+        </Option>
+        <Option name="PV_PATH" label="paraview version" save="true">
+          <Enumeration default="/sw/analysis/paraview/3.10.0/sles11.1_intel11.1.038-x">
+            <Entry value="/sw/analysis/paraview/3.10.0/sles11.1_intel11.1.038-x" label="3.10.0"/>
+          </Enumeration>
+        </Option>
+        <Option name="QUEUE" label="queue" save="true">
+          <Enumeration default="analysis">
+            <Entry value="computation" label="computation"/>
+            <Entry value="analysis" label="analysis"/>
+          </Enumeration>
+        </Option>
+
+        <Option name="SSH_PATH" label="/path/to/ssh" save="true">
+          <File default="/usr/bin/ssh"/>
+        </Option>
+
+        <Option name="XTERM_PATH" label="/path/to/xterm" save="true">
+          <File default="/usr/bin/xterm"/>
+        </Option>
+
+        <!--
+        <Option name="LOGIN_HOST" label="login node" save="true">
+          <Enumeration default="login.nautilus.nics.tennessee.edu">
+            <Entry value="login.nautilus.nics.tennessee.edu" label="arronax/conseil"/>
+          </Enumeration>
+        </Option>
+        -->
+      </Options>
+      <Command exec="$XTERM_PATH$" timeout="0" delay="0" Arguments="0">
+        <Arguments>
+          <Argument value="-T"/>
+          <Argument value="ParaView $REMOTE_USER$@Nautilus"/>
+          <Argument value="-e"/>
+          <Argument value="$SSH_PATH$"/>
+          <Argument value="-t"/>
+          <Argument value="-R"/>
+          <Argument value="$PV_SERVER_PORT$:localhost:$PV_SERVER_PORT$"/>
+          <Argument value="$REMOTE_USER$@login.nautilus.nics.tennessee.edu"/>
+          <Argument value="$PV_PATH$/start_pvserver-x.sh"/>
+          <Argument value="$NCPUS$"/>
+          <Argument value="$NGPUS$"/>
+          <Argument value="$MEM$"/>
+          <Argument value="$WALLTIME$"/>
+          <Argument value="$ACCOUNT$"/>
+          <Argument value="$QUEUE$"/>
+          <Argument value="$PV_SERVER_PORT$"/>
+        </Arguments>
+      </Command>
+    </CommandStartup>
+  </Server>
+
+  <!-- nautilus osmesa -->
+  <Server name="Nautilus-OSMesa" resource="csrc://">
+    <CommandStartup>
+      <Options>
+        <Option name="REMOTE_USER" label="user name" save="true">
+          <String default="TG_USER"/>
+        </Option>
+        <Option name="PV_SERVER_PORT" label="tunnel port" save="true">
+          <Range type="int" min="1" max="65535" step="1" default="11111"/>
+        </Option>
+        <!--
+        <Option name="REMOTE_PORT" label="remote port" save="true">
+          <Range type="int" min="1" max="65535" step="1" default="11111"/>
+        </Option>
+        -->
+        <Option name="NCPUS" label="number of processes" save="true">
+          <Range type="int" min="1" max="1024" step="1" default="8"/>
+        </Option>
+        <Option name="MEM" label="memory per process" save="true">
+          <Enumeration default="4">
+            <Entry value="4"  label=" 4 GB"/>
+            <Entry value="8"  label=" 8 GB"/>
+            <Entry value="16" label="16 GB"/>
+            <Entry value="32" label="32 GB"/>
+          </Enumeration>
+        </Option>
+        <Option name="WALLTIME" label="job wall time" save="true">
+          <String default="HH:MM:SS"/>
+        </Option>
+        <Option name="ACCOUNT" label="teragrid account" save="true">
+          <String default="TG_ACCOUNT"/>
+        </Option>
+        <Option name="PV_PATH" label="paraview version" save="true">
+          <Enumeration default="/sw/analysis/paraview/3.12.0/sles11.1_intel11.1.038">
+            <Entry value="/sw/analysis/paraview/3.12.0/sles11.1_intel11.1.038" label="3.12.0"/>
+            <Entry value="/sw/analysis/paraview/3.10.0/sles11.1_intel11.1.038" label="3.10.0"/>
+            <Entry value="/sw/analysis/paraview/3.8.1/sles11.1_intel11.1.038" label="3.8.1"/>
+          </Enumeration>
+        </Option>
+        <Option name="QUEUE" label="queue" save="true">
+          <Enumeration default="analysis">
+            <Entry value="computation" label="computation"/>
+            <Entry value="analysis" label="analysis"/>
+          </Enumeration>
+        </Option>
+        <Option name="SSH_PATH" label="/path/to/ssh" save="true">
+          <File default="/usr/bin/ssh"/>
+        </Option>
+
+        <Option name="XTERM_PATH" label="/path/to/xterm" save="true">
+          <File default="/usr/bin/xterm"/>
+        </Option>
+        <!--
+        <Option name="LOGIN_HOST" label="login node" save="true">
+          <Enumeration default="login.nautilus.nics.tennessee.edu">
+            <Entry value="ssh.nautilus.nics.tennessee.edu" label="arronax"/>
+            <Entry value="login.nautilus.nics.tennessee.edu" label="conseil"/>
+          </Enumeration>
+        </Option>
+        -->
+      </Options>
+      <Command exec="$XTERM_PATH$" timeout="0" delay="0" Arguments="0">
+        <Arguments>
+          <Argument value="-T"/>
+          <Argument value="ParaView $REMOTE_USER$@Nautilus"/>
+          <Argument value="-e"/>
+          <Argument value="$SSH_PATH$"/>
+          <Argument value="-t"/>
+          <Argument value="-R"/>
+          <Argument value="$PV_SERVER_PORT$:localhost:$PV_SERVER_PORT$"/>
+          <Argument value="$REMOTE_USER$@login.nautilus.nics.tennessee.edu"/>
+          <Argument value="$PV_PATH$/start_pvserver.sh"/>
+          <Argument value="$NCPUS$"/>
+          <Argument value="$MEM$"/>
+          <Argument value="$WALLTIME$"/>
+          <Argument value="$ACCOUNT$"/>
+          <Argument value="$QUEUE$"/>
+          <Argument value="$PV_SERVER_PORT$"/>
+        </Arguments>
+      </Command>
+    </CommandStartup>
+  </Server>
+
+</Servers>
+

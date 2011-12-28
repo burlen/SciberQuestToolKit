@@ -32,9 +32,6 @@ set(SVTK_LIB_INSTALL_PATH
 
 # Server manager wrapped sources.
 set(SM_CXX_SOURCES
-  vtkSC11DemoAnnotation.cxx
-  vtkSC11DemoExtentTranslator.cxx
-  vtkSC11DemoReader.cxx
   vtkSQBOVReader.cxx
   vtkSQBOVWriter.cxx
   vtkSQDistributedStreamTracer.cxx
@@ -63,6 +60,17 @@ set(SM_CXX_SOURCES
   vtkSQVolumeSource.cxx
   vtkSQVortexFilter.cxx
   )
+
+set(SVTK_SC11_DEMO OFF CACHE BOOL "Build the SC11 demo")
+if (SVTK_SC11_DEMO)
+  message(STATUS "Building the SC11 demo")
+  set(SM_CXX_SOURCES
+    ${SM_CXX_SOURCES}
+    vtkSC11DemoAnnotation.cxx
+    vtkSC11DemoExtentTranslator.cxx
+    vtkSC11DemoReader.cxx
+    )
+endif()
 
 set(SVTK_PROCESS_MONITOR ON CACHE BOOL "Build the process monitor.")
 if (SVTK_PROCESS_MONITOR)
@@ -152,7 +160,9 @@ if (SVTK_PROCESS_MONITOR)
   endif()
 endif()
 
-if (CUDA_FOUND)
+
+set(SVTK_CUDA OFF CACHE BOOL "Enable CUDA optimizations.")
+if (CUDA_FOUND AND SVTK_CUDA)
   message(STATUS "Including CUDA accelerated filters.")
   message(STATUS "Cuda ${CUDA_VERSION_STRING} found.")
   set(CUDA_NVCC_FLAGS "-arch=sm_20;--compiler-options;-fPIC" CACHE STRING "nvcc flags")
@@ -169,16 +179,11 @@ if (CUDA_FOUND)
   CUDA_ADD_LIBRARY(CUDAConvolutionDriver ${CU_SOURCES})
   install(TARGETS CUDAConvolutionDriver DESTINATION ${SVTK_LIB_INSTALL_PATH})
   CUDA_BUILD_CLEAN_TARGET()
-
 else()
-
   set(CXX_SOURCES
     ${CXX_SOURCES}
     CUDAConvolutionDriver.cxx
     )
-
-  message(STATUS "CXX_SOURCE=${CXX_SOURCES}")
-
 endif()
 
 if(PARAVIEW_BUILD_QT_GUI)
@@ -243,15 +248,6 @@ if(PARAVIEW_BUILD_QT_GUI)
   set(_IFACES ${_IFACES} ${IFACES})
   set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
-  QT4_WRAP_CPP(MOC_SRCS pqSC11DemoReader.h)
-  ADD_PARAVIEW_OBJECT_PANEL(
-    IFACES IFACE_SRCS
-    CLASS_NAME pqSC11DemoReader
-    XML_NAME vtkSC11DemoReader
-    XML_GROUP sources)
-  set(_IFACES ${_IFACES} ${IFACES})
-  set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
-
   if (SVTK_PROCESS_MONITOR)
     message(STATUS "Building process monitor ui.")
     QT4_WRAP_CPP(MOC_SRCS pqSQProcessMonitor.h)
@@ -265,12 +261,23 @@ if(PARAVIEW_BUILD_QT_GUI)
     set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
   endif()
 
+  if (SVTK_SC11_DEMO)
+    QT4_WRAP_CPP(MOC_SRCS pqSC11DemoReader.h)
+    ADD_PARAVIEW_OBJECT_PANEL(
+      IFACES IFACE_SRCS
+      CLASS_NAME pqSC11DemoReader
+      XML_NAME vtkSC11DemoReader
+      XML_GROUP sources)
+    set(_IFACES ${_IFACES} ${IFACES})
+    set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+  endif()
+
+
   set (CXX_SOURCES
     ${CXX_SOURCES}
     ${MOC_SRCS}
     ${UI_SRCS}
     ${_IFACE_SRCS}
-    pqSC11DemoReader.cxx
     pqSQBOVMetaReader.cxx
     pqSQFieldTracer.cxx
     pqSQHemisphereSource.cxx
@@ -281,6 +288,10 @@ if(PARAVIEW_BUILD_QT_GUI)
 
   if (SVTK_PROCESS_MONITOR)
     set (CXX_SOURCES ${CXX_SOURCES} pqSQProcessMonitor.cxx)
+  endif()
+
+  if (SVTK_SC11_DEMO)
+    set (CXX_SOURCES ${CXX_SOURCES} pqSC11DemoReader.cxx)
   endif()
 
 endif (PARAVIEW_BUILD_QT_GUI)
@@ -299,7 +310,7 @@ add_paraview_plugin(
   GUI_RESOURCE_FILES ${CLIENT_XML}
   SOURCES ${CXX_SOURCES})
 
-if (CUDA_FOUND)
+if (SVTK_CUDA AND CUDA_FOUND)
   target_link_libraries(SciVisToolKit CUDAConvolutionDriver)
 endif()
 
@@ -310,7 +321,7 @@ endif()
 install(TARGETS SciVisToolKit DESTINATION ${SVTK_LIB_INSTALL_PATH})
 
 if (NOT WIN32)
-  generate_python_bindings(SciVisToolKit ${SM_CXX_SOURCES})
+  generate_python_bindings(SciVisToolKit "${SM_CXX_SOURCES}")
 endif()
 
 # GIMP scripts
