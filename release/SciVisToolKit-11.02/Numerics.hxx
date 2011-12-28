@@ -411,8 +411,30 @@ void Magnitude(
 {
   for (size_t q=0; q<n; ++q)
     {
-    const int qq=3*q;
+    size_t qq=3*q;
     mV[q] = sqrt(V[qq]*V[qq]+V[qq+1]+V[qq+1]+V[qq+2]*V[qq+2]);
+    }
+}
+
+// Magnitude of a vector
+//*****************************************************************************
+template <typename T>
+void Magnitude(
+      size_t nt, // number of tuples
+      size_t nc, // number of components
+      T * __restrict__ V,
+      T * __restrict__ mV)
+{
+  for (size_t q=0; q<nt; ++q)
+    {
+    size_t qq=nc*q;
+    T vv=0.0f;
+    for (size_t c=0; c<nc; ++c)
+      {
+      size_t r=qq+c;
+      vv+=V[r]*V[r];
+      }
+    mV[q] = sqrt(vv);
     }
 }
 
@@ -785,7 +807,7 @@ void ScalarConvolution3D(
 /*
 this vectorized version is slightly SLOWER than then unoptimized version
 
-//*****************************************************************************
+// ****************************************************************************
 template<typename T>
 void ScalarConvolution2D(
       //int worldRank,
@@ -2482,14 +2504,132 @@ void Gradient(
           int vkhi_y=vkhi_x+1;
           int vkhi_z=vkhi_y+1;
 
-          Jxx[_pi] = (V[vkhi_x]-V[vklo_x])/dx[2];;
-          Jxy[_pi] = (V[vkhi_y]-V[vklo_y])/dx[2];;
-          Jxz[_pi] = (V[vkhi_z]-V[vklo_z])/dx[2];;
+          Jzx[_pi] = (V[vkhi_x]-V[vklo_x])/dx[2];;
+          Jzy[_pi] = (V[vkhi_y]-V[vklo_y])/dx[2];;
+          Jzz[_pi] = (V[vkhi_z]-V[vklo_z])/dx[2];;
           }
         }
       }
     }
 }
+
+// input  -> patch input array is defined on
+// output -> patch outpu array is defined on
+// dX     -> grid spacing triple
+// V      -> vector field
+// Q      -> 
+//*****************************************************************************
+template <typename T>
+void QCriteria(
+      int *input,
+      int *output,
+      int mode,
+      double *dX,
+      T *V,
+      T *Q)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int nk=input[5]-input[4]+1;
+  FlatIndex idx(ni,nj,nk,mode);
+
+  const int iok=(ni<3?0:1);
+  const int jok=(nj<3?0:1);
+  const int kok=(nk<3?0:1);
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _nk=output[5]-output[4]+1;
+  FlatIndex _idx(_ni,_nj,_nk,mode);
+
+  // stencil deltas
+  const double dx[3]={dX[0]*2.0,dX[1]*2.0,dX[2]*2.0};
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    const int  k=r-input[4];
+    const int _k=r-output[4];
+
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      const int  j=q-input[2];
+      const int _j=q-output[2];
+
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        const int  i=p-input[0];
+        const int _i=p-output[0];
+
+        const int _pi=_idx.Index(_i,_j,_k);
+
+        // J: gradient tensor, (jacobian)
+        T Jxx=0.0;
+        T Jxy=0.0;
+        T Jxz=0.0;
+        if (iok)
+          {
+          int vilo_x=3*idx.Index(i-1,j,k);
+          int vilo_y=vilo_x+1;
+          int vilo_z=vilo_y+1;
+
+          int vihi_x=3*idx.Index(i+1,j,k);
+          int vihi_y=vihi_x+1;
+          int vihi_z=vihi_y+1;
+
+          Jxx = (V[vihi_x]-V[vilo_x])/dx[0];;
+          Jxy = (V[vihi_y]-V[vilo_y])/dx[0];;
+          Jxz = (V[vihi_z]-V[vilo_z])/dx[0];;
+          }
+
+        T Jyx=0.0;
+        T Jyy=0.0;
+        T Jyz=0.0;
+        if (jok)
+          {
+          int vjlo_x=3*idx.Index(i,j-1,k);
+          int vjlo_y=vjlo_x+1;
+          int vjlo_z=vjlo_y+1;
+
+          int vjhi_x=3*idx.Index(i,j+1,k);
+          int vjhi_y=vjhi_x+1;
+          int vjhi_z=vjhi_y+1;
+
+          Jyx = (V[vjhi_x]-V[vjlo_x])/dx[1];;
+          Jyy = (V[vjhi_y]-V[vjlo_y])/dx[1];;
+          Jyz = (V[vjhi_z]-V[vjlo_z])/dx[1];;
+          }
+
+        T Jzx=0.0;
+        T Jzy=0.0;
+        T Jzz=0.0;
+        if (kok)
+          {
+          int vklo_x=3*idx.Index(i,j,k-1);
+          int vklo_y=vklo_x+1;
+          int vklo_z=vklo_y+1;
+
+          int vkhi_x=3*idx.Index(i,j,k+1);
+          int vkhi_y=vkhi_x+1;
+          int vkhi_z=vkhi_y+1;
+
+          Jzx = (V[vkhi_x]-V[vklo_x])/dx[2];;
+          Jzy = (V[vkhi_y]-V[vklo_y])/dx[2];;
+          Jzz = (V[vkhi_z]-V[vklo_z])/dx[2];;
+          }
+
+        T divV=Jxx+Jyy+Jzz;
+        Q[_pi]
+          = (divV*divV - (Jxx*Jxx + Jxy*Jyx + Jxz*Jzx
+                           + Jyx*Jxy + Jyy*Jyy + Jyz*Jzy
+                             + Jzx*Jxz + Jzy*Jyz + Jzz*Jzz))/2.0f;
+        }
+      }
+    }
+}
+
 
 // input  -> patch input array is defined on
 // output -> patch outpu array is defined on

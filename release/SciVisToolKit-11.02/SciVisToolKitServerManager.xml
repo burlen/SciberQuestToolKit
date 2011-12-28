@@ -3338,6 +3338,18 @@ Copyright 2008 SciberQuest Inc.
      </IntVectorProperty>
 
      <IntVectorProperty
+        name="ResultMagnitude"
+        label="Result magnitude"
+        command="SetResultMagnitude"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the magnitude for all multi-component results.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
         name="ComputeRotation"
         label="Rotation"
         command="SetComputeRotation"
@@ -3370,6 +3382,18 @@ Copyright 2008 SciberQuest Inc.
         <BooleanDomain name="bool" />
         <Documentation>
           Compute the normailzed helicity of the vector field using a point centered stencil.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeQ"
+        label="Q"
+        command="SetComputeQ"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute Q-criteria
         </Documentation>
      </IntVectorProperty>
 
@@ -3541,6 +3565,21 @@ Copyright 2008 SciberQuest Inc.
     </IntVectorProperty>
 
     <IntVectorProperty
+        name="CPUDriverOptimization"
+        label="CPU Optimization"
+        command="SetCPUDriverOptimization"
+        number_of_elements="1"
+        default_values="1">
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="Minimize memory usage"/>
+        <Entry value="1" text="Minimize cache misses"/>
+      </EnumerationDomain>
+      <Documentation>
+        Various optimizations. If you are running out of memory then choose the minimize memory usage.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
         name="RanksToUseCUDA"
         label="CUDA Ranks Per Host"
         command="SetNumberOfMPIRanksToUseCUDA"
@@ -3583,85 +3622,6 @@ Copyright 2008 SciberQuest Inc.
          Control over domain decomposition. More warps per block means larger blocks.
        </Documentation>
     </IntVectorProperty>
-
-    <!-- CUDA 
-    <IntVectorProperty
-        name="Use CUDA"
-        command="SetEnableCUDA"
-        number_of_elements="1"
-        default_values="0" >
-       <BooleanDomain name="bool"/>
-       <Documentation>
-         When enabled CUDA algorithm is used.
-       </Documentation>
-    </IntVectorProperty>
-
-    <IntVectorProperty
-      name="GetCUDADeviceRange"
-      command="GetCUDADeviceRange"
-      information_only="1">
-      <SimpleIntInformationHelper/>
-    </IntVectorProperty>
-    <IntVectorProperty
-        name="CUDADeviceId"
-        label="CUDA Device Id"
-        command="SetCUDADeviceId"
-        number_of_elements="1"
-        default_values="0">
-      <IntRangeDomain name="range">
-        <RequiredProperties>
-            <Property name="GetCUDADeviceRange" function="Range"/>
-        </RequiredProperties>
-      </IntRangeDomain>
-      <Documentation>
-        Set the cuda device id to use.
-      </Documentation>
-    </IntVectorProperty>
-
-    <IntVectorProperty
-      name="GetCUDAThreadRange"
-      command="GetCUDAThreadRange"
-      information_only="1">
-      <SimpleIntInformationHelper/>
-    </IntVectorProperty>
-    <IntVectorProperty
-        name="NumberOfCUDAThreads"
-        label="Num. CUDA Threads"
-        command="SetNumberOfCUDAThreads"
-        number_of_elements="1"
-        default_values="1024">
-      <IntRangeDomain name="range">
-        <RequiredProperties>
-            <Property name="GetCUDAThreadRange" function="Range"/>
-        </RequiredProperties>
-      </IntRangeDomain>
-      <Documentation>
-        Set the number of of cuda threads.
-      </Documentation>
-    </IntVectorProperty>
-
-    <IntVectorProperty
-      name="GetCUDABlockRange"
-      command="GetCUDABlockRange"
-      information_only="1">
-      <SimpleIntInformationHelper/>
-    </IntVectorProperty>
-    <IntVectorProperty
-        name="NumberOfCUDABlocks"
-        label="Num. CUDA Blocks"
-        command="SetNumberOfCUDABlocks"
-        number_of_elements="1"
-        default_values="1024">
-      <IntRangeDomain name="range">
-        <RequiredProperties>
-            <Property name="GetCUDABlockRange" function="Range"/>
-        </RequiredProperties>
-      </IntRangeDomain>
-      <Documentation>
-        Set the number of of cuda blocks.
-      </Documentation>
-    </IntVectorProperty>
-    -->
 
     <IntVectorProperty
         name="KernelCUDAMemoryType"

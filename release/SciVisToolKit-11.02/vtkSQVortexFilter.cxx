@@ -51,9 +51,11 @@ vtkSQVortexFilter::vtkSQVortexFilter()
     :
   PassInput(0),
   SplitComponents(0),
+  ResultMagnitude(0),
   ComputeRotation(1),
   ComputeHelicity(0),
   ComputeNormalizedHelicity(0),
+  ComputeQ(0),
   ComputeLambda(0),
   ComputeLambda2(0),
   ComputeDivergence(0),
@@ -99,6 +101,10 @@ int vtkSQVortexFilter::Initialize(vtkPVXMLElement *root)
   GetOptionalAttribute<int,1>(elem,"splitComponents",&splitComponents);
   this->SetSplitComponents(splitComponents);
 
+  int resultMagnitude=0;
+  GetOptionalAttribute<int,1>(elem,"resultMagnitude",&resultMagnitude);
+  this->SetResultMagnitude(resultMagnitude);
+
   int computeRotation=0;
   GetOptionalAttribute<int,1>(elem,"computeRotation",&computeRotation);
   this->SetComputeRotation(computeRotation);
@@ -110,6 +116,10 @@ int vtkSQVortexFilter::Initialize(vtkPVXMLElement *root)
   int computeNormalizedHelicity=0;
   GetOptionalAttribute<int,1>(elem,"computeNormalizedHelicity",&computeNormalizedHelicity);
   this->SetComputeNormalizedHelicity(computeNormalizedHelicity);
+
+  int computeQ=0;
+  GetOptionalAttribute<int,1>(elem,"computeQ",&computeQ);
+  this->SetComputeQ(computeQ);
 
   int computeLambda=0;
   GetOptionalAttribute<int,1>(elem,"computeLambda",&computeLambda);
@@ -131,6 +141,7 @@ int vtkSQVortexFilter::Initialize(vtkPVXMLElement *root)
       computeRotation ||
       computeHelicity ||
       computeNormalizedHelicity ||
+      computeQ ||
       computeLambda ||
       computeLambda2 ||
       computeDivergence ||
@@ -145,10 +156,12 @@ int vtkSQVortexFilter::Initialize(vtkPVXMLElement *root)
   *log
     << "# ::vtkSQVortexFilter" << "\n"
     << "#   passInput=" << passInput << "\n"
+    << "#   resultMagnitude=" << resultMagnitude << "\n"
     << "#   splitComponents=" << splitComponents << "\n"
     << "#   computeRotation=" << computeRotation << "\n"
     << "#   computeHelicity=" << computeHelicity << "\n"
     << "#   computeNormalizedHelicity=" << computeNormalizedHelicity << "\n"
+    << "#   computeQ=" << computeQ << "\n"
     << "#   computeLambda=" << computeLambda << "\n"
     << "#   computeLambda2=" << computeLambda2 << "\n"
     << "#   computeDivergence=" << computeDivergence << "\n"
@@ -607,6 +620,37 @@ int vtkSQVortexFilter::RequestData(
       #endif
       }
 
+    // Q Criteria
+    if (this->ComputeQ)
+      {
+      #if defined vtkSQVortexFilterTIME
+      log->StartEvent("vtkSQVortexFilter::Q");
+      #endif
+      vtkDataArray *Q=V->NewInstance();
+      outImData->GetPointData()->AddArray(Q);
+      Q->Delete();
+      Q->SetNumberOfComponents(1);
+      Q->SetNumberOfTuples(outputTups);
+      string name("q-");
+      name+=V->GetName();
+      Q->SetName(name.c_str());
+      //
+      switch(V->GetDataType())
+        {
+        vtkTemplateMacro(
+          QCriteria<VTK_TT>(
+              inputExt.GetData(),
+              outputExt.GetData(),
+              this->Mode,
+              dX,
+              (VTK_TT*)V->GetVoidPointer(0),
+              (VTK_TT*)Q->GetVoidPointer(0)));
+        }
+      #if defined vtkSQVortexFilterTIME
+      log->EndEvent("vtkSQVortexFilter::Q");
+      #endif
+      }
+
     // Lambda-1,2,3.
     if (this->ComputeLambda)
       {
@@ -1047,6 +1091,43 @@ int vtkSQVortexFilter::RequestData(
       #endif
       }
 
+    if (this->ResultMagnitude)
+      {
+      #if defined vtkSQVortexFilterTIME
+      log->StartEvent("vtkSQVortexFilter::ResultMagnitude");
+      #endif
+      int nOutArrays=outImData->GetPointData()->GetNumberOfArrays();
+      for (int i=0; i<nOutArrays; ++i)
+        {
+        vtkDataArray *da=outImData->GetPointData()->GetArray(i);
+        if (da->GetNumberOfComponents()==1)
+          {
+          continue;
+          }
+        vtkDataArray *mda=da->NewInstance();
+        size_t daNc=da->GetNumberOfComponents();
+        size_t daNt=da->GetNumberOfTuples();
+        mda->SetNumberOfComponents(daNc);
+        mda->SetNumberOfTuples(daNt);
+        string name="mag-";
+        name+=da->GetName();
+        mda->SetName(name.c_str());
+        outImData->GetPointData()->AddArray(mda);
+        mda->Delete();
+        switch(V->GetDataType())
+          {
+          vtkTemplateMacro(
+            Magnitude<VTK_TT>(
+                daNt,
+                daNc,
+                (VTK_TT*)da->GetVoidPointer(0),
+                (VTK_TT*)mda->GetVoidPointer(0)));
+          }
+        #if defined vtkSQVortexFilterTIME
+        log->EndEvent("vtkSQVortexFilter::ResultMagnitude");
+        #endif
+        }
+      }
     // outImData->Print(cerr);
     }
   else
@@ -1054,6 +1135,11 @@ int vtkSQVortexFilter::RequestData(
     {
     vtkWarningMacro("TODO : implment difference opperators on stretched grids.");
     }
+
+
+
+
+
 
   #if defined vtkSQVortexFilterTIME
   log->EndEvent("vtkSQVortexFilter::RequestData");

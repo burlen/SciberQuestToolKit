@@ -265,7 +265,6 @@ int main(int argc, char **argv)
     }
 
   /// build the pipeline
-  vtkPVXMLElement *elem;
   int iErr=0;
 
   // set up the reader

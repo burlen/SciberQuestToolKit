@@ -38,6 +38,11 @@ public:
   vtkGetMacro(SplitComponents,int);
 
   // Description:
+  // Coompute the magnitude of all multi-component results.
+  vtkSetMacro(ResultMagnitude,int);
+  vtkGetMacro(ResultMagnitude,int);
+
+  // Description:
   // Compute the rotation, curl(v).
   vtkSetMacro(ComputeRotation,int);
   vtkGetMacro(ComputeRotation,int);
@@ -56,6 +61,12 @@ public:
   // tracing streamlines from H_n maxima/minima.
   vtkSetMacro(ComputeNormalizedHelicity,int);
   vtkGetMacro(ComputeNormalizedHelicity,int);
+
+  // Description:
+  // Compute Q criteria (using the definition for compressible flow).
+  // In a vortex Q>0.
+  vtkSetMacro(ComputeQ,int);
+  vtkGetMacro(ComputeQ,int);
 
   // Description:
   // Lambda refers to the Lambda 2 method, where the second of the sorted
@@ -100,9 +111,11 @@ private:
   // controls to turn on/off array generation
   int PassInput;
   int SplitComponents;
+  int ResultMagnitude;
   int ComputeRotation;
   int ComputeHelicity;
   int ComputeNormalizedHelicity;
+  int ComputeQ;
   int ComputeLambda;
   int ComputeLambda2;
   int ComputeDivergence;
