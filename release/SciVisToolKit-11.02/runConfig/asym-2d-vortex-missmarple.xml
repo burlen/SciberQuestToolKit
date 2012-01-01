@@ -10,6 +10,7 @@
   </vtkSQBOVReader>
 
   <vtkSQVortexFilter
+     splitComponents="0"
      passInput="0"
      resultMagnitude="1"
      computeRotation="1"

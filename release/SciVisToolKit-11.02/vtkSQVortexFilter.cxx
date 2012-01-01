@@ -1101,14 +1101,13 @@ int vtkSQVortexFilter::RequestData(
       for (int i=0; i<nOutArrays; ++i)
         {
         vtkDataArray *da=outImData->GetPointData()->GetArray(i);
-        if (da->GetNumberOfComponents()==1)
+        size_t daNc=da->GetNumberOfComponents();
+        if (daNc==1)
           {
           continue;
           }
         vtkDataArray *mda=da->NewInstance();
-        size_t daNc=da->GetNumberOfComponents();
         size_t daNt=da->GetNumberOfTuples();
-        mda->SetNumberOfComponents(daNc);
         mda->SetNumberOfTuples(daNt);
         string name="mag-";
         name+=da->GetName();
