@@ -18,6 +18,8 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __vtkSQLog_h
 #define __vtkSQLog_h
 
+//#define vtkSQLogDEBUG
+
 #include "vtkObject.h"
 
 #include <vector>

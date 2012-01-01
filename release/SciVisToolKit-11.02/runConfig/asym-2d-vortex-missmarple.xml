@@ -3,17 +3,17 @@
 
   <vtkSQBOVReader
       cb_enable="1"
-      ISubset="5120 10239"
+      ISubset="6910 7935"
       JSubset="-1 -1"
-      KSubset="1280 2560">
+      KSubset="690 1715">
        <arrays> b ui ue </arrays>
   </vtkSQBOVReader>
 
   <vtkSQVortexFilter
-     passInput="1"
-     resultMagnitude="0"
-     computeRotation="0"
-     computeGradient="0"
+     passInput="0"
+     resultMagnitude="1"
+     computeRotation="1"
+     computeGradient="1"
      computeQ="0"/>
 
   <vtkSQBOVWriter

@@ -60,6 +60,7 @@ vtkSQVortexFilter::vtkSQVortexFilter()
   ComputeLambda2(0),
   ComputeDivergence(0),
   ComputeGradient(0),
+  ComputeEigenvalueDiagnostic(0),
   ComputeGradientDiagnostic(0),
   Mode(CartesianExtent::DIM_MODE_3D)
 {
@@ -1123,10 +1124,10 @@ int vtkSQVortexFilter::RequestData(
                 (VTK_TT*)da->GetVoidPointer(0),
                 (VTK_TT*)mda->GetVoidPointer(0)));
           }
-        #if defined vtkSQVortexFilterTIME
-        log->EndEvent("vtkSQVortexFilter::ResultMagnitude");
-        #endif
         }
+      #if defined vtkSQVortexFilterTIME
+      log->EndEvent("vtkSQVortexFilter::ResultMagnitude");
+      #endif
       }
     // outImData->Print(cerr);
     }

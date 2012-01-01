@@ -22,8 +22,8 @@ Copyright 2008 SciberQuest Inc.
 using std::ofstream;
 using std::ios_base;
 
-
 #include <mpi.h>
+
 
 
 //=============================================================================
@@ -375,6 +375,14 @@ void vtkSQLog::EndEvent(const char *event)
   timeval wallt;
   gettimeofday(&wallt,0x0);
   walle=(double)wallt.tv_sec+((double)wallt.tv_usec)/1.0E6;
+
+  #if defined(vtkSQLogDEBUG)
+  if (this->StartTime.size()==0)
+    {
+    sqErrorMacro(pCerr(),"No event to end! " << event);
+    return;
+    }
+  #endif
 
   double walls=this->StartTime.back();
   this->StartTime.pop_back();
