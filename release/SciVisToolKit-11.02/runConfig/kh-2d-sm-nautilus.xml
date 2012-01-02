@@ -6,7 +6,7 @@
       ISubset="-1 -1"
       JSubset="-1 -1"
       KSubset="-1 -1">
-       <arrays> ne </arrays>
+       <arrays> Ui Ue </arrays>
   </vtkSQBOVReader>
 
    <vtkSQKernelConvolution
@@ -16,12 +16,11 @@
      numberOfActiveCUDADevices="0"
      numberOfWarpsPerCUDABlock="8"
      inputCUDAMemoryType="0"
-     kernelCUDAMemoryType="0"
-     CPUDriverOptimization="1" />
+     kernelCUDAMemoryType="0"/>
 
   <vtkSQBOVWriter
       direct_io="0"
-      cb_enable="1"
+      cb_enable="0"
       cb_buffer_size="0"
       stripe_count="0"/>
 

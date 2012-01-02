@@ -6,7 +6,7 @@
       ISubset="-1 -1"
       JSubset="-1 -1"
       KSubset="-1 -1">
-       <arrays> ne </arrays>
+       <arrays> Ue Ui B J </arrays>
   </vtkSQBOVReader>
 
    <vtkSQKernelConvolution
@@ -21,7 +21,7 @@
 
   <vtkSQBOVWriter
       direct_io="0"
-      cb_enable="1"
+      cb_enable="0"
       cb_buffer_size="0"
       stripe_count="0"/>
 

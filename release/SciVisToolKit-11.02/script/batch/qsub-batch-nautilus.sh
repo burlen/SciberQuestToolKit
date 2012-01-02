@@ -7,10 +7,11 @@
 #$ -j y                                 # Combine stderr and stdout into stdout
 #!/bin/bash
 
-if [ $# != 10 ]
+if [ $# != 11 ]
 then
   echo "Usage: start_pvserver.sh NCPUS WALLTIME ACCOUNT PORT"
   echo
+  echo "  EXE          - program to execute."
   echo "  NCPUS        - number of processes in mutiple of 8."
   echo "  MEM          - ram per process. each 8 cpus comes with 32GB ram."
   echo "  WALLTIME     - wall time in HH:MM:SS format."
@@ -25,19 +26,22 @@ then
   exit
 fi
 
-NCPUS=$1
-MEM=$2
-WALLTIME=$3
-ACCOUNT=$4
-QUEUE=$5
-export CONFIG_FILE=$6
-export BOV_FILE=$7
-export OUTPUT_PATH=$8
-export START_TIME=$9
-export END_TIME=${10}
+export PV_EXE=$1
+NCPUS=$2
+export PV_NCPUS=$NCPUS
+MEM=$3
+WALLTIME=$4
+ACCOUNT=$5
+QUEUE=$6
+export CONFIG_FILE=$7
+export BOV_FILE=$8
+export OUTPUT_PATH=$9
+export START_TIME=${10}
+export END_TIME=${11}
 MEM=`echo "$NCPUS*$MEM*1000" | bc`
 
 export MPI_TYPE_MAX=1000000
+export MPI_GROUP_MAX=4096
 
 export PV_PATH=/sw/analysis/paraview/3.12.0/sles11.1_intel11.1.038
 
@@ -45,42 +49,12 @@ export LD_LIBRARY_PATH=$PV_PATH/lib/paraview-3.12/:/sw/analysis/python/2.7.1/sle
 
 export PATH=$PV_PATH/bin:/sw/analysis/python/2.7.1/sles11.1_intel11.1/bin:/opt/sgi/mpt/mpt-2.04/bin:/sw/analysis/git/1.7.6/sles11.1_intel11.1/bin:/nics/e/sw/tools/bin:/usr/local/hsi/bin:/usr/local/gold/bin:/opt/intel/Compiler/11.1/038/bin/intel64:/opt/moab/6.0.4/bin:/opt/torque/3.0.3/bin:/usr/local/bin:/usr/bin:/bin:/usr/lib/mit/bin:/usr/lib/mit/sbin
 
-export SMB_EXE=`which SmoothBatch`
-
-JID=`qsub -v MPI_TYPE_MAX,PV_PATH,PATH,LD_LIBRARY_PATH,PV_NCPUS,CONFIG_FILE,BOV_FILE,OUTPUT_PATH,START_TIME,END_TIME,SMB_EXE -N sm-batch -A $ACCOUNT -q $QUEUE -l ncpus=$NCPUS,mem=$MEM\MB,walltime=$WALLTIME /sw/analysis/paraview/3.12.0/sles11.1_intel11.1.038/bin/qsub-smooth-nautilus.qsub`
+JID=`qsub -v MPI_TYPE_MAX,MPI_GROUP_MAX,PV_PATH,PATH,LD_LIBRARY_PATH,PV_NCPUS,CONFIG_FILE,BOV_FILE,OUTPUT_PATH,START_TIME,END_TIME,PV_EXE -N sm-batch -A $ACCOUNT -q $QUEUE -l ncpus=$NCPUS,mem=$MEM\MB,walltime=$WALLTIME /sw/analysis/paraview/3.12.0/sles11.1_intel11.1.038/bin/qsub-batch-nautilus.qsub`
 ERRNO=$?
 if [ $ERRNO == 0 ] 
 then
-echo "Job submitted succesfully."
+echo "Job $JID submitted succesfully."
 else
 echo "ERROR $ERRNO: in job submission."
 fi
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

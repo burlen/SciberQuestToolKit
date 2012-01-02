@@ -10,6 +10,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkMPIController.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkCompositeDataPipeline.h"
+#include "vtkAlgorithm.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkInformationDoubleVectorKey.h"
@@ -22,6 +23,7 @@ Copyright 2008 SciberQuest Inc.
 
 #include "SQMacros.h"
 #include "postream.h"
+#include "vtkSQVPICReader.h"
 #include "vtkSQBOVReader.h"
 #include "vtkSQBOVWriter.h"
 #include "vtkSQImageGhosts.h"
@@ -271,10 +273,26 @@ int main(int argc, char **argv)
 
   // set up reader
   vector<string> arrays;
-  vtkSQBOVReader *r=vtkSQBOVReader::New();
-  iErr=r->Initialize(root,bovFileName,arrays);
-  if (iErr)
+  vtkAlgorithm *r=0;
+  vtkSQBOVReader *br=vtkSQBOVReader::New();
+  vtkSQVPICReader *vr=vtkSQVPICReader::New();
+  if (!br->Initialize(root,bovFileName,arrays))
     {
+    r=br;
+    vr->Delete();
+    vr=0;
+    }
+  else
+  if (!vr->Initialize(root,bovFileName,arrays))
+    {
+    r=vr;
+    br->Delete(); 
+    br=0;
+    }
+  else
+    {
+    br->Delete();
+    vr->Delete();
     sqErrorMacro(pCerr(),"Failed to initialize reader.");
     return SQ_EXIT_ERROR;
     }
@@ -433,9 +451,18 @@ int main(int argc, char **argv)
       //arrayEventLabel += vecName;
       //log->StartEvent(arrayEventLabel.c_str());
 
-      r->ClearPointArrayStatus();
-      r->SetPointArrayStatus(vecName.c_str(),1);
-
+      if (br)
+        {
+        br->ClearPointArrayStatus();
+        br->SetPointArrayStatus(vecName.c_str(),1);
+        }
+      else
+      if (vr)
+        {
+        vr->DisableAllPointArrays();
+        vr->SetPointArrayStatus(vecName.c_str(),1);
+        }
+ 
       kconv->SetInputArrayToProcess(
             0,
             0,

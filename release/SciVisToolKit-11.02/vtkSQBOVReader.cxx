@@ -204,10 +204,10 @@ int vtkSQBOVReader::Initialize(
       const char *fileName,
       vector<string> &arrays)
 {
-  vtkPVXMLElement *elem=GetRequiredElement(root,"vtkSQBOVReader");
+  vtkPVXMLElement *elem=GetOptionalElement(root,"vtkSQBOVReader");
   if (elem==0)
     {
-    sqErrorMacro(pCerr(),"Element for vtkSQBOVReader not present.");
+    //sqErrorMacro(pCerr(),"Element for vtkSQBOVReader not present.");
     return -1;
     }
 

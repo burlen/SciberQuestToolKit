@@ -700,6 +700,170 @@ Copyright 2008 SciberQuest Inc.
     </Hints>
   </SourceProxy>
 
+
+   <!-- Start vtkSQVPICReader -->
+   <SourceProxy name="vtkSQVPICReader"
+                class="vtkSQVPICReader"
+                label="VPIC Reader">
+
+     <Documentation
+       short_help="Read VPIC simulation files."
+       long_help="Reads distributed VPIC files into an ImageData.">
+       VPIC is a 3D kinetic plasma particle-in-cell simulation. The input file (.vpc) opened by the SQVPIC reader is an ASCII description of the data files which are written one file per processor, per category and per time step. These are arranged in subdirectories per category (field data and hydrology data) and then in time step subdirectories.
+     </Documentation>
+
+     <StringVectorProperty
+        name="FileName"
+        command="SetFileName"
+        animateable="0"
+        number_of_elements="1">
+        <FileListDomain name="files"/>
+        <Documentation>
+        ASCII .vpc file describes locations of data files, grid sizes, time step sizes and type and order of data written to the files.
+        </Documentation>
+     </StringVectorProperty>
+
+     <StringVectorProperty
+        name="PointArrayInfo"
+        information_only="1">
+        <ArraySelectionInformationHelper attribute_name="Point"/>
+     </StringVectorProperty>
+
+     <StringVectorProperty
+        name="PointArrayStatus"
+        command="SetPointArrayStatus"
+        number_of_elements="2"
+        repeat_command="1"
+        number_of_elements_per_command="2"
+        element_types="2 0"
+        information_property="PointArrayInfo"
+        label="Point Arrays">
+        <ArraySelectionDomain name="array_list" >
+          <RequiredProperties>
+             <Property name="PointArrayInfo" function="ArrayList"/>
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+        Variables written to the data files are described in the .vpc file and are presented for selection. Only selected variables are loaded for a time step.
+        </Documentation>
+     </StringVectorProperty>
+
+     <DoubleVectorProperty
+         name="TimestepValues"
+         repeatable="1"
+         information_only="1">
+       <TimeStepsInformationHelper/>
+     </DoubleVectorProperty>
+
+     <IntVectorProperty
+         name="SetStride"
+         label="Stride"
+         command="SetStride"
+         number_of_elements="3"
+         default_values="1 1 1">
+         <IntRangeDomain name="range" min="1"/>
+         <Documentation>
+         VPIC data may be very large and not all is needed for effective visualization. Setting the stride selects every nth data item within the files for display.
+         </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="DefaultXExtent"
+        command="GetXLayout"
+        information_only="1">
+        <SimpleIntInformationHelper/>
+        <Documentation>
+        VPIC data is written one file per simulation processor. This coarse map of files is used in partitioning files between visualizing processors so that each ParaView processor has its own set of files to display. Default extent is all files available.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="DefaultYExtent"
+        command="GetYLayout"
+        information_only="1">
+        <SimpleIntInformationHelper/>
+        <Documentation>
+        VPIC data is written one file per simulation processor. This coarse map of files is used in partitioning files between visualizing processors so that each ParaView processor has its own set of files to display. Default extent is all files available.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="DefaultZExtent"
+        command="GetZLayout"
+        information_only="1">
+        <SimpleIntInformationHelper/>
+        <Documentation>
+        SQVPIC data is written one file per simulation processor. This coarse map of files is used in partitioning files between visualizing processors so that each ParaView processor has its own set of files to display. Default extent is all files available.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="XExtent"
+        label="X Extent"
+        command="SetXExtent"
+        number_of_elements="2"
+        animateable="1"
+        default_values="-1 -1">
+        <IntRangeDomain name="XRange">
+             <RequiredProperties>
+                 <Property name="DefaultXExtent" function="Range"/>
+             </RequiredProperties>
+        </IntRangeDomain>
+        <Documentation>
+        VPIC data is written one file per simulation processor. This coarse map of files is used in partitioning files between visualizing processors so that each ParaView processor has its own set of files to display. Ghost cell overlap is handled within the reader. To limit the View of SQVPIC information the extent in the X dimension of "files" can be specified. Only the files selected will be displayed and they will be partitioned between the visualizing processors, allowing a higher resolution over a smaller area.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="YExtent"
+        label="Y Extent"
+        command="SetYExtent"
+        number_of_elements="2"
+        animateable="1"
+        default_values="-1 -1">
+        <IntRangeDomain name="YRange">
+             <RequiredProperties>
+                 <Property name="DefaultYExtent" function="Range"/>
+             </RequiredProperties>
+        </IntRangeDomain>
+        <Documentation>
+        VPIC data is written one file per simulation processor. This coarse map of files is used in partitioning files between visualizing processors so that each ParaView processor has its own set of files to display. Ghost cell overlap is handled within the reader. To limit the View of SQVPIC information the extent in the Y dimension of "files" can be specified. Only the files selected will be displayed and they will be partitioned between the visualizing processors, allowing a higher resolution over a smaller area.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ZExtent"
+        label="Z Extent"
+        command="SetZExtent"
+        number_of_elements="2"
+        animateable="1"
+        default_values="-1 -1">
+        <IntRangeDomain name="ZRange">
+             <RequiredProperties>
+                 <Property name="DefaultZExtent" function="Range"/>
+             </RequiredProperties>
+        </IntRangeDomain>
+        <Documentation>
+        VPIC data is written one file per simulation processor. This coarse map of files is used in partitioning files between visualizing processors so that each ParaView processor has its own set of files to display. Ghost cell overlap is handled within the reader. To limit the View of SQVPIC information the extent in the Z dimension of "files" can be specified. Only the files selected will be displayed and they will be partitioned between the visualizing processors, allowing a higher resolution over a smaller area.
+        </Documentation>
+     </IntVectorProperty>
+
+     <Hints>
+        <ReaderFactory extensions="vpc"
+          file_description="VPIC Files" />
+     </Hints>
+
+   </SourceProxy>
+   <!-- End vtkSQVPICReader -->
+
+
+
+
+
+
+
+
+
 </ProxyGroup>
 
 <!--

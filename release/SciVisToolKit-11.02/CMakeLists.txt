@@ -59,6 +59,7 @@ set(SM_CXX_SOURCES
   vtkSQTubeFilter.cxx
   vtkSQVolumeSource.cxx
   vtkSQVortexFilter.cxx
+  vtkSQVPICReader.cxx
   )
 
 set(SVTK_SC11_DEMO OFF CACHE BOOL "Build the SC11 demo")
@@ -355,14 +356,14 @@ set(SVTK_BATCH_SCRIPTS_ALL OFF CACHE BOOL "Install all batchscripts")
 set(SVTK_BATCH_SCRIPTS_NAUTILUS OFF CACHE BOOL "Install scripts for Nautilus")
 if (SVTK_BATCH_SCRIPTS_NAUTILUS OR SVTK_BATCH_SCRIPTS_ALL)
   message(STATUS "Installing batch scripts for Nautilus.")
-  file(GLOB SVTK_BATCH_SCRIPT_SOURCES RELATIVE script/batch/ "*nautilus*")
+  file(GLOB SVTK_BATCH_SCRIPT_SOURCES  "${BATCH_SCRIPT_DIR}/*nautilus*")
   install(PROGRAMS ${SVTK_BATCH_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()
 
 set(SVTK_BATCH_SCRIPTS_LONGHORN OFF CACHE BOOL "Install scripts for Longhorn")
 if (SVTK_BATCH_SCRIPTS_LONGHORN OR SVTK_BATCH_SCRIPTS_ALL)
   message(STATUS "Installing batch scripts for Longhorn.")
-  file(GLOB SVTK_BATCH_SCRIPT_SOURCES RELATIVE script/batch/ "*lonhorn*")
+  file(GLOB SVTK_BATCH_SCRIPT_SOURCES "${BATCH_SCRIPT_DIR}/*lonhorn*")
   install(PROGRAMS ${SVTK_BATCH_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()
 
