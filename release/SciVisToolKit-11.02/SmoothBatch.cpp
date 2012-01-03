@@ -28,6 +28,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkSQBOVWriter.h"
 #include "vtkSQImageGhosts.h"
 #include "vtkSQKernelConvolution.h"
+#include "vtkSQMedianFilter.h"
 #include "vtkSQLog.h"
 #include "FsUtils.h"
 #include "XMLUtils.h"
@@ -286,7 +287,7 @@ int main(int argc, char **argv)
   if (!vr->Initialize(root,bovFileName,arrays))
     {
     r=vr;
-    br->Delete(); 
+    br->Delete();
     br=0;
     }
   else
@@ -309,19 +310,34 @@ int main(int argc, char **argv)
   r->Delete();
 
   // set up kernel convolution filter
+  vtkAlgorithm *sf=0;
+  int fwid=3;
   vtkSQKernelConvolution *kconv=vtkSQKernelConvolution::New();
-  iErr=kconv->Initialize(root);
-  if (iErr)
+  vtkSQMedianFilter *medf=vtkSQMedianFilter::New();
+  if (!kconv->Initialize(root))
     {
-    sqErrorMacro(pCerr(),"Failed to initialize kernel convolution filter.");
+    sf=kconv;
+    fwid=kconv->GetKernelWidth();
+    medf->Delete();
+    }
+  else
+  if (!medf->Initialize(root))
+    {
+    sf=medf;
+    fwid=medf->GetKernelWidth();
+    kconv->Delete();
+    }
+  else
+    {
+    sqErrorMacro(pCerr(),"Failed to initialize smoothing filter.");
     return SQ_EXIT_ERROR;
     }
-  kconv->AddInputConnection(ig->GetOutputPort(0));
+  sf->AddInputConnection(ig->GetOutputPort(0));
   ig->Delete();
 
   // set up the writer
   ostringstream bovId;
-  bovId << "_sm_" << kconv->GetKernelWidth() << ".bov";
+  bovId << "_sm_" << fwid << ".bov";
   string outputBovFileName
     = outputPath +
         StripExtensionFromFileName(StripPathFromFileName(bovFileName)) +
@@ -335,8 +351,8 @@ int main(int argc, char **argv)
     return SQ_EXIT_ERROR;
     }
   w->SetFileName(outputBovFileName.c_str());
-  w->AddInputConnection(0,kconv->GetOutputPort(0));
-  kconv->Delete();
+  w->AddInputConnection(0,sf->GetOutputPort(0));
+  sf->Delete();
 
   // make a directory for this dataset
   if (worldRank==0)
@@ -354,7 +370,7 @@ int main(int argc, char **argv)
 
   // initialize for domain decomposition
   vtkStreamingDemandDrivenPipeline* exec
-    = dynamic_cast<vtkStreamingDemandDrivenPipeline*>(kconv->GetExecutive());
+    = dynamic_cast<vtkStreamingDemandDrivenPipeline*>(sf->GetExecutive());
 
   vtkInformation *info=exec->GetOutputInformation(0);
 
@@ -430,9 +446,6 @@ int main(int argc, char **argv)
 
     ostringstream oss;
     oss << idx << ":" << time;
-    //string stepEventLabel("SmoothBatch::ProcessTimeStep_");
-    //stepEventLabel+=oss.str();
-    //log->StartEvent(stepEventLabel.c_str());
 
     if (worldRank==0)
       {
@@ -447,10 +460,6 @@ int main(int argc, char **argv)
       {
       const string &vecName=arrays[vecIdx];
 
-      //string arrayEventLabel("SmoothBatch::ProcessArray_");
-      //arrayEventLabel += vecName;
-      //log->StartEvent(arrayEventLabel.c_str());
-
       if (br)
         {
         br->ClearPointArrayStatus();
@@ -462,8 +471,8 @@ int main(int argc, char **argv)
         vr->DisableAllPointArrays();
         vr->SetPointArrayStatus(vecName.c_str(),1);
         }
- 
-      kconv->SetInputArrayToProcess(
+
+      sf->SetInputArrayToProcess(
             0,
             0,
             0,
@@ -477,10 +486,7 @@ int main(int argc, char **argv)
         pCerr() << "Wrote " << vecName << endl;
         }
 
-      //log->EndEvent(arrayEventLabel.c_str());
       }
-
-      //log->EndEvent(stepEventLabel.c_str());
     }
 
   w->WriteMetaData();
@@ -489,7 +495,6 @@ int main(int argc, char **argv)
   free(configName);
   free(outputPath);
   free(bovFileName);
-
 
   MPI_Barrier(MPI_COMM_WORLD);
   log->EndEvent(0,"SmoothBatch::TotalRunTime");
