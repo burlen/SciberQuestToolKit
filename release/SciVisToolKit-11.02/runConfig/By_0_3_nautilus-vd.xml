@@ -6,7 +6,7 @@
       ISubset="-1 -1"
       JSubset="-1 -1"
       KSubset="-1 -1">
-       <arrays> B Ui Ue J </arrays>
+       <arrays> Ue J </arrays>
   </vtkSQBOVReader>
 
   <vtkSQVortexFilter

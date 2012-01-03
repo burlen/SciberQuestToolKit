@@ -13,6 +13,14 @@ Copyright 2008 SciberQuest Inc.
 //-----------------------------------------------------------------------------
 MPI_File Open(MPI_Comm comm, MPI_Info hints, const char *fileName, int mode)
 {
+  // added this to deal with vpic data arrays which use spaces.
+  string cleanFileName=fileName;
+  size_t fileNameLen=cleanFileName.size();
+  for (size_t i=0; i<fileNameLen; ++i)
+    { 
+    if (cleanFileName[i]==' ') cleanFileName[i]='-';
+    }
+
   MPI_File file=0;
   int iErr;
   const int eStrLen=2048;
@@ -20,7 +28,7 @@ MPI_File Open(MPI_Comm comm, MPI_Info hints, const char *fileName, int mode)
   // Open the file
   iErr=MPI_File_open(
       comm,
-      const_cast<char *>(fileName),
+      const_cast<char *>(cleanFileName.c_str()),
       mode,
       hints,
       &file);
@@ -28,7 +36,7 @@ MPI_File Open(MPI_Comm comm, MPI_Info hints, const char *fileName, int mode)
     {
     MPI_Error_string(iErr,eStr,const_cast<int *>(&eStrLen));
     sqErrorMacro(cerr,
-        << "Error opeing file: " << fileName << endl
+        << "Error opeing file: " << cleanFileName << endl
         << eStr);
     file=0;
     }

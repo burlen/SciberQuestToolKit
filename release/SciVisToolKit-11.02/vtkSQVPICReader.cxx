@@ -202,6 +202,17 @@ int vtkSQVPICReader::Initialize(
       sqErrorMacro(pCerr(),"Error: parsing <arrays>.");
       return -1;
       }
+    // vpic array names contain spaces, for our convinience these
+    // will be replaced with - in the xml config.
+    for (int i=0; i<nArrays; ++i) 
+      {  
+      string &arrayName=arrays[i];
+      int arrayNameLen=arrayName.size();
+      for (int j=0; j<arrayNameLen; ++j)
+        {
+        if (arrayName[j]=='-') arrayName[j]=' ';
+        }
+      }
     }
   else
     {
