@@ -943,6 +943,130 @@ void ScalarConvolution3D(
 }
 */
 
+
+/**
+Functor for comapring array values by index
+*/
+template<typename T>
+class IndirectCompare
+{
+public:
+  //
+  IndirectCompare() : Data(0) {}
+  IndirectCompare(T *data) : Data(data) {}
+
+  // compare data at the given indices
+  bool operator()(unsigned long l, unsigned long r)
+  { return this->Data[l]<this->Data[r]; }
+
+private:
+  T *Data;
+};
+
+/**
+This implementation is written so that adjacent threads access adjacent
+memory locations. This requires that vtk vectors/tensors etc be split.
+*/
+//*****************************************************************************
+template<typename T>
+void ScalarMedianFilter2D(
+      //int worldRank,
+      unsigned long vni,
+      unsigned long wni,
+      unsigned long wnij,
+      unsigned long kni,
+      unsigned long knij,
+      unsigned long nGhost,
+      T * __restrict__ V,
+      T * __restrict__ W)
+{
+  unsigned long ids[knij];
+  IndirectCompare<T> comp(V);
+
+  // get a tuple from the current flat index in the output
+  // index space
+  for (unsigned long wi=0; wi<wnij; ++wi)
+    {
+    unsigned long i,j;
+    j=wi/wni;
+    i=wi-j*wni;
+
+    // setup search space
+    unsigned long ki=0;
+    for (unsigned long g=0; g<kni; ++g)
+      {
+      unsigned long q=vni*(j+g)+i;
+      for (unsigned long f=0; f<kni; ++f)
+        {
+        unsigned long vi=q+f;
+        ids[ki]=vi;
+        ++ki;
+        }
+      }
+
+    // sort
+    std::sort(ids,ids+knij,comp);
+
+    // cerr << wi << " " << V[ids[0]] << " " << V[ids[knij/2]] << " " << V[ids[knij-1]] << endl;
+
+    // median
+    W[wi]=V[ids[knij/2]];
+    }
+}
+
+//*****************************************************************************
+template<typename T>
+void ScalarMedianFilter3D(
+      unsigned long vni,
+      unsigned long vnij,
+      unsigned long wni,
+      unsigned long wnij,
+      unsigned long wnijk,
+      unsigned long kni,
+      unsigned long knij,
+      unsigned long knijk,
+      unsigned long nGhost,
+      T * __restrict__ V,
+      T * __restrict__ W)
+{
+  unsigned long ids[knijk];
+  IndirectCompare<T> comp(V);
+
+  // visit each output element
+  for (unsigned long wi=0; wi<wnijk; ++wi)
+    {
+    unsigned long i,j,k;
+    k=wi/wnij;
+    j=(wi-k*wnij)/wni;
+    i=wi-k*wnij-j*wni;
+
+    // set up search space
+    unsigned long ki=0;
+    for (unsigned long h=0; h<kni; ++h)
+      {
+      unsigned long r=vnij*(k+h);
+      for (unsigned long g=0; g<kni; ++g)
+        {
+        unsigned long q=r+vni*(j+g)+i;
+        for (unsigned long f=0; f<kni; ++f)
+          {
+          unsigned long vi=q+f;
+          ids[q]=vi;
+          }
+        }
+      }
+
+    // sort
+    std::sort(ids,ids+knijk,comp);
+
+    // median
+    W[wi]=V[ids[knijk/2]];
+    }
+}
+
+
+
+
 //*****************************************************************************
 template <typename T>
 void DivergenceFace(int *I, double *dX, T *V, T *mV, T *div)

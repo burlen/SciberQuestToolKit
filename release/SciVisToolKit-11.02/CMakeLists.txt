@@ -34,6 +34,7 @@ set(SVTK_LIB_INSTALL_PATH
 set(SM_CXX_SOURCES
   vtkSQBOVReader.cxx
   vtkSQBOVWriter.cxx
+  vtkSQCellGenerator.cxx
   vtkSQDistributedStreamTracer.cxx
   vtkSQEdgeFilter.cxx
   vtkSQFieldTopologySelect.cxx
@@ -43,7 +44,7 @@ set(SM_CXX_SOURCES
   vtkSQImageGhosts.cxx
   vtkSQKernelConvolution.cxx
   vtkSQLineSource.cxx
-  vtkSQCellGenerator.cxx
+  vtkSQMedianFilter.cxx
   vtkSQPlaneSourceCellGenerator.cxx
   vtkSQPStreamTracer.cxx
   vtkSQVolumeSourceCellGenerator.cxx

@@ -10,8 +10,11 @@ Copyright 2008 SciberQuest Inc.
 
   <Proxy group="sources" name="vtkSQBOVReader" />
   <Proxy group="sources" name="vtkSQBOVMetaReader" />
-  <Proxy group="sources" name="vtkSC11DemoReader" />
   <Proxy group="sources" name="vtkSQVPICReader" />
+
+  <!--
+  <Proxy group="sources" name="vtkSC11DemoReader" />
+  -->
 
 </ParaViewReaders>
 

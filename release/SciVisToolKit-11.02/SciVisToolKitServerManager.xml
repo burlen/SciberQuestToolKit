@@ -644,6 +644,7 @@ Copyright 2008 SciberQuest Inc.
   </SourceProxy>
 
   <!--========================================================================-->
+  <!--
   <SourceProxy
       name="vtkSC11DemoReader"
       class="vtkSC11DemoReader"
@@ -653,7 +654,7 @@ Copyright 2008 SciberQuest Inc.
         long_help="SC11 Demo reader"
     </Documentation>
 
-    <!-- File Name -->
+     File Name
     <StringVectorProperty
         name="FileName"
         animateable="0"
@@ -664,7 +665,8 @@ Copyright 2008 SciberQuest Inc.
       This property specifies the file name for the reader.
     </Documentation>
     </StringVectorProperty>
-    <!-- Time Steps -->
+
+     Time Steps
     <DoubleVectorProperty
         name="TimestepValues"
         information_only="1">
@@ -674,7 +676,7 @@ Copyright 2008 SciberQuest Inc.
       </Documentation>
     </DoubleVectorProperty>
 
-    <!-- Subset selection -->
+      Subset selection 
     <IntVectorProperty
         name="DirtyValueInfo"
         command="GetDirtyValue"
@@ -699,6 +701,7 @@ Copyright 2008 SciberQuest Inc.
       <Property name="DirtyValue" show="0"/>
     </Hints>
   </SourceProxy>
+  -->
 
 
    <!-- Start vtkSQVPICReader -->
@@ -3640,6 +3643,199 @@ Copyright 2008 SciberQuest Inc.
 
   <!-- End vtkSQVortexFilter -->
   </SourceProxy>
+
+  <!-- ==================================================================== -->
+  <SourceProxy
+    name="vtkSQMedianFilter"
+    class="vtkSQMedianFilter"
+    label="SQ Median Filter">
+    <Documentation
+      long_help="Long Documentation"
+      short_help="Short Documentation">
+      Textual Documentation.
+    </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+           <InputArrayDomain name="input_array" attribute_type="point"/>
+      </InputProperty>
+
+      <StringVectorProperty
+         name="SelectInputVectors"
+         command="SetInputArrayToProcess"
+         number_of_elements="5"
+         element_types="0 0 0 0 2"
+         label="Vector Field">
+            <ArrayListDomain name="array_list" attribute_type="Vectors">
+              <RequiredProperties>
+                 <Property name="Input" function="Input"/>
+              </RequiredProperties>
+            </ArrayListDomain>
+            <Documentation>
+              Identifies the vector field on which to operate.
+            </Documentation>
+      </StringVectorProperty>
+
+    <!--
+    <IntVectorProperty
+        name="KernelType"
+        lable="Kernel"
+        command="SetKernelType"
+        number_of_elements="1"
+        default_values="1" >
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="Min"/>
+        <Entry value="1" text="Median"/>
+        <Entry value="1" text="Max"/>
+        <Entry value="3" text="Max diff"/>
+      </EnumerationDomain>
+      <Documentation>
+        Select a kernel.
+      </Documentation>
+    </IntVectorProperty>
+    -->
+
+    <IntVectorProperty
+        name="KernelWidth"
+        label="Width"
+        command="SetKernelWidth"
+        number_of_elements="1"
+        default_values="3"
+        animateable="1"
+        >
+      <EnumerationDomain name="enum">
+        <Entry value="3" text="3"/>
+        <Entry value="5" text="5"/>
+        <Entry value="7" text="7"/>
+        <Entry value="9" text="9"/>
+        <Entry value="11" text="11"/>
+        <Entry value="13" text="13"/>
+        <Entry value="15" text="15"/>
+        <Entry value="17" text="17"/>
+        <Entry value="19" text="19"/>
+        <Entry value="21" text="21"/>
+        <Entry value="23" text="23"/>
+        <Entry value="25" text="25"/>
+        <Entry value="27" text="27"/>
+        <Entry value="29" text="29"/>
+        <Entry value="31" text="31"/>
+        <Entry value="33" text="33"/>
+        <Entry value="35" text="35"/>
+        <Entry value="37" text="37"/>
+        <Entry value="39" text="39"/>
+      </EnumerationDomain>
+      <Documentation>
+        Kernel size.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!--
+    <IntVectorProperty
+        name="CPUDriverOptimization"
+        label="CPU Optimization"
+        command="SetCPUDriverOptimization"
+        number_of_elements="1"
+        default_values="1">
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="Minimize memory usage"/>
+        <Entry value="1" text="Minimize cache misses"/>
+      </EnumerationDomain>
+      <Documentation>
+        Various optimizations. If you are running out of memory then choose the minimize memory usage.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="RanksToUseCUDA"
+        label="CUDA Ranks Per Host"
+        command="SetNumberOfMPIRanksToUseCUDA"
+        number_of_elements="1"
+        default_values="-1">
+       <Documentation>
+         When set larger than 0, ranks are assigned to use GPUs.
+       </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+      name="GetNumberOfCUDADevices"
+      command="GetNumberOfCUDADevices"
+      information_only="1">
+      <SimpleIntInformationHelper/>
+    </IntVectorProperty>
+    <IntVectorProperty
+        name="ActiveCUDADevices"
+        label="Active CUDA Devices Per Host"
+        command="SetNumberOfActiveCUDADevices"
+        number_of_elements="1"
+        default_values="-1">
+       <Documentation>
+         When set larger than 0, work is assigned to GPUs.
+       </Documentation>
+      <IntRangeDomain name="range">
+        <RequiredProperties>
+            <Property name="GetNumberOfCUDADevices" function="Range"/>
+        </RequiredProperties>
+      </IntRangeDomain>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="WarpsPerCUDABlock"
+        label="CUDA Warps Per Block"
+        command="SetNumberOfWarpsPerCUDABlock"
+        number_of_elements="1"
+        default_values="8">
+       <Documentation>
+         Control over domain decomposition. More warps per block means larger blocks.
+       </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="KernelCUDAMemoryType"
+        label="Kernel CUDA Memory Type"
+        command="SetKernelCUDAMemoryType"
+        number_of_elements="1"
+        default_values="0">
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="global"/>
+        <Entry value="1" text="constant"/>
+        <Entry value="2" text="texture"/>
+      </EnumerationDomain>
+      <Documentation>
+        Control where the kernel is placed in device memory.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="InputCUDAMemoryType"
+        label="Input CUDA Memory Type"
+        command="SetInputCUDAMemoryType"
+        number_of_elements="1"
+        default_values="0">
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="global"/>
+        <Entry value="2" text="texture"/>
+      </EnumerationDomain>
+      <Documentation>
+        Control where the input array is placed in device memory.
+      </Documentation>
+    </IntVectorProperty>
+    -->
+
+    <Hints>
+      <View type="RenderView"/>
+    </Hints>
+
+  <!-- End vtkSQMedianFilter -->
+  </SourceProxy>
+
 
   <!-- ==================================================================== -->
   <SourceProxy 
