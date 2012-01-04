@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<SmoothBatch>
+
+  <vtkSQBOVReader
+      cb_enable="0"
+      ISubset="-1 -1"
+      JSubset="-1 -1"
+      KSubset="-1 -1">
+       <arrays> vi b den </arrays>
+  </vtkSQBOVReader>
+
+  <vtkSQMedianFilter stencilWidth="9" />
+
+  <!--
+  <vtkSQKernelConvolution
+     kernelType="0"
+     stencilWidth="19"
+     numberOfMPIRanksToUseCUDA="0"
+     numberOfActiveCUDADevices="0"
+     numberOfWarpsPerCUDABlock="8"
+     inputCUDAMemoryType="0"
+     kernelCUDAMemoryType="0"
+     CPUDriverOptimization="1" />
+  -->
+
+  <vtkSQBOVWriter
+      direct_io="0"
+      cb_enable="1"
+      cb_buffer_size="0"
+      stripe_count="0"/>
+
+</SmoothBatch>
+

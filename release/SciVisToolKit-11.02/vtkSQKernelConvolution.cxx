@@ -233,10 +233,11 @@ int vtkSQKernelConvolution::Initialize(vtkPVXMLElement *root)
   pCerr() << "===============================vtkSQKernelConvolution::Initialize" << endl;
   #endif
 
-  vtkPVXMLElement *elem=GetRequiredElement(root,"vtkSQKernelConvolution");
+  vtkPVXMLElement *elem=0;
+  elem=GetOptionalElement(root,"vtkSQKernelConvolution");
   if (elem==0)
     {
-    sqErrorMacro(pCerr(),"Element for vtkSQKernelConvolution is not present.");
+    //sqErrorMacro(pCerr(),"Element for vtkSQKernelConvolution is not present.");
     return -1;
     }
 

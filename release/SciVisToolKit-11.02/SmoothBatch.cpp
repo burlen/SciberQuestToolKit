@@ -309,7 +309,7 @@ int main(int argc, char **argv)
   ig->AddInputConnection(r->GetOutputPort(0));
   r->Delete();
 
-  // set up kernel convolution filter
+  // set up smoothing filter
   vtkAlgorithm *sf=0;
   int fwid=3;
   vtkSQKernelConvolution *kconv=vtkSQKernelConvolution::New();

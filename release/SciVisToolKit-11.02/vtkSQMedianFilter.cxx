@@ -237,10 +237,11 @@ int vtkSQMedianFilter::Initialize(vtkPVXMLElement *root)
   pCerr() << "===============================vtkSQMedianFilter::Initialize" << endl;
   #endif
 
-  vtkPVXMLElement *elem=GetRequiredElement(root,"vtkSQMedianFilter");
+  vtkPVXMLElement *elem=0;
+  elem=GetOptionalElement(root,"vtkSQMedianFilter");
   if (elem==0)
     {
-    sqErrorMacro(pCerr(),"Element for vtkSQMedianFilter is not present.");
+    //sqErrorMacro(pCerr(),"Element for vtkSQMedianFilter is not present.");
     return -1;
     }
 

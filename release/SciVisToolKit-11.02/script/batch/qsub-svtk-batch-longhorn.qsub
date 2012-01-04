@@ -7,7 +7,7 @@
 #$ -j y                                 # Combine stderr and stdout into stdout
 #$ -o $HOME/$JOB_NAME.out               # Name of the output file
 
-if [ $# != 7 ]
+if [ $# != 6 ]
 then
   echo "usage:"
   echo $0 EXE CONFIG_FILE BOV_FILE OUTPUT_PATH START_TIME END_TIME
@@ -27,15 +27,13 @@ module load cuda/4.0
 #module load PV3-3.10.0-icc-ompi-R
 #module load SVTK-PV3-3.10.0-icc-ompi-R
 
+date
 echo "EXE=$EXE"
 echo "CONFIG_FILE=$CONFIG_FILE"
 echo "BOV_FILE=$BOV_FILE"
 echo "OUTPUT_PATH=$OUTPUT_PATH"
-echo "BASE_NAME=$BASE_NAME"
 echo "START_TIME=$START_TIME"
 echo "END_TIME=$END_TIME"
-
-date
 
 IBRUN_PATH=/share/sge6.2/default/pe_scripts
 
