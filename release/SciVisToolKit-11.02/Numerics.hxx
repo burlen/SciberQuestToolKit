@@ -1005,7 +1005,8 @@ void ScalarMedianFilter2D(
       }
 
     // sort
-    std::sort(ids,ids+knij,comp);
+    //std::sort(ids,ids+knij,comp);
+    std::partial_sort(ids,ids+knij/2+1,ids+knij,comp);
 
     // cerr << wi << " " << V[ids[0]] << " " << V[ids[knij/2]] << " " << V[ids[knij-1]] << endl;
 
@@ -1051,13 +1052,15 @@ void ScalarMedianFilter3D(
         for (unsigned long f=0; f<kni; ++f)
           {
           unsigned long vi=q+f;
-          ids[q]=vi;
+          ids[ki]=vi;
+          ++ki;
           }
         }
       }
 
     // sort
-    std::sort(ids,ids+knijk,comp);
+    //std::sort(ids,ids+knijk,comp);
+    std::partial_sort(ids,ids+knijk/2+1,ids+knijk,comp);
 
     // median
     W[wi]=V[ids[knijk/2]];

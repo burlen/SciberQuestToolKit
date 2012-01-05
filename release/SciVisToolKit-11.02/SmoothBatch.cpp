@@ -319,6 +319,7 @@ int main(int argc, char **argv)
     sf=kconv;
     fwid=kconv->GetKernelWidth();
     medf->Delete();
+    medf=0;
     }
   else
   if (!medf->Initialize(root))
@@ -326,6 +327,7 @@ int main(int argc, char **argv)
     sf=medf;
     fwid=medf->GetKernelWidth();
     kconv->Delete();
+    kconv=0;
     }
   else
     {

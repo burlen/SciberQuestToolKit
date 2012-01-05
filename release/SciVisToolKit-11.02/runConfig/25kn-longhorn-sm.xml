@@ -2,7 +2,7 @@
 <SmoothBatch>
 
   <vtkSQBOVReader
-      cb_enable="0"
+      cb_enable="1"
       ISubset="-1 -1"
       JSubset="-1 -1"
       KSubset="-1 -1">
@@ -14,7 +14,7 @@
   <!--
   <vtkSQKernelConvolution
      kernelType="0"
-     stencilWidth="19"
+     stencilWidth="9"
      numberOfMPIRanksToUseCUDA="0"
      numberOfActiveCUDADevices="0"
      numberOfWarpsPerCUDABlock="8"
