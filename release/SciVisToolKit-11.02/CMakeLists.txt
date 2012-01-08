@@ -322,8 +322,12 @@ endif()
 
 install(TARGETS SciVisToolKit DESTINATION ${SVTK_LIB_INSTALL_PATH})
 
-if (NOT WIN32)
+set(SVTK_PYTHON_BINDINGS OFF CACHE BOOL "Generate vtk python bindings")
+if (SVTK_PYTHON_BINDINGS)
+  message(STATUS "generating vtk python bindings.")
   generate_python_bindings(SciVisToolKit "${SM_CXX_SOURCES}")
+  install(TARGETS SciVisToolKitPython DESTINATION ${SVTK_LIB_INSTALL_PATH})
+  install(TARGETS SciVisToolKitPythonD DESTINATION ${SVTK_LIB_INSTALL_PATH})
 endif()
 
 # GIMP scripts
