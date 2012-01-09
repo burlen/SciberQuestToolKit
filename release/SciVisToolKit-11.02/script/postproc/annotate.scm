@@ -7,9 +7,9 @@
 ;Copyright 2008 SciberQuest Inc.
 ;
 
-(define 
-  (annotate inFile outFile text fontSize fontColor)
-    (let* 
+(define
+  (annotate inFile outFile text pos fontSize fontColor)
+    (let*
       (
       (imw  0)    ; image width
       (imh  0)    ; image ht
@@ -39,15 +39,37 @@
 
       (set! lm (* fpx 1))
       (set! rm (* fpx 0))
-      (set! tm (* fpx 1))
+      (set! tm (* fpx 0))
       (set! bm (* fpx 1))
 
       (set! tw (* (string-length text) fpx))
       (set! th fpx)
 
-      ; lower right position
-      (set! x (- imw (+ rm tw)))
-      (set! y (- imh (+ bm th)))
+      ; debug
+      ; (gimp-message-set-handler ERROR-CONSOLE)
+      ; (gimp-message inFile)
+      ; (gimp-message outFile)
+      ; (gimp-message text)
+      ; (gimp-message pos)
+      ; (gimp-message fontSize)
+      ; (gimp-message fontColor)
+
+      (cond
+        ((string=? pos "ur")
+          (set! x (- imw (+ rm tw)))
+          (set! y (+ 0 (+ tm th))))
+        ((string=? pos "lr")
+          (set! x (- imw (+ rm tw)))
+          (set! y (- imh (+ bm th))))
+        ((string=? pos "ul")
+          (set! x (+ 0 (+ rm tw)))
+          (set! y (+ 0 (+ tm th))))
+        ((string=? pos "ll")
+          (set! x (+ 0 (+ rm tw)))
+          (set! y (- imh (+ bm th))))
+        (else
+          (set! x (- imw (+ rm tw)))
+          (set! y (- imh (+ bm th)))))
 
       ; add annotation
       (cond
@@ -61,9 +83,9 @@
           (gimp-context-set-background '(  0   0   0))
           (gimp-context-set-foreground '(145 145 145))))
 
-      (gimp-floating-sel-to-layer 
-        (car 
-          (gimp-text-fontname 
+      (gimp-floating-sel-to-layer
+        (car
+          (gimp-text-fontname
               im
               dw
               x

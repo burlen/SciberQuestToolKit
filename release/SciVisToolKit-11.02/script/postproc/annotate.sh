@@ -1,24 +1,23 @@
 #!/bin/bash
 
-INPUT=$1
-shift 1
 
-OUTPUT=$1
-shift 1
-
-TEXT=$1
-shift 1
-
-FONT_SIZE=$1
-shift 1
-
-FONT_COLOR=$1
-shift 1
-
-if [[ -z "$INPUT" || -z "$OUTPUT" || -z "$TEXT" ]]
+if [ $# -lt 3 ]
 then
   echo "Error: $0 /path/to/input /path/to/output text" 1>&2
-  exit
+  exit -1
+fi
+
+INPUT=$1
+OUTPUT=$2
+TEXT=$3
+POS=$4
+FONT_SIZE=$5
+FONT_COLOR=$6
+
+# default font size
+if [[ -z "$POS" ]]
+then
+  POS="lr"
 fi
 
 # default font size
@@ -33,4 +32,4 @@ then
   FONT_COLOR="w"
 fi
 
-gimp -i -b "(annotate \"$INPUT\" \"$OUTPUT\" \"$TEXT\" \"$FONT_SIZE\" \"$FONT_COLOR\")" -b "(gimp-quit 0)"
+gimp -i -b "(annotate \"$INPUT\" \"$OUTPUT\" \"$TEXT\" \"$POS\" \"$FONT_SIZE\" \"$FONT_COLOR\")" -b "(gimp-quit 0)"
