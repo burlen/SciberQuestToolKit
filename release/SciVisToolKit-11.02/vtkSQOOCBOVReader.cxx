@@ -153,7 +153,7 @@ void vtkSQOOCBOVReader::Close()
     }
   #endif
 
-  if (CloseClearsCachedBlocks)
+  if (this->CloseClearsCachedBlocks)
     {
     this->ClearBlockCache();
     }

@@ -189,6 +189,45 @@ void logspace(T lo, T hi, int n, T p, T *data)
     }
 }
 
+//*****************************************************************************
+template <typename T>
+T Interpolate(double t, T v0, T v1)
+{
+  T w=(1.0-t)*v0 + t*v1;
+  return w;
+}
+
+//*****************************************************************************
+template <typename T>
+T Interpolate(double t0, double t1, T v0, T v1, T v2, T v3)
+{
+  T w0=Interpolate(t0,v0,v1);
+  T w1=Interpolate(t0,v2,v3);
+  T w2=Interpolate(t1,w0,w1);
+  return w2;
+}
+
+//*****************************************************************************
+template <typename T>
+T Interpolate(
+      double t0,
+      double t1,
+      double t2,
+      T v0,
+      T v1,
+      T v2,
+      T v3,
+      T v4,
+      T v5,
+      T v6,
+      T v7)
+{
+  T w0=Interpolate(t0,t1,v0,v1,v2,v3);
+  T w1=Interpolate(t0,t1,v4,v5,v6,v7);
+  T w2=Interpolate(t2,w0,w1);
+  return w2;
+}
+
 //=============================================================================
 template <typename T>
 class CentralStencil

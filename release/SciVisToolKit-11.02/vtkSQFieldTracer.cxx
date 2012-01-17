@@ -1027,7 +1027,7 @@ void vtkSQFieldTracer::IntegrateOne(
       pCerr() << " " << Tuple<double>(p0,3) << endl;
       #endif
 
-      // Load a block if the seed point is not sontained in the current block.
+      // Load a block if the seed point is not contained in the current block.
       if (tcon->OutsideWorkingDomain(p0))
         {
         #if defined vtkSQImageGhostsTIME
