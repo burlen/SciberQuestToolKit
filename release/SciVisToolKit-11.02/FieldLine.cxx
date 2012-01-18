@@ -45,16 +45,38 @@ vtkIdType FieldLine::CopyPoints(float *pts)
   float *pbtr=this->BwdTrace->GetPointer(0);
   // start at the end.
   pbtr+=3*nPtsBwd-3;
-  for (vtkIdType i=0; i<nPtsBwd; ++i,pts+=3,pbtr-=3)
+  if (nPtsBwd)
     {
     pts[0]=pbtr[0];
     pts[1]=pbtr[1];
     pts[2]=pbtr[2];
+    pts+=3;
+    pbtr-=3;
+    for (vtkIdType i=3; i<nPtsBwd; ++i,pbtr-=3)
+      {
+      if (this->MinSegmentLength>0.0)
+        {
+        float dx=pbtr[0]-*(pts-3);
+        float dy=pbtr[1]-*(pts-2);
+        float dz=pbtr[2]-*(pts-1);
+        float r=sqrt(dx*dx+dy*dy+dz*dz);
+        if (r<this->MinSegmentLength)
+          {
+          continue;
+          }
+        }
+      pts[0]=pbtr[0];
+      pts[1]=pbtr[1];
+      pts[2]=pbtr[2];
+      pts+=3;
+      }
     }
 
   // Copy the forward running field line.
   vtkIdType nPtsFwd=this->FwdTrace->GetNumberOfTuples();
   float *pftr=this->FwdTrace->GetPointer(0);
+
+
   for (vtkIdType i=0; i<nPtsFwd; ++i,pts+=3,pftr+=3)
     {
     pts[0]=pftr[0];
