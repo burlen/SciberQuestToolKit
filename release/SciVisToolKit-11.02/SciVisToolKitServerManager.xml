@@ -2220,6 +2220,17 @@ Copyright 2008 SciberQuest Inc.
       <BooleanDomain name="bool"/>
     </IntVectorProperty>
 
+    <DoubleVectorProperty
+        name="MinSegementLength"
+        label="Minimum Segement Length"
+        command="SetMinSegementLength"
+        number_of_elements="1"
+        default_values="0.0" >
+      <Documentation>
+        Lower bound on the segments in the resulting streamline
+      </Documentation>
+    </DoubleVectorProperty>
+
     <!-- Colormap/Legened control -->
     <IntVectorProperty 
         name="SqueezeColorMap"
@@ -2475,6 +2486,17 @@ Copyright 2008 SciberQuest Inc.
         default_values="1">
       <BooleanDomain name="bool"/>
     </IntVectorProperty>
+
+    <DoubleVectorProperty
+        name="MinSegementLength"
+        label="Minimum Segement Length"
+        command="SetMinSegementLength"
+        number_of_elements="1"
+        default_values="0.0" >
+      <Documentation>
+        Lower bound on the segments in the resulting streamline
+      </Documentation>
+    </DoubleVectorProperty>
 
     <!-- Colormap/Legened control -->
     <IntVectorProperty 

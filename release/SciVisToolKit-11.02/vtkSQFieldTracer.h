@@ -136,6 +136,11 @@ public:
   vtkGetMacro(NullThreshold,double);
 
   // Description:
+  // Specify the minimum segment length
+  vtkSetMacro(MinSegmentLength,double);
+  vtkGetMacro(MinSegmentLength,double);
+
+  // Description:
   // If set then comm world is used during reads. This will result in better
   // in-core preformance when there is enough memory for each process to
   // have it's own copy of the data. Note: use of comm world precludes
@@ -144,7 +149,7 @@ public:
   vtkGetMacro(UseCommWorld,int);
 
   // Description:
-  // If on then color map produced will only contain used colors. 
+  // If on then color map produced will only contain used colors.
   // NOTE: requires a global communication,
   vtkSetMacro(SqueezeColorMap,int);
   vtkGetMacro(SqueezeColorMap,int);
@@ -268,7 +273,7 @@ private:
   double NullThreshold;
   int IntegratorType;
   vtkInitialValueProblemSolver* Integrator;
-
+  double MinSegmentLength;
   static const double EPSILON;
 
   // Reader related

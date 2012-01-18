@@ -105,6 +105,7 @@ vtkSQFieldTracer::vtkSQFieldTracer()
   NullThreshold(1E-3),
   IntegratorType(INTEGRATOR_NONE),
   Integrator(0),
+  MinSegmentLength(0.0),
   UseCommWorld(0),
   Mode(MODE_TOPOLOGY),
   SqueezeColorMap(0)
@@ -1007,8 +1008,9 @@ void vtkSQFieldTracer::IntegrateOne(
     double lineLength=0.0;                  // cumulative length of stream line
     vtkIdType numSteps=0;                   // cumulative number of steps taken in integration
     double V0[3]={0.0};                     // vector field interpolated at the start point
-    double p0[3]={0.0};                     // a start point
+    double p0[3]={0.0};                     // start point
     double p1[3]={0.0};                     // integrated point
+    double s0[3]={0.0};                     // segment start point
     int bcSurf=0;                           // set when a periodic boundary condition has been applied.
     static                                  // interpolator
     vtkInterpolatedVelocityField *interp=0;
@@ -1018,6 +1020,7 @@ void vtkSQFieldTracer::IntegrateOne(
     #endif
 
     line->GetSeedPoint(p0);
+    line->GetSeedPoint(s0);
 
     // Integrate until the maximum line length is reached, maximum number of
     // steps is reached or until a termination surface is encountered.
@@ -1152,7 +1155,7 @@ void vtkSQFieldTracer::IntegrateOne(
       #endif
 
       // update the arc length and number of steps taken.
-      double dx=0;
+      double dx=0.0;
       dx+=(p1[0]-p0[0])*(p1[0]-p0[0]);
       dx+=(p1[1]-p0[1])*(p1[1]-p0[1]);
       dx+=(p1[2]-p0[2])*(p1[2]-p0[2]);
@@ -1160,7 +1163,7 @@ void vtkSQFieldTracer::IntegrateOne(
       lineLength+=dx;
       ++numSteps;
 
-      // TODO does this test neccessary ???
+      // TODO is this test neccessary ???
       // Use v=dx/dt to calculate speed and check if it is below
       // stagnation threshold. (test prior to tests that modify p1)
       double dt=fabs(stepTaken);
@@ -1256,7 +1259,21 @@ void vtkSQFieldTracer::IntegrateOne(
         }
 
       // add the point to the line.
-      if (this->Mode==MODE_STREAM) line->PushPoint(i,p1);
+      if (this->Mode==MODE_STREAM)
+        {
+        double ds=0.0;
+        ds+=(p1[0]-s0[0])*(p1[0]-s0[0]);
+        ds+=(p1[1]-s0[1])*(p1[1]-s0[1]);
+        ds+=(p1[2]-s0[2])*(p1[2]-s0[2]);
+        ds=sqrt(ds);
+        if (ds>=this->MinSegmentLength)
+          {
+          line->PushPoint(i,p1);
+          s0[0]=p1[0];
+          s0[1]=p1[1];
+          s0[2]=p1[2];
+          }
+        }
 
       // Update the seed point
       p0[0]=p1[0];
