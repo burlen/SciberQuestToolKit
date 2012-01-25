@@ -211,8 +211,8 @@ int vtkSQBOVReader::Initialize(
     return -1;
     }
 
+  // hints
   this->SetUseDataSieving(vtkSQBOVReader::HINT_AUTOMATIC);
-
   this->SetUseCollectiveIO(vtkSQBOVReader::HINT_AUTOMATIC);
   int cb_enable=0;
   GetOptionalAttribute<int,1>(elem,"cb_enable",&cb_enable);
@@ -233,6 +233,31 @@ int vtkSQBOVReader::Initialize(
     this->SetCollectBufferSize(cb_buffer_size);
     }
 
+  // meta-read
+  int meta_read=0;
+  GetOptionalAttribute<int,1>(elem,"meta_read",&meta_read);
+  if (meta_read>0)
+    {
+    this->SetMetaRead(1);
+
+    int decomp_dims[3]={0,0,0};
+    GetOptionalAttribute<int,3>(elem,"decomp_dims",decomp_dims);
+    if (decomp_dims[0]>0)
+      {
+      this->SetDecompDims(decomp_dims);
+      }
+
+    int block_cache_size=0;
+    GetOptionalAttribute<int,1>(elem,"block_cache_size",&block_cache_size);
+    if (block_cache_size>0)
+      {
+      this->SetBlockCacheSize(block_cache_size);
+      }
+
+    this->SetUseCollectiveIO(vtkSQBOVReader::HINT_DISABLED);
+    }
+
+  // open the file, do it now to get domain/subset info
   this->SetFileName(fileName);
   if (!this->IsOpen())
     {
@@ -254,8 +279,8 @@ int vtkSQBOVReader::Initialize(
     }
   this->SetSubset(subset);
 
-  // select arrays to process
-  // when none are provided we process all available
+  // return selected arrays
+  // when none are selected we return all available
   int nArrays=0;
   elem=GetOptionalElement(elem,"arrays");
   if (elem)

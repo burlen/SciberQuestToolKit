@@ -31,12 +31,16 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkFloatArray.h"
 #include "vtkSphereSource.h"
 
+#include "vtkSQLog.h"
 #include "vtkSQMetaDataKeys.h"
 #include "GDAMetaDataKeys.h"
+#include "XMLUtils.h"
 #include "Tuple.hxx"
 #include "SQMacros.h"
 
 #include <math.h>
+
+#define vtkSQHemisphereSourceTIME
 
 //*****************************************************************************
 void LocateHemisphere(float *pX, size_t nx,double *C, double *N)
@@ -128,6 +132,49 @@ vtkSQHemisphereSource::~vtkSQHemisphereSource()
   #endif
   this->SetNorthHemisphereName(0);
   this->SetSouthHemisphereName(0);
+}
+
+//-----------------------------------------------------------------------------
+int vtkSQHemisphereSource::Initialize(vtkPVXMLElement *root)
+{
+  #ifdef vtkSQHemisphereSourceDEBUG
+  pCerr() << "===============================vtkSQHemisphereSource::Initialize" << endl;
+  #endif
+
+  vtkPVXMLElement *elem=0;
+  elem=GetOptionalElement(root,"vtkSQHemisphereSource");
+  if (elem==0)
+    {
+    return -1;
+    }
+
+  double center[3]={0.0,0.0,0.0};
+  GetOptionalAttribute<double,3>(elem,"center",center);
+  this->SetCenter(center);
+
+  double north[3]={0.0,1.0,0.0};
+  GetOptionalAttribute<double,3>(elem,"north",north);
+  this->SetNorth(north);
+
+  double radius=1.0;
+  GetOptionalAttribute<double,1>(elem,"radius",&radius);
+  this->SetRadius(radius);
+
+  int resolution=32;
+  GetOptionalAttribute<int,1>(elem,"resolution",&resolution);
+  this->SetResolution(resolution);
+
+  #if defined vtkSQHemisphereSourceTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  *log
+    << "# ::vtkSQHemisphereSource" << "\n"
+    << "#   center=" << center[0] << ", " << center[1] << ", " << center[2] << "\n"
+    << "#   north=" << north[0] << ", " << north[1] << ", " << north[2] << "\n"
+    << "#   radius=" << radius << "\n"
+    << "#   resolution=" << resolution << "\n";
+  #endif
+
+  return 0;
 }
 
 //----------------------------------------------------------------------------

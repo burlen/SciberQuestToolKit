@@ -36,9 +36,11 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkType.h"
 #include "vtkCellType.h"
 #include "Numerics.hxx"
+#include "XMLUtils.h"
 #include "Tuple.hxx"
 #include "vtkSQVolumeSourceCellGenerator.h"
 #include "vtkSQCellGenerator.h"
+#include "vtkSQLog.h"
 
 #include <map>
 using std::map;
@@ -48,6 +50,7 @@ typedef pair<map<vtkIdType,vtkIdType>::iterator,bool> MapInsert;
 typedef pair<vtkIdType,vtkIdType> MapElement;
 
 // #define vtkSQVolumeSourceDEBUG
+#define vtkSQVolumeSourceTIME
 
 vtkCxxRevisionMacro(vtkSQVolumeSource, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQVolumeSource);
@@ -64,7 +67,6 @@ vtkSQVolumeSource::vtkSQVolumeSource()
   this->Resolution[0]=
   this->Resolution[1]=
   this->Resolution[2]=1;
-
 
   this->Origin[0]=
   this->Origin[1]=
@@ -92,6 +94,55 @@ vtkSQVolumeSource::~vtkSQVolumeSource()
   #ifdef vtkSQVolumeSourceDEBUG
   cerr << "===============================vtkSQVolumeSource::~vtkSQVolumeSource" << endl;
   #endif
+}
+
+//-----------------------------------------------------------------------------
+int vtkSQVolumeSource::Initialize(vtkPVXMLElement *root)
+{
+  vtkPVXMLElement *elem=0;
+  elem=GetOptionalElement(root,"vtkSQVolumeSource");
+  if (elem==0)
+    {
+    return -1;
+    }
+
+  double origin[3]={0.0,0.0,0.0};
+  GetOptionalAttribute<double,3>(elem,"origin",origin);
+  this->SetOrigin(origin);
+
+  double point1[3]={1.0,0.0,0.0};;
+  GetOptionalAttribute<double,3>(elem,"point1",point1);
+  this->SetPoint1(point1);
+
+  double point2[3]={0.0,1.0,0.0};
+  GetOptionalAttribute<double,3>(elem,"point2",point2);
+  this->SetPoint2(point2);
+
+  double point3[3]={0.0,1.0,0.0};
+  GetOptionalAttribute<double,3>(elem,"point3",point3);
+  this->SetPoint3(point3);
+
+  int resolution[3]={1,1,1};
+  GetOptionalAttribute<int,3>(elem,"resolution",resolution);
+  this->SetResolution(resolution);
+
+  int immediate_mode=1;
+  GetOptionalAttribute<int,1>(elem,"immediate_mode",&immediate_mode);
+  this->SetImmediateMode(immediate_mode);
+
+  #if defined vtkSQVolumeSourceTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  *log
+    << "# ::vtkSQVolumeSource" << "\n"
+    << "#   origin=" << origin[0] << ", " << origin[1] << ", " << origin[2] << "\n"
+    << "#   point1=" << point1[0] << ", " << point1[1] << ", " << point1[2] << "\n"
+    << "#   point2=" << point2[0] << ", " << point2[1] << ", " << point2[2] << "\n"
+    << "#   point3=" << point3[0] << ", " << point3[1] << ", " << point3[2] << "\n"
+    << "#   resolution=" << resolution[0] << ", " << resolution[1] << ", " << resolution[2] << "\n"
+    << "#   immediate_mode=" << immediate_mode << "\n";
+  #endif
+
+  return 0;
 }
 
 //----------------------------------------------------------------------------

@@ -2221,9 +2221,9 @@ Copyright 2008 SciberQuest Inc.
     </IntVectorProperty>
 
     <DoubleVectorProperty
-        name="MinSegementLength"
-        label="Minimum Segement Length"
-        command="SetMinSegementLength"
+        name="MinSegmentLength"
+        label="Minimum Segment Length"
+        command="SetMinSegmentLength"
         number_of_elements="1"
         default_values="0.0" >
       <Documentation>
@@ -2488,9 +2488,9 @@ Copyright 2008 SciberQuest Inc.
     </IntVectorProperty>
 
     <DoubleVectorProperty
-        name="MinSegementLength"
-        label="Minimum Segement Length"
-        command="SetMinSegementLength"
+        name="MinSegmentLength"
+        label="Minimum Segment Length"
+        command="SetMinSegmentLength"
         number_of_elements="1"
         default_values="0.0" >
       <Documentation>

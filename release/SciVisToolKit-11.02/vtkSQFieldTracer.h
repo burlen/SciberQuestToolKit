@@ -28,6 +28,7 @@ class vtkSQOOCReader;
 class vtkMultiProcessController;
 class vtkInitialValueProblemSolver;
 class vtkPointSet;
+class vtkPVXMLElement;
 //BTX
 class IdBlock;
 class FieldLine;
@@ -56,6 +57,9 @@ public:
   void AddTerminatorInputConnection(vtkAlgorithmOutput* algOutput);
   void ClearTerminatorInputConnections();
 
+  // Description:
+  // Initialize the object from an xml document.
+  int Initialize(vtkPVXMLElement *root);
 
   // Description:
   // Set the run mode of the filter.

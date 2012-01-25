@@ -16,12 +16,18 @@ Copyright 2008 SciberQuest Inc.
 
 #include "vtkUnstructuredGridAlgorithm.h"
 
+class vtkPVXMLElement;
+
 class VTK_EXPORT vtkSQVolumeSource : public vtkUnstructuredGridAlgorithm
 {
 public:
   static vtkSQVolumeSource *New();
   vtkTypeRevisionMacro(vtkSQVolumeSource,vtkUnstructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
+
+  // Description:
+  // Initialize the object from an xml document.
+  int Initialize(vtkPVXMLElement *root);
 
   // Description:
   // Set the points defining edges of a 3D quarilateral.

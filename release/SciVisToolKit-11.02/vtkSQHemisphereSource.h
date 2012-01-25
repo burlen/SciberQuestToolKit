@@ -16,6 +16,7 @@ Copyright 2008 SciberQuest Inc.
 
 #include "vtkPolyDataAlgorithm.h"
 
+class vtkPVXMLElement;
 
 class VTK_EXPORT vtkSQHemisphereSource : public vtkPolyDataAlgorithm
 {
@@ -23,6 +24,10 @@ public:
   vtkTypeRevisionMacro(vtkSQHemisphereSource,vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQHemisphereSource *New();
+
+  // Description:
+  // Initialize from and xml document
+  int Initialize(vtkPVXMLElement *root);
 
   // Description:
   // Set/Get location of the sphere.

@@ -49,6 +49,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkSQOOCReader.h"
 #include "vtkSQCellGenerator.h"
 #include "vtkSQMetaDataKeys.h"
+#include "vtkSQLog.h"
 #include "FieldLine.h"
 #include "TerminationCondition.h"
 #include "IdBlock.h"
@@ -58,6 +59,7 @@ Copyright 2008 SciberQuest Inc.
 #include "UnstructuredFieldTopologyMap.h"
 #include "StreamlineData.h"
 #include "PoincareMapData.h"
+#include "XMLUtils.h"
 #include "Tuple.hxx"
 #include "postream.h"
 
@@ -141,6 +143,123 @@ vtkSQFieldTracer::~vtkSQFieldTracer()
     this->Integrator->Delete();
     }
   delete this->TermCon;
+}
+
+//-----------------------------------------------------------------------------
+int vtkSQFieldTracer::Initialize(vtkPVXMLElement *root)
+{
+  vtkPVXMLElement *elem=0;
+  elem=GetOptionalElement(root,"vtkSQFieldTracer");
+  if (elem==0)
+    {
+    return -1;
+    }
+
+  int mode=MODE_STREAM;
+  GetOptionalAttribute<int,1>(elem,"mode",&mode);
+  this->SetMode(mode);
+
+  int integratorType=INTEGRATOR_RK45;
+  GetOptionalAttribute<int,1>(elem,"integrator_type",&integratorType);
+  this->SetIntegratorType(integratorType);
+
+  double maxArcLength=0.0;
+  GetOptionalAttribute<double,1>(elem,"max_arc_length",&maxArcLength);
+  if (maxArcLength>0.0)
+    {
+    this->SetMaxLineLength(maxArcLength);
+    }
+
+  double minSegmentLength=0.0;
+  GetOptionalAttribute<double,1>(elem,"min_segment_length",&minSegmentLength);
+  if (minSegmentLength>0.0)
+    {
+    this->SetMinSegmentLength(minSegmentLength);
+    }
+
+  int maxNumberSteps=0;
+  GetOptionalAttribute<int,1>(elem,"max_number_steps",&maxNumberSteps);
+  if (maxNumberSteps>0)
+    {
+    this->SetMaxNumberOfSteps(maxNumberSteps);
+    }
+
+  double minStepSize=0.0;
+  GetOptionalAttribute<double,1>(elem,"min_step_size",&minStepSize);
+  if (minStepSize>0.0)
+    {
+    this->SetMinStep(minStepSize);
+    }
+
+  double maxStepSize=0.0;
+  GetOptionalAttribute<double,1>(elem,"max_step_size",&maxStepSize);
+  if (maxStepSize>0.0)
+    {
+    this->SetMaxStep(maxStepSize);
+    }
+
+  double maxError=0.0;
+  GetOptionalAttribute<double,1>(elem,"max_error",&maxError);
+  if (maxError>0.0)
+    {
+    this->SetMaxError(maxError);
+    }
+
+  double nullThreshold=0.0;
+  GetOptionalAttribute<double,1>(elem,"null_threshold",&nullThreshold);
+  if (nullThreshold>0.0)
+    {
+    this->SetNullThreshold(nullThreshold);
+    }
+
+  int dynamicScheduler=-1;
+  GetOptionalAttribute<int,1>(elem,"dynamic_scheduler",&dynamicScheduler);
+  if (dynamicScheduler>0)
+    {
+    this->SetUseDynamicScheduler(dynamicScheduler);
+    }
+
+  int masterBlockSize=0;
+  GetOptionalAttribute<int,1>(elem,"master_block_size",&masterBlockSize);
+  if (masterBlockSize)
+    {
+    this->SetMasterBlockSize(masterBlockSize);
+    }
+
+  int workerBlockSize=0;
+  GetOptionalAttribute<int,1>(elem,"worker_block_size",&workerBlockSize);
+  if (workerBlockSize)
+    {
+    this->SetWorkerBlockSize(workerBlockSize);
+    }
+
+  int squeezeColorMap=0;
+  GetOptionalAttribute<int,1>(elem,"squeeze_color_map",&squeezeColorMap);
+  if (squeezeColorMap)
+    {
+    this->SetSqueezeColorMap(squeezeColorMap);
+    }
+
+  #if defined vtkSQFieldTracerTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  *log
+    << "# ::vtkSQFieldTracer" << "\n"
+    << "#   mode=" << this->GetMode() << "\n"
+    << "#   integrator=" << this->GetIntegratorType() << "\n"
+    << "#   minStepSize=" << this->GetMinStep() << "\n"
+    << "#   maxStepSize=" << this->GetMaxStep() << "\n"
+    << "#   maxNumberOfSteps=" << this->GetMaxNumberOfSteps() << "\n"
+    << "#   maxLineLength=" << this->GetMaxLineLength() << "\n"
+    << "#   minSegmentLength=" << this->GetMinSegmentLength() << "\n"
+    << "#   maxError=" << this->GetMaxError() << "\n"
+    << "#   nullThreshold=" << this->GetNullThreshold() << "\n"
+    << "#   dynamicScheduler=" << this->GetUseDynamicScheduler() << "\n"
+    << "#   masterBlockSize=" << this->GetMasterBlockSize() << "\n"
+    << "#   workerBlockSize=" << this->GetWorkerBlockSize() << "\n"
+    << "#   squeezeColorMap=" << this->GetSqueezeColorMap() << "\n";
+  #endif
+
+  return 0;
 }
 
 //-----------------------------------------------------------------------------

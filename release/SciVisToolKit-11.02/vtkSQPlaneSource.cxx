@@ -29,6 +29,7 @@
 #include "vtkSQMetaDataKeys.h"
 #include "vtkSQPlaneSourceConstants.h"
 #include "vtkSQPlaneSourceCellGenerator.h"
+#include "XMLUtils.h"
 #include "SQMacros.h"
 #include "postream.h"
 
@@ -75,6 +76,50 @@ vtkSQPlaneSource::~vtkSQPlaneSource()
   cerr << "===============================vtkSQPlaneSource::~vtkSQPlaneSource" << endl;
   #endif
   this->SetDescriptiveName(0);
+}
+
+//-----------------------------------------------------------------------------
+int vtkSQPlaneSource::Initialize(vtkPVXMLElement *root)
+{
+  vtkPVXMLElement *elem=0;
+  elem=GetOptionalElement(root,"vtkSQPlaneSource");
+  if (elem==0)
+    {
+    return -1;
+    }
+
+  double origin[3]={0.0,0.0,0.0};
+  GetOptionalAttribute<double,3>(elem,"origin",origin);
+  this->SetOrigin(origin);
+
+  double point1[3]={1.0,0.0,0.0};;
+  GetOptionalAttribute<double,3>(elem,"point1",point1);
+  this->SetPoint1(point1);
+
+  double point2[3]={0.0,1.0,0.0};
+  GetOptionalAttribute<double,3>(elem,"point2",point2);
+  this->SetPoint2(point2);
+
+  int resolution[2]={1,1};
+  GetOptionalAttribute<int,2>(elem,"resolution",resolution);
+  this->SetResolution(resolution);
+
+  int immediate_mode=1;
+  GetOptionalAttribute<int,1>(elem,"immediate_mode",&immediate_mode);
+  this->SetImmediateMode(immediate_mode);
+
+  #if defined vtkSQPlaneSourceTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  *log
+    << "# ::vtkSQPlaneSource" << "\n"
+    << "#   origin=" << origin[0] << ", " << origin[1] << ", " << origin[2] << "\n"
+    << "#   point1=" << point1[0] << ", " << point1[1] << ", " << point1[2] << "\n"
+    << "#   point2=" << point2[0] << ", " << point2[1] << ", " << point2[2] << "\n"
+    << "#   resolution=" << resolution[0] << ", " << resolution[1] << "\n"
+    << "#   immediate_mode=" << immediate_mode << "\n";
+  #endif
+
+  return 0;
 }
 
 //-----------------------------------------------------------------------------

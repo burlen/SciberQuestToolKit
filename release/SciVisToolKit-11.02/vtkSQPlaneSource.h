@@ -55,6 +55,8 @@ Copyright 2008 SciberQuest Inc.
 
 #include "vtkPolyDataAlgorithm.h"
 
+class vtkPVXMLElement;
+
 class VTK_EXPORT vtkSQPlaneSource : public vtkPolyDataAlgorithm
 {
 public:
@@ -65,6 +67,10 @@ public:
   // Construct plane perpendicular to z-axis, resolution 1x1, width
   // and height 1.0, and centered at the origin.
   static vtkSQPlaneSource *New();
+
+  // Description:
+  // Initialize the object from an xml document.
+  int Initialize(vtkPVXMLElement *root);
 
   // Description:
   // Mode controls how data is generated. Demand mode generates
