@@ -253,7 +253,11 @@ if(PARAVIEW_BUILD_QT_GUI)
   if (SVTK_PROCESS_MONITOR)
     message(STATUS "Building process monitor ui.")
     QT4_WRAP_CPP(MOC_SRCS pqSQProcessMonitor.h)
+    QT4_WRAP_CPP(MOC_SRCS pqSQRemoteCommandDialog.h)
+    QT4_WRAP_CPP(MOC_SRCS pqSQRemoteSignalDialog.h)
     QT4_WRAP_UI(UI_SRCS pqSQProcessMonitorForm.ui)
+    QT4_WRAP_UI(UI_SRCS pqSQRemoteCommandDialogForm.ui)
+    QT4_WRAP_UI(UI_SRCS pqSQRemoteSignalDialogForm.ui)
     ADD_PARAVIEW_OBJECT_PANEL(
       IFACES IFACE_SRCS
       CLASS_NAME pqSQProcessMonitor
@@ -289,7 +293,11 @@ if(PARAVIEW_BUILD_QT_GUI)
     )
 
   if (SVTK_PROCESS_MONITOR)
-    set (CXX_SOURCES ${CXX_SOURCES} pqSQProcessMonitor.cxx)
+    set (CXX_SOURCES
+      ${CXX_SOURCES}
+      pqSQProcessMonitor.cxx
+      pqSQRemoteCommandDialog.cxx
+      pqSQRemoteSignalDialog.cxx)
   endif()
 
   if (SVTK_SC11_DEMO)
@@ -338,18 +346,8 @@ endif()
 if (GIMP_FOUND AND SVTK_POSTPROC_SCRIPTS)
   message(STATUS "Installing post-processing scripts.")
   set(POSTPROC_SCRIPT_DIR "${PROJECT_SOURCE_DIR}/script/postproc/")
-  set(SVTK_GIMP_SCM_SOURCES
-    "${POSTPROC_SCRIPT_DIR}/annotate.scm"
-    "${POSTPROC_SCRIPT_DIR}/autocrop.scm"
-    "${POSTPROC_SCRIPT_DIR}/crop.scm"
-    )
-  set(SVTK_GIMP_SH_SOURCES
-    "${POSTPROC_SCRIPT_DIR}/annotate.sh"
-    "${POSTPROC_SCRIPT_DIR}/autocrop.sh"
-    "${POSTPROC_SCRIPT_DIR}/crop.sh"
-    "${POSTPROC_SCRIPT_DIR}/mp42avi.sh"
-    "${POSTPROC_SCRIPT_DIR}/png2mp4.sh"
-    )
+  file(GLOB SVTK_GIMP_SCM_SOURCES  "${POSTPROC_SCRIPT_DIR}/*.scm")
+  file(GLOB SVTK_GIMP_SH_SOURCES  "${POSTPROC_SCRIPT_DIR}/*.sh")
   install(FILES ${SVTK_GIMP_SCM_SOURCES} DESTINATION ${GIMP_SCRIPT_PATH})
   install(PROGRAMS ${SVTK_GIMP_SH_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()

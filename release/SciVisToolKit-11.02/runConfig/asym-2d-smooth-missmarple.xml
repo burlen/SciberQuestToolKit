@@ -10,12 +10,13 @@
        <arrays> b </arrays>
   </vtkSQBOVReader>
 
+  <vtkSQMedianFilter stencilWidth="9" />
+
   <!--
   memory types:
     gloabl=0
     constant=1
     texture=2
-  -->
   <vtkSQKernelConvolution
       stencilWidth="19"
       CPUDriverOptimization="1"
@@ -24,6 +25,7 @@
       numberOfWarpsPerCUDABlock="8"
       inputCUDAMemoryType="2"
       kernelCUDAMemoryType="0"/>
+  -->
 
   <vtkSQBOVWriter
       cb_enable="1"

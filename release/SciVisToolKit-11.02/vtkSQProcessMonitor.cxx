@@ -172,7 +172,7 @@ void vtkSQProcessMonitor::SetEnableBacktraceHandler(int enable)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQProcessMonitor::SetEnableFE_ALL(int enable)
+void vtkSQProcessMonitor::SetTrapAllFPE(int enable)
 {
   #if defined vtkSQProcessMonitorDEBUG
   cerr << "===============================vtkSQProcessMonitor::SetEnableFE_ALL" << endl;
@@ -181,9 +181,8 @@ void vtkSQProcessMonitor::SetEnableFE_ALL(int enable)
   this->ServerSystem->CatchAllFloatingPointExceptions(enable);
 }
 
-
 //-----------------------------------------------------------------------------
-void vtkSQProcessMonitor::SetEnableFE_DIVBYZERO(int enable)
+void vtkSQProcessMonitor::SetTrapFPEDivByZero(int enable)
 {
   #if defined vtkSQProcessMonitorDEBUG
   cerr << "===============================vtkSQProcessMonitor::SetEnableFE_DIVBYZERO" << endl;
@@ -193,7 +192,7 @@ void vtkSQProcessMonitor::SetEnableFE_DIVBYZERO(int enable)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQProcessMonitor::SetEnableFE_INEXACT(int enable)
+void vtkSQProcessMonitor::SetTrapFPEInexact(int enable)
 {
   #if defined vtkSQProcessMonitorDEBUG
   cerr << "===============================vtkSQProcessMonitor::SetEnableFE_INEXACT" << endl;
@@ -203,7 +202,7 @@ void vtkSQProcessMonitor::SetEnableFE_INEXACT(int enable)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQProcessMonitor::SetEnableFE_INVALID(int enable)
+void vtkSQProcessMonitor::SetTrapFPEInvalid(int enable)
 {
   #if defined vtkSQProcessMonitorDEBUG
   cerr << "===============================vtkSQProcessMonitor::SetEnableFE_INVALID" << endl;
@@ -213,7 +212,7 @@ void vtkSQProcessMonitor::SetEnableFE_INVALID(int enable)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQProcessMonitor::SetEnableFE_OVERFLOW(int enable)
+void vtkSQProcessMonitor::SetTrapFPEOverflow(int enable)
 {
   #if defined vtkSQProcessMonitorDEBUG
   cerr << "===============================vtkSQProcessMonitor::SetEnableFE_OVERFLOW" << endl;
@@ -223,7 +222,7 @@ void vtkSQProcessMonitor::SetEnableFE_OVERFLOW(int enable)
 }
 
 //-----------------------------------------------------------------------------
-void vtkSQProcessMonitor::SetEnableFE_UNDERFLOW(int enable)
+void vtkSQProcessMonitor::SetTrapFPEUnderflow(int enable)
 {
   #if defined vtkSQProcessMonitorDEBUG
   cerr << "===============================vtkSQProcessMonitor::SetEnableFE_UNDERFLOW" << endl;
@@ -282,7 +281,7 @@ int vtkSQProcessMonitor::RequestInformation(
     // root cleans up.
     free(remoteMemoryUse);
     }
- 
+
   ++this->InformationMTime;
 
   return 1;

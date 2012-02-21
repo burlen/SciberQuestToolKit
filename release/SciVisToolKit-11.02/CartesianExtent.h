@@ -125,7 +125,8 @@ public:
   /**
   Get the number in each direction.
   */
-  void Size(int nCells[3]) const;
+  template<typename T>
+  void Size(T nCells[3]) const;
 
   /**
   Get the total number.
@@ -240,6 +241,7 @@ public:
   shift by the given amount while respecting mode
   */
   static void Shift(int *ijk, int n, int mode);
+  static void Shift(int *ijk, int *n, int mode);
   /// \@}
 
 private:
@@ -436,8 +438,8 @@ void CartesianExtent::GetBounds(
 }
 
 //-----------------------------------------------------------------------------
-inline
-void CartesianExtent::Size(int nCells[3]) const
+template<typename T>
+void CartesianExtent::Size(T nCells[3]) const
 {
   nCells[0]=this->Data[1]-this->Data[0]+1;
   nCells[1]=this->Data[3]-this->Data[2]+1;

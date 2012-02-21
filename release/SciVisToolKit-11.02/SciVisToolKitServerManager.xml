@@ -1435,7 +1435,7 @@ Copyright 2008 SciberQuest Inc.
       <SimpleIntInformationHelper />
     </IntVectorProperty>
     <IntVectorProperty name="SetInformationMTime"
-      command="SetInformationMTime" 
+      command="SetInformationMTime"
       number_of_elements="1"
       default_values="0">
     </IntVectorProperty>
@@ -1453,8 +1453,8 @@ Copyright 2008 SciberQuest Inc.
 
     <!-- Floating point exceptions -->
     <IntVectorProperty
-      name="EnableFE_DIVBYZERO"
-      command="SetEnableFE_DIVBYZERO"
+      name="TrapFPEDivByZero"
+      command="SetTrapFPEDivByZero"
       number_of_elements="1"
       default_values="0">
     <Documentation>
@@ -1463,8 +1463,8 @@ Copyright 2008 SciberQuest Inc.
     </IntVectorProperty>
 
     <IntVectorProperty
-      name="EnableFE_INEXACT"
-      command="SetEnableFE_INEXACT"
+      name="TrapFPEInexact"
+      command="SetTrapFPEInexact"
       number_of_elements="1"
       default_values="0">
       <Documentation>
@@ -1473,8 +1473,8 @@ Copyright 2008 SciberQuest Inc.
     </IntVectorProperty>
 
     <IntVectorProperty
-      name="EnableFE_INVALID"
-      command="SetEnableFE_INVALID"
+      name="TrapFPEInvalid"
+      command="SetTrapFPEInvalid"
       number_of_elements="1"
       default_values="0">
       <Documentation>
@@ -1483,8 +1483,8 @@ Copyright 2008 SciberQuest Inc.
     </IntVectorProperty>
 
     <IntVectorProperty
-      name="EnableFE_OVERFLOW"
-      command="SetEnableFE_OVERFLOW"
+      name="TrapFPEOverflow"
+      command="SetTrapFPEOverflow"
       number_of_elements="1"
       default_values="0">
       <Documentation>
@@ -1493,8 +1493,8 @@ Copyright 2008 SciberQuest Inc.
     </IntVectorProperty>
 
     <IntVectorProperty
-      name="EnableFE_UNDERFLOW"
-      command="SetEnableFE_UNDERFLOW"
+      name="TrapFPEUnderflow"
+      command="SetTrapFPEUnderflow"
       number_of_elements="1"
       default_values="0">
       <Documentation>
@@ -1503,8 +1503,8 @@ Copyright 2008 SciberQuest Inc.
     </IntVectorProperty>
 
     <IntVectorProperty
-      name="EnableFE_ALL"
-      command="SetEnableFE_ALL"
+      name="TrapAllFPE"
+      command="SetTrapAllFPE"
       number_of_elements="1"
       default_values="0">
       <Documentation>

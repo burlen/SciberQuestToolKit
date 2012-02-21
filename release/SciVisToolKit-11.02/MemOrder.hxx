@@ -11,6 +11,124 @@ Copyright 2008 SciberQuest Inc.
 using std::vector;
 
 //*****************************************************************************
+enum {
+  REORDER_SPLIT=1,
+  REORDER_INTERLEAVE=0
+  };
+template <typename T>
+void SubsetReorder(
+      CartesianExtent &extV,
+      CartesianExtent &extW,
+      T*  V,
+      vector<T*> &W,
+      int dimMode,
+      int split)
+{
+  // copy a subextent of V described by extW  into an array W.
+  unsigned long nComp=W.size();
+
+  unsigned long nW[3];
+  extW.Size(nW);
+
+  unsigned long nV[3];
+  extV.Size(nV);
+
+  unsigned long vi0=extW[0];
+  unsigned long vj0=extW[1];
+  unsigned long vk0=extW[2];
+
+  unsigned long wni;
+  unsigned long wnij;
+
+  unsigned long vni;
+  unsigned long vnij;
+
+  unsigned long ni;
+  unsigned long nj;
+  unsigned long nk;
+
+  switch (dimMode)
+    {
+    case CartesianExtent::DIM_MODE_2D_XY:
+      wni=nW[0];
+      wnij=0;
+
+      vni=nV[0];
+      vnij=0;
+
+      ni=nW[0];
+      nj=nW[1];
+      nk=1;
+      break;
+
+    case CartesianExtent::DIM_MODE_2D_XZ:
+      wni=nW[0];
+      wnij=0;
+
+      vni=nV[0];
+      vnij=0;
+
+      ni=nW[0];
+      nj=nW[2];
+      nk=1;
+      break;
+
+    case CartesianExtent::DIM_MODE_2D_YZ:
+      wni=nW[0];
+      wnij=0;
+
+      vni=nV[0];
+      vnij=0;
+
+      ni=nW[1];
+      nj=nW[2];
+      nk=1;
+      break;
+
+    case CartesianExtent::DIM_MODE_3D:
+      wni=nW[0];
+      wnij=nW[0]*nW[1];
+
+      vni=nV[0];
+      vnij=nV[0]*nV[1];
+
+      ni=nW[0];
+      nj=nW[1];
+      nk=nW[2];
+      break;
+    }
+
+  for (unsigned long k=0; k<nk; ++k)
+    {
+    unsigned long vk=(vk0+k)*vnij;
+    unsigned long wk=k*wnij;
+    for (unsigned long j=0; j<nj; ++j)
+      {
+      unsigned long vj=(vj0+j)*vni+vk;
+      unsigned long wj=j*wni+wk;
+      for (unsigned long i=0; i<ni; ++i)
+        {
+        unsigned long vi=nComp*(vj+vi0+i);
+        unsigned long wi=wj+i;
+        for (long c=0; c<nComp; ++c)
+          {
+          if (split)
+            {
+            W[c][wi]=V[vi+c];
+            }
+          else
+            {
+            V[vi+c]=W[c][wi];
+            }
+          }
+        }
+      }
+    }
+}
+
+
+
+//*****************************************************************************
 template<typename T>
 void Split(
       size_t n,

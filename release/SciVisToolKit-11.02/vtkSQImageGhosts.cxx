@@ -71,7 +71,6 @@ vtkSQImageGhosts::vtkSQImageGhosts()
   MPI_Comm_size(this->Comm,&this->WorldSize);
   MPI_Comm_rank(this->Comm,&this->WorldRank);
 
-
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
 }

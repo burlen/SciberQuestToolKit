@@ -2,11 +2,15 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
 #include "pqSQProcessMonitor.h"
+#include "pqSQRemoteSignalDialog.h"
+#include "pqSQRemoteCommandDialog.h"
+#include "ui_pqSQProcessMonitorForm.h"
+using Ui::pqSQProcessMonitorForm;
 
 // #define pqSQProcessMonitorDEBUG
 
@@ -34,6 +38,8 @@ Copyright 2008 SciberQuest Inc.
 #include <QPalette>
 #include <QFont>
 #include <QPlastiqueStyle>
+#include <QPoint>
+#include <QMenu>
 #include <QDebug>
 
 #include "PrintUtils.h"
@@ -56,6 +62,42 @@ using std::istringstream;
 using std::cerr;
 using std::endl;
 
+// ****************************************************************************
+void flattenTree(
+    QTreeWidgetItem *item,
+    vector<QTreeWidgetItem*> &flatTree)
+{
+  flatTree.push_back(item);
+
+  int nChild=item->childCount();
+  for (int i=0; i<nChild; ++i)
+    {
+    flattenTree(item->child(i),flatTree);
+    }
+}
+
+// ****************************************************************************
+void flattenTree(
+    QTreeWidget *tree,
+    vector<QTreeWidgetItem*> &flatTree)
+{
+  int nTop=tree->topLevelItemCount();
+  for (int i=0; i<nTop; ++i)
+    {
+    flattenTree(tree->topLevelItem(i),flatTree);
+    }
+}
+
+
+// User interface
+//=============================================================================
+class pqSQProcessMonitorUI
+    :
+  public Ui::pqSQProcessMonitorForm
+    {};
+
+#define SQPM_PROGBAR_MAX 1000
+
 enum {
   PROCESS_TYPE=Qt::UserRole,
   PROCESS_TYPE_INVALID,
@@ -71,10 +113,8 @@ enum {
   PROCESS_RANK
 };
 
-#define SQPM_PROGBAR_MAX 1000
-
 //*****************************************************************************
-QString FormatMemUsage(float memUse)
+QString UiatMemUsage(float memUse)
 {
   QString fmt("%1 %2");
 
@@ -194,7 +234,7 @@ void RankData::UpdateLoadWidget()
 
   this->LoadWidget->setValue(progVal);
   this->LoadWidget->setFormat(
-    QString("%1 %2%").arg(FormatMemUsage(used)).arg(percUsed, 0,'f',2));
+    QString("%1 %2%").arg(UiatMemUsage(used)).arg(percUsed, 0,'f',2));
 
   QPalette palette(this->LoadWidget->palette());
   if (fracUsed>0.75)
@@ -215,7 +255,8 @@ void RankData::InitializeLoadWidget()
 {
   this->LoadWidget=new QProgressBar;
   this->LoadWidget->setStyle(new QPlastiqueStyle);
-  this->LoadWidget->setMaximumSize(128,15);
+  //this->LoadWidget->setMaximumSize(128,15);
+  this->LoadWidget->setMaximumHeight(15);
   this->LoadWidget->setMinimum(0);
   this->LoadWidget->setMaximum(SQPM_PROGBAR_MAX);
   QFont font(this->LoadWidget->font());
@@ -375,7 +416,8 @@ void HostData::InitializeLoadWidget()
 {
   this->LoadWidget=new QProgressBar;
   this->LoadWidget->setStyle(new QPlastiqueStyle);
-  this->LoadWidget->setMaximumSize(128,15);
+  //this->LoadWidget->setMaximumSize(128,15);
+  this->LoadWidget->setMaximumHeight(15);
   this->LoadWidget->setMinimum(0);
   this->LoadWidget->setMaximum(SQPM_PROGBAR_MAX);
   QFont font(this->LoadWidget->font());
@@ -395,7 +437,7 @@ void HostData::UpdateLoadWidget()
 
   this->LoadWidget->setValue(progVal);
   this->LoadWidget->setFormat(
-    QString("%1 %2%").arg(FormatMemUsage(used)).arg(percUsed, 0,'f',2));
+    QString("%1 %2%").arg(UiatMemUsage(used)).arg(percUsed, 0,'f',2));
 
   QPalette palette(this->LoadWidget->palette());
   if (fracUsed>0.75)
@@ -422,6 +464,7 @@ pqSQProcessMonitor::pqSQProcessMonitor(
   #if defined pqSQProcessMonitorDEBUG
   cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::pqSQProcessMonitor" << endl;
   #endif
+
   this->ClientOnly=0;
   this->ClientHost=0;
   this->ClientRank=0;
@@ -429,13 +472,18 @@ pqSQProcessMonitor::pqSQProcessMonitor(
 
   this->ServerType=SYSTEM_TYPE_UNDEFINED;
 
+  this->EnableBacktraceHandler=0;
+
+  this->TrapFPEDivByZero=0;
+  this->TrapFPEInexact=0;
+  this->TrapFPEInvalid=0;
+  this->TrapFPEOverflow=0;
+  this->TrapFPEUnderflow=0;
+
   // Construct Qt form.
-  this->Form=new pqSQProcessMonitorForm;
-  this->Form->setupUi(this);
-  // this->Form->addCommand->setIcon(QPixmap(":/pqWidgets/Icons/pqNewItem16.png"));
-  // this->Form->execCommand->setIcon(QPixmap(":/pqWidgets/Icons/pqVcrPlay16.png"));
-  this->Form->updateMemUse->setIcon(QPixmap(":/pqWidgets/Icons/pqRedo24.png"));
-  this->Restore();
+  this->Ui=new pqSQProcessMonitorUI;
+  this->Ui->setupUi(this);
+  this->Ui->updateMemUse->setIcon(QPixmap(":/pqWidgets/Icons/pqRedo24.png"));
 
   vtkSMProxy* pmProxy=this->referenceProxy()->getProxy();
 
@@ -458,97 +506,64 @@ pqSQProcessMonitor::pqSQProcessMonitor(
 
   // apply capacity override
   QObject::connect(
-        this->Form->overrideCapacity,
+        this->Ui->overrideCapacity,
         SIGNAL(editingFinished()),
         this,
         SLOT(OverrideCapacity()));
 
   QObject::connect(
-        this->Form->enableOverrideCapacity,
+        this->Ui->enableOverrideCapacity,
         SIGNAL(toggled(bool)),
         this,
         SLOT(OverrideCapacity()));
 
 
-  // set command add,edit,del,exec buttons
+  // execute remote command
   QObject::connect(
-        this->Form->execCommand,
+        this->Ui->configView,
+        SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
+        this,
+        SLOT(EnableRemoteCommands()));
+
+  QObject::connect(
+        this->Ui->openCommandDialog,
         SIGNAL(clicked()),
         this,
-        SLOT(ExecCommand()));
+        SLOT(ExecuteRemoteCommand()));
 
-  // QObject::connect(
-  //       this->Form->addCommand,
-  //       SIGNAL(clicked()),
-  //       this,
-  //       SLOT(AddCommand()));
-
+  // edit signal handler
   QObject::connect(
-        this->Form->delCommand,
+        this->Ui->openSignalDialog,
         SIGNAL(clicked()),
         this,
-        SLOT(DelCommand()));
+        SLOT(EditRemoteSignals()));
 
-  QObject::connect(
-        this->Form->editCommand,
-        SIGNAL(toggled(bool)),
-        this,
-        SLOT(EditCommand(bool)));
 
-  // connect execption handing checks to pv apply button
-  QObject::connect(
-        this->Form->btSignalHandler,
-        SIGNAL(toggled(bool)),
-        this,
-        SLOT(setModified()));
-
-  QObject::connect(
-        this->Form->fpeDisableAll,
-        SIGNAL(toggled(bool)),
-        this,
-        SLOT(setModified()));
-
-  QObject::connect(
-        this->Form->fpeTrapOverflow,
-        SIGNAL(toggled(bool)),
-        this,
-        SLOT(setModified()));
-
-  QObject::connect(
-        this->Form->fpeTrapUnderflow,
-        SIGNAL(toggled(bool)),
-        this,
-        SLOT(setModified()));
-
-  QObject::connect(
-        this->Form->fpeTrapDivByZero,
-        SIGNAL(toggled(bool)),
-        this,
-        SLOT(setModified()));
-
-  QObject::connect(
-        this->Form->fpeTrapInvalid,
-        SIGNAL(toggled(bool)),
-        this,
-        SLOT(setModified()));
-
-  QObject::connect(
-        this->Form->fpeTrapInexact,
-        SIGNAL(toggled(bool)),
-        this,
-        SLOT(setModified()));
-
+  // refresh
   //QObject::connect(
-  //      this->Form->updateMemUse,
+  //      this->Ui->updateMemUse,
   //      SIGNAL(released()),
   //      this,
   //      SLOT(setModified()));
 
   QObject::connect(
-        this->Form->updateMemUse,
+        this->Ui->updateMemUse,
         SIGNAL(released()),
         this,
         SLOT(UpdateServerLoad()));
+
+
+  // context menu
+  QObject::connect(
+        this->Ui->configView,
+        SIGNAL(customContextMenuRequested(const QPoint &)),
+        this,
+        SLOT(ConfigViewContextMenu(const QPoint &)));
+
+  this->Ui->configView->setContextMenuPolicy(Qt::CustomContextMenu);
+
+  this->Ui->configView->expandAll();
+
 
   // Let the superclass do the undocumented stuff that needs to hapen.
   pqNamedObjectPanel::linkServerManagerProperties();
@@ -561,9 +576,7 @@ pqSQProcessMonitor::~pqSQProcessMonitor()
   cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::~pqSQProcessMonitor" << endl;
   #endif
 
-  this->Save();
-
-  delete this->Form;
+  delete this->Ui;
 
   this->VTKConnect->Delete();
 
@@ -601,54 +614,6 @@ void pqSQProcessMonitor::ClearServerHosts()
 }
 
 //-----------------------------------------------------------------------------
-void pqSQProcessMonitor::Restore()
-{
-  QStringList defaults;
-  defaults
-       << ""
-       << "-geometry 200x40 -fg white -bg black -T @HOST@:@PID@"
-       << "xterm @XTOPTS@ -e gdb --pid=@PID@"
-       << "xterm @XTOPTS@ -e ssh -t @FEURL@ ssh -t @HOST@ gdb --pid=@PID@"
-       << "xterm @XTOPTS@ -e ssh -t @FEURL@ ssh -t @HOST@ top"
-       << "xterm @XTOPTS@ -e ssh -t @HOST@ gdb --pid=@PID@"
-       << "xterm @XTOPTS@ -e ssh -t @HOST@ top"
-       << "xterm -e ssh @HOST@ kill -TERM @PID@"
-       << "xterm -e ssh @HOST@ kill -KILL @PID@";
-
-  QSettings settings("SciberQuest", "SciVisToolKit");
-
-  QStringList defs=settings.value("ProcessMonitor/defaults",defaults).toStringList();
-
-  this->Form->feURL->setText(defs.at(0));
-  this->Form->xtOpts->setText(defs.at(1));
-  int n=defs.size();
-  for (int i=2; i<n; ++i)
-    {
-    this->Form->commandCombo->addItem(defs.at(i));
-    }
-}
-
-//-----------------------------------------------------------------------------
-void pqSQProcessMonitor::Save()
-{
-  QStringList defs;
-
-  defs
-    << this->Form->feURL->text()
-    << this->Form->xtOpts->text();
-
-  int nCmds=this->Form->commandCombo->count();
-  for (int i=0; i<nCmds; ++i)
-    {
-    defs << this->Form->commandCombo->itemText(i);
-    }
-
-  QSettings settings("SciberQuest","SciVisToolKit");
-
-  settings.setValue("ProcessMonitor/defaults",defs);
-}
-
-//-----------------------------------------------------------------------------
 void pqSQProcessMonitor::PullServerConfig()
 {
   #if defined pqSQProcessMonitorDEBUG
@@ -657,7 +622,7 @@ void pqSQProcessMonitor::PullServerConfig()
   vtkSMProxy* pmProxy=this->referenceProxy()->getProxy();
 
   // client
-  QTreeWidgetItem *clientGroupItem=new QTreeWidgetItem(this->Form->configView);
+  QTreeWidgetItem *clientGroupItem=new QTreeWidgetItem(this->Ui->configView);
   clientGroupItem->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
   clientGroupItem->setExpanded(true);
   clientGroupItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_CLIENT_GROUP));
@@ -685,12 +650,12 @@ void pqSQProcessMonitor::PullServerConfig()
   clientRankItem->setData(1,PROCESS_HOST_NAME,QVariant(clientHostName.c_str()));
   clientRankItem->setData(2,PROCESS_ID,QVariant(clientPid));
   clientRankItem->setText(0,QString("0:%1").arg(clientPid));
-  this->Form->configView->setItemWidget(clientRankItem,1,this->ClientRank->GetLoadWidget());
+  this->Ui->configView->setItemWidget(clientRankItem,1,this->ClientRank->GetLoadWidget());
 
   // server group
   this->ClientOnly=0;
 
-  QTreeWidgetItem *serverGroup=new QTreeWidgetItem(this->Form->configView,QStringList("pvserver"));
+  QTreeWidgetItem *serverGroup=new QTreeWidgetItem(this->Ui->configView,QStringList("pvserver"));
   serverGroup->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
   serverGroup->setExpanded(true);
   serverGroup->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_SERVER_GROUP));
@@ -710,8 +675,10 @@ void pqSQProcessMonitor::PullServerConfig()
     is >> this->ServerType;
     if (this->ServerType==SYSTEM_TYPE_WIN)
       {
-      this->Form->groupSignal->hide();
-      this->Form->groupFPE->hide();
+      // TODO
+      // server side implementation for windows
+      this->Ui->openCommandDialog->hide();
+      this->Ui->openSignalDialog->hide();
       }
 
     int commSize;
@@ -737,7 +704,7 @@ void pqSQProcessMonitor::PullServerConfig()
       if (clientPid==serverPid)
         {
         this->ClientOnly=1;
-        this->Form->configView->takeTopLevelItem(1);
+        this->Ui->configView->takeTopLevelItem(1);
         break;
         }
 
@@ -754,10 +721,10 @@ void pqSQProcessMonitor::PullServerConfig()
 
         QTreeWidgetItem *serverHostItem=new QTreeWidgetItem(serverGroup);
         serverHostItem->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
-        serverHostItem->setExpanded(true);
+        //serverHostItem->setExpanded(true);
         serverHostItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_SERVER_HOST));
         serverHostItem->setText(0,serverHostName.c_str());
-        this->Form->configView->setItemWidget(serverHostItem,1,serverHost->GetLoadWidget());
+        this->Ui->configView->setItemWidget(serverHostItem,1,serverHost->GetLoadWidget());
 
         serverHost->SetTreeItem(serverHostItem);
         }
@@ -770,12 +737,12 @@ void pqSQProcessMonitor::PullServerConfig()
 
       QTreeWidgetItem *serverRankItem=new QTreeWidgetItem(serverHost->GetTreeItem());
       serverRankItem->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
-      serverRankItem->setExpanded(false);
+      //serverRankItem->setExpanded(false);
       serverRankItem->setData(0,PROCESS_TYPE,QVariant(PROCESS_TYPE_SERVER_RANK));
       serverRankItem->setData(1,PROCESS_HOST_NAME,QVariant(serverHostName.c_str()));
       serverRankItem->setData(2,PROCESS_ID,QVariant(serverPid));
       serverRankItem->setText(0,QString("%1:%2").arg(i).arg(serverPid));
-      this->Form->configView->setItemWidget(serverRankItem,1,serverRank->GetLoadWidget());
+      this->Ui->configView->setItemWidget(serverRankItem,1,serverRank->GetLoadWidget());
 
       cerr << i << " " << serverHostName << " " << serverPid << endl;
       }
@@ -785,8 +752,8 @@ void pqSQProcessMonitor::PullServerConfig()
     cerr << "Error: failed to get configuration stream. Aborting." << endl;
     }
 
-  this->Form->configView->resizeColumnToContents(0);
-  this->Form->configView->resizeColumnToContents(1);
+  this->Ui->configView->resizeColumnToContents(0);
+  this->Ui->configView->resizeColumnToContents(1);
 
   if (!this->ClientOnly)
     {
@@ -864,13 +831,108 @@ void pqSQProcessMonitor::UpdateInformationEvent()
 }
 
 //-----------------------------------------------------------------------------
+void pqSQProcessMonitor::IncrementInformationMTime()
+{
+  vtkSMProxy* pmProxy=this->referenceProxy()->getProxy();
+
+  ++this->InformationMTime;
+
+  vtkSMIntVectorProperty *infoMTimeProp
+    =dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("GetInformationMTime"));
+  infoMTimeProp->SetElement(0,this->InformationMTime);
+
+  pmProxy->UpdateVTKObjects();
+//   pqNamedObjectPanel::accept();
+}
+
+
+//-----------------------------------------------------------------------------
+void pqSQProcessMonitor::accept()
+{
+  #if defined pqSQProcessMonitorDEBUG
+  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::accept" << endl;
+  #endif
+
+  // Let our superclass do the undocumented stuff that needs to be done.
+  pqNamedObjectPanel::accept();
+
+
+  vtkSMProxy* pmProxy=this->referenceProxy()->getProxy();
+
+  vtkSMIntVectorProperty *prop=0;
+
+  prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("EnableBacktraceHandler"));
+  prop->SetElement(0,this->Ui->btSignalHandler->isChecked());
+
+  if ( this->TrapFPEDivByZero
+    || this->TrapFPEInexact
+    || this->TrapFPEInvalid
+    || this->TrapFPEOverflow
+    || this->TrapFPEUnderflow)
+    {
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("TrapFPEDivByZero"));
+    prop->SetElement(0,this->TrapFPEDivByZero);
+    prop->Modified();
+
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("TrapFPEInexact"));
+    prop->SetElement(0,this->TrapFPEInexact);
+    prop->Modified();
+
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("TrapFPEInvalid"));
+    prop->SetElement(0,this->TrapFPEInvalid);
+    prop->Modified();
+
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("TrapFPEOverflow"));
+    prop->SetElement(0,this->TrapFPEOverflow);
+    prop->Modified();
+
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("TrapFPEUnderflow"));
+    prop->SetElement(0,this->TrapFPEUnderflow);
+    prop->Modified();
+    }
+  else
+    {
+    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("TrapAllFPE"));
+    prop->SetElement(0,0);
+    prop->Modified();
+    }
+
+  // force a refresh
+  ++this->InformationMTime;
+  prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("SetInformationMTime"));
+  prop->SetElement(0,this->InformationMTime);
+  prop->Modified();
+
+  pmProxy->UpdateVTKObjects();
+
+  // mark dirty
+  // The idea was that if it was dirty then it would be
+  // updated when the pipeline ran providing an automated
+  // reporting mechanism but that didn't hold true, when
+  // advancing through timesteps.
+  // this->setModified();
+}
+
+//-----------------------------------------------------------------------------
+void pqSQProcessMonitor::UpdateServerLoad()
+{
+  this->setModified();
+  this->accept();
+
+  pqRenderView* renderView =
+    qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
+
+  renderView->render();
+}
+
+//-----------------------------------------------------------------------------
 void pqSQProcessMonitor::OverrideCapacity()
 {
   #if defined pqSQProcessMonitorDEBUG
   cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::OverrideCapacity" << endl;
   #endif
 
-  bool applyOverride = this->Form->enableOverrideCapacity->isChecked();
+  bool applyOverride = this->Ui->enableOverrideCapacity->isChecked();
 
   map<string,HostData*>::iterator it=this->ServerHosts.begin();
   map<string,HostData*>::iterator end=this->ServerHosts.end();
@@ -880,7 +942,7 @@ void pqSQProcessMonitor::OverrideCapacity()
     // capacity and usage are reported in kiB, but UI request
     // in GiB.
     unsigned long long capacity
-      = this->Form->overrideCapacity->text().toDouble()*pow(2.0,20);
+      = this->Ui->overrideCapacity->text().toDouble()*pow(2.0,20);
 
     if (capacity<=0)
       {
@@ -906,53 +968,38 @@ void pqSQProcessMonitor::OverrideCapacity()
 }
 
 //-----------------------------------------------------------------------------
-void pqSQProcessMonitor::IncrementInformationMTime()
+void pqSQProcessMonitor::EditRemoteSignals()
 {
-  vtkSMProxy* pmProxy=this->referenceProxy()->getProxy();
+  pqSQRemoteSignalDialog dialog(this,0);
 
-  ++this->InformationMTime;
+  dialog.SetTrapFPEDivByZero(this->TrapFPEDivByZero);
+  dialog.SetTrapFPEInexact(this->TrapFPEInexact);
+  dialog.SetTrapFPEInvalid(this->TrapFPEInvalid);
+  dialog.SetTrapFPEOverflow(this->TrapFPEOverflow);
+  dialog.SetTrapFPEUnderflow(this->TrapFPEUnderflow);
 
-  vtkSMIntVectorProperty *infoMTimeProp
-    =dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("GetInformationMTime"));
-  infoMTimeProp->SetElement(0,this->InformationMTime);
+  if ((dialog.exec()==QDialog::Accepted) && dialog.GetModified())
+    {
+    this->TrapFPEDivByZero=dialog.GetTrapFPEDivByZero();
+    this->TrapFPEInexact=dialog.GetTrapFPEInexact();
+    this->TrapFPEInvalid=dialog.GetTrapFPEInvalid();
+    this->TrapFPEOverflow=dialog.GetTrapFPEOverflow();
+    this->TrapFPEUnderflow=dialog.GetTrapFPEUnderflow();
 
-  pmProxy->UpdateVTKObjects();
-//   pqNamedObjectPanel::accept();
+    this->setModified();
+    }
 }
 
 //-----------------------------------------------------------------------------
-void pqSQProcessMonitor::AddCommand()
-{
-//   int idx=this->Form->commandCombo->count();
-//   this->Form->commandCombo->addItem("NEW COMMAND");
-//   this->Form->commandCombo->setCurrentIndex(idx);
-//   if (!this->Form->editCommand->isChecked())
-//     {
-//     this->Form->editCommand->click();
-//     }
-}
-
-//-----------------------------------------------------------------------------
-void pqSQProcessMonitor::DelCommand()
-{
-  int idx=this->Form->commandCombo->currentIndex();
-  this->Form->commandCombo->removeItem(idx);
-}
-
-//-----------------------------------------------------------------------------
-void pqSQProcessMonitor::EditCommand(bool state)
-{
-  this->Form->commandCombo->setEditable(state);
-}
-
-//-----------------------------------------------------------------------------
-void pqSQProcessMonitor::ExecCommand()
+void pqSQProcessMonitor::EnableRemoteCommands()
 {
   #if defined pqSQProcessMonitorDEBUG
-  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::ExecCommand" << endl;
+  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::SetExecuteButtonState" << endl;
   #endif
 
-  QTreeWidgetItem *item=this->Form->configView->currentItem();
+  this->Ui->openCommandDialog->setEnabled(false);
+
+  QTreeWidgetItem *item=this->Ui->configView->currentItem();
   if (item)
     {
     bool ok;
@@ -963,183 +1010,159 @@ void pqSQProcessMonitor::ExecCommand()
       case PROCESS_TYPE_CLIENT_RANK:
       case PROCESS_TYPE_SERVER_RANK:
         {
-        string cmd=(const char*)this->Form->commandCombo->currentText().toAscii();
-
-        string feURLStr(this->Form->feURL->text().toAscii());
-        SearchAndReplace(string("@FEURL@"),feURLStr,cmd);
-
-        string xtOptsStr(this->Form->xtOpts->text().toAscii());
-        SearchAndReplace(string("@XTOPTS@"),xtOptsStr,cmd);
-
-        string hostNameStr((const char *)item->data(1,PROCESS_HOST_NAME).toString().toAscii());
-        SearchAndReplace(string("@HOST@"),hostNameStr,cmd);
-
-        string pidStr((const char *)item->data(2,PROCESS_ID).toString().toAscii());
-        SearchAndReplace(string("@PID@"),pidStr,cmd);
-
-        int iErr=this->ClientSystem->Exec(cmd);
-        if (iErr)
-          {
-          QMessageBox ebx;
-          ebx.setText("Exec failed.");
-          ebx.exec();
-          return;
-          }
+        this->Ui->openCommandDialog->setEnabled(true);
         }
-        break;
-      default:
-        QMessageBox ebx;
-        ebx.setText("Could not exec. No process selected.");
-        ebx.exec();
-        return;
         break;
       }
     }
 }
 
 //-----------------------------------------------------------------------------
-void pqSQProcessMonitor::accept()
+void pqSQProcessMonitor::ExecuteRemoteCommand()
 {
   #if defined pqSQProcessMonitorDEBUG
-  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::accept" << endl;
+  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::ExecCommand" << endl;
   #endif
 
-  // Let our superclass do the undocumented stuff that needs to be done.
-  pqNamedObjectPanel::accept();
-
-
-  vtkSMProxy* pmProxy=this->referenceProxy()->getProxy();
-
-  vtkSMIntVectorProperty *prop=0;
-
-  prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("EnableBacktraceHandler"));
-  prop->SetElement(0,this->Form->btSignalHandler->isChecked());
-  //pmProxy->UpdateProperty("EnableBacktraceHandler");
-
-
-  bool disableFPE=this->Form->fpeDisableAll->isChecked();
-  if (disableFPE)
+  QTreeWidgetItem *item=this->Ui->configView->currentItem();
+  if (item)
     {
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("EnableFE_ALL"));
-    prop->SetElement(0,0);
-    prop->Modified();
+    bool ok;
+    int type=item->data(0,PROCESS_TYPE).toInt(&ok);
+    if (!ok) return;
+    switch (type)
+      {
+      case PROCESS_TYPE_CLIENT_RANK:
+      case PROCESS_TYPE_SERVER_RANK:
+        {
+        string pvHost((const char *)item->data(1,PROCESS_HOST_NAME).toString().toAscii());
+        string pvPid((const char *)item->data(2,PROCESS_ID).toString().toAscii());
+
+        // give user a chance to configure the command
+        pqSQRemoteCommandDialog dialog(this,0);
+
+        dialog.SetActiveHost(pvHost);
+        dialog.SetActivePid(pvPid);
+
+        if (dialog.exec()==QDialog::Accepted)
+          {
+          string command=dialog.GetCommand();
+
+          int iErr=this->ClientSystem->Exec(command);
+          if (iErr)
+            {
+            QMessageBox ebx(
+                QMessageBox::Information,
+                "Error",
+                QString(command.c_str())  + "  failed.");
+            ebx.exec();
+            }
+          }
+        }
+        break;
+
+      default:
+        QMessageBox ebx(
+            QMessageBox::Information,
+            "Error",
+            "No process selected. Select a specific process first by "
+            "clicking on its entry in the tree view widget.");
+        ebx.exec();
+        break;
+      }
     }
   else
     {
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("EnableFE_DIVBYZERO"));
-    prop->SetElement(0,this->Form->fpeTrapDivByZero->isChecked());
-    prop->Modified(); // force push
-
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("EnableFE_INEXACT"));
-    prop->SetElement(0,this->Form->fpeTrapInexact->isChecked());
-    prop->Modified();
-
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("EnableFE_INVALID"));
-    prop->SetElement(0,this->Form->fpeTrapInvalid->isChecked());
-    prop->Modified();
-
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("EnableFE_OVERFLOW"));
-    prop->SetElement(0,this->Form->fpeTrapOverflow->isChecked());
-    prop->Modified();
-
-    prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("EnableFE_UNDERFLOW"));
-    prop->SetElement(0,this->Form->fpeTrapUnderflow->isChecked());
-    prop->Modified();
+    QMessageBox ebx(
+        QMessageBox::Information,
+        "Error",
+        "No process selected. Select a specific process first by "
+        "clicking on its entry in the tree view widget.");
+    ebx.exec();
     }
-
-  // force a refresh
-  ++this->InformationMTime;
-  prop=dynamic_cast<vtkSMIntVectorProperty *>(pmProxy->GetProperty("SetInformationMTime"));
-  prop->SetElement(0,this->InformationMTime);
-  prop->Modified();
-
-  pmProxy->UpdateVTKObjects();
-
-  // mark dirty
-  // The idea was that if it was dirty then it would be
-  // updated when the puipeline ran providing an autoomated
-  // reporting mechanism but that didn't hold true, when
-  // advancing through timesteps.
-  // this->setModified();
 }
 
 //-----------------------------------------------------------------------------
-void pqSQProcessMonitor::UpdateServerLoad()
+void pqSQProcessMonitor::ShowOnlyNodes()
 {
-  this->setModified();
-  this->accept();
+  #if defined pqSQProcessMonitorDEBUG
+  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::ShowOnlyNodes" << endl;
+  #endif
 
-  pqRenderView* renderView =
-    qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
+  this->Ui->configView->collapseAll();
 
-  renderView->render();
+  vector<QTreeWidgetItem*> items;
+  flattenTree(this->Ui->configView,items);
+
+  int nItems=items.size();
+  for (int i=0; i<nItems; ++i)
+    {
+    QTreeWidgetItem *item=items[i];
+
+    bool ok;
+    int type=item->data(0,PROCESS_TYPE).toInt(&ok);
+    if (!ok) return;
+    switch (type)
+      {
+      case PROCESS_TYPE_CLIENT_GROUP:
+      case PROCESS_TYPE_SERVER_GROUP:
+      case PROCESS_TYPE_CLIENT_HOST:
+        item->setExpanded(true);
+        break;
+
+      case PROCESS_TYPE_SERVER_HOST:
+        item->setExpanded(false);
+        break;
+
+      case PROCESS_TYPE_CLIENT_RANK:
+      case PROCESS_TYPE_SERVER_RANK:
+        break;
+      }
+    }
 }
 
+//-----------------------------------------------------------------------------
+void pqSQProcessMonitor::ShowAllRanks()
+{
+  #if defined pqSQProcessMonitorDEBUG
+  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::ShowAllRanks" << endl;
+  #endif
 
+  this->Ui->configView->expandAll();
+}
 
+//-----------------------------------------------------------------------------
+void pqSQProcessMonitor::ConfigViewContextMenu(const QPoint &pos)
+{
+  #if defined pqSQProcessMonitorDEBUG
+  cerr << ":::::::::::::::::::::::::::::::pqSQProcessMonitor::ConfigContextMenu" << endl;
+  #endif
 
-/// VTK stuffs
-//   // Connect to server side pipeline's UpdateInformation events.
-//   this->VTKConnect=vtkEventQtSlotConnect::New();
-//   this->VTKConnect->Connect(
-//       dbbProxy,
-//       vtkCommand::UpdateInformationEvent,
-//       this, SLOT(UpdateInformationEvent()));
-//   // Get our initial state from the server side. In server side RequestInformation
-//   // the database view is encoded in vtkInformationObject. We are relying on the 
-//   // fact that there is a pending event waiting for us.
-//   this->UpdateInformationEvent();
+  QMenu context;
+  context.addAction("show only nodes",this,SLOT(ShowOnlyNodes()));
+  context.addAction("show all ranks",this,SLOT(ShowAllRanks()));
 
-// 
-//   // These connection let PV know that we have changed, and makes the apply button
-//   // is activated.
-//   QObject::connect(
-//       this->Form->DatabaseView,
-//       SIGNAL(itemChanged(QTreeWidgetItem*, int)),
-//       this, SLOT(setModified()));
+  QTreeWidgetItem * item=this->Ui->configView->itemAt(pos);
+  if (item)
+    {
+    bool ok;
+    int type=item->data(0,PROCESS_TYPE).toInt(&ok);
+    if (!ok) return;
+    switch (type)
+      {
+      case PROCESS_TYPE_CLIENT_GROUP:
+      case PROCESS_TYPE_SERVER_GROUP:
+      case PROCESS_TYPE_CLIENT_HOST:
+      case PROCESS_TYPE_SERVER_HOST:
+        break;
 
-// vtkSMProxy* dbbProxy=this->referenceProxy()->getProxy();
-/// Example of how to get stuff from the server side.
-// vtkSMIntVectorProperty *serverDVMTimeProp
-//   =dynamic_cast<vtkSMIntVectorProperty *>(dbbProxy->GetProperty("DatabaseViewMTime"));
-// dbbProxy->UpdatePropertyInformation(serverDVMTimeProp);
-// const int *serverDVMTime=dvmtProp->GetElement(0);
-/// Example of how to get stuff from the XML configuration.
-// vtkSMStringVectorProperty *ppProp
-//   =dynamic_cast<vtkSMStringVectorProperty *>(dbbProxy->GetProperty("PluginPath"));
-// const char *pp=ppProp->GetElement(0);
-// this->Form->PluginPath->setText(pp);
-/// Imediate update example.
-// These are bad because it gets updated more than when you call
-// modified, see the PV guide.
-//  iuiProp->SetImmediateUpdate(1); set this in constructor
-// vtkSMProperty *iuiProp=dbbProxy->GetProperty("InitializeUI");
-// iuiProp->Modified();
-/// Do some changes and force a push.
-// vtkSMIntVectorProperty *meshProp
-//   = dynamic_cast<vtkSMIntVectorProperty *>(dbbProxy->GetProperty("PushMeshId"));
-// meshProp->SetElement(meshIdx,meshId);
-// ++meshIdx;
-// dbbProxy->UpdateProperty("PushMeshId");
-/// Catch all, update anything else that may need updating.
-// dbbProxy->UpdateVTKObjects();
-/// How a wiget in custom panel tells PV that things need to be applied
-// QObject::connect(
-//     this->Form->DatabaseView,
-//     SIGNAL(itemChanged(QTreeWidgetItem*, int)),
-//     this, SLOT(setModified()));
-  // Pull run time configuration from server. The values are transfered
-  // in the form of an ascii stream.
-//   vtkSMIntVectorProperty *pidProp
-//     = dynamic_cast<vtkSMIntVectorProperty*>(pmProxy->GetProperty("Pid"));
-//   pmProxy->UpdatePropertyInformation(pidProp);
-//   pid_t p=pidProp->GetElement(0);
-//   cerr << "PID=" << p << endl;
-/*
-  vtkSMProxy* reader = this->referenceProxy()->getProxy();
-  reader->UpdatePropertyInformation(reader->GetProperty("Pid"));
-  int stamp = vtkSMPropertyHelper(reader, "Pid").GetAsInt();
-  cerr << stamp;*/
-/// how to get something from the server.
-// dbbProxy->UpdatePropertyInformation(reader->GetProperty("SILUpdateStamp"));
-// int stamp = vtkSMPropertyHelper(dbbProxy, "SILUpdateStamp").GetAsInt();
+      case PROCESS_TYPE_CLIENT_RANK:
+      case PROCESS_TYPE_SERVER_RANK:
+        context.addAction("remote command",this,SLOT(ExecuteRemoteCommand()));
+        break;
+      }
+    }
+
+  context.exec(this->Ui->configView->mapToGlobal(pos));
+}
+

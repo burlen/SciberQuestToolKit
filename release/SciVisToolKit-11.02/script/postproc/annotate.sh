@@ -3,7 +3,8 @@
 
 if [ $# -lt 3 ]
 then
-  echo "Error: $0 /path/to/input /path/to/output text" 1>&2
+  exe=`basename $0`
+  echo "Error: $exe /path/to/input /path/to/output text [pos:ll,lr,ur,ul] [size] [color]" 1>&2
   exit -1
 fi
 

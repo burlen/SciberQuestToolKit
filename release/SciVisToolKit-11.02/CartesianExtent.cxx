@@ -253,3 +253,33 @@ void CartesianExtent::Shift(
   }
 }
 
+//-----------------------------------------------------------------------------
+void CartesianExtent::Shift(
+      int *ijk,
+      int *n,
+      int mode)
+{
+  switch(mode)
+  {
+  case DIM_MODE_2D_XY:
+    ijk[0]+=n[0];
+    ijk[1]+=n[1];
+    break;
+  case DIM_MODE_2D_XZ:
+    ijk[0]+=n[0];
+    ijk[2]+=n[2];
+    break;
+  case DIM_MODE_2D_YZ:
+    ijk[1]+=n[1];
+    ijk[2]+=n[2];
+    break;
+  case DIM_MODE_3D:
+    ijk[0]+=n[0];
+    ijk[1]+=n[1];
+    ijk[2]+=n[2];
+    break;
+  }
+}
+
+
+

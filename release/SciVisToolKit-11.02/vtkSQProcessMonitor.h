@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
@@ -54,7 +54,6 @@ public:
   vtkSetMacro(InformationMTime,int);
   vtkGetMacro(InformationMTime,int);
 
-
   // Description:
   // Enable backtrace trap on signals SEGV, ILL, FPE, and BUS. Disabling
   // will restore the previous handler.
@@ -62,12 +61,12 @@ public:
 
   // Description:
   // Explicitly turn on/off floating point exceptions.
-  void SetEnableFE_ALL(int on);
-  void SetEnableFE_DIVBYZERO(int on);
-  void SetEnableFE_INEXACT(int on);
-  void SetEnableFE_INVALID(int on);
-  void SetEnableFE_OVERFLOW(int on);
-  void SetEnableFE_UNDERFLOW(int on);
+  void SetTrapAllFPE(int on);
+  void SetTrapFPEDivByZero(int on);
+  void SetTrapFPEInvalid(int on);
+  void SetTrapFPEInexact(int on);
+  void SetTrapFPEOverflow(int on);
+  void SetTrapFPEUnderflow(int on);
 
 protected:
   vtkSQProcessMonitor();
