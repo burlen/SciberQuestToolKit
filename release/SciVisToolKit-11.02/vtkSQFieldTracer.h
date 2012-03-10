@@ -66,8 +66,9 @@ public:
   // The enumeration is as follows:
   //    0  TOPOLOGY filter produces field topology map
   //    1  STREAM   filter produces stream lines
-  //    2  POINCARE filter produces a poincare map
-  // This allows this filter to serve as multiple ParaView filters, 
+  //    2  POINCARE filter produces a displacement map
+  //    3  DISPLACEMENT filter produces a poincare map
+  // This allows this filter to serve as multiple ParaView filters,
   // the OOCFieldTracer, OOCDTopologyMapper, and OOCDPoincareMapper
   // NOTE This only works if Mode is set before the filter runs.
   // PV gets confused if you try to change Mode later.
@@ -78,7 +79,8 @@ public:
     {
     MODE_STREAM=1,
     MODE_TOPOLOGY=2,
-    MODE_POINCARE=3
+    MODE_POINCARE=3,
+    MODE_DISPLACEMENT=4
     };
   //ETX
 
@@ -133,6 +135,11 @@ public:
   // Specify the maximum length of a streamline expressed in LENGTH_UNIT.
   vtkSetMacro(MaxLineLength,double);
   vtkGetMacro(MaxLineLength,double);
+
+  // Description:
+  // Specify the maximum time interval to integrate over.
+  vtkSetMacro(MaxIntegrationInterval,double);
+  vtkGetMacro(MaxIntegrationInterval,double);
 
   // Description
   // Specify the terminal speed value, below which integration is terminated.
@@ -274,6 +281,7 @@ private:
   double MaxError;
   vtkIdType MaxNumberOfSteps;
   double MaxLineLength;
+  double MaxIntegrationInterval;
   double NullThreshold;
   int IntegratorType;
   vtkInitialValueProblemSolver* Integrator;
@@ -290,7 +298,7 @@ private:
 
   //BTX
   // units
-  enum 
+  enum
     {
     ARC_LENGTH=1,
     CELL_FRACTION=2

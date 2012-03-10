@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
@@ -43,6 +43,7 @@ vtkIdType FieldLine::CopyPoints(float *pts)
   // so it ends at the seed point.
   vtkIdType nPtsBwd=this->BwdTrace->GetNumberOfTuples();
   float *pbtr=this->BwdTrace->GetPointer(0);
+
   // start at the end.
   pbtr+=3*nPtsBwd-3;
   for (vtkIdType i=0; i<nPtsBwd; ++i,pts+=3,pbtr-=3)
@@ -63,4 +64,34 @@ vtkIdType FieldLine::CopyPoints(float *pts)
     }
 
   return nPtsBwd+nPtsFwd;
+}
+
+//-----------------------------------------------------------------------------
+void FieldLine::GetDisplacement(float *d)
+{
+  float s[3]={
+      this->Seed[0],
+      this->Seed[1],
+      this->Seed[2]
+      };
+
+  float *p0=s;
+  if (this->BwdTrace)
+    {
+    vtkIdType nb=this->BwdTrace->GetNumberOfTuples();
+    p0=this->BwdTrace->GetPointer(0);
+    p0+=3*nb-3;
+    }
+
+  float *p1=s;
+  if (this->FwdTrace)
+    {
+    vtkIdType nf=this->FwdTrace->GetNumberOfTuples();
+    p1=this->FwdTrace->GetPointer(0);
+    p1+=3*nf-3;
+    }
+
+  d[0]=p1[0]-p0[0];
+  d[1]=p1[1]-p0[1];
+  d[2]=p1[2]-p0[2];
 }

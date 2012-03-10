@@ -2,145 +2,184 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
-/*=========================================================================
+#include "vtkSQImageSource.h"
 
-  Program:   Visualization Toolkit
-  Module:    vtkSQPointSource.cxx
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-#include "vtkSQPointSource.h"
+#include "CartesianExtent.h"
+#include "postream.h"
+#include "Numerics.hxx"
+#include "GhostTransaction.h"
 
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
+typedef vtkStreamingDemandDrivenPipeline vtkSDDPipeline;
+
+#include "vtkImageData.h"
+#include "vtkRectilinearGrid.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
-#include "vtkFloatArray.h"
-#include "vtkCellArray.h"
-#include "vtkPoints.h"
-#include "vtkPolyData.h"
+#include "vtkDataArray.h"
+#include "vtkDataSet.h"
+#include "vtkDataSetAttributes.h"
+#include "vtkPVXMLElement.h"
+#include <vtkstd/string>
+using vtkstd::string;
 
-#include <float.h>
-#include <math.h>
-#include <time.h>
-#include <stdlib.h>
+#include <mpi.h>
 
-vtkStandardNewMacro(vtkSQPointSource);
+// #define vtkSQImageSourceDEBUG
+#define vtkSQImageSourceTIME
 
-//----------------------------------------------------------------------------
-vtkSQPointSource::vtkSQPointSource()
+#if defined vtkSQImageSourceTIME
+  #include "vtkSQLog.h"
+#endif
+
+
+vtkCxxRevisionMacro(vtkSQImageSource, "$Revision: 0.0 $");
+vtkStandardNewMacro(vtkSQImageSource);
+
+//-----------------------------------------------------------------------------
+vtkSQImageSource::vtkSQImageSource()
 {
-  this->NumberOfPoints=1;
+  #ifdef vtkSQImageSourceDEBUG
+  pCerr() << "=====vtkSQImageSource::vtkSQImageSource" << endl;
+  #endif
 
-  this->Center[0]=
-  this->Center[1]=
-  this->Center[2]=0.0;
+  this->Extent[0]=0;
+  this->Extent[1]=1;
+  this->Extent[2]=0;
+  this->Extent[3]=1;
+  this->Extent[4]=0;
+  this->Extent[5]=1;
 
-  this->Radius=1;
+  this->Origin[0]=0.0;
+  this->Origin[1]=0.0;
+  this->Origin[2]=0.0;
+
+  this->Spacing[0]=1.0;
+  this->Spacing[1]=1.0;
+  this->Spacing[2]=1.0;
 
   this->SetNumberOfInputPorts(0);
+  this->SetNumberOfOutputPorts(1);
 }
 
-//----------------------------------------------------------------------------
-int vtkSQPointSource::RequestData(
-  vtkInformation *vtkNotUsed(request),
-  vtkInformationVector **vtkNotUsed(inputVector),
-  vtkInformationVector *outputVector)
+//-----------------------------------------------------------------------------
+vtkSQImageSource::~vtkSQImageSource()
 {
-  // get the info object
-  vtkInformation *outInfo = outputVector->GetInformationObject(0);
+  #ifdef vtkSQImageSourceDEBUG
+  pCerr() << "=====vtkSQImageSource::~vtkSQImageSource" << endl;
+  #endif
+}
 
-  // get the ouptut
-  vtkPolyData *output 
-    = dynamic_cast<vtkPolyData*>(outInfo->Get(vtkDataObject::DATA_OBJECT()));
+//-----------------------------------------------------------------------------
+int vtkSQImageSource::Initialize(vtkPVXMLElement *root)
+{
+  #if defined vtkSQImageSourceTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  *log
+    << "# ::vtkSQImageSource" << "\n"
+    << "\n";
+  #endif
+  vtkErrorMacro("Initialize not yet implemented!!!");
+  return 0;
+}
 
+//-----------------------------------------------------------------------------
+void vtkSQImageSource::SetIExtent(int ilo, int ihi)
+{
+  int *s=this->Extent;
+  this->SetExtent(ilo,ihi,s[2],s[3],s[4],s[5]);
+}
 
-  // paralelize by piece information.
-  int pieceNo
-    = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
-  int nPieces
-    = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+//-----------------------------------------------------------------------------
+void vtkSQImageSource::SetJExtent(int jlo, int jhi)
+{
+  int *s=this->Extent;
+  this->SetExtent(s[0],s[1],jlo,jhi,s[4],s[5]);
+}
 
-  // sanity - the requst cannot be fullfilled
-  if ( (pieceNo>=nPieces) || (pieceNo>=this->NumberOfPoints) )
-    {
-    output->Initialize();
-    return 1;
-    }
+//-----------------------------------------------------------------------------
+void vtkSQImageSource::SetKExtent(int klo, int khi)
+{
+  int *s=this->Extent;
+  this->SetExtent(s[0],s[1],s[2],s[3],klo,khi);
+}
 
-  // domain decomposition
-  int nLocal=1;
-  if (this->NumberOfPoints>nPieces)
-    {
-    int pieceSize=this->NumberOfPoints/nPieces;
-    int nLarge=this->NumberOfPoints%nPieces;
-    nLocal=pieceSize+(pieceNo<nLarge?1:0);
-    }
+//-----------------------------------------------------------------------------
+int vtkSQImageSource::RequestInformation(
+      vtkInformation * /*req*/,
+      vtkInformationVector **inInfos,
+      vtkInformationVector *outInfos)
+{
+  #ifdef vtkSQImageSourceDEBUG
+  pCerr() << "=====vtkSQImageSource::RequestInformation" << endl;
+  #endif
+  //this->Superclass::RequestInformation(req,inInfos,outInfos);
 
-  vtkFloatArray *pa=vtkFloatArray::New();
-  pa->SetNumberOfComponents(3);
-  pa->SetNumberOfTuples(nLocal);
-  float *ppa=pa->GetPointer(0);
+  vtkInformation* outInfo=outInfos->GetInformationObject(0);
 
-  vtkIdTypeArray *ca=vtkIdTypeArray::New();
-  ca->SetNumberOfTuples(2*nLocal);
-  vtkIdType *pca=ca->GetPointer(0);
-
-  srand(pieceNo+time(0));
-
-  for (int i=0; i<nLocal; ++i)
-    {
-    double pi=3.14159265358979;
-    double rho=this->Radius*((double)rand())/((double)RAND_MAX);
-    double theta=2.0*pi*((double)rand())/((double)RAND_MAX);
-    double phi=pi*((double)rand())/((double)RAND_MAX);
-    double sin_theta=sin(theta);
-    double cos_theta=cos(theta);
-    double rho_sin_phi=rho*sin(phi);
-    ppa[0]=this->Center[0]+rho_sin_phi*cos_theta;
-    ppa[1]=this->Center[1]+rho_sin_phi*sin_theta;
-    ppa[2]=this->Center[2]+rho*cos(phi);
-    ppa+=3;
-
-    pca[0]=1;
-    pca[1]=i;
-    pca+=2;
-    }
-
-  vtkCellArray *cells=vtkCellArray::New();
-  cells->SetCells(nLocal,ca);
-  ca->Delete();
-  output->SetVerts(cells);
-  cells->Delete();
-
-  vtkPoints *points=vtkPoints::New();
-  points->SetData(pa);
-  pa->Delete();
-  output->SetPoints(points);
-  points->Delete();
+  outInfo->Set(
+        vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+        this->Extent,
+        6);
 
   return 1;
 }
 
-//----------------------------------------------------------------------------
-void vtkSQPointSource::PrintSelf(ostream& os, vtkIndent indent)
+//-----------------------------------------------------------------------------
+int vtkSQImageSource::RequestData(
+    vtkInformation * /*req*/,
+    vtkInformationVector **inInfoVec,
+    vtkInformationVector *outInfoVec)
 {
-  this->Superclass::PrintSelf(os,indent);
+  #ifdef vtkSQImageSourceDEBUG
+  pCerr() << "=====vtkSQImageSource::RequestData" << endl;
+  #endif
+  #if defined vtkSQImageSourceTIME
+  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
+  log->StartEvent("vtkSQImageSource::RequestData");
+  #endif
 
-  os << indent << "Number Of Points: " << this->NumberOfPoints << "\n";
-  os << indent << "Radius: " << this->Radius << "\n";
-  os << indent << "Center: (" << this->Center[0] << ", "
-                              << this->Center[1] << ", "
-                              << this->Center[2] << ")\n";
+  vtkInformation *outInfo=outInfoVec->GetInformationObject(0);
+  vtkDataSet *outData
+    = dynamic_cast<vtkDataSet*>(outInfo->Get(vtkDataObject::DATA_OBJECT()));
+
+  // Guard against empty input.
+  vtkImageData *outIm = dynamic_cast<vtkImageData*>(outData);
+  if (!outIm)
+    {
+    vtkErrorMacro("Empty output detected.");
+    return 1;
+    }
+
+  // build an empty image data with the requested  origin, spacing
+  // and extents.
+  int updateExtent[6];
+  outInfo->Get(
+        vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
+        updateExtent);
+
+  outIm->SetExtent(updateExtent);
+  outIm->SetOrigin(this->Origin);
+  outIm->SetSpacing(this->Spacing);
+
+  #if defined vtkSQImageSourceTIME
+  log->EndEvent("vtkSQImageSource::RequestData");
+  #endif
+
+  return 1;
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQImageSource::PrintSelf(ostream& os, vtkIndent indent)
+{
+  #ifdef vtkSQImageSourceDEBUG
+  pCerr() << "=====vtkSQImageSource::PrintSelf" << endl;
+  #endif
+
+  this->Superclass::PrintSelf(os,indent);
 }

@@ -2,76 +2,69 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
+
 */
-/*=========================================================================
+#ifndef __vtkSQImageSource_h
+#define __vtkSQImageSource_h
 
-  Program:   Visualization Toolkit
-  Module:    vtkSQPointSource.h
+#include "vtkImageAlgorithm.h"
+#include "CartesianExtent.h"
+#include "GhostTransaction.h"
 
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
+class vtkInformation;
+class vtkInformationVector;
+class vtkDataSetAttributes;
+class vtkPVXMLElement;
 
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
-// .NAME vtkSQPointSource - create a random cloud of points
-// .SECTION Description
-// vtkSQPointSource is a source object that creates a user-specified number 
-// of points within a specified radius about a specified center point. 
-// By default location of the points is random within the sphere. It is
-// also possible to generate random points only on the surface of the
-// sphere.
-// Modified so that downstream work can be parallelized on cell id.
-
-#ifndef __vtkSQPointSource_h
-#define __vtkSQPointSource_h
-
-#include "vtkPolyDataAlgorithm.h"
-
-class VTK_EXPORT vtkSQPointSource : public vtkPolyDataAlgorithm
+class vtkSQImageSource : public vtkImageAlgorithm
 {
 public:
-  static vtkSQPointSource *New();
-  vtkTypeMacro(vtkSQPointSource,vtkPolyDataAlgorithm);
+  vtkTypeRevisionMacro(vtkSQImageSource,vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
+  static vtkSQImageSource *New();
 
   // Description:
-  // Set the number of points to generate.
-  vtkSetClampMacro(NumberOfPoints,vtkIdType,1,VTK_LARGE_ID);
-  vtkGetMacro(NumberOfPoints,vtkIdType);
+  // Initialize from an xml document.
+  int Initialize(vtkPVXMLElement *root);
 
   // Description:
-  // Set the center of the point cloud.
-  vtkSetVector3Macro(Center,double);
-  vtkGetVectorMacro(Center,double,3);
+  // Set the whole extent of the generated dataset
+  vtkGetVector6Macro(Extent,int);
+  vtkSetVector6Macro(Extent,int);
 
   // Description:
-  // Set the radius of the point cloud.  If you are
-  // generating a Gaussian distribution, then this is
-  // the standard deviation for each of x, y, and z.
-  vtkSetClampMacro(Radius,double,0.0,VTK_DOUBLE_MAX);
-  vtkGetMacro(Radius,double);
+  // For PV UI. Range domains only work with arrays of size 2.
+  void SetIExtent(int ilo, int ihi);
+  void SetJExtent(int jlo, int jhi);
+  void SetKExtent(int klo, int khi);
 
+  // Description:
+  // Set the grid spacing.
+  vtkSetVector3Macro(Origin,double);
+  vtkGetVector3Macro(Origin,double);
+
+  // Description:
+  // Set the dataset origin
+  vtkSetVector3Macro(Spacing,double);
+  vtkGetVector3Macro(Spacing,double);
 
 protected:
-  vtkSQPointSource();
-  ~vtkSQPointSource() {};
-
-  int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-
-  vtkIdType NumberOfPoints;
-  double Center[3];
-  double Radius;
+  int RequestData(vtkInformation *req, vtkInformationVector **input, vtkInformationVector *output);
+  int RequestInformation(vtkInformation *req, vtkInformationVector **input, vtkInformationVector *output);
+  vtkSQImageSource();
+  virtual ~vtkSQImageSource();
 
 private:
-  vtkSQPointSource(const vtkSQPointSource&);  // Not implemented.
-  void operator=(const vtkSQPointSource&);  // Not implemented.
+  int Extent[6];
+  double Origin[3];
+  double Spacing[3];
+
+private:
+  vtkSQImageSource(const vtkSQImageSource &); // Not implemented
+  void operator=(const vtkSQImageSource &); // Not implemented
 };
 
 #endif

@@ -42,6 +42,7 @@ set(SM_CXX_SOURCES
   vtkSQFieldTracer.cxx
   vtkSQHemisphereSource.cxx
   vtkSQImageGhosts.cxx
+  vtkSQImageSource.cxx
   vtkSQKernelConvolution.cxx
   vtkSQLineSource.cxx
   vtkSQMedianFilter.cxx

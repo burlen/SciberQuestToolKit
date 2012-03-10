@@ -108,6 +108,7 @@ protected:
 
 protected:
   vtkIntArray *IntersectColor;
+  vtkFloatArray *Displacement;
   int *pIntersectColor;
   vector<FieldLine *> Lines;
   TerminationCondition *Tcon;

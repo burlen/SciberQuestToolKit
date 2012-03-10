@@ -15,11 +15,16 @@ Copyright 2008 SciberQuest Inc.
 //-----------------------------------------------------------------------------
 FieldTraceData::FieldTraceData()
       :
-    IntersectColor(0)//,
+    IntersectColor(0),
+    Displacement(0)
     //SourceId(0)
 {
   this->IntersectColor=vtkIntArray::New();
   this->IntersectColor->SetName("IntersectColor");
+
+  this->Displacement=vtkFloatArray::New();
+  this->Displacement->SetName("displacement");
+  this->Displacement->SetNumberOfComponents(3);
 
   // this->SourceId=vtkIntArray::New();
   // this->SourceId->SetName("SourceId");
@@ -31,6 +36,7 @@ FieldTraceData::FieldTraceData()
 FieldTraceData::~FieldTraceData()
 {
   this->IntersectColor->Delete();
+  this->Displacement->Delete();
   // this->SourceId->Delete();
   this->ClearFieldLines();
 
@@ -41,6 +47,7 @@ FieldTraceData::~FieldTraceData()
 void FieldTraceData::SetOutput(vtkDataSet *o)
 {
   o->GetCellData()->AddArray(this->IntersectColor);
+  o->GetCellData()->AddArray(this->Displacement);
   // o->GetCellData()->AddArray(this->SourceId);
 }
 
@@ -70,6 +77,7 @@ int FieldTraceData::SyncScalars()
   vtkIdType lastLineId=this->IntersectColor->GetNumberOfTuples();
 
   int *pColor=this->IntersectColor->WritePointer(lastLineId,nLines);
+  float *pDisplacement=this->Displacement->WritePointer(3*lastLineId,3*nLines);
   // int *pId=this->SourceId->WritePointer(lastLineId,nLines);
 
   for (vtkIdType i=0; i<nLines; ++i)
@@ -77,7 +85,10 @@ int FieldTraceData::SyncScalars()
     FieldLine *line=this->Lines[i];
 
     *pColor=this->Tcon->GetTerminationColor(line);
-    ++pColor;
+    pColor+=1;
+
+    line->GetDisplacement(pDisplacement);
+    pDisplacement+=3;
 
     // *pId=line->GetSeedId();
     // ++pId;

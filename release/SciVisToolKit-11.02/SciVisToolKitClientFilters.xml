@@ -12,6 +12,8 @@ Copyright 2008 SciberQuest Inc.
     <Proxy group="filters" name="vtkSC11DemoAnnotation"/>
     <Proxy group="filters" name="vtkSQDistributedStreamTracer"/>
     <Proxy group="filters" name="vtkSQEdgeFilter"/>
+    <Proxy group="filters" name="vtkSQDisplacementMapper"/>
+    <Proxy group="filters" name="vtkSQDisplacementMapperRK45"/>
     <Proxy group="filters" name="vtkSQFieldTopologySelect"/>
     <Proxy group="filters" name="vtkSQFieldTopologySplit"/>
     <Proxy group="filters" name="vtkSQFieldTracer"/>

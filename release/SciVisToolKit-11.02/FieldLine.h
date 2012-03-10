@@ -79,10 +79,15 @@ public:
   // data is reveresed.
   vtkIdType CopyPoints(float *pts);
 
+  // Description:
+  // Compute the displacement between the first and last point
+  // in the Line.
+  void GetDisplacement(float *d);
+
 private:
   vtkFloatArray *FwdTrace;    // streamline trace along V
   vtkFloatArray *BwdTrace;    // streamline trace along -V
-  double Seed[3];             // seed point
+  double Seed[3];             // seed point TODO - should be a float.
   unsigned long long SeedId;  // cell id in origniating dataset
   int FwdTerminator;          // code indicating how fwd trace ended
   int BwdTerminator;          // code indicating how bwd trace ended
@@ -199,6 +204,5 @@ vtkIdType FieldLine::GetNumberOfPoints()
 
   return total;
 }
-
 
 #endif

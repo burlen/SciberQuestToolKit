@@ -858,15 +858,6 @@ Copyright 2008 SciberQuest Inc.
 
    </SourceProxy>
    <!-- End vtkSQVPICReader -->
-
-
-
-
-
-
-
-
-
 </ProxyGroup>
 
 <!--
@@ -1515,8 +1506,85 @@ Copyright 2008 SciberQuest Inc.
    <!-- End Debug Panel -->
    </SourceProxy>
 
-</ProxyGroup>
+  <!-- ==================================================================== -->
+  <SourceProxy name="vtkSQImageSource"
+        class="vtkSQImageSource"
+        label="SQ Image Source">
+      <Documentation
+        long_help="Create an empty image dataset with given whole extent, origin and spacing"
+        short_help="Create an empty image dataset with given whole extent, origin and spacing">
+        Create an empty image dataset with given whole extent, origin and spacing
+      </Documentation>
 
+      <DoubleVectorProperty
+         name="Origin"
+         command="SetOrigin"
+         number_of_elements="3"
+         animateable="1"
+         default_values="0.0 0.0 0.0">
+        <DoubleRangeDomain name="range"/>
+        <Documentation>
+          This property specifies the 3D coordinate of the origin (one corner) of the image.
+        </Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+         name="Spacing"
+         command="SetSpacing"
+         number_of_elements="3"
+         animateable="1"
+         default_values="1.0 1.0 1.0">
+        <DoubleRangeDomain name="range"/>
+        <Documentation>
+          This property specifies the grid spacing of the dataset.
+        </Documentation>
+      </DoubleVectorProperty>
+
+    <!-- Extent selection -->
+    <IntVectorProperty
+        name="IExtent"
+        command="SetIExtent"
+        number_of_elements="2"
+        default_values="0 1"
+        animateable="1">
+      <IntRangeDomain name="range">
+      </IntRangeDomain>
+      <Documentation>
+        Set data subset range in the z direction.
+      </Documentation>
+    </IntVectorProperty>
+    <IntVectorProperty
+        name="JExtent"
+        command="SetJExtent"
+        number_of_elements="2"
+        default_values="0 1"
+        animateable="1">
+      <IntRangeDomain name="range">
+      </IntRangeDomain>
+      <Documentation>
+        Set data subset range in the z direction.
+      </Documentation>
+    </IntVectorProperty>
+    <IntVectorProperty
+        name="KExtent"
+        command="SetKExtent"
+        number_of_elements="2"
+        default_values="0 1"
+        animateable="1">
+      <IntRangeDomain name="range">
+      </IntRangeDomain>
+      <Documentation>
+        Set data subset range in the z direction.
+      </Documentation>
+    </IntVectorProperty>
+
+    <Hints>
+      <View type="RenderView"/>
+    </Hints>
+
+   <!-- End Plane -->
+   </SourceProxy>
+</ProxyGroup>
 
 <!--
 *******************************************************************************
@@ -1525,7 +1593,6 @@ Copyright 2008 SciberQuest Inc.
 *                                                                             *
 *******************************************************************************
 -->
-
 <ProxyGroup name="filters">
 
    <!-- ==================================================================== -->
@@ -3229,7 +3296,7 @@ Copyright 2008 SciberQuest Inc.
 
     <IdTypeVectorProperty
         name="MaxNumberOfSteps"
-        label="Max Step Sizes"
+        label="Max Number of Steps"
         command="SetMaxNumberOfSteps"
         number_of_elements="1"
         default_values="100000000" >
@@ -3357,6 +3424,549 @@ Copyright 2008 SciberQuest Inc.
     </Hints>
 
    <!-- End SQ Poincare Mapper -->
+  </SourceProxy>
+
+  <!-- ==================================================================== -->
+  <SourceProxy
+    name="vtkSQDisplacementMapper"
+    label="SQ Displacement Mapper"
+    class="vtkSQFieldTracer">
+
+    <!-- Inputs -->
+    <InputProperty
+        name="DatasetInput"
+        command="AddVectorInputConnection"
+        clean_command="ClearVectorInputConnections"
+        label="Vector Field">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type" composite_data_supported="0">
+        <DataType value="vtkDataSet"/>
+      </DataTypeDomain>
+      <InputArrayDomain name="input_array" attribute_type="point" number_of_components="3"/>
+      <Documentation>
+        Dataset containing the vector field.
+      </Documentation>
+    </InputProperty>
+
+    <InputProperty
+        name="SeedPointInput"
+        command="AddSeedPointInputConnection"
+        clean_command="ClearSeedPointInputConnections"
+        label="Seed Cells"
+        multiple_input="0">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <Documentation>
+        Cells to generate seed points from (at cell center).
+      </Documentation>
+    </InputProperty>
+
+    <InputProperty
+        name="TerminatorInput"
+        command="AddTerminatorInputConnection"
+        clean_command="ClearTerminatorInputConnections"
+        label="Map Surfaces"
+        multiple_input="1"
+        optional="1">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <Documentation>
+        Surfaces which if present stop field line integration when a field line crosses one.
+      </Documentation>
+    </InputProperty>
+
+    <!-- Outputs -->
+    <OutputPort name="Displacement Map" index="0" />
+
+    <!-- Vector Field Selection -->
+    <StringVectorProperty 
+        name="SelectInputVectors"
+        command="SetInputArrayToProcess"
+        number_of_elements="5"
+        element_types="0 0 0 0 2"
+        animateable="0"
+        label="Vector Field">
+      <ArrayListDomain name="array_list" attribute_type="Vectors">
+        <RequiredProperties>
+          <Property name="DatasetInput" function="Input"/>
+        </RequiredProperties>
+      </ArrayListDomain>
+      <Documentation>
+        This property contains the name of the vector array from which to generate streamlines.
+      </Documentation>
+    </StringVectorProperty>
+
+    <!-- Integrator type -->
+    <IntVectorProperty
+        name="IntegratorType"
+        label="Integrator"
+        command="SetIntegratorType"
+        number_of_elements="1"
+        default_values="2">
+      <EnumerationDomain name="enum">
+        <Entry value="1"       text="RK-2"/>
+        <Entry value="2"       text="RK-4"/>
+        <!--<Entry value="3"       text="RK-4-5"/>-->
+      </EnumerationDomain>
+    </IntVectorProperty>
+
+    <!-- Integrator parameters 
+    <DoubleVectorProperty
+        name="MinStep"
+        label="Minimum Step"
+        command="SetMinStep"
+        number_of_elements="1"
+        default_values="1.0e-8" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Minimum integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty>-->
+
+    <DoubleVectorProperty
+        name="MaxStep"
+        label="Max Step Size"
+        command="SetMaxStep"
+        number_of_elements="1"
+        default_values="0.1" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Maximum integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <!--
+    <DoubleVectorProperty
+        name="MaxError"
+        command="SetMaxError"
+        number_of_elements="1"
+        default_values="1.0e-4">
+      <DoubleRangeDomain name="range" min="1.0e-14" max="1.0" />
+      <Documentation>
+        Error bound for adaptive step size integration.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <IdTypeVectorProperty
+        name="MaxNumberOfSteps"
+        label="Max Number of Steps"
+        command="SetMaxNumberOfSteps"
+        number_of_elements="1"
+        default_values="100000000" >
+      <IntRangeDomain name="range"/>
+      <Documentation>
+        Maximum number of steps, beyond which integration is terminated.
+      </Documentation>
+    </IdTypeVectorProperty>-->
+
+    <DoubleVectorProperty
+        name="MaxLineLength"
+        label="Max Arc Length"
+        command="SetMaxLineLength"
+        number_of_elements="1"
+        default_values="1.0" >
+      <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="10">
+        <RequiredProperties>
+          <Property name="DatasetInput" function="Input"/>
+        </RequiredProperties>
+      </BoundsDomain>
+      <Documentation>
+        Maximum streamline arc length beyond which line integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="MaxIntegrationInterval"
+        label="Max Time Interval"
+        command="SetMaxIntegrationInterval"
+        number_of_elements="1"
+        default_values="1.0" >
+      <Documentation>
+        Maximum time interval beyond which line integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="NullThreshold"
+        label="Null Threshold"
+        command="SetNullThreshold"
+        number_of_elements="1"
+        default_values="0.001" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Vector field magnitude below which particle advection/integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <IntVectorProperty
+        name="ForwardOnly"
+        label="Disable reverse integrate"
+        command="SetForwardOnly"
+        number_of_elements="1"
+        default_values="1">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <!-- Colormap/Legened control
+    <IntVectorProperty 
+        name="SqueezeColorMap"
+        label="Squeeze Color Map"
+        command="SetSqueezeColorMap"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Use the minimum number of intersect colors required. Requires global reduction.
+      </Documentation>
+    </IntVectorProperty>
+    -->
+
+    <!-- Integration parameter unit (2=cell length)
+    <IntVectorProperty 
+        name="StepUnit"
+        label="Step Unit"
+        command="SetStepUnit" 
+        number_of_elements="1"
+        default_values="2"/>
+    -->
+
+    <!-- Mode Flag -->
+    <IntVectorProperty 
+        name="Mode"
+        command="SetMode"
+        number_of_elements="1"
+        default_values="4">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Set the mode of operation to one of STREAM,TOPOLOGY,POINCARE.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Load balancing/work scheduling controls -->
+    <IntVectorProperty 
+        name="UseDynamicScheduler"
+        command="SetUseDynamicScheduler"
+        number_of_elements="1"
+        default_values="0" > 
+      <BooleanDomain name="bool"/>
+      <Documentation>
+      When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
+      on all processes. This must be off if this is not the case. Set once before the filter runs.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty 
+        name="MasterBlockSize"
+        command="SetMasterBlockSize"
+        number_of_elements="1"
+        default_values="1"
+        animateable="0">
+      <IntRangeDomain name="range" min="1"/>
+      <Documentation>
+        Controls how much work the master does in between servicing work requests
+        from the workers. Should be much smaller the WorkerBlockSize.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty 
+        name="WorkerBlockSize"
+        command="SetWorkerBlockSize"
+        number_of_elements="1"
+        default_values="1"
+        animateable="0">
+      <IntRangeDomain name="range" min="1"/>
+      <Documentation>
+        Controls how much work is given to the worker processes at each
+        request.
+      </Documentation>
+    </IntVectorProperty>
+
+    <Hints>
+      <Property name="Mode" show="0"/>
+      <Property name="UseDynamicScheduler" show="0"/>
+      <Property name="MasterBlockSize" show="1"/>
+      <Property name="WorkerBlockSize" show="1"/>
+    </Hints>
+
+   <!-- End SQ Displacement Mapper -->
+  </SourceProxy>
+
+  <!-- ==================================================================== -->
+  <SourceProxy
+    name="vtkSQDisplacementMapperRK45"
+    label="SQ Displacement Mapper RK-4-5"
+    class="vtkSQFieldTracer">
+
+    <!-- Inputs -->
+    <InputProperty
+        name="DatasetInput"
+        command="AddVectorInputConnection"
+        clean_command="ClearVectorInputConnections"
+        label="Vector Field">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type" composite_data_supported="0">
+        <DataType value="vtkDataSet"/>
+      </DataTypeDomain>
+      <InputArrayDomain name="input_array" attribute_type="point" number_of_components="3"/>
+      <Documentation>
+        Dataset containing the vector field.
+      </Documentation>
+    </InputProperty>
+
+    <InputProperty
+        name="SeedPointInput"
+        command="AddSeedPointInputConnection"
+        clean_command="ClearSeedPointInputConnections"
+        label="Seed Cells"
+        multiple_input="0">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <Documentation>
+        Cells to generate seed points from (at cell center).
+      </Documentation>
+    </InputProperty>
+
+    <InputProperty
+        name="TerminatorInput"
+        command="AddTerminatorInputConnection"
+        clean_command="ClearTerminatorInputConnections"
+        label="Terminator Surfaces"
+        multiple_input="1"
+        optional="1">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources"/>
+        <Group name="filters"/>
+      </ProxyGroupDomain>
+      <Documentation>
+        Surfaces which if present stop field line integration when a field line crosses one.
+      </Documentation>
+    </InputProperty>
+
+    <!-- Outputs -->
+    <OutputPort name="Displacement Map" index="0" />
+
+    <!-- Vector Field Selection -->
+    <StringVectorProperty 
+        name="SelectInputVectors"
+        command="SetInputArrayToProcess"
+        number_of_elements="5"
+        element_types="0 0 0 0 2"
+        animateable="0"
+        label="Vector Field">
+      <ArrayListDomain name="array_list" attribute_type="Vectors">
+        <RequiredProperties>
+          <Property name="DatasetInput" function="Input"/>
+        </RequiredProperties>
+      </ArrayListDomain>
+      <Documentation>
+        This property contains the name of the vector array from which to generate streamlines.
+      </Documentation>
+    </StringVectorProperty>
+
+    <!-- Integrator type -->
+    <IntVectorProperty
+        name="IntegratorType"
+        label="Integrator"
+        command="SetIntegratorType"
+        number_of_elements="1"
+        default_values="3">
+      <EnumerationDomain name="enum">
+        <Entry value="1"       text="RK-2"/>
+        <Entry value="2"       text="RK-4"/>
+        <Entry value="3"       text="RK-4-5"/>
+      </EnumerationDomain>
+    </IntVectorProperty>
+
+    <!-- Integrator parameters -->
+    <DoubleVectorProperty
+        name="MinStep"
+        label="Min Step Size"
+        command="SetMinStep"
+        number_of_elements="1"
+        default_values="1.0e-8" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Minimum integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty> 
+
+    <DoubleVectorProperty
+        name="MaxStep"
+        label="Max Step Size"
+        command="SetMaxStep"
+        number_of_elements="1"
+        default_values="0.1" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Maximum integration step size as a multiple of cell lengths.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="MaxError"
+        label="Max Error"
+        command="SetMaxError"
+        number_of_elements="1"
+        default_values="1.0e-6">
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Error bound for adaptive step size integration.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <IdTypeVectorProperty
+        name="MaxNumberOfSteps"
+        label="Max Number of Steps"
+        command="SetMaxNumberOfSteps"
+        number_of_elements="1"
+        default_values="100000000" >
+      <IntRangeDomain name="range"/>
+      <Documentation>
+        Maximum number of steps, beyond which integration is terminated.
+      </Documentation>
+    </IdTypeVectorProperty>
+
+    <DoubleVectorProperty
+        name="MaxLineLength"
+        label="Max Arc Length"
+        command="SetMaxLineLength"
+        number_of_elements="1"
+        default_values="1.0" >
+      <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="10">
+        <RequiredProperties>
+          <Property name="DatasetInput" function="Input"/>
+        </RequiredProperties>
+      </BoundsDomain>
+      <Documentation>
+        Maximum streamline arc length beyond which line integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="MaxIntegrationInterval"
+        label="Max Time Interval"
+        command="SetMaxIntegrationInterval"
+        number_of_elements="1"
+        default_values="1.0" >
+      <Documentation>
+        Maximum time interval beyond which line integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
+        name="NullThreshold"
+        label="Null Threshold"
+        command="SetNullThreshold"
+        number_of_elements="1"
+        default_values="0.001" >
+      <DoubleRangeDomain name="range"/>
+      <Documentation>
+        Vector field magnitude below which particle advection/integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <IntVectorProperty
+        name="ForwardOnly"
+        label="Disable reverse integrate"
+        command="SetForwardOnly"
+        number_of_elements="1"
+        default_values="1">
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <!-- Colormap/Legened control
+    <IntVectorProperty 
+        name="SqueezeColorMap"
+        label="Squeeze Color Map"
+        command="SetSqueezeColorMap"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Use the minimum number of intersect colors required. Requires global reduction.
+      </Documentation>
+    </IntVectorProperty>
+    -->
+
+    <!-- Integration parameter unit (2=cell length)
+    <IntVectorProperty 
+        name="StepUnit"
+        label="Step Unit"
+        command="SetStepUnit" 
+        number_of_elements="1"
+        default_values="2"/>
+    -->
+
+    <!-- Mode Flag -->
+    <IntVectorProperty 
+        name="Mode"
+        command="SetMode"
+        number_of_elements="1"
+        default_values="4">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Set the mode of operation to one of STREAM,TOPOLOGY,POINCARE.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Load balancing/work scheduling controls -->
+    <IntVectorProperty 
+        name="UseDynamicScheduler"
+        command="SetUseDynamicScheduler"
+        number_of_elements="1"
+        default_values="0">
+      <BooleanDomain name="bool"/>
+      <Documentation>
+      When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
+      on all processes. This must be off if this is not the case. Set once before the filter runs.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="MasterBlockSize"
+        command="SetMasterBlockSize"
+        number_of_elements="1"
+        default_values="1">
+      <IntRangeDomain name="range" min="1"/>
+      <Documentation>
+        Controls how much work the master does in between servicing work requests
+        from the workers. Should be much smaller the WorkerBlockSize.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty 
+        name="WorkerBlockSize"
+        command="SetWorkerBlockSize"
+        number_of_elements="1"
+        default_values="1">
+      <IntRangeDomain name="range" min="1"/>
+      <Documentation>
+        Controls how much work is given to the worker processes at each
+        request.
+      </Documentation>
+    </IntVectorProperty>
+
+    <Hints>
+      <Property name="Mode" show="0"/>
+      <Property name="IntegratorType" show="0"/>
+      <Property name="UseDynamicScheduler" show="0"/>
+      <Property name="MasterBlockSize" show="1"/>
+      <Property name="WorkerBlockSize" show="1"/>
+    </Hints>
+
+   <!-- End SQ Displacement Mapper -->
   </SourceProxy>
 
   <!-- ==================================================================== -->

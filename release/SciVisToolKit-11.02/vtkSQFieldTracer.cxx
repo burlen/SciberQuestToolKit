@@ -35,6 +35,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkPointSet.h"
 #include "vtkPolyData.h"
 #include "vtkUnstructuredGrid.h"
+#include "vtkImageData.h"
 #include "vtkPointData.h"
 #include "vtkCellData.h"
 
@@ -104,6 +105,7 @@ vtkSQFieldTracer::vtkSQFieldTracer()
   MaxError(1E-4),
   MaxNumberOfSteps(1000000000),
   MaxLineLength(1000),
+  MaxIntegrationInterval(VTK_DOUBLE_MAX),
   NullThreshold(1E-3),
   IntegratorType(INTEGRATOR_NONE),
   Integrator(0),
@@ -168,6 +170,13 @@ int vtkSQFieldTracer::Initialize(vtkPVXMLElement *root)
   if (maxArcLength>0.0)
     {
     this->SetMaxLineLength(maxArcLength);
+    }
+
+  double maxIntegrationInterval=VTK_DOUBLE_MAX;
+  GetOptionalAttribute<double,1>(elem,"max_integration_interval",&maxIntegrationInterval);
+  if (maxIntegrationInterval<VTK_DOUBLE_MAX)
+    {
+    this->SetMaxIntegrationInterval(maxIntegrationInterval);
     }
 
   double minSegmentLength=0.0;
@@ -250,6 +259,7 @@ int vtkSQFieldTracer::Initialize(vtkPVXMLElement *root)
     << "#   maxStepSize=" << this->GetMaxStep() << "\n"
     << "#   maxNumberOfSteps=" << this->GetMaxNumberOfSteps() << "\n"
     << "#   maxLineLength=" << this->GetMaxLineLength() << "\n"
+    << "#   maxIntegrationInterval=" << this->GetMaxIntegrationInterval() << "\n"
     << "#   minSegmentLength=" << this->GetMinSegmentLength() << "\n"
     << "#   maxError=" << this->GetMaxError() << "\n"
     << "#   nullThreshold=" << this->GetNullThreshold() << "\n"
@@ -469,14 +479,14 @@ int vtkSQFieldTracer::RequestDataObject(
   vtkInformation* outInfo = outInfos->GetInformationObject(0);
   vtkDataObject *outData=outInfo->Get(vtkDataObject::DATA_OBJECT());
 
-  // If the filter is being run in TopologyMode the output is either
-  // polydata or unstructured grid depending on the second input.
-  // Otherwise the output is polydata.
   switch (this->Mode)
     {
+    case MODE_DISPLACEMENT:
     case MODE_TOPOLOGY:
       {
-      // duplicate the input type for the map output.
+      // output type is polydata or unstructured grid depending on the
+      // data type of the second input. duplicate the input type for the
+      // map output.
       vtkInformation* inInfo=inInfos[1]->GetInformationObject(0);
       vtkDataObject *inData=inInfo->Get(vtkDataObject::DATA_OBJECT());
       if (!outData || !outData->IsA(inData->GetClassName()))
@@ -494,7 +504,8 @@ int vtkSQFieldTracer::RequestDataObject(
     case MODE_POINCARE:
       if (!outData)
         {
-        // consrtruct a polydata for the field line output.
+        // consrtruct a polydata for the field line output. output type
+        // is always polydata.
         outData=vtkPolyData::New();
         outData->SetPipelineInformation(outInfo);
         outData->Delete();
@@ -528,6 +539,7 @@ int vtkSQFieldTracer::RequestUpdateExtent(
   // only process 0 gets the source data.
   int piece=0;
   int numPieces=1;
+
   // The dynamic scheduler requires all processes have all of the seeds,
   // while the static scheduler expects each process has a unique sub set
   // of the seeeds.
@@ -536,6 +548,7 @@ int vtkSQFieldTracer::RequestUpdateExtent(
     piece=outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
     numPieces=outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
     }
+
   // Seed point input.
   int nSources=inInfos[1]->GetNumberOfInformationObjects();
   for (int i=0; i<nSources; ++i)
@@ -691,6 +704,7 @@ int vtkSQFieldTracer::RequestData(
   // for See SetMode.
   switch (this->Mode)
     {
+    case MODE_DISPLACEMENT:
     case MODE_TOPOLOGY:
       {
       vtkPolyData *sourcePd, *outPd;
@@ -1125,6 +1139,7 @@ void vtkSQFieldTracer::IntegrateOne(
     double maxStep=this->MaxStep;
     double stepSize=stepSign*this->MaxStep; // initial step size
     double lineLength=0.0;                  // cumulative length of stream line
+    double timeInterval=0.0;                // cumulative integration time
     vtkIdType numSteps=0;                   // cumulative number of steps taken in integration
     double V0[3]={0.0};                     // vector field interpolated at the start point
     double p0[3]={0.0};                     // start point
@@ -1244,7 +1259,6 @@ void vtkSQFieldTracer::IntegrateOne(
       // 3=unexepcted val. Have to handle out of bounds because
       // in some cases p1 is not updated which leads to incorrect
       // classification as a field null.
-      // TODO should this be ignored for poincare map?
       if (iErr==1)
         {
         #if vtkSQFieldTracerDEBUG>0
@@ -1282,7 +1296,6 @@ void vtkSQFieldTracer::IntegrateOne(
       lineLength+=dx;
       ++numSteps;
 
-      // TODO is this test neccessary ???
       // Use v=dx/dt to calculate speed and check if it is below
       // stagnation threshold. (test prior to tests that modify p1)
       double dt=fabs(stepTaken);
@@ -1300,6 +1313,27 @@ void vtkSQFieldTracer::IntegrateOne(
         break;
         }
 
+      // check the integration interval
+      timeInterval+=dt;
+      if (timeInterval>=this->MaxIntegrationInterval)
+        {
+        #if vtkSQFieldTracerDEBUG>0
+        pCerr()
+          << "Terminated: Max integration interval exceeded. "
+          << "nSteps= " << numSteps << "."
+          << "arcLen= " << lineLength << "."
+          << "timeInterval= " << timeInterval << "."
+          << endl;
+        #endif
+        line->SetTerminator(i,tcon->GetShortIntegrationId());
+        if ((this->Mode==MODE_STREAM)||(this->Mode==MODE_DISPLACEMENT))
+          {
+          line->PushPoint(i,p1);
+          }
+        break;
+
+        }
+
       // check arc-length for a termination condition
       if (lineLength>this->MaxLineLength)
         {
@@ -1308,10 +1342,14 @@ void vtkSQFieldTracer::IntegrateOne(
           << "Terminated: Max arc length exceeded. "
           << "nSteps= " << numSteps << "."
           << "arcLen= " << lineLength << "."
+          << "timeInterval= " << timeInterval << "."
           << endl;
         #endif
         line->SetTerminator(i,tcon->GetShortIntegrationId());
-        if (this->Mode==MODE_STREAM) line->PushPoint(i,p1);
+        if ((this->Mode==MODE_STREAM)||(this->Mode==MODE_DISPLACEMENT))
+          {
+          line->PushPoint(i,p1);
+          }
         break;
         }
 
@@ -1324,10 +1362,14 @@ void vtkSQFieldTracer::IntegrateOne(
           << "Terminated: Max number of steps exceeded. "
           << "nSteps= " << numSteps << "."
           << "arcLen= " << lineLength << "."
+          << "timeInterval= " << timeInterval << "."
           << endl;
         #endif
         line->SetTerminator(i,tcon->GetShortIntegrationId());
-        if (this->Mode==MODE_STREAM) line->PushPoint(i,p1);
+        if ((this->Mode==MODE_STREAM)||(this->Mode==MODE_DISPLACEMENT))
+          {
+          line->PushPoint(i,p1);
+          }
         break;
         }
 
@@ -1373,7 +1415,10 @@ void vtkSQFieldTracer::IntegrateOne(
         pCerr() << "Terminated: Integration outside problem domain." << endl;
         #endif
         line->SetTerminator(i,tcon->GetProblemDomainSurfaceId());
-        if (this->Mode==MODE_STREAM) line->PushPoint(i,p1);
+        if ((this->Mode==MODE_STREAM)||(this->Mode==MODE_DISPLACEMENT))
+          {
+          line->PushPoint(i,p1);
+          }
         break;
         }
 
@@ -1422,10 +1467,10 @@ void vtkSQFieldTracer::IntegrateOne(
 unsigned long vtkSQFieldTracer::GetGlobalCellId(vtkDataSet *data)
 {
   unsigned long nLocal=data->GetNumberOfCells();
-  
+
   unsigned long *nGlobal
     = (unsigned long *)malloc(this->WorldSize*sizeof(unsigned long));
-  
+
   MPI_Allgather(
         &nLocal,1,MPI_UNSIGNED_LONG,
         &nGlobal,1,MPI_UNSIGNED_LONG,
