@@ -116,7 +116,8 @@ int RectilinearDecomp::DecomposeDomain()
   #endif
 
   CartesianExtent fileExt(this->FileExtent);
-  fileExt.CellToNode(); // dual grid
+  fileExt
+    = CartesianExtent::CellToNode(fileExt,this->Mode); // dual grid
 
   int idx=0;
 
@@ -142,22 +143,24 @@ int RectilinearDecomp::DecomposeDomain()
           // compute extent
           if (I[q]<nLarge[q])
             {
-            ext[lo]=I[q]*(smBlockSize[q]+1);
+            ext[lo]=this->Extent[lo]+I[q]*(smBlockSize[q]+1);
             ext[hi]=ext[lo]+smBlockSize[q];
             }
           else
             {
-            ext[lo]=I[q]*smBlockSize[q]+nLarge[q];
+            ext[lo]=this->Extent[lo]+I[q]*smBlockSize[q]+nLarge[q];
             ext[hi]=ext[lo]+smBlockSize[q]-1;
             }
           }
 
         // compute bounds
         double bounds[6];
-        ext.GetBounds(
+        CartesianExtent::GetBounds(
+            ext,
             this->Coordinates[0]->GetPointer(),
             this->Coordinates[1]->GetPointer(),
             this->Coordinates[2]->GetPointer(),
+            this->Mode,
             bounds);
         block->GetBounds().Set(bounds);
 
@@ -167,10 +170,15 @@ int RectilinearDecomp::DecomposeDomain()
 
         // create an io descriptor.
         CartesianExtent blockExt(ext);
-        blockExt.CellToNode(); //dual grid
+        blockExt
+          = CartesianExtent::CellToNode(blockExt,this->Mode); //dual grid
+
         CartesianDataBlockIODescriptor *descr
             = new CartesianDataBlockIODescriptor(
-                blockExt,fileExt,this->PeriodicBC,this->NGhosts);
+                  blockExt,
+                  fileExt,
+                  this->PeriodicBC,
+                  this->NGhosts);
 
         this->Decomp[idx]=block;
         this->IODescriptors[idx]=descr;

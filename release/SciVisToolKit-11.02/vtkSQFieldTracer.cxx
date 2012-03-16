@@ -1126,7 +1126,10 @@ void vtkSQFieldTracer::IntegrateOne(
     }
 
   // start by adding the seed point to the forward trace.
-  if (this->Mode==MODE_STREAM) line->PushPoint(1,seed);
+  if ((this->Mode==MODE_STREAM)||(this->MODE_DISPLACEMENT))
+    {
+    line->PushPoint(1,seed);
+    }
 
   // make the integration, possibly in two parts a backward and then
   // a forward trace.
@@ -1309,7 +1312,10 @@ void vtkSQFieldTracer::IntegrateOne(
           << "thresh=" << this->NullThreshold << "." << endl;
         #endif
         line->SetTerminator(i,tcon->GetFieldNullId());
-        if (this->Mode==MODE_STREAM) line->PushPoint(i,p1);
+        if ((this->Mode==MODE_STREAM)||(this->Mode==MODE_DISPLACEMENT))
+          {
+          line->PushPoint(i,p1);
+          }
         break;
         }
 
@@ -1423,7 +1429,7 @@ void vtkSQFieldTracer::IntegrateOne(
         }
 
       // add the point to the line.
-      if (this->Mode==MODE_STREAM)
+      if ((this->Mode==MODE_STREAM)||(this->Mode==MODE_DISPLACEMENT))
         {
         double ds=0.0;
         ds+=(p1[0]-s0[0])*(p1[0]-s0[0]);

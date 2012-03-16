@@ -67,6 +67,7 @@ private:
   friend ostream &operator<<(ostream &os,const CartesianDataBlockIODescriptor &descr);
 
 private:
+  int Mode;
   CartesianExtent MemExtent;
   vector<MPI_Datatype> FileViews;
   vector<MPI_Datatype> MemViews;

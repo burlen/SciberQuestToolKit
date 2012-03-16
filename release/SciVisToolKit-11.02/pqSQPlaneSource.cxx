@@ -771,8 +771,8 @@ int pqSQPlaneSource::GetConstraint()
     return SQPS_CONSTRAINT_YZ;
     }
 
-  sqErrorMacro(qDebug(),"Invalid constraint.");
-  return SQPS_CONSTRAINT_INVALID;
+  this->Form->constraintNone->setChecked(true);
+  return SQPS_CONSTRAINT_NONE;
 }
 
 //-----------------------------------------------------------------------------

@@ -239,6 +239,7 @@ int PolyDataFieldTopologyMap::InsertCellsFromGenerator(IdBlock *SourceIds)
     seed[2]/=nSourcePtIds;
 
     this->Lines[lId]=new FieldLine(seed,polyId);
+    this->Lines[lId]->AllocateTrace();
     ++polyId;
     ++lId;
     }
@@ -340,10 +341,11 @@ int PolyDataFieldTopologyMap::InsertCellsFromDataset(IdBlock *SourceIds)
     seed[2]/=nPtIds;
 
     this->Lines[lId]=new FieldLine(seed,polyId);
+    this->Lines[lId]->AllocateTrace();
     ++polyId;
     ++lId;
     }
-  // correct the length of the point array, above we assumed 
+  // correct the length of the point array, above we assumed
   // that all points from each cell needed to be inserted
   // and allocated that much space.
   this->OutPts->Resize(nOutPts);

@@ -933,6 +933,7 @@ int vtkSQBOVReader::RequestData(
   // The subset is the what the user selected in the GUI. This is what will
   // be loaded in aggregate across the entire run.
   CartesianExtent subset=md->GetSubset();
+
   #if defined vtkSQBOVReaderDEBUG
   if (this->WorldRank==0)
     {
@@ -944,12 +945,7 @@ int vtkSQBOVReader::RequestData(
   #endif
   // shift to the dual grid
   subset.NodeToCell();
-  // we must always have a single cell in all directions.
-  /*if ((subset[1]<subset[0])||(subset[3]<subset[2]))
-    {
-    vtkErrorMacro("Invalid subset requested: " << subset << ".");
-    return 1;
-    }*/
+
   // this is a hack to accomodate 2D grids.
   for (int q=0; q<3; ++q)
     {
@@ -995,21 +991,17 @@ int vtkSQBOVReader::RequestData(
 
     // The file extents describe the data as it is on the disk.
     CartesianExtent fileExt=md->GetDomain();
+
     // shift to dual grid
     fileExt.NodeToCell();
-    // we must always have a single cell in all directions.
-    /*if ((fileExt[1]<fileExt[0])||(fileExt[3]<fileExt[2]))
-      {
-      vtkErrorMacro("Invalid fileExt requested: " << fileExt << ".");
-      return 1;
-      }*/
+
     // this is a hack to accomodate 2D grids.
     for (int q=0; q<3; ++q)
       {
       int qq=2*q;
-      if (subset[qq+1]<subset[qq])
+      if (fileExt[qq+1]<fileExt[qq])
         {
-        subset[qq+1]=subset[qq];
+        fileExt[qq+1]=fileExt[qq];
         }
       }
 
@@ -1062,10 +1054,11 @@ int vtkSQBOVReader::RequestData(
       iddecomp->SetExtent(subset);
       iddecomp->SetOrigin(subsetX0);
       iddecomp->SetSpacing(subsetDX);
+      iddecomp->SetNumberOfGhostCells(this->NGhosts);
+      iddecomp->ComputeDimensionMode();
       iddecomp->ComputeBounds();
       iddecomp->SetDecompDims(this->DecompDims);
       iddecomp->SetPeriodicBC(this->PeriodicBC);
-      iddecomp->SetNumberOfGhostCells(this->NGhosts);
       int ok=iddecomp->DecomposeDomain();
       if (!ok)
         {
@@ -1238,7 +1231,13 @@ int vtkSQBOVReader::RequestData(
 
       // Store the bounds of the aggregate dataset.
       double subsetBounds[6];
-      subset.GetBounds(X0,dX,subsetBounds);
+      CartesianExtent::GetBounds(
+            subset,
+            X0,
+            dX,
+            CartesianExtent::DIM_MODE_3D,
+            subsetBounds);
+
       info->Set(
           vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),
           subsetBounds,
@@ -1276,11 +1275,14 @@ int vtkSQBOVReader::RequestData(
 
       // Store the bounds of the aggregate dataset.
       double subsetBounds[6];
-      subset.GetBounds(
+      CartesianExtent::GetBounds(
+          subset,
           md->GetCoordinate(0)->GetPointer(),
           md->GetCoordinate(1)->GetPointer(),
           md->GetCoordinate(2)->GetPointer(),
+          CartesianExtent::DIM_MODE_3D,
           subsetBounds);
+
       info->Set(
           vtkStreamingDemandDrivenPipeline::WHOLE_BOUNDING_BOX(),
           subsetBounds,

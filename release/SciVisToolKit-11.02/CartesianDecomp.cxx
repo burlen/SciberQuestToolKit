@@ -15,7 +15,7 @@ Copyright 2008 SciberQuest Inc.
 
 #include <mpi.h>
 
-// #define CartesianDecompDEBUG
+#define CartesianDecompDEBUG
 
 // Search the decomposition for the block conaining the point. Return
 // non-zero if an error occured or the point was contained by any block
@@ -75,6 +75,8 @@ int DecompSearch(
 //-----------------------------------------------------------------------------
 CartesianDecomp::CartesianDecomp()
 {
+  this->Mode=CartesianExtent::DIM_MODE_3D;
+
   this->DecompDims[0]=
   this->DecompDims[1]=
   this->DecompDims[2]=0;
@@ -125,7 +127,15 @@ void CartesianDecomp::SetFileExtent(
       int klo,
       int khi)
 {
-  this->FileExtent.Set(ilo,ihi,jlo,jhi,klo,khi);
+
+  int ext[6]={ilo,ihi,jlo,jhi,klo,khi};
+  this->SetFileExtent(ext);
+}
+
+//-----------------------------------------------------------------------------
+void CartesianDecomp::SetFileExtent(const CartesianExtent &ext)
+{
+  this->SetFileExtent(ext.GetData());
 }
 
 //-----------------------------------------------------------------------------
@@ -135,9 +145,10 @@ void CartesianDecomp::SetFileExtent(const int ext[6])
 }
 
 //-----------------------------------------------------------------------------
-void CartesianDecomp::SetFileExtent(const CartesianExtent &ext)
+void CartesianDecomp::ComputeDimensionMode()
 {
-  this->FileExtent=ext;
+  this->Mode
+    = CartesianExtent::GetDimensionMode(this->FileExtent,this->NGhosts);
 }
 
 //-----------------------------------------------------------------------------

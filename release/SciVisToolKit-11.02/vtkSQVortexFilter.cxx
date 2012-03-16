@@ -65,7 +65,7 @@ vtkSQVortexFilter::vtkSQVortexFilter()
   Mode(CartesianExtent::DIM_MODE_3D)
 {
   #ifdef vtkSQVortexFilterDEBUG
-  pCerr() << "===============================vtkSQVortexFilter::vtkSQVortexFilter" << endl;
+  pCerr() << "=====vtkSQVortexFilter::vtkSQVortexFilter" << endl;
   #endif
 
   this->SetNumberOfInputPorts(1);
@@ -76,7 +76,7 @@ vtkSQVortexFilter::vtkSQVortexFilter()
 vtkSQVortexFilter::~vtkSQVortexFilter()
 {
   #ifdef vtkSQVortexFilterDEBUG
-  pCerr() << "===============================vtkSQVortexFilter::~vtkSQVortexFilter" << endl;
+  pCerr() << "=====vtkSQVortexFilter::~vtkSQVortexFilter" << endl;
   #endif
 }
 
@@ -84,7 +84,7 @@ vtkSQVortexFilter::~vtkSQVortexFilter()
 int vtkSQVortexFilter::Initialize(vtkPVXMLElement *root)
 {
   #ifdef vtkSQVortexFilterDEBUG
-  pCerr() << "===============================vtkSQVortexFilter::Initialize" << endl;
+  pCerr() << "=====vtkSQVortexFilter::Initialize" << endl;
   #endif
 
   vtkPVXMLElement *elem=GetRequiredElement(root,"vtkSQVortexFilter");
@@ -180,7 +180,7 @@ int vtkSQVortexFilter::RequestDataObject(
     vtkInformationVector* outInfoVec)
 {
   #ifdef vtkSQVortexFilterDEBUG
-  pCerr() << "===============================vtkSQVortexFilter::RequestDataObject" << endl;
+  pCerr() << "=====vtkSQVortexFilter::RequestDataObject" << endl;
   #endif
 
   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
@@ -209,7 +209,7 @@ int vtkSQVortexFilter::RequestInformation(
       vtkInformationVector *outInfos)
 {
   #ifdef vtkSQVortexFilterDEBUG
-  pCerr() << "===============================vtkSQVortexFilter::RequestInformation" << endl;
+  pCerr() << "=====vtkSQVortexFilter::RequestInformation" << endl;
   #endif
   //this->Superclass::RequestInformation(req,inInfos,outInfos);
 
@@ -273,7 +273,7 @@ int vtkSQVortexFilter::RequestUpdateExtent(
       vtkInformationVector *outInfos)
 {
   #ifdef vtkSQVortexFilterDEBUG
-  pCerr() << "===============================vtkSQVortexFilter::RequestUpdateExtent" << endl;
+  pCerr() << "=====vtkSQVortexFilter::RequestUpdateExtent" << endl;
   #endif
 
   typedef vtkStreamingDemandDrivenPipeline vtkSDDPipeline;
@@ -338,7 +338,7 @@ int vtkSQVortexFilter::RequestData(
     vtkInformationVector *outInfoVec)
 {
   #ifdef vtkSQVortexFilterDEBUG
-  pCerr() << "===============================vtkSQVortexFilter::RequestData" << endl;
+  pCerr() << "=====vtkSQVortexFilter::RequestData" << endl;
   #endif
 
   #if defined vtkSQVortexFilterTIME
@@ -1152,7 +1152,7 @@ int vtkSQVortexFilter::RequestData(
 void vtkSQVortexFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   #ifdef vtkSQVortexFilterDEBUG
-  pCerr() << "===============================vtkSQVortexFilter::PrintSelf" << endl;
+  pCerr() << "=====vtkSQVortexFilter::PrintSelf" << endl;
   #endif
 
   this->Superclass::PrintSelf(os,indent);

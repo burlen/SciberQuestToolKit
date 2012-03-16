@@ -235,6 +235,7 @@ int UnstructuredFieldTopologyMap::InsertCellsFromGenerator(IdBlock *SourceIds)
     seed[2]/=nPtIds;
 
     this->Lines[lId]=new FieldLine(seed,sourceCellId);
+    this->Lines[lId]->AllocateTrace();
     ++sourceCellId;
     ++lId;
     }
@@ -363,6 +364,7 @@ int UnstructuredFieldTopologyMap::InsertCellsFromDataset(IdBlock *SourceIds)
     seed[2]/=nPtIds;
 
     this->Lines[lId]=new FieldLine(seed,sourceCellId);
+    this->Lines[lId]->AllocateTrace();
     ++sourceCellId;
     ++lId;
     }

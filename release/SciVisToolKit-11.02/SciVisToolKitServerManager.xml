@@ -4070,8 +4070,8 @@ Copyright 2008 SciberQuest Inc.
 
   <!-- ==================================================================== -->
   <SourceProxy
-    name="vtkSQVortexFilter"
-    class="vtkSQVortexFilter"
+    name="vtkSQVortexDetect"
+    class="vtkSQVortexDetect"
     label="SQ Vortex Detect">
     <Documentation
       long_help="Long Documentation"
@@ -4096,8 +4096,204 @@ Copyright 2008 SciberQuest Inc.
            </Documentation>
       </InputProperty>
 
-      <StringVectorProperty 
-         name="SelectInputVectors" 
+      <StringVectorProperty
+         name="SelectInputVectors"
+         command="SetInputArrayToProcess"
+         number_of_elements="5"
+         element_types="0 0 0 0 2"
+         label="Vector Field">
+            <ArrayListDomain name="array_list" attribute_type="Vectors">
+              <RequiredProperties>
+                 <Property name="Input" function="Input"/>
+              </RequiredProperties>
+            </ArrayListDomain>
+            <Documentation>
+              Identifies the vector field on which to operate.
+            </Documentation>
+      </StringVectorProperty>
+
+     <IntVectorProperty
+        name="PassInput"
+        label="Copy input"
+        command="SetPassInput"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Deep copy the input array to the output
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="SplitComponents"
+        label="Split components"
+        command="SetSplitComponents"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Convert the result into components arrays.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ResultMagnitude"
+        label="Result magnitude"
+        command="SetResultMagnitude"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the magnitude for all multi-component results.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeGradient"
+        label="Gradient"
+        command="SetComputeGradient"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the gradient tensor on a centered stencil.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeVorticity"
+        label="Vorticity"
+        command="SetComputeVorticity"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the rotation (curl) of the vector field using a point centered stencil.
+        </Documentation>
+     </IntVectorProperty>
+
+      <IntVectorProperty
+        name="ComputeHelicity"
+        label="Helicity"
+        command="SetComputeHelicity"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the helicity (dot of vector and its curl) of the vector field using a point centered stencil.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeNormalizedHelicity"
+        label="Normalized helicity"
+        command="SetComputeNormalizedHelicity"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the normailzed helicity of the vector field using a point centered stencil.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeQ"
+        label="Q"
+        command="SetComputeQ"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute Q-criteria
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeLambda2"
+        label="Lambda-2"
+        command="SetComputeLambda2"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the second eigenvalue of corrected pressure hessian.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeDivergence"
+        label="Divergence"
+        command="SetComputeDivergence"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute the divergence using a centered stencil.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeEigenvalueDiagnostic"
+        label="Eigenvalue diagnostic"
+        command="SetComputeEigenvalueDiagnostic"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Eigenvalue diagnostic of Haimes and Kenwright.
+        </Documentation>
+     </IntVectorProperty>
+
+     <IntVectorProperty
+        name="ComputeFTLE"
+        label="FTLE"
+        command="SetComputeFTLE"
+        number_of_elements="1"
+        default_values="0">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Compute FTLE of the given displacement map.
+        </Documentation>
+     </IntVectorProperty>
+
+    <Hints>
+      <View type="RenderView"/>
+    </Hints>
+
+  <!-- End vtkSQVortexDetect -->
+  </SourceProxy>
+
+
+  <!-- ==================================================================== -->
+  <SourceProxy
+    name="vtkSQVortexFilter"
+    class="vtkSQVortexFilter"
+    label="SQ Vortex Filter">
+    <Documentation
+      long_help="Long Documentation"
+      short_help="Short Documentation">
+      Textual Documentation.
+    </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+           <InputArrayDomain name="input_array" attribute_type="point"
+                             number_of_components="3"/>
+           <Documentation>
+             This property specifies the input to the Warp (vector) filter.
+           </Documentation>
+      </InputProperty>
+
+      <StringVectorProperty
+         name="SelectInputVectors"
          command="SetInputArrayToProcess"
          number_of_elements="5"
          element_types="0 0 0 0 2"

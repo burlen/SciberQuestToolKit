@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
@@ -12,7 +12,7 @@ Copyright 2008 SciberQuest Inc.
 #include "Tuple.hxx"
 #include "MPIRawArrayIO.hxx"
 
-// #define CartesianDataBlockIODescriptorDEBUG
+#define CartesianDataBlockIODescriptorDEBUG
 
 //-----------------------------------------------------------------------------
 CartesianDataBlockIODescriptor::CartesianDataBlockIODescriptor(
@@ -21,6 +21,9 @@ CartesianDataBlockIODescriptor::CartesianDataBlockIODescriptor(
       const int periodic[3],
       int nGhosts)
 {
+  this->Mode
+    = CartesianExtent::GetDimensionMode(fileExt,nGhosts);
+
   // Determine the true memory extents. Start by assuming that the
   // block is on the interior of the domain decomposition. Strip edge
   // and face ghost cells, if the block lies on the exterior of the
@@ -30,7 +33,7 @@ CartesianDataBlockIODescriptor::CartesianDataBlockIODescriptor(
   memExt.Set(blockExt);
   if (nGhosts>0)
     {
-    memExt.Grow(nGhosts);
+    CartesianExtent::Grow(memExt,nGhosts,this->Mode);
 
     for (int q=0; q<3; ++q)
       {
@@ -40,14 +43,14 @@ CartesianDataBlockIODescriptor::CartesianDataBlockIODescriptor(
       if (!periodic[q] && (blockExt[qq]==fileExt[qq]))
         {
         // strip the ghost cells
-        memExt.GrowLow(q,-nGhosts);
+        memExt=CartesianExtent::GrowLow(memExt,q,-nGhosts,this->Mode);
         }
 
       // on high side non-periodic boundary in q direction
       if (!periodic[q] && (blockExt[qq+1]==fileExt[qq+1]))
         {
         // strip the ghost cells
-        memExt.GrowHigh(q,-nGhosts);
+        memExt=CartesianExtent::GrowHigh(memExt,q,-nGhosts,this->Mode);
         }
       }
     }

@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
@@ -15,13 +15,13 @@ Copyright 2008 SciberQuest Inc.
 
 #include <mpi.h>
 
-// #define ImageDecompDEBUG
+#define ImageDecompDEBUG
 
 //-----------------------------------------------------------------------------
 ImageDecomp::ImageDecomp()
 {
   this->SetOrigin(0.0,0.0,0.0);
-  this->SetSpacing(0.0,0.0,0.0);
+  this->SetSpacing(1.0,1.0,1.0);
 }
 
 //-----------------------------------------------------------------------------
@@ -61,7 +61,12 @@ void ImageDecomp::SetSpacing(const double dX[3])
 //-----------------------------------------------------------------------------
 void ImageDecomp::ComputeBounds()
 {
-  this->Extent.GetBounds(this->X0,this->DX,this->Bounds.GetData());
+  CartesianExtent::GetBounds(
+        this->Extent,
+        this->X0,
+        this->DX,
+        this->Mode,
+        this->Bounds.GetData());
 }
 
 //-----------------------------------------------------------------------------
@@ -109,7 +114,8 @@ int ImageDecomp::DecomposeDomain()
   #endif
 
   CartesianExtent fileExt(this->FileExtent);
-  fileExt.CellToNode(); // dual grid
+  fileExt
+    = CartesianExtent::CellToNode(fileExt,this->Mode); // dual grid
 
   int idx=0;
 
@@ -135,19 +141,24 @@ int ImageDecomp::DecomposeDomain()
           // compute extent
           if (I[q]<nLarge[q])
             {
-            ext[lo]=I[q]*(smBlockSize[q]+1);
+            ext[lo]=this->Extent[lo]+I[q]*(smBlockSize[q]+1);
             ext[hi]=ext[lo]+smBlockSize[q];
             }
           else
             {
-            ext[lo]=I[q]*smBlockSize[q]+nLarge[q];
+            ext[lo]=this->Extent[lo]+I[q]*smBlockSize[q]+nLarge[q];
             ext[hi]=ext[lo]+smBlockSize[q]-1;
             }
           }
 
         // compute bounds
         double *bounds=block->GetBounds().GetData();
-        ext.GetBounds(this->X0,this->DX,bounds);
+        CartesianExtent::GetBounds(
+              ext,
+              this->X0,
+              this->DX,
+              this->Mode,
+              bounds);
 
         #ifdef ImageDecompDEBUG
         cerr << *block << endl;
@@ -155,10 +166,14 @@ int ImageDecomp::DecomposeDomain()
 
         // create an io descriptor.
         CartesianExtent blockExt(ext);
-        blockExt.CellToNode(); //dual grid
+        blockExt=CartesianExtent::CellToNode(blockExt,this->Mode);
+
         CartesianDataBlockIODescriptor *descr
             = new CartesianDataBlockIODescriptor(
-                blockExt,fileExt,this->PeriodicBC,this->NGhosts);
+                  blockExt,
+                  fileExt,
+                  this->PeriodicBC,
+                  this->NGhosts);
 
         this->Decomp[idx]=block;
         this->IODescriptors[idx]=descr;

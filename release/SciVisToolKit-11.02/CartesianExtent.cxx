@@ -75,7 +75,6 @@ CartesianExtent CartesianExtent::Grow(
       int nGhosts,
       int mode)
 {
-
   CartesianExtent outputExt
     = CartesianExtent::Grow(inputExt,nGhosts,mode);
 
@@ -90,27 +89,98 @@ CartesianExtent CartesianExtent::Grow(
       int nGhosts,
       int mode)
 {
-
   CartesianExtent outputExt(inputExt);
 
   switch(mode)
-  {
-  case DIM_MODE_2D_XY:
-    outputExt.Grow(0,nGhosts);
-    outputExt.Grow(1,nGhosts);
-    break;
-  case DIM_MODE_2D_XZ:
-    outputExt.Grow(0,nGhosts);
-    outputExt.Grow(2,nGhosts);
-    break;
-  case DIM_MODE_2D_YZ:
-    outputExt.Grow(1,nGhosts);
-    outputExt.Grow(2,nGhosts);
-    break;
-  case DIM_MODE_3D:
-    outputExt.Grow(nGhosts);
-    break;
-  }
+    {
+    case DIM_MODE_2D_XY:
+      outputExt.Grow(0,nGhosts);
+      outputExt.Grow(1,nGhosts);
+      break;
+    case DIM_MODE_2D_XZ:
+      outputExt.Grow(0,nGhosts);
+      outputExt.Grow(2,nGhosts);
+      break;
+    case DIM_MODE_2D_YZ:
+      outputExt.Grow(1,nGhosts);
+      outputExt.Grow(2,nGhosts);
+      break;
+    case DIM_MODE_3D:
+      outputExt.Grow(nGhosts);
+      break;
+    }
+
+  return outputExt;
+}
+
+//-----------------------------------------------------------------------------
+CartesianExtent CartesianExtent::GrowLow(
+      const CartesianExtent &inputExt,
+      int q,
+      int n,
+      int mode)
+{
+  CartesianExtent outputExt(inputExt);
+
+  switch(mode)
+    {
+    case DIM_MODE_2D_XY:
+      if (q==2)
+        {
+        return outputExt;
+        }
+      break;
+    case DIM_MODE_2D_XZ:
+      if (q==1)
+        {
+        return outputExt;
+        }
+      break;
+    case DIM_MODE_2D_YZ:
+      if (q==0)
+        {
+        return outputExt;
+        }
+      break;
+    }
+
+  outputExt[2*q]-=n;
+
+  return outputExt;
+}
+
+//-----------------------------------------------------------------------------
+CartesianExtent CartesianExtent::GrowHigh(
+      const CartesianExtent &inputExt,
+      int q,
+      int n,
+      int mode)
+{
+  CartesianExtent outputExt(inputExt);
+
+  switch(mode)
+    {
+    case DIM_MODE_2D_XY:
+      if (q==2)
+        {
+        return outputExt;
+        }
+      break;
+    case DIM_MODE_2D_XZ:
+      if (q==1)
+        {
+        return outputExt;
+        }
+      break;
+    case DIM_MODE_2D_YZ:
+      if (q==0)
+        {
+        return outputExt;
+        }
+      break;
+    }
+
+  outputExt[2*q+1]+=n;
 
   return outputExt;
 }
@@ -131,34 +201,33 @@ CartesianExtent CartesianExtent::Shrink(
       int nGhosts,
       int mode)
 {
-
   CartesianExtent outputExt(inputExt);
 
   switch(mode)
-  {
-  case DIM_MODE_2D_XY:
-    outputExt.Grow(0,-nGhosts);
-    outputExt.Grow(1,-nGhosts);
-    break;
-  case DIM_MODE_2D_XZ:
-    outputExt.Grow(0,-nGhosts);
-    outputExt.Grow(2,-nGhosts);
-    break;
-  case DIM_MODE_2D_YZ:
-    outputExt.Grow(1,-nGhosts);
-    outputExt.Grow(2,-nGhosts);
-    break;
-  case DIM_MODE_3D:
-    outputExt.Grow(-nGhosts);
-    break;
-  }
+    {
+    case DIM_MODE_2D_XY:
+      outputExt.Grow(0,-nGhosts);
+      outputExt.Grow(1,-nGhosts);
+      break;
+    case DIM_MODE_2D_XZ:
+      outputExt.Grow(0,-nGhosts);
+      outputExt.Grow(2,-nGhosts);
+      break;
+    case DIM_MODE_2D_YZ:
+      outputExt.Grow(1,-nGhosts);
+      outputExt.Grow(2,-nGhosts);
+      break;
+    case DIM_MODE_3D:
+      outputExt.Grow(-nGhosts);
+      break;
+    }
 
   // don't shrink at the problem domain.
   for (int i=0; i<6; ++i)
     {
-    if (inputExt[i] == problemDomain[i])
+    if (inputExt[i]==problemDomain[i])
       {
-      outputExt[i] = problemDomain[i];
+      outputExt[i]=problemDomain[i];
       }
     }
 
@@ -170,27 +239,26 @@ CartesianExtent CartesianExtent::CellToNode(
       const CartesianExtent &inputExt,
       int mode)
 {
-
   CartesianExtent outputExt(inputExt);
 
   switch(mode)
-  {
-  case DIM_MODE_2D_XY:
-    ++outputExt[1];
-    ++outputExt[3];
-    break;
-  case DIM_MODE_2D_XZ:
-    ++outputExt[1];
-    ++outputExt[5];
-    break;
-  case DIM_MODE_2D_YZ:
-    ++outputExt[3];
-    ++outputExt[5];
-    break;
-  case DIM_MODE_3D:
-    outputExt.CellToNode();
-    break;
-  }
+    {
+    case DIM_MODE_2D_XY:
+      ++outputExt[1];
+      ++outputExt[3];
+      break;
+    case DIM_MODE_2D_XZ:
+      ++outputExt[1];
+      ++outputExt[5];
+      break;
+    case DIM_MODE_2D_YZ:
+      ++outputExt[3];
+      ++outputExt[5];
+      break;
+    case DIM_MODE_3D:
+      outputExt.CellToNode();
+      break;
+    }
 
   return outputExt;
 }
@@ -200,27 +268,26 @@ CartesianExtent CartesianExtent::NodeToCell(
       const CartesianExtent &inputExt,
       int mode)
 {
-
   CartesianExtent outputExt(inputExt);
 
   switch(mode)
-  {
-  case DIM_MODE_2D_XY:
-    --outputExt[1];
-    --outputExt[3];
-    break;
-  case DIM_MODE_2D_XZ:
-    --outputExt[1];
-    --outputExt[5];
-    break;
-  case DIM_MODE_2D_YZ:
-    --outputExt[3];
-    --outputExt[5];
-    break;
-  case DIM_MODE_3D:
-    outputExt.NodeToCell();
-    break;
-  }
+    {
+    case DIM_MODE_2D_XY:
+      --outputExt[1];
+      --outputExt[3];
+      break;
+    case DIM_MODE_2D_XZ:
+      --outputExt[1];
+      --outputExt[5];
+      break;
+    case DIM_MODE_2D_YZ:
+      --outputExt[3];
+      --outputExt[5];
+      break;
+    case DIM_MODE_3D:
+      outputExt.NodeToCell();
+      break;
+    }
 
   return outputExt;
 }
@@ -232,25 +299,25 @@ void CartesianExtent::Shift(
       int mode)
 {
   switch(mode)
-  {
-  case DIM_MODE_2D_XY:
-    ijk[0]+=n;
-    ijk[1]+=n;
-    break;
-  case DIM_MODE_2D_XZ:
-    ijk[0]+=n;
-    ijk[2]+=n;
-    break;
-  case DIM_MODE_2D_YZ:
-    ijk[1]+=n;
-    ijk[2]+=n;
-    break;
-  case DIM_MODE_3D:
-    ijk[0]+=n;
-    ijk[1]+=n;
-    ijk[2]+=n;
-    break;
-  }
+    {
+    case DIM_MODE_2D_XY:
+      ijk[0]+=n;
+      ijk[1]+=n;
+      break;
+    case DIM_MODE_2D_XZ:
+      ijk[0]+=n;
+      ijk[2]+=n;
+      break;
+    case DIM_MODE_2D_YZ:
+      ijk[1]+=n;
+      ijk[2]+=n;
+      break;
+    case DIM_MODE_3D:
+      ijk[0]+=n;
+      ijk[1]+=n;
+      ijk[2]+=n;
+      break;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -260,26 +327,146 @@ void CartesianExtent::Shift(
       int mode)
 {
   switch(mode)
-  {
-  case DIM_MODE_2D_XY:
-    ijk[0]+=n[0];
-    ijk[1]+=n[1];
-    break;
-  case DIM_MODE_2D_XZ:
-    ijk[0]+=n[0];
-    ijk[2]+=n[2];
-    break;
-  case DIM_MODE_2D_YZ:
-    ijk[1]+=n[1];
-    ijk[2]+=n[2];
-    break;
-  case DIM_MODE_3D:
-    ijk[0]+=n[0];
-    ijk[1]+=n[1];
-    ijk[2]+=n[2];
-    break;
-  }
+    {
+    case DIM_MODE_2D_XY:
+      ijk[0]+=n[0];
+      ijk[1]+=n[1];
+      break;
+    case DIM_MODE_2D_XZ:
+      ijk[0]+=n[0];
+      ijk[2]+=n[2];
+      break;
+    case DIM_MODE_2D_YZ:
+      ijk[1]+=n[1];
+      ijk[2]+=n[2];
+      break;
+    case DIM_MODE_3D:
+      ijk[0]+=n[0];
+      ijk[1]+=n[1];
+      ijk[2]+=n[2];
+      break;
+    }
 }
 
+//-----------------------------------------------------------------------------
+void CartesianExtent::GetLowerBound(
+      const CartesianExtent &ext,
+      const double X0[3],
+      const double DX[3],
+      double lowerBound[3])
+{
+  lowerBound[0]=X0[0]+ext[0]*DX[0];
+  lowerBound[1]=X0[1]+ext[2]*DX[1];
+  lowerBound[2]=X0[2]+ext[4]*DX[2];
+}
 
+//-----------------------------------------------------------------------------
+void CartesianExtent::GetLowerBound(
+      const CartesianExtent &ext,
+      const float *X,
+      const float *Y,
+      const float *Z,
+      double lowerBound[3])
+{
+  lowerBound[0]=X[ext[0]];
+  lowerBound[1]=Y[ext[2]];
+  lowerBound[2]=Z[ext[4]];
+}
+
+//-----------------------------------------------------------------------------
+void CartesianExtent::GetBounds(
+      const CartesianExtent &ext,
+      const double X0[3],
+      const double DX[3],
+      int mode,
+      double bounds[6])
+{
+  int nCells[3];
+  CartesianExtent::Size(ext,nCells);
+
+  double extX0[3];
+  CartesianExtent::GetLowerBound(ext,X0,DX,extX0);
+
+  switch(mode)
+    {
+    case DIM_MODE_2D_XY:
+      bounds[0]=extX0[0];
+      bounds[1]=extX0[0]+nCells[0]*DX[0];
+      bounds[2]=extX0[1];
+      bounds[3]=extX0[1]+nCells[1]*DX[1];
+      bounds[4]=extX0[2];
+      bounds[5]=extX0[2];
+      break;
+    case DIM_MODE_2D_XZ:
+      bounds[0]=extX0[0];
+      bounds[1]=extX0[0]+nCells[0]*DX[0];
+      bounds[2]=extX0[1];
+      bounds[3]=extX0[1];
+      bounds[4]=extX0[2];
+      bounds[5]=extX0[2]+nCells[2]*DX[2];
+      break;
+    case DIM_MODE_2D_YZ:
+      bounds[0]=extX0[0];
+      bounds[1]=extX0[0];
+      bounds[2]=extX0[1];
+      bounds[3]=extX0[1]+nCells[1]*DX[1];
+      bounds[4]=extX0[2];
+      bounds[5]=extX0[2]+nCells[2]*DX[2];
+      break;
+    case DIM_MODE_3D:
+      bounds[0]=extX0[0];
+      bounds[1]=extX0[0]+nCells[0]*DX[0];
+      bounds[2]=extX0[1];
+      bounds[3]=extX0[1]+nCells[1]*DX[1];
+      bounds[4]=extX0[2];
+      bounds[5]=extX0[2]+nCells[2]*DX[2];
+      break;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void CartesianExtent::GetBounds(
+      const CartesianExtent &ext,
+      const float *X,
+      const float *Y,
+      const float *Z,
+      int mode,
+      double bounds[6])
+{
+  switch(mode)
+    {
+    case DIM_MODE_2D_XY:
+      bounds[0]=X[ext[0]];
+      bounds[1]=X[ext[1]+1];
+      bounds[2]=Y[ext[2]];
+      bounds[3]=Y[ext[3]+1];
+      bounds[4]=Z[ext[4]];
+      bounds[5]=Z[ext[4]];
+      break;
+    case DIM_MODE_2D_XZ:
+      bounds[0]=X[ext[0]];
+      bounds[1]=X[ext[1]+1];
+      bounds[2]=Y[ext[2]];
+      bounds[3]=Y[ext[2]];
+      bounds[4]=Z[ext[4]];
+      bounds[5]=Z[ext[5]+1];
+      break;
+    case DIM_MODE_2D_YZ:
+      bounds[0]=X[ext[0]];
+      bounds[1]=X[ext[0]];
+      bounds[2]=Y[ext[2]];
+      bounds[3]=Y[ext[3]+1];
+      bounds[4]=Z[ext[4]];
+      bounds[5]=Z[ext[5]+1];
+      break;
+    case DIM_MODE_3D:
+      bounds[0]=X[ext[0]];
+      bounds[1]=X[ext[1]+1];
+      bounds[2]=Y[ext[2]];
+      bounds[3]=Y[ext[3]+1];
+      bounds[4]=Z[ext[4]];
+      bounds[5]=Z[ext[5]+1];
+      break;
+    }
+}
 

@@ -24,7 +24,7 @@ class CartesianDataBlockIODescriptor;
 /// Splits a cartesian grid into a set of smaller cartesian grids.
 /**
 Splits a cartesian grid into a set of smaller cartesian grids using
-a set of axis aligned planes. Given a point will locate and return 
+a set of axis aligned planes. Given a point will locate and return
 the sub-grid which contains it.
 */
 class CartesianDecomp : public RefCountedPointer
@@ -42,20 +42,10 @@ public:
   const CartesianExtent &GetFileExtent() const { return this->FileExtent; }
 
   /**
-  Get/Set the domain origin.
+  Determine from fileExtent and number of Ghosts the dimension
+  of the dataset.
   */
-//   void SetOrigin(double x0, double y0, double z0);
-//   void SetOrigin(const double X0[3]);
-//   double *GetOrigin(){ return this->X0; }
-//   const double *GetOrigin() const { return this->X0; }
-
-  /**
-  Get/Set the grid spacing.
-  */
-//   void SetSpacing(double dx, double dy, double dz);
-//   void SetSpacing(const double dX[3]);
-//   double *GetSpacing(){ return this->DX; }
-//   const double *GetSpacing() const { return this->DX; }
+  void ComputeDimensionMode();
 
   /**
   Get/Set the physical bounds of the entire decomposition.
@@ -71,12 +61,6 @@ public:
   void SetBounds(const CartesianBounds &bounds);
   CartesianBounds &GetBounds(){ return this->Bounds; }
   const CartesianBounds &GetBounds() const { return this->Bounds; }
-
-  /**
-  Set the domain bounds based on curren values of
-  extent, oring and spacing.
-  */
-//   void ComputeBounds();
 
   /**
   Set the index space of the decomposition.
@@ -203,6 +187,7 @@ protected:
   virtual void ClearIODescriptors();
 
 protected:
+  int Mode;                     // 2d xy,xz,yz, or 3d
   int NGhosts;                  // number of ghost cells.
   int PeriodicBC[3];            // boolean set if periodic boundary in the direction
   int DecompDims[4];            // block array size (ni,nj,nk,ni*nj)

@@ -93,16 +93,18 @@ public:
   /**
   Given the dataset origin (point that coresponds to the index 0,0,0)
   and the dataset spacing compute the point at the end of this extent.
-  */
+  WARNING: this produces incorrect result for 2D data
   void GetBounds(
         const double X0[3],
         const double DX[3],
         double bounds[6]) const;
+
   void GetBounds(
         const float *X,
         const float *Y,
         const float *Z,
         double bounds[6]) const;
+  */
   /// \@}
 
 
@@ -192,6 +194,19 @@ public:
       int nGhosts);
 
   /**
+  Get the number in each direction.
+  */
+  template<typename T>
+  static
+  void Size(const CartesianExtent &ext, T nCells[3]);
+
+  /**
+  Get the total number.
+  */
+  static
+  size_t Size(const CartesianExtent &ext);
+
+  /**
   Add or remove ghost cells. If a problem domain is
   provided then the result is clipled to be within the
   problem domain.
@@ -205,6 +220,18 @@ public:
       const CartesianExtent &inputExt,
       const CartesianExtent &problemDomain,
       int nGhosts,
+      int mode);
+
+  static CartesianExtent GrowLow(
+      const CartesianExtent &ext,
+      int q,
+      int n,
+      int mode);
+
+  static CartesianExtent GrowHigh(
+      const CartesianExtent &ext,
+      int q,
+      int n,
       int mode);
 
   /**
@@ -242,6 +269,45 @@ public:
   */
   static void Shift(int *ijk, int n, int mode);
   static void Shift(int *ijk, int *n, int mode);
+
+  /**
+  Given the dataset origin (point that coresponds to the index 0,0,0
+  compute the point at the start of this extent.
+  */
+  static void GetLowerBound(
+        const CartesianExtent &ext,
+        const double X0[3],
+        const double DX[3],
+        double lowerBound[3]);
+
+  static void GetLowerBound(
+        const CartesianExtent &ext,
+        const float *X,
+        const float *Y,
+        const float *Z,
+        double lowerBound[3]);
+
+  /**
+  Given the dataset origin (point that coresponds to the index 0,0,0)
+  and the dataset spacing compute the point at the end of this extent.
+  respecting mode
+  */
+  static void GetBounds(
+        const CartesianExtent &ext,
+        const double X0[3],
+        const double DX[3],
+        int mode,
+        double bounds[6]);
+
+  static void GetBounds(
+        const CartesianExtent &ext,
+        const float *X,
+        const float *Y,
+        const float *Z,
+        int mode,
+        double bounds[6]);
+
+
   /// \@}
 
 private:
@@ -399,6 +465,7 @@ void CartesianExtent::GetUpperBound(
   upperBound[2]=Z[this->Data[5]+1];
 }
 
+/*
 //-----------------------------------------------------------------------------
 inline
 void CartesianExtent::GetBounds(
@@ -436,24 +503,39 @@ void CartesianExtent::GetBounds(
   bounds[4]=Z[this->Data[4]];
   bounds[5]=Z[this->Data[5]+1];
 }
+*/
 
 //-----------------------------------------------------------------------------
 template<typename T>
 void CartesianExtent::Size(T nCells[3]) const
 {
-  nCells[0]=this->Data[1]-this->Data[0]+1;
-  nCells[1]=this->Data[3]-this->Data[2]+1;
-  nCells[2]=this->Data[5]-this->Data[4]+1;
+  CartesianExtent::Size(*this,nCells);
 }
 
 //-----------------------------------------------------------------------------
 inline
 size_t CartesianExtent::Size() const
 {
+  return CartesianExtent::Size(*this);
+}
+
+//-----------------------------------------------------------------------------
+template<typename T>
+void CartesianExtent::Size(const CartesianExtent &ext, T nCells[3])
+{
+  nCells[0]=ext[1]-ext[0]+1;
+  nCells[1]=ext[3]-ext[2]+1;
+  nCells[2]=ext[5]-ext[4]+1;
+}
+
+//-----------------------------------------------------------------------------
+inline
+size_t CartesianExtent::Size(const CartesianExtent &ext)
+{
   return
-       (this->Data[1]-this->Data[0]+1)
-      *(this->Data[3]-this->Data[2]+1)
-      *(this->Data[5]-this->Data[4]+1);
+       (ext[1]-ext[0]+1)
+      *(ext[3]-ext[2]+1)
+      *(ext[5]-ext[4]+1);
 }
 
 //-----------------------------------------------------------------------------

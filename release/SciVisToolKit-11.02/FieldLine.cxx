@@ -75,20 +75,19 @@ void FieldLine::GetDisplacement(float *d)
       this->Seed[2]
       };
 
+  vtkIdType np;
   float *p0=s;
-  if (this->BwdTrace)
+  if (this->BwdTrace && (np=this->BwdTrace->GetNumberOfTuples()))
     {
-    vtkIdType nb=this->BwdTrace->GetNumberOfTuples();
     p0=this->BwdTrace->GetPointer(0);
-    p0+=3*nb-3;
+    p0+=3*np-3;
     }
 
   float *p1=s;
-  if (this->FwdTrace)
+  if (this->FwdTrace && (np=this->FwdTrace->GetNumberOfTuples()))
     {
-    vtkIdType nf=this->FwdTrace->GetNumberOfTuples();
     p1=this->FwdTrace->GetPointer(0);
-    p1+=3*nf-3;
+    p1+=3*np-3;
     }
 
   d[0]=p1[0]-p0[0];
