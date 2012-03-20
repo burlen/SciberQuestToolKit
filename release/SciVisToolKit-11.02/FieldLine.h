@@ -84,6 +84,11 @@ public:
   // in the Line.
   void GetDisplacement(float *d);
 
+  // Description:
+  // Get end points on the filed line.
+  void GetForwardEndPoint(float *d);
+  void GetBackwardEndPoint(float *d);
+
 private:
   vtkFloatArray *FwdTrace;    // streamline trace along V
   vtkFloatArray *BwdTrace;    // streamline trace along -V

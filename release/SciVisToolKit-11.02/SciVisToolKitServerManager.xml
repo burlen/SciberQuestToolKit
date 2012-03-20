@@ -3572,7 +3572,7 @@ Copyright 2008 SciberQuest Inc.
         command="SetMaxLineLength"
         number_of_elements="1"
         default_values="1.0" >
-      <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="10">
+      <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="100">
         <RequiredProperties>
           <Property name="DatasetInput" function="Input"/>
         </RequiredProperties>
@@ -3654,7 +3654,7 @@ Copyright 2008 SciberQuest Inc.
         name="UseDynamicScheduler"
         command="SetUseDynamicScheduler"
         number_of_elements="1"
-        default_values="0" > 
+        default_values="1" > 
       <BooleanDomain name="bool"/>
       <Documentation>
       When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
@@ -3666,7 +3666,7 @@ Copyright 2008 SciberQuest Inc.
         name="MasterBlockSize"
         command="SetMasterBlockSize"
         number_of_elements="1"
-        default_values="1"
+        default_values="16"
         animateable="0">
       <IntRangeDomain name="range" min="1"/>
       <Documentation>
@@ -3679,7 +3679,7 @@ Copyright 2008 SciberQuest Inc.
         name="WorkerBlockSize"
         command="SetWorkerBlockSize"
         number_of_elements="1"
-        default_values="1"
+        default_values="128"
         animateable="0">
       <IntRangeDomain name="range" min="1"/>
       <Documentation>
@@ -3690,7 +3690,7 @@ Copyright 2008 SciberQuest Inc.
 
     <Hints>
       <Property name="Mode" show="0"/>
-      <Property name="UseDynamicScheduler" show="0"/>
+      <Property name="UseDynamicScheduler" show="1"/>
       <Property name="MasterBlockSize" show="1"/>
       <Property name="WorkerBlockSize" show="1"/>
     </Hints>
@@ -3844,7 +3844,7 @@ Copyright 2008 SciberQuest Inc.
         command="SetMaxLineLength"
         number_of_elements="1"
         default_values="1.0" >
-      <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="10">
+      <BoundsDomain name="bounds" mode="scaled_extent" scale_factor="100">
         <RequiredProperties>
           <Property name="DatasetInput" function="Input"/>
         </RequiredProperties>
@@ -3926,7 +3926,7 @@ Copyright 2008 SciberQuest Inc.
         name="UseDynamicScheduler"
         command="SetUseDynamicScheduler"
         number_of_elements="1"
-        default_values="0">
+        default_values="1">
       <BooleanDomain name="bool"/>
       <Documentation>
       When set the work is by a simple self-scheduling algorithm. In this case all of the seed source data has to be duplicated 
@@ -3938,7 +3938,7 @@ Copyright 2008 SciberQuest Inc.
         name="MasterBlockSize"
         command="SetMasterBlockSize"
         number_of_elements="1"
-        default_values="1">
+        default_values="16">
       <IntRangeDomain name="range" min="1"/>
       <Documentation>
         Controls how much work the master does in between servicing work requests
@@ -3950,7 +3950,7 @@ Copyright 2008 SciberQuest Inc.
         name="WorkerBlockSize"
         command="SetWorkerBlockSize"
         number_of_elements="1"
-        default_values="1">
+        default_values="128">
       <IntRangeDomain name="range" min="1"/>
       <Documentation>
         Controls how much work is given to the worker processes at each
@@ -3961,7 +3961,7 @@ Copyright 2008 SciberQuest Inc.
     <Hints>
       <Property name="Mode" show="0"/>
       <Property name="IntegratorType" show="0"/>
-      <Property name="UseDynamicScheduler" show="0"/>
+      <Property name="UseDynamicScheduler" show="1"/>
       <Property name="MasterBlockSize" show="1"/>
       <Property name="WorkerBlockSize" show="1"/>
     </Hints>

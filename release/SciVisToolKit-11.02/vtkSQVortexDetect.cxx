@@ -118,7 +118,7 @@ void ComputeVorticity(
   vortV=vtkDoubleArray::New();
   vortV->SetNumberOfComponents(3);
   vortV->SetNumberOfTuples(nCells);
-  string name="vort-";
+  string name="vorticity-";
   name+=gradV->GetName();
   vortV->SetName(name.c_str());
   double *pVortV=vortV->GetPointer(0);
@@ -138,6 +138,48 @@ void ComputeVorticity(
 
     pVortV+=3;
     pGradV+=9;
+    }
+}
+
+// ****************************************************************************
+void ComputeHelicity(
+      vtkAlgorithm *alg,
+      double prog0,
+      double prog1,
+      vtkIdType nCells,
+      vtkDoubleArray *V,
+      vtkDoubleArray *vortV,
+      vtkDoubleArray *helV)
+{
+  const vtkIdType nProgSteps=10;
+  const vtkIdType progInt=max(nCells/nProgSteps,vtkIdType(1));
+  const double progInc=(prog1-prog0)/nProgSteps;
+  double prog=prog0;
+
+  double *pHelV=vortV->GetPointer(0);
+
+  helV->SetNumberOfComponents(3);
+  helV->SetNumberOfTuples(nCells);
+  string name="helicity-";
+//name+=gradV->GetName();
+  helV->SetName(name.c_str());
+  double *pVortV=helV->GetPointer(0);
+
+  // for each cell
+  for (vtkIdType cellId=0; cellId<nCells; ++cellId)
+    {
+    if (!(cellId%progInt))
+      {
+      alg->UpdateProgress(prog);
+      prog+=progInc;
+      }
+
+    pVortV[0]=pHelV[7]-pHelV[5];
+    pVortV[1]=pHelV[2]-pHelV[6];
+    pVortV[2]=pHelV[3]-pHelV[1];
+
+    pVortV+=3;
+    pHelV+=9;
     }
 }
 
@@ -188,6 +230,7 @@ void ComputeFTLE(
     double lam;
     lam=max(e(0,0),e(1,0));
     lam=max(lam,e(2,0));
+    lam=max(lam,1.0);
 
     pFtleV[0]=log(sqrt(lam));
 
@@ -281,13 +324,6 @@ int vtkSQVortexDetect::RequestData(
     return 1;
     }
 
-  vtkIdType nCells=input->GetNumberOfCells();
-  if (nCells<1)
-    {
-    vtkErrorMacro("No cells on input.");
-    return 1;
-    }
-
   vtkDataSet *output
      = vtkDataSet::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
   if (!output)
@@ -300,6 +336,13 @@ int vtkSQVortexDetect::RequestData(
   if (this->PassInput)
     {
     output->CopyAttributes(input);
+    }
+
+  vtkIdType nCells=input->GetNumberOfCells();
+  if (nCells<1)
+    {
+    vtkErrorMacro("No cells on input.");
+    return 1;
     }
 
   vtkDataArray *V=this->GetInputArrayToProcess(0,inInfos);

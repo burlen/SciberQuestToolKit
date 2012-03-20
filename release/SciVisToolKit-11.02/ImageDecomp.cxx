@@ -120,6 +120,9 @@ int ImageDecomp::DecomposeDomain()
   int idx=0;
 
   // allocate and initialize each block in the new decomposition.
+  // when ghosts are employed the blocks don't have ghosts so that
+  // they are uniquely identified. Ghosts are handled later by  the
+  // IODescriptor.
   for (int k=0; k<this->DecompDims[2]; ++k)
     {
     for (int j=0; j<this->DecompDims[1]; ++j)

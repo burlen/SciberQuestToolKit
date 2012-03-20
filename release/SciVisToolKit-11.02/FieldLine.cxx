@@ -94,3 +94,48 @@ void FieldLine::GetDisplacement(float *d)
   d[1]=p1[1]-p0[1];
   d[2]=p1[2]-p0[2];
 }
+
+//-----------------------------------------------------------------------------
+void FieldLine::GetForwardEndPoint(float *d)
+{
+  float s[3]={
+      this->Seed[0],
+      this->Seed[1],
+      this->Seed[2]
+      };
+
+  vtkIdType np;
+
+  float *p1=s;
+  if (this->FwdTrace && (np=this->FwdTrace->GetNumberOfTuples()))
+    {
+    p1=this->FwdTrace->GetPointer(0);
+    p1+=3*np-3;
+    }
+
+  d[0]=p1[0];
+  d[1]=p1[1];
+  d[2]=p1[2];
+}
+
+//-----------------------------------------------------------------------------
+void FieldLine::GetBackwardEndPoint(float *d)
+{
+  float s[3]={
+      this->Seed[0],
+      this->Seed[1],
+      this->Seed[2]
+      };
+
+  vtkIdType np;
+  float *p0=s;
+  if (this->BwdTrace && (np=this->BwdTrace->GetNumberOfTuples()))
+    {
+    p0=this->BwdTrace->GetPointer(0);
+    p0+=3*np-3;
+    }
+
+  d[0]=p0[0];
+  d[1]=p0[1];
+  d[2]=p0[2];
+}

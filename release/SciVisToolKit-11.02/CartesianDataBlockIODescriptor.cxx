@@ -12,7 +12,7 @@ Copyright 2008 SciberQuest Inc.
 #include "Tuple.hxx"
 #include "MPIRawArrayIO.hxx"
 
-#define CartesianDataBlockIODescriptorDEBUG
+// #define CartesianDataBlockIODescriptorDEBUG
 
 //-----------------------------------------------------------------------------
 CartesianDataBlockIODescriptor::CartesianDataBlockIODescriptor(
@@ -33,7 +33,7 @@ CartesianDataBlockIODescriptor::CartesianDataBlockIODescriptor(
   memExt.Set(blockExt);
   if (nGhosts>0)
     {
-    CartesianExtent::Grow(memExt,nGhosts,this->Mode);
+    memExt=CartesianExtent::Grow(memExt,nGhosts,this->Mode);
 
     for (int q=0; q<3; ++q)
       {

@@ -58,7 +58,6 @@ public:
   */
   int Inside(double *pt){ return this->Bounds.Inside(pt); }
 
-
   /**
   Set the block's extent.
   */

@@ -70,7 +70,7 @@ Copyright 2008 SciberQuest Inc.
 using std::min;
 using std::max;
 
-// #define vtkSQImageGhostsDEBUG
+#define vtkSQFieldTracerDEBUG 0
 #define vtkSQFieldTracerTIME
 
 #ifndef vtkSQFieldTracerDEBUG
@@ -81,7 +81,7 @@ using std::max;
   #define vtkSQFieldTracerDEBUG 0
 #endif
 
-#if defined vtkSQImageGhostsTIME
+#if defined vtkSQFieldTracerTIME
   #include "vtkSQLog.h"
 #endif
 
@@ -605,9 +605,9 @@ int vtkSQFieldTracer::RequestData(
   #if vtkSQFieldTracerDEBUG>1
   pCerr() << "===============================vtkSQFieldTracer::RequestData" << endl;
   #endif
-  #if defined vtkSQImageGhostsTIME
+  #if defined vtkSQFieldTracerTIME
   vtkSQLog *log=vtkSQLog::GetGlobalInstance();
-  log->StartEvent("vtkSQImageGhosts::RequestData");
+  log->StartEvent("vtkSQFieldTracer::RequestData");
   #endif
 
   vtkInformation *info;
@@ -671,7 +671,8 @@ int vtkSQFieldTracer::RequestData(
   info=inputVector[1]->GetInformationObject(0);
 
   vtkSmartPointer<vtkSQCellGenerator> sourceGen=0;
-  if ((this->Mode==MODE_TOPOLOGY) && this->UseDynamicScheduler)
+  if ( ((this->Mode==MODE_TOPOLOGY) || (this->Mode==MODE_DISPLACEMENT))
+     && this->UseDynamicScheduler )
     {
     sourceGen
     =dynamic_cast<vtkSQCellGenerator*>(info->Get(vtkSQCellGenerator::CELL_GENERATOR()));
@@ -722,6 +723,10 @@ int vtkSQFieldTracer::RequestData(
           {
           traceData->SetSource(sourcePd);
           }
+        if (this->Mode==MODE_DISPLACEMENT)
+          {
+          traceData->SetComputeDisplacementMap(1);
+          }
         traceData->SetOutput(outPd);
         }
       else
@@ -736,6 +741,10 @@ int vtkSQFieldTracer::RequestData(
         else
           {
           traceData->SetSource(sourceUg);
+          }
+        if (this->Mode==MODE_DISPLACEMENT)
+          {
+          traceData->SetComputeDisplacementMap(1);
           }
         traceData->SetOutput(outUg);
         }
@@ -840,8 +849,8 @@ int vtkSQFieldTracer::RequestData(
 
   delete traceData;
 
-  #if defined vtkSQImageGhostsTIME
-  log->EndEvent("vtkSQImageGhosts::RequestData");
+  #if defined vtkSQFieldTracerTIME
+  log->EndEvent("vtkSQFieldTracer::RequestData");
   #endif
 
   return 1;
@@ -856,9 +865,9 @@ int vtkSQFieldTracer::IntegrateStatic(
       vtkDataSet *&oocrCache,
       FieldTraceData *traceData)
 {
-  #if defined vtkSQImageGhostsTIME
+  #if defined vtkSQFieldTracerTIME
   vtkSQLog *log=vtkSQLog::GetGlobalInstance();
-  log->StartEvent("vtkSQImageGhosts::IntegrateStatic");
+  log->StartEvent("vtkSQFieldTracer::IntegrateStatic");
   #endif
 
   // do all local ids in a single pass.
@@ -873,8 +882,8 @@ int vtkSQFieldTracer::IntegrateStatic(
             oocr,
             oocrCache);
 
-  #if defined vtkSQImageGhostsTIME
-  log->EndEvent("vtkSQImageGhosts::IntegrateStatic");
+  #if defined vtkSQFieldTracerTIME
+  log->EndEvent("vtkSQFieldTracer::IntegrateStatic");
   #endif
 
   return ok;
@@ -890,9 +899,9 @@ int vtkSQFieldTracer::IntegrateDynamic(
       vtkDataSet *&oocrCache,
       FieldTraceData *traceData)
 {
-  #if defined vtkSQImageGhostsTIME
+  #if defined vtkSQFieldTracerTIME
   vtkSQLog *log=vtkSQLog::GetGlobalInstance();
-  log->StartEvent("vtkSQImageGhosts::IntegrateDynamic");
+  log->StartEvent("vtkSQFieldTracer::IntegrateDynamic");
   #endif
 
   const int masterProcId=(nProcs>1?1:0); // NOTE: proc 0 is busy with PV overhead.
@@ -911,9 +920,9 @@ int vtkSQFieldTracer::IntegrateDynamic(
     int moreWork=1;
     while (nActiveWorkers || moreWork)
       {
-      #if defined vtkSQImageGhostsTIME
+      #if defined vtkSQFieldTracerTIME
       vtkSQLog *log=vtkSQLog::GetGlobalInstance();
-      log->StartEvent("vtkSQImageGhosts::ServiceWorkRequest");
+      log->StartEvent("vtkSQFieldTracer::ServiceWorkRequest");
       #endif
       // dispatch any and all pending requests
       int pendingReq=0;
@@ -950,8 +959,8 @@ int vtkSQFieldTracer::IntegrateDynamic(
           }
         }
       while (pendingReq);
-      #if defined vtkSQImageGhostsTIME
-      log->EndEvent("vtkSQImageGhosts::ServiceWorkRequest");
+      #if defined vtkSQFieldTracerTIME
+      log->EndEvent("vtkSQFieldTracer::ServiceWorkRequest");
       #endif
 
       // now that all the worker that need work have it. Do a small amount
@@ -987,9 +996,9 @@ int vtkSQFieldTracer::IntegrateDynamic(
       #if vtkSQFieldTracerDEBUG>1
       pCerr() << "Slave " << procId << " requesting work" << endl;
       #endif
-      #if defined vtkSQImageGhostsTIME
+      #if defined vtkSQFieldTracerTIME
       vtkSQLog *log=vtkSQLog::GetGlobalInstance();
-      log->StartEvent("vtkSQImageGhosts::WorkRequest");
+      log->StartEvent("vtkSQFieldTracer::WorkRequest");
       #endif
 
       // get a block of seed cell ids to process.
@@ -1008,8 +1017,8 @@ int vtkSQFieldTracer::IntegrateDynamic(
       #if vtkSQFieldTracerDEBUG>1
       pCerr() << "Slave " << procId << " received " << sourceIds << endl;
       #endif
-      #if defined vtkSQImageGhostsTIME
-      log->EndEvent("vtkSQImageGhosts::WorkRequest");
+      #if defined vtkSQFieldTracerTIME
+      log->EndEvent("vtkSQFieldTracer::WorkRequest");
       #endif
 
       // stop when no work has been issued.
@@ -1028,8 +1037,8 @@ int vtkSQFieldTracer::IntegrateDynamic(
       }
     }
 
-  #if defined vtkSQImageGhostsTIME
-  log->EndEvent("vtkSQImageGhosts::IntegrateDynamic");
+  #if defined vtkSQFieldTracerTIME
+  log->EndEvent("vtkSQFieldTracer::IntegrateDynamic");
   #endif
 
   return 1;
@@ -1045,13 +1054,13 @@ int vtkSQFieldTracer::IntegrateBlock(
 
 {
   // build the output.
-  #if defined vtkSQImageGhostsTIME
+  #if defined vtkSQFieldTracerTIME
   vtkSQLog *log=vtkSQLog::GetGlobalInstance();
-  log->StartEvent("vtkSQImageGhosts::InsertCells");
+  log->StartEvent("vtkSQFieldTracer::InsertCells");
   #endif
   vtkIdType nLines=traceData->InsertCells(sourceIds);
-  #if defined vtkSQImageGhostsTIME
-  log->EndEvent("vtkSQImageGhosts::InsertCells");
+  #if defined vtkSQFieldTracerTIME
+  log->EndEvent("vtkSQFieldTracer::InsertCells");
   #endif
 
   // double prog=0.0;
@@ -1082,15 +1091,14 @@ int vtkSQFieldTracer::IntegrateBlock(
 
   // sync results to output. free resources in preparation
   // for the next pass.
-  #if defined vtkSQImageGhostsTIME
-  vtkSQLog *log=vtkSQLog::GetGlobalInstance();
-  log->StartEvent("vtkSQImageGhosts::SyncOutput");
+  #if defined vtkSQFieldTracerTIME
+  log->StartEvent("vtkSQFieldTracer::SyncOutput");
   #endif
   traceData->SyncScalars();
   traceData->SyncGeometry();
   traceData->ClearFieldLines();
-  #if defined vtkSQImageGhostsTIME
-  log->EndEvent("vtkSQImageGhosts::SyncOutput");
+  #if defined vtkSQFieldTracerTIME
+  log->EndEvent("vtkSQFieldTracer::SyncOutput");
   #endif
 
   return 1;
@@ -1104,9 +1112,9 @@ void vtkSQFieldTracer::IntegrateOne(
       FieldLine *line,
       TerminationCondition *tcon)
 {
-  #if defined vtkSQImageGhostsTIME
+  #if defined vtkSQFieldTracerTIME
   vtkSQLog *log=vtkSQLog::GetGlobalInstance();
-  log->StartEvent("vtkSQImageGhosts::Integrate");
+  log->StartEvent("vtkSQFieldTracer::Integrate");
   #endif
 
   // Sanity check -- seed point is in bounds. If not skip it.
@@ -1119,8 +1127,8 @@ void vtkSQFieldTracer::IntegrateOne(
       << "Terminated: Seed " << Tuple<double>(line->GetSeedPoint(),3)
       << " outside problem domain.";
     #endif
-    #if defined vtkSQImageGhostsTIME
-    log->EndEvent("vtkSQImageGhosts::Integrate");
+    #if defined vtkSQFieldTracerTIME
+    log->EndEvent("vtkSQFieldTracer::Integrate");
     #endif
     return;
     }
@@ -1170,9 +1178,9 @@ void vtkSQFieldTracer::IntegrateOne(
       // Load a block if the seed point is not contained in the current block.
       if (tcon->OutsideWorkingDomain(p0))
         {
-        #if defined vtkSQImageGhostsTIME
-        log->EndEvent("vtkSQImageGhosts::Integrate");
-        log->StartEvent("vtkSQImageGhosts::LoadBlock");
+        #if defined vtkSQFieldTracerTIME
+        log->EndEvent("vtkSQFieldTracer::Integrate");
+        log->StartEvent("vtkSQFieldTracer::LoadBlock");
         #endif
         oocRCache=oocR->ReadNeighborhood(p0,tcon->GetWorkingDomain());
         if (!oocRCache)
@@ -1186,9 +1194,9 @@ void vtkSQFieldTracer::IntegrateOne(
         interp->SelectVectors(fieldName);
         this->Integrator->SetFunctionSet(interp);
         interp->Delete();
-        #if defined vtkSQImageGhostsTIME
-        log->EndEvent("vtkSQImageGhosts::LoadBlock");
-        log->StartEvent("vtkSQImageGhosts::Integrate");
+        #if defined vtkSQFieldTracerTIME
+        log->EndEvent("vtkSQFieldTracer::LoadBlock");
+        log->StartEvent("vtkSQFieldTracer::Integrate");
         #endif
         }
 
@@ -1224,8 +1232,8 @@ void vtkSQFieldTracer::IntegrateOne(
             << "minimum step size."
             << "x=" << Tuple<double>(p0,3) << ", "
             << "v=" << Tuple<double>(V0,3));
-          #if defined vtkSQImageGhostsTIME
-          log->EndEvent("vtkSQImageGhosts::Integrate");
+          #if defined vtkSQFieldTracerTIME
+          log->EndEvent("vtkSQFieldTracer::Integrate");
           #endif
           return;
           }
@@ -1462,8 +1470,8 @@ void vtkSQFieldTracer::IntegrateOne(
     #endif
     }
 
-  #if defined vtkSQImageGhostsTIME
-  log->EndEvent("vtkSQImageGhosts::Integrate");
+  #if defined vtkSQFieldTracerTIME
+  log->EndEvent("vtkSQFieldTracer::Integrate");
   #endif
 
   return;

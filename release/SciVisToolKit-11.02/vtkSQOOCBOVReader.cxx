@@ -244,7 +244,6 @@ vtkDataSet *vtkSQOOCBOVReader::ReadNeighborhood(
 
     const CartesianExtent &blockExt=descr->GetMemExtent();
 
-
     if (this->Reader->DataSetTypeIsImage())
       {
       ImageDecomp *idec=dynamic_cast<ImageDecomp*>(this->DomainDecomp);
