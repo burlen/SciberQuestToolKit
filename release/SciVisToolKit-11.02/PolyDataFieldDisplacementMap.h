@@ -6,10 +6,10 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#ifndef PolyDataFieldTopologyMap_h
-#define PolyDataFieldTopologyMap_h
+#ifndef PolyDataFieldDisplacementMap_h
+#define PolyDataFieldDisplacementMap_h
 
-#include "FieldTopologyMapData.h"
+#include "FieldDisplacementMapData.h"
 
 #include<vector>
 using std::vector;
@@ -33,10 +33,10 @@ Abstract collection of datastructures needed to build the topology map.
 The details of building the map change drastically depending on the input
 data type. Concrete classes deal with these specifics.
 */
-class PolyDataFieldTopologyMap : public FieldTopologyMapData
+class PolyDataFieldDisplacementMap : public FieldDisplacementMapData
 {
 public:
-  PolyDataFieldTopologyMap()
+  PolyDataFieldDisplacementMap()
         :
     SourceGen(0),
     SourcePts(0),
@@ -44,9 +44,9 @@ public:
     OutPts(0),
     OutCells(0),
     CellType(0)
-      {  }
+  {}
 
-  virtual ~PolyDataFieldTopologyMap();
+  virtual ~PolyDataFieldDisplacementMap();
 
   // Description:
   // Set the dataset to be used as the seed source. Use either
@@ -69,7 +69,6 @@ public:
   // Convert a list of seed cells (sourceIds) to FieldLine
   // structures and build the output (if any).
   virtual int InsertCells(IdBlock *SourceIds);
-
 
 private:
   void ClearSource();

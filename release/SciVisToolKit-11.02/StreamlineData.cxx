@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
@@ -52,7 +52,7 @@ void StreamlineData::ClearOut()
 //-----------------------------------------------------------------------------
 void StreamlineData::SetSource(vtkSQCellGenerator *sourceGen)
 {
-  sqErrorMacro(pCerr(),"Cell generator source is not supported."); 
+  sqErrorMacro(pCerr(),"Cell generator source is not supported.");
 }
 
 //-----------------------------------------------------------------------------
@@ -128,7 +128,7 @@ void StreamlineData::SetSource(vtkDataSet *s)
 //-----------------------------------------------------------------------------
 void StreamlineData::SetOutput(vtkDataSet *o)
 {
-  this->FieldTraceData::SetOutput(o);
+  this->FieldTopologyMapData::SetOutput(o);
 
   this->ClearOut();
 
@@ -160,7 +160,7 @@ int StreamlineData::InsertCells(IdBlock *SourceIds)
   vtkIdType startId=SourceIds->first();
   vtkIdType endId=SourceIds->last();
 
-  // Cells are sequentially acccessed (not random) so explicitly 
+  // Cells are sequentially acccessed (not random) so explicitly
   // skip all cells we aren't interested in.
   this->SourceCells->InitTraversal();
   for (vtkIdType i=0; i<startId; ++i)
@@ -271,5 +271,3 @@ int StreamlineData::SyncGeometry()
 
   return 1;
 }
-
-

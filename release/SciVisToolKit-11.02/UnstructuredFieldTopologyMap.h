@@ -2,14 +2,14 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
 #ifndef UnstructuredFieldTopologyMap_h
 #define UnstructuredFieldTopologyMap_h
 
-#include "FieldTraceData.h"
+#include "FieldTopologyMapData.h"
 
 #include<vector>
 using std::vector;
@@ -33,7 +33,7 @@ Abstract collection of datastructures needed to build the topology map.
 The details of building the map change drastically depending on the input
 data type. Concrete classes deal with these specifics.
 */
-class UnstructuredFieldTopologyMap : public FieldTraceData
+class UnstructuredFieldTopologyMap : public FieldTopologyMapData
 {
 public:
   UnstructuredFieldTopologyMap()

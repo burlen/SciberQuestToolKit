@@ -58,6 +58,8 @@ Copyright 2008 SciberQuest Inc.
 #include "FieldTraceData.h"
 #include "PolyDataFieldTopologyMap.h"
 #include "UnstructuredFieldTopologyMap.h"
+#include "PolyDataFieldDisplacementMap.h"
+#include "UnstructuredFieldDisplacementMap.h"
 #include "StreamlineData.h"
 #include "PoincareMapData.h"
 #include "XMLUtils.h"
@@ -70,8 +72,13 @@ Copyright 2008 SciberQuest Inc.
 using std::min;
 using std::max;
 
-#define vtkSQFieldTracerDEBUG 0
-#define vtkSQFieldTracerTIME
+#define vtkSQFieldTracerDEBUG 1
+
+// TODO
+// logging current;ly chews through a tremendous amount of ram
+// on the master rank, probably due to log events placed in 
+// integrate dynamic.
+//#define vtkSQFieldTracerTIME
 
 #ifndef vtkSQFieldTracerDEBUG
   // 0 -- no output
@@ -430,7 +437,7 @@ void vtkSQFieldTracer::SetIntegratorType(int type)
   pCerr() << "===============================vtkSQFieldTracer::SetIntegratorType" << endl;
   #endif
 
-  if (this->IntegratorType==type) 
+  if (this->IntegratorType==type)
     {
     return;
     }
@@ -714,7 +721,14 @@ int vtkSQFieldTracer::RequestData(
       if ((sourcePd=dynamic_cast<vtkPolyData*>(source))
         && (outPd=dynamic_cast<vtkPolyData*>(out)))
         {
-        traceData=new PolyDataFieldTopologyMap;
+        if (this->Mode==MODE_TOPOLOGY)
+          {
+          traceData=new PolyDataFieldTopologyMap;
+          }
+        else
+          {
+          traceData=new PolyDataFieldDisplacementMap;
+          }
         if (sourceGen)
           {
           traceData->SetSource(sourceGen);
@@ -723,17 +737,20 @@ int vtkSQFieldTracer::RequestData(
           {
           traceData->SetSource(sourcePd);
           }
-        if (this->Mode==MODE_DISPLACEMENT)
-          {
-          traceData->SetComputeDisplacementMap(1);
-          }
         traceData->SetOutput(outPd);
         }
       else
       if ((sourceUg=dynamic_cast<vtkUnstructuredGrid*>(source))
         && (outUg=dynamic_cast<vtkUnstructuredGrid*>(out)))
         {
-        traceData=new UnstructuredFieldTopologyMap;
+        if (this->Mode==MODE_TOPOLOGY)
+          {
+          traceData=new UnstructuredFieldTopologyMap;
+          }
+        else
+          {
+          traceData=new UnstructuredFieldDisplacementMap;
+          }
         if (sourceGen)
           {
           traceData->SetSource(sourceGen);
@@ -741,10 +758,6 @@ int vtkSQFieldTracer::RequestData(
         else
           {
           traceData->SetSource(sourceUg);
-          }
-        if (this->Mode==MODE_DISPLACEMENT)
-          {
-          traceData->SetComputeDisplacementMap(1);
           }
         traceData->SetOutput(outUg);
         }
@@ -965,7 +978,7 @@ int vtkSQFieldTracer::IntegrateDynamic(
 
       // now that all the worker that need work have it. Do a small amount
       // of work while the others are busy.
-      if (!this->MODE_POINCARE || nProcs==1)
+      if (!(this->Mode==MODE_POINCARE) || (nProcs==1))
         {
         IdBlock sourceIds;
         moreWork=Q.GetBlock(sourceIds,masterBlockSize);

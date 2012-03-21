@@ -106,7 +106,9 @@ set(CXX_SOURCES
   CPUConvolutionDriver.cxx
   DebugUtil.cxx
   IdBlock.cxx
+  FieldDisplacementMapData.cxx
   FieldLine.cxx
+  FieldTopologyMapData.cxx
   FieldTraceData.cxx
   FlatIndex.cxx
   FsUtils.cxx
@@ -116,6 +118,7 @@ set(CXX_SOURCES
   ImageDecomp.cxx
   IntersectionSet.cxx
   PolyDataCellCopier.cxx
+  PolyDataFieldDisplacementMap.cxx
   PolyDataFieldTopologyMap.cxx
   PoincareMapData.cxx
   postream.cxx
@@ -126,6 +129,7 @@ set(CXX_SOURCES
   SystemInterfaceFactory.cxx
   TerminationCondition.cxx
   TopologicalClassSelector.cxx
+  UnstructuredFieldDisplacementMap.cxx
   UnstructuredFieldTopologyMap.cxx
   UnstructuredGridCellCopier.cxx
   vtkSQHemisphereSourceConfigurationWriter.cxx

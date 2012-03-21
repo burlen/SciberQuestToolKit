@@ -6,7 +6,7 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-#include "PolyDataFieldTopologyMap.h"
+#include "PolyDataFieldDisplacementMap.h"
 
 #include "SQMacros.h"
 #include "IdBlock.h"
@@ -24,14 +24,14 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkCellType.h"
 
 //-----------------------------------------------------------------------------
-PolyDataFieldTopologyMap::~PolyDataFieldTopologyMap()
+PolyDataFieldDisplacementMap::~PolyDataFieldDisplacementMap()
 {
   this->ClearSource();
   this->ClearOut();
 }
 
 //-----------------------------------------------------------------------------
-void PolyDataFieldTopologyMap::ClearSource()
+void PolyDataFieldDisplacementMap::ClearSource()
 {
   if (this->SourceGen){ this->SourceGen->Delete(); }
   if (this->SourcePts){ this->SourcePts->Delete(); }
@@ -44,7 +44,7 @@ void PolyDataFieldTopologyMap::ClearSource()
 }
 
 //-----------------------------------------------------------------------------
-void PolyDataFieldTopologyMap::ClearOut()
+void PolyDataFieldDisplacementMap::ClearOut()
 {
   if (this->OutPts){ this->OutPts->Delete(); }
   if (this->OutCells){ this->OutCells->Delete(); }
@@ -55,7 +55,7 @@ void PolyDataFieldTopologyMap::ClearOut()
 }
 
 //-----------------------------------------------------------------------------
-void PolyDataFieldTopologyMap::SetSource(vtkSQCellGenerator *sourceGen)
+void PolyDataFieldDisplacementMap::SetSource(vtkSQCellGenerator *sourceGen)
 {
   if (this->SourceGen==sourceGen){ return; }
   if (this->SourceGen){ this->SourceGen->Delete(); }
@@ -69,7 +69,7 @@ void PolyDataFieldTopologyMap::SetSource(vtkSQCellGenerator *sourceGen)
 }
 
 //-----------------------------------------------------------------------------
-void PolyDataFieldTopologyMap::SetSource(vtkDataSet *s)
+void PolyDataFieldDisplacementMap::SetSource(vtkDataSet *s)
 {
   this->ClearSource();
 
@@ -110,9 +110,9 @@ void PolyDataFieldTopologyMap::SetSource(vtkDataSet *s)
 }
 
 //-----------------------------------------------------------------------------
-void PolyDataFieldTopologyMap::SetOutput(vtkDataSet *o)
+void PolyDataFieldDisplacementMap::SetOutput(vtkDataSet *o)
 {
-  this->FieldTraceData::SetOutput(o);
+  this->FieldDisplacementMapData::SetOutput(o);
 
   this->ClearOut();
 
@@ -147,7 +147,7 @@ void PolyDataFieldTopologyMap::SetOutput(vtkDataSet *o)
 }
 
 //-----------------------------------------------------------------------------
-int PolyDataFieldTopologyMap::InsertCells(IdBlock *SourceIds)
+int PolyDataFieldDisplacementMap::InsertCells(IdBlock *SourceIds)
 {
   if (this->SourceGen)
     {
@@ -157,7 +157,7 @@ int PolyDataFieldTopologyMap::InsertCells(IdBlock *SourceIds)
 }
 
 //-----------------------------------------------------------------------------
-int PolyDataFieldTopologyMap::InsertCellsFromGenerator(IdBlock *SourceIds)
+int PolyDataFieldDisplacementMap::InsertCellsFromGenerator(IdBlock *SourceIds)
 {
   vtkIdType startCellId=SourceIds->first();
   vtkIdType nCellsLocal=SourceIds->size();
@@ -170,9 +170,6 @@ int PolyDataFieldTopologyMap::InsertCellsFromGenerator(IdBlock *SourceIds)
 
   vtkIdType nOutPts=this->OutPts->GetNumberOfTuples();
   vtkIdType polyId=startCellId;
-
-  int lId=this->Lines.size();
-  this->Lines.resize(lId+nCellsLocal,0);
 
   vector<vtkIdType> sourcePtIds;
   vector<float> sourcePts;
@@ -200,8 +197,7 @@ int PolyDataFieldTopologyMap::InsertCellsFromGenerator(IdBlock *SourceIds)
     // Get location to write new point. assumes we need to copy all
     // but this is wrong as there will be many duplicates. ignored.
     float *pOutPts=this->OutPts->WritePointer(3*nOutPts,3*nSourcePtIds);
-    // the seed point is the center of the cell
-    double seed[3]={0.0};
+
     // transfer from input to output (only what we own)
     for (vtkIdType j=0; j<nSourcePtIds; ++j,++pOutCells)
       {
@@ -216,11 +212,17 @@ int PolyDataFieldTopologyMap::InsertCellsFromGenerator(IdBlock *SourceIds)
         pOutPts[0]=sourcePts[idx  ];
         pOutPts[1]=sourcePts[idx+1];
         pOutPts[2]=sourcePts[idx+2];
-        pOutPts+=3;
 
         // insert the new point id.
         *pOutCells=nOutPts;
-        ++nOutPts;
+
+        // compute a field line from this point
+        FieldLine *line=new FieldLine(pOutPts,nOutPts);
+        line->AllocateTrace();
+        this->Lines.push_back(line);
+
+        nOutPts+=1;
+        pOutPts+=3;
         }
       else
         {
@@ -228,31 +230,20 @@ int PolyDataFieldTopologyMap::InsertCellsFromGenerator(IdBlock *SourceIds)
         // insert the other point id.
         *pOutCells=(*ret.first).second;
         }
-      // compute contribution to cell center.
-      seed[0]+=sourcePts[idx  ];
-      seed[1]+=sourcePts[idx+1];
-      seed[2]+=sourcePts[idx+2];
       }
-    // finsih the seed point computation (at cell center).
-    seed[0]/=nSourcePtIds;
-    seed[1]/=nSourcePtIds;
-    seed[2]/=nSourcePtIds;
 
-    this->Lines[lId]=new FieldLine(seed,polyId);
-    this->Lines[lId]->AllocateTrace();
     ++polyId;
-    ++lId;
     }
   // correct the length of the point array, above we assumed 
   // that all points from each cell needed to be inserted
   // and allocated that much space.
   this->OutPts->Resize(nOutPts);
 
-  return nCellsLocal;
+  return this->Lines.size();
 }
 
 //-----------------------------------------------------------------------------
-int PolyDataFieldTopologyMap::InsertCellsFromDataset(IdBlock *SourceIds)
+int PolyDataFieldDisplacementMap::InsertCellsFromDataset(IdBlock *SourceIds)
 {
   vtkIdType startCellId=SourceIds->first();
   vtkIdType nCellsLocal=SourceIds->size();
@@ -276,10 +267,6 @@ int PolyDataFieldTopologyMap::InsertCellsFromDataset(IdBlock *SourceIds)
   vtkIdType insertLoc=outCells->GetNumberOfTuples();
 
   vtkIdType nOutPts=this->OutPts->GetNumberOfTuples();
-  vtkIdType polyId=startCellId;
-
-  int lId=this->Lines.size();
-  this->Lines.resize(lId+nCellsLocal,0);
 
   // For each cell asigned to us we'll get its center (this is the seed point)
   // and build corresponding cell in the output, The output only will have
@@ -302,8 +289,7 @@ int PolyDataFieldTopologyMap::InsertCellsFromDataset(IdBlock *SourceIds)
     // Get location to write new point. assumes we need to copy all
     // but this is wrong as there will be many duplicates. ignored.
     float *pOutPts=this->OutPts->WritePointer(3*nOutPts,3*nPtIds);
-    // the  point we will use the center of the cell
-    double seed[3]={0.0};
+
     // transfer from input to output (only what we own)
     for (vtkIdType j=0; j<nPtIds; ++j,++pOutCells)
       {
@@ -318,11 +304,17 @@ int PolyDataFieldTopologyMap::InsertCellsFromDataset(IdBlock *SourceIds)
         pOutPts[0]=pSourcePts[idx  ];
         pOutPts[1]=pSourcePts[idx+1];
         pOutPts[2]=pSourcePts[idx+2];
-        pOutPts+=3;
 
         // insert the new point id.
         *pOutCells=nOutPts;
-        ++nOutPts;
+
+        // compute a field line form this point
+        FieldLine *line=new FieldLine(pOutPts,nOutPts);
+        line->AllocateTrace();
+        this->Lines.push_back(line);
+
+        nOutPts+=1;
+        pOutPts+=3;
         }
       else
         {
@@ -330,25 +322,12 @@ int PolyDataFieldTopologyMap::InsertCellsFromDataset(IdBlock *SourceIds)
         // insert the other point id.
         *pOutCells=(*ret.first).second;
         }
-      // compute contribution to cell center.
-      seed[0]+=pSourcePts[idx  ];
-      seed[1]+=pSourcePts[idx+1];
-      seed[2]+=pSourcePts[idx+2];
       }
-    // finsih the seed point computation (at cell center).
-    seed[0]/=nPtIds;
-    seed[1]/=nPtIds;
-    seed[2]/=nPtIds;
-
-    this->Lines[lId]=new FieldLine(seed,polyId);
-    this->Lines[lId]->AllocateTrace();
-    ++polyId;
-    ++lId;
     }
   // correct the length of the point array, above we assumed
   // that all points from each cell needed to be inserted
   // and allocated that much space.
   this->OutPts->Resize(nOutPts);
 
-  return nCellsLocal;
+  return this->Lines.size();
 }

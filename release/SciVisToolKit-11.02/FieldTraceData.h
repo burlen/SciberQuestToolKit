@@ -35,11 +35,6 @@ public:
   virtual ~FieldTraceData();
 
   /**
-  Enable/disable the computation of displacement maps.
-  */
-  void SetComputeDisplacementMap(int enable);
-
-  /**
   Set the dataset to be used as the seed source. Use either
   a dataset or a cell generator. The dataset explicitly contains
   all geometry that will be accessed.
@@ -57,7 +52,7 @@ public:
   /**
   Copy the IntersectColor and SourceId array into the output.
   */
-  virtual void SetOutput(vtkDataSet *o);
+  virtual void SetOutput(vtkDataSet *o)=0;
 
   /**
   compute seed points (centred on cells of input). Copy the cells
@@ -88,13 +83,13 @@ public:
   Move scalar data (IntersectColor, SourceId) from the internal
   structure into the vtk output data.
   */
-  virtual int SyncScalars();
+  virtual int SyncScalars()=0;
 
   /**
   Move field line geometry (trace) from the internal structure
   into the vtk output data.
   */
-  virtual int SyncGeometry(){ return 0; }
+  virtual int SyncGeometry()=0;
 
   /**
   Access to the termination object.
@@ -106,18 +101,9 @@ public:
   or all posibilities may be included. The latter is better for temporal
   animations.
   */
-  virtual void PrintLegend(int reduce);
+  virtual void PrintLegend(int reduce){}
 
 protected:
-  int *Append(vtkIntArray *ia, int nn);
-
-protected:
-  int ComputeDisplacement;
-  vtkIntArray *IntersectColor;
-  vtkFloatArray *Displacement;
-  vtkFloatArray *FwdDisplacement;
-  vtkFloatArray *BwdDisplacement;
-  int *pIntersectColor;
   vector<FieldLine *> Lines;
   TerminationCondition *Tcon;
 };

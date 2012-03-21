@@ -2,11 +2,11 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
-#include "UnstructuredFieldTopologyMap.h"
+#include "UnstructuredFieldDisplacementMap.h"
 
 #include "IdBlock.h"
 #include "FieldLine.h"
@@ -21,14 +21,14 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkIdTypeArray.h"
 
 //-----------------------------------------------------------------------------
-UnstructuredFieldTopologyMap::~UnstructuredFieldTopologyMap()
+UnstructuredFieldDisplacementMap::~UnstructuredFieldDisplacementMap()
 {
   this->ClearSource();
   this->ClearOut();
 }
 
 //-----------------------------------------------------------------------------
-void UnstructuredFieldTopologyMap::ClearSource()
+void UnstructuredFieldDisplacementMap::ClearSource()
 {
   if (this->SourceGen){ this->SourceGen->Delete(); }
   if (this->SourcePts){ this->SourcePts->Delete(); }
@@ -42,7 +42,7 @@ void UnstructuredFieldTopologyMap::ClearSource()
 }
 
 //-----------------------------------------------------------------------------
-void UnstructuredFieldTopologyMap::ClearOut()
+void UnstructuredFieldDisplacementMap::ClearOut()
 {
   if (this->OutPts){ this->OutPts->Delete(); }
   if (this->OutCells){ this->OutCells->Delete(); }
@@ -56,7 +56,7 @@ void UnstructuredFieldTopologyMap::ClearOut()
 }
 
 //-----------------------------------------------------------------------------
-void UnstructuredFieldTopologyMap::SetSource(vtkSQCellGenerator *sourceGen)
+void UnstructuredFieldDisplacementMap::SetSource(vtkSQCellGenerator *sourceGen)
 {
   if (this->SourceGen==sourceGen){ return; }
   if (this->SourceGen){ this->SourceGen->Delete(); }
@@ -65,7 +65,7 @@ void UnstructuredFieldTopologyMap::SetSource(vtkSQCellGenerator *sourceGen)
 }
 
 //-----------------------------------------------------------------------------
-void UnstructuredFieldTopologyMap::SetSource(vtkDataSet *s)
+void UnstructuredFieldDisplacementMap::SetSource(vtkDataSet *s)
 {
   this->ClearSource();
 
@@ -92,9 +92,9 @@ void UnstructuredFieldTopologyMap::SetSource(vtkDataSet *s)
 }
 
 //-----------------------------------------------------------------------------
-void UnstructuredFieldTopologyMap::SetOutput(vtkDataSet *o)
+void UnstructuredFieldDisplacementMap::SetOutput(vtkDataSet *o)
 {
-  this->FieldTraceData::SetOutput(o);
+  this->FieldDisplacementMapData::SetOutput(o);
 
   this->ClearOut();
 
@@ -120,7 +120,7 @@ void UnstructuredFieldTopologyMap::SetOutput(vtkDataSet *o)
 }
 
 //-----------------------------------------------------------------------------
-int UnstructuredFieldTopologyMap::InsertCells(IdBlock *SourceIds)
+int UnstructuredFieldDisplacementMap::InsertCells(IdBlock *SourceIds)
 {
   if (this->SourceGen)
     {
@@ -130,7 +130,7 @@ int UnstructuredFieldTopologyMap::InsertCells(IdBlock *SourceIds)
 }
 
 //-----------------------------------------------------------------------------
-int UnstructuredFieldTopologyMap::InsertCellsFromGenerator(IdBlock *SourceIds)
+int UnstructuredFieldDisplacementMap::InsertCellsFromGenerator(IdBlock *SourceIds)
 {
   vtkIdType startCellId=SourceIds->first();
   vtkIdType nCellsLocal=SourceIds->size();
@@ -155,10 +155,6 @@ int UnstructuredFieldTopologyMap::InsertCellsFromGenerator(IdBlock *SourceIds)
   // output cell locations
   vtkIdType endOfLocs=this->OutLocs->GetNumberOfTuples();
   vtkIdType *pOutLocs=this->OutLocs->WritePointer(endOfLocs,nCellsLocal);
-
-  // field lines
-  int lId=this->Lines.size();
-  this->Lines.resize(lId+nCellsLocal,0);
 
   vector<float> sourcePts;
   vector<vtkIdType> sourceIds;
@@ -200,8 +196,7 @@ int UnstructuredFieldTopologyMap::InsertCellsFromGenerator(IdBlock *SourceIds)
     // Get location to write new point. assumes we need to copy all
     // but this is wrong as there will be many duplicates. ignored.
     float *pOutPts=this->OutPts->WritePointer(3*nOutPts,3*nPtIds);
-    // the  point we will use the center of the cell
-    double seed[3]={0.0};
+
     // transfer from input to output (only what we own)
     for (vtkIdType j=0; j<nPtIds; ++j)
       {
@@ -216,40 +211,33 @@ int UnstructuredFieldTopologyMap::InsertCellsFromGenerator(IdBlock *SourceIds)
         pOutPts[0]=sourcePts[idx  ];
         pOutPts[1]=sourcePts[idx+1];
         pOutPts[2]=sourcePts[idx+2];
+
+        FieldLine *line=new FieldLine(pOutPts,nOutPts);
+        line->AllocateTrace();
+        this->Lines.push_back(line);
+
         pOutPts+=3;
-        ++nOutPts;
+        nOutPts+=1;
         }
 
       // insert the point id.
       *pOutCells=(*ret.first).second;
       ++pOutCells;
-
-      // compute contribution to cell center.
-      seed[0]+=sourcePts[idx  ];
-      seed[1]+=sourcePts[idx+1];
-      seed[2]+=sourcePts[idx+2];
       }
-    // finsih the seed point computation (at cell center).
-    seed[0]/=nPtIds;
-    seed[1]/=nPtIds;
-    seed[2]/=nPtIds;
 
-    this->Lines[lId]=new FieldLine(seed,sourceCellId);
-    this->Lines[lId]->AllocateTrace();
     ++sourceCellId;
-    ++lId;
     }
 
-  // correct the length of the point array, above we assumed 
+  // correct the length of the point array, above we assumed
   // that all points from each cell needed to be inserted
   // and allocated that much space.
   this->OutPts->Resize(nOutPts);
 
-  return nCellsLocal;
+  return this->Lines.size();
 }
 
 //-----------------------------------------------------------------------------
-int UnstructuredFieldTopologyMap::InsertCellsFromDataset(IdBlock *SourceIds)
+int UnstructuredFieldDisplacementMap::InsertCellsFromDataset(IdBlock *SourceIds)
 {
   vtkIdType startCellId=SourceIds->first();
   vtkIdType nCellsLocal=SourceIds->size();
@@ -285,10 +273,6 @@ int UnstructuredFieldTopologyMap::InsertCellsFromDataset(IdBlock *SourceIds)
   vtkIdType endOfLocs=this->OutLocs->GetNumberOfTuples();
   vtkIdType *pOutLocs=this->OutLocs->WritePointer(endOfLocs,nCellsLocal);
 
-  // field lines
-  int lId=this->Lines.size();
-  this->Lines.resize(lId+nCellsLocal,0);
-
   vtkIdType sourceCellId=startCellId;
 
   // For each cell asigned to us we'll get its center to use as a
@@ -323,8 +307,7 @@ int UnstructuredFieldTopologyMap::InsertCellsFromDataset(IdBlock *SourceIds)
     // Get location to write new point. assumes we need to copy all
     // but this is wrong as there will be many duplicates. ignored.
     float *pOutPts=this->OutPts->WritePointer(3*nOutPts,3*nPtIds);
-    // the  point we will use the center of the cell
-    double seed[3]={0.0};
+
     // transfer from input to output (only what we own)
     for (vtkIdType j=0; j<nPtIds; ++j)
       {
@@ -339,11 +322,16 @@ int UnstructuredFieldTopologyMap::InsertCellsFromDataset(IdBlock *SourceIds)
         pOutPts[0]=pSourcePts[idx  ];
         pOutPts[1]=pSourcePts[idx+1];
         pOutPts[2]=pSourcePts[idx+2];
-        pOutPts+=3;
 
         // insert the new point id.
         *pOutCells=nOutPts;
-        ++nOutPts;
+
+        FieldLine *line=new FieldLine(pOutPts,nOutPts);
+        line->AllocateTrace();
+        this->Lines.push_back(line);
+
+        pOutPts+=3;
+        nOutPts+=1;
         }
       else
         {
@@ -351,28 +339,17 @@ int UnstructuredFieldTopologyMap::InsertCellsFromDataset(IdBlock *SourceIds)
         // insert the other point id.
         *pOutCells=(*ret.first).second;
         }
+
       ++pOutCells;
-
-      // compute contribution to cell center.
-      seed[0]+=pSourcePts[idx  ];
-      seed[1]+=pSourcePts[idx+1];
-      seed[2]+=pSourcePts[idx+2];
       }
-    // finsih the seed point computation (at cell center).
-    seed[0]/=nPtIds;
-    seed[1]/=nPtIds;
-    seed[2]/=nPtIds;
 
-    this->Lines[lId]=new FieldLine(seed,sourceCellId);
-    this->Lines[lId]->AllocateTrace();
     ++sourceCellId;
-    ++lId;
     }
 
-  // correct the length of the point array, above we assumed 
+  // correct the length of the point array, above we assumed
   // that all points from each cell needed to be inserted
   // and allocated that much space.
   this->OutPts->Resize(nOutPts);
 
-  return nCellsLocal;
+  return this->Lines.size();
 }

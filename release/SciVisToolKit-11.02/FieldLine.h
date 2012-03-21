@@ -96,7 +96,6 @@ private:
   unsigned long long SeedId;  // cell id in origniating dataset
   int FwdTerminator;          // code indicating how fwd trace ended
   int BwdTerminator;          // code indicating how bwd trace ended
-  float MinSegmentLength;     // minimum arc length for a point to be added to output
 };
 
 //-----------------------------------------------------------------------------
