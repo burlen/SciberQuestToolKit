@@ -225,10 +225,15 @@ int main(int argc, char **argv)
   vtkSQHemisphereSource *hs=vtkSQHemisphereSource::New();
   if (!hs->Initialize(root))
     {
-    r->Delete();
+    // termination surfaces are not neccessary when using
+    // in displacement map mode. assume its ok for now
+    // verify later.
     hs->Delete();
-    sqErrorMacro(pCerr(),"Failed to initialize terminator surfaces.");
-    return SQ_EXIT_ERROR;
+    hs=0;
+
+    // r->Delete();
+    //sqErrorMacro(pCerr(),"Failed to initialize terminator surfaces.");
+    //return SQ_EXIT_ERROR;
     }
 
   // seed source
@@ -255,7 +260,7 @@ int main(int argc, char **argv)
   else
     {
     r->Delete();
-    hs->Delete();
+    if (hs){ hs->Delete(); }
     vs->Delete();
     ps->Delete();
     sqErrorMacro(pCerr(),"Failed to initialize seeds.");
@@ -267,18 +272,21 @@ int main(int argc, char **argv)
   if (!ftm->Initialize(root))
     {
     r->Delete();
-    hs->Delete();
+    if (hs){ hs->Delete(); }
     ss->Delete();
     ftm->Delete();
     sqErrorMacro(pCerr(),"Failed to initialize field tracer.");
     return SQ_EXIT_ERROR;
     }
-  ftm->SetMode(vtkSQFieldTracer::MODE_TOPOLOGY);
   ftm->SetSqueezeColorMap(0);
 
   ftm->AddVectorInputConnection(r->GetOutputPort(0));
-  ftm->AddTerminatorInputConnection(hs->GetOutputPort(0));
-  ftm->AddTerminatorInputConnection(hs->GetOutputPort(1));
+  if (hs)
+    {
+    ftm->AddTerminatorInputConnection(hs->GetOutputPort(0));
+    ftm->AddTerminatorInputConnection(hs->GetOutputPort(1));
+    }
+
   ftm->AddSeedPointInputConnection(ss->GetOutputPort(0));
   ftm->SetInputArrayToProcess(
         0,
@@ -287,9 +295,6 @@ int main(int argc, char **argv)
         vtkDataObject::FIELD_ASSOCIATION_POINTS,
         arrays[0].c_str());
 
-  r->Delete();
-  hs->Delete();
-  ss->Delete();
 
   vtkXMLPDataSetWriter *w=vtkXMLPDataSetWriter::New();
   //w->SetDataModeToBinary();
@@ -320,6 +325,10 @@ int main(int argc, char **argv)
   if (nTimes<1)
     {
     sqErrorMacro(pCerr(),"Error: No timesteps.");
+    if (hs) { hs->Delete(); }
+    r->Delete();
+    ss->Delete();
+    w->Delete();
     return SQ_EXIT_ERROR;
     }
   vector<double> times(timeInfo,timeInfo+nTimes);
@@ -342,12 +351,20 @@ int main(int argc, char **argv)
     if (startTimeIdx<0)
       {
       sqErrorMacro(pCerr(),"Invalid start time " << startTimeIdx << ".");
+      if (hs) { hs->Delete(); }
+      r->Delete();
+      ss->Delete();
+      w->Delete();
       return SQ_EXIT_ERROR;
       }
 
     endTimeIdx=IndexOf(endTime,&times[0],0,nTimes-1);
     if (endTimeIdx<0)
       {
+      if (hs) { hs->Delete(); }
+      r->Delete();
+      ss->Delete();
+      w->Delete();
       sqErrorMacro(pCerr(),"Invalid end time " << endTimeIdx << ".");
       return SQ_EXIT_ERROR;
       }
@@ -373,6 +390,10 @@ int main(int argc, char **argv)
       sqErrorMacro(pCerr(),
           << "Failed to mkdir " << outputPath << "." << endl
           << "Error: " << sErr << ".");
+      if (hs) { hs->Delete(); }
+      r->Delete();
+      ss->Delete();
+      w->Delete();
       return SQ_EXIT_ERROR;
       }
     }
@@ -403,6 +424,10 @@ int main(int argc, char **argv)
         sqErrorMacro(pCerr(),
             << "Failed to mkdir " << fns.str() << "."
             << "Error: " << sErr << ".");
+        if (hs) { hs->Delete(); }
+        r->Delete();
+        ss->Delete();
+        w->Delete();
         return SQ_EXIT_ERROR;
         }
       }
@@ -418,6 +443,10 @@ int main(int argc, char **argv)
       pCerr() << "Wrote: " << fns.str().c_str() << "." << endl;
       }
     }
+
+  if (hs) { hs->Delete(); }
+  r->Delete();
+  ss->Delete();
   w->Delete();
 
   free(configName);
@@ -428,4 +457,3 @@ int main(int argc, char **argv)
 
   return SQ_EXIT_SUCCESS;
 }
-

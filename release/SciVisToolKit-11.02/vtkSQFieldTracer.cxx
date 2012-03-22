@@ -76,7 +76,7 @@ using std::max;
 
 // TODO
 // logging current;ly chews through a tremendous amount of ram
-// on the master rank, probably due to log events placed in 
+// on the master rank, probably due to log events placed in
 // integrate dynamic.
 //#define vtkSQFieldTracerTIME
 
@@ -122,7 +122,7 @@ vtkSQFieldTracer::vtkSQFieldTracer()
   SqueezeColorMap(0)
 {
   #if vtkSQFieldTracerDEBUG>1
-  pCerr() << "===============================vtkSQFieldTracer::vtkSQFieldTracer" << endl;
+  pCerr() << "=====vtkSQFieldTracer::vtkSQFieldTracer" << endl;
   #endif
 
   int mpiOk=0;
@@ -145,7 +145,7 @@ vtkSQFieldTracer::vtkSQFieldTracer()
 vtkSQFieldTracer::~vtkSQFieldTracer()
 {
   #if vtkSQFieldTracerDEBUG>1
-  pCerr() << "===============================vtkSQFieldTracer::~vtkSQFieldTracer" << endl;
+  pCerr() << "=====vtkSQFieldTracer::~vtkSQFieldTracer" << endl;
   #endif
   if (this->Integrator)
     {
@@ -283,7 +283,7 @@ int vtkSQFieldTracer::Initialize(vtkPVXMLElement *root)
 int vtkSQFieldTracer::FillInputPortInformation(int port, vtkInformation *info)
 {
   #if vtkSQFieldTracerDEBUG>1
-  pCerr() << "===============================vtkSQFieldTracer::FillInputPortInformation" << endl;
+  pCerr() << "=====vtkSQFieldTracer::FillInputPortInformation" << endl;
   #endif
   switch (port)
     {
@@ -314,7 +314,7 @@ int vtkSQFieldTracer::FillOutputPortInformation(
       vtkInformation *info)
 {
   #if vtkSQFieldTracerDEBUG>1
-  pCerr() << "===============================vtkSQFieldTracer::FillOutputPortInformation" << endl;
+  pCerr() << "=====vtkSQFieldTracer::FillOutputPortInformation" << endl;
   #endif
 
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkDataSet");
@@ -356,7 +356,7 @@ void vtkSQFieldTracer::AddVectorInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
   #if vtkSQFieldTracerDEBUG>1
-  pCerr() << "===============================vtkSQFieldTracer::AddDatasetInputConnectiont" << endl;
+  pCerr() << "=====vtkSQFieldTracer::AddDatasetInputConnectiont" << endl;
   #endif
 
   this->AddInputConnection(0, algOutput);
@@ -366,7 +366,7 @@ void vtkSQFieldTracer::AddVectorInputConnection(
 void vtkSQFieldTracer::ClearVectorInputConnections()
 {
   #if vtkSQFieldTracerDEBUG>1
-  pCerr() << "===============================vtkSQFieldTracer::ClearDatasetInputConnections" << endl;
+  pCerr() << "=====vtkSQFieldTracer::ClearDatasetInputConnections" << endl;
   #endif
 
   this->SetInputConnection(0, 0);
@@ -377,7 +377,7 @@ void vtkSQFieldTracer::AddSeedPointInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
   #if vtkSQFieldTracerDEBUG>1
-  pCerr() << "===============================vtkSQFieldTracer::AddSeedPointInputConnection" << endl;
+  pCerr() << "=====vtkSQFieldTracer::AddSeedPointInputConnection" << endl;
   #endif
   this->AddInputConnection(1, algOutput);
 }
@@ -386,7 +386,7 @@ void vtkSQFieldTracer::AddSeedPointInputConnection(
 void vtkSQFieldTracer::ClearSeedPointInputConnections()
 {
   #if vtkSQFieldTracerDEBUG>1
-  pCerr() << "===============================vtkSQFieldTracer::ClearSeedPointInputConnections" << endl;
+  pCerr() << "=====vtkSQFieldTracer::ClearSeedPointInputConnections" << endl;
   #endif
   this->SetInputConnection(1, 0);
 }
@@ -396,7 +396,7 @@ void vtkSQFieldTracer::AddTerminatorInputConnection(
                 vtkAlgorithmOutput* algOutput)
 {
   #if vtkSQFieldTracerDEBUG>1
-  pCerr() << "===============================vtkSQFieldTracer::AddBoundaryInputConnection" << endl;
+  pCerr() << "=====vtkSQFieldTracer::AddBoundaryInputConnection" << endl;
   #endif
   this->AddInputConnection(2, algOutput);
 }
@@ -405,7 +405,7 @@ void vtkSQFieldTracer::AddTerminatorInputConnection(
 void vtkSQFieldTracer::ClearTerminatorInputConnections()
 {
   #if vtkSQFieldTracerDEBUG>1
-  pCerr() << "===============================vtkSQFieldTracer::ClearBoundaryInputConnections" << endl;
+  pCerr() << "=====vtkSQFieldTracer::ClearBoundaryInputConnections" << endl;
   #endif
   this->SetInputConnection(2, 0);
 }
@@ -414,7 +414,7 @@ void vtkSQFieldTracer::ClearTerminatorInputConnections()
 void vtkSQFieldTracer::SetStepUnit(int unit)
 {
   #if vtkSQFieldTracerDEBUG>1
-  pCerr() << "===============================vtkSQFieldTracer::SetStepUnit" << endl;
+  pCerr() << "=====vtkSQFieldTracer::SetStepUnit" << endl;
   #endif
   if (unit==this->StepUnit )
     {
@@ -434,7 +434,7 @@ void vtkSQFieldTracer::SetStepUnit(int unit)
 void vtkSQFieldTracer::SetIntegratorType(int type)
 {
   #if vtkSQFieldTracerDEBUG>1
-  pCerr() << "===============================vtkSQFieldTracer::SetIntegratorType" << endl;
+  pCerr() << "=====vtkSQFieldTracer::SetIntegratorType" << endl;
   #endif
 
   if (this->IntegratorType==type)
@@ -480,7 +480,7 @@ int vtkSQFieldTracer::RequestDataObject(
                 vtkInformationVector* outInfos)
 {
   #if vtkSQFieldTracerDEBUG>1
-  pCerr() << "===============================vtkSQFieldTracer::RequestDataObject" << endl;
+  pCerr() << "=====vtkSQFieldTracer::RequestDataObject" << endl;
   #endif
   // get the filters output
   vtkInformation* outInfo = outInfos->GetInformationObject(0);
@@ -535,7 +535,7 @@ int vtkSQFieldTracer::RequestUpdateExtent(
                 vtkInformationVector *outInfos)
 {
   #if vtkSQFieldTracerDEBUG>1
-  pCerr() << "===============================vtkSQFieldTracer::RequestUpdateExtent" << endl;
+  pCerr() << "=====vtkSQFieldTracer::RequestUpdateExtent" << endl;
   #endif
 
   vtkInformation *outInfo = outInfos->GetInformationObject(0);
@@ -594,7 +594,7 @@ int vtkSQFieldTracer::RequestInformation(
                 vtkInformationVector *outputVector)
 {
   #if vtkSQFieldTracerDEBUG>1
-  pCerr() << "===============================vtkSQFieldTracer::RequestInformation" << endl;
+  pCerr() << "=====vtkSQFieldTracer::RequestInformation" << endl;
   #endif
 
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
@@ -610,7 +610,7 @@ int vtkSQFieldTracer::RequestData(
                 vtkInformationVector *outputVector)
 {
   #if vtkSQFieldTracerDEBUG>1
-  pCerr() << "===============================vtkSQFieldTracer::RequestData" << endl;
+  pCerr() << "=====vtkSQFieldTracer::RequestData" << endl;
   #endif
   #if defined vtkSQFieldTracerTIME
   vtkSQLog *log=vtkSQLog::GetGlobalInstance();
