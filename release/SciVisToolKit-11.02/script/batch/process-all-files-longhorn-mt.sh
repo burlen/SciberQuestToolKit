@@ -71,7 +71,7 @@ do
     echo "submitted for $ifile $ofile $step"
 
     #echo \
-    qsub -A $ACCT -V -N mt-$step -q $QUEUE -P vis -pe 8way $N_CPUS -l h_rt=$RUN_TIME \
+    qsub -A $ACCT -V -N mt-$step -q $QUEUE -P vis -pe 4way $N_CPUS -l h_rt=$RUN_TIME \
          $SVTK_INSTALL/bin/qsub-svtk-batch-longhorn.qsub \
          $SVTK_INSTALL/bin/$EXE \
          $CONFIG_FILE \

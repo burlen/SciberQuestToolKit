@@ -72,7 +72,7 @@ Copyright 2008 SciberQuest Inc.
 using std::min;
 using std::max;
 
-#define vtkSQFieldTracerDEBUG 1
+#define vtkSQFieldTracerDEBUG 0
 
 // TODO
 // logging current;ly chews through a tremendous amount of ram

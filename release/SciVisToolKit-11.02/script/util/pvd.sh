@@ -20,9 +20,12 @@ echo "<?xml version=\"1.0\"?>" > $FNAME
 echo "<VTKFile type=\"Collection\">" >> $FNAME
 echo "<Collection>" >> $FNAME
 
-for f in `find ./ -name '*.'$PEXT`
+for f in `find ./ -name '*.'$PEXT | sort`
 do
-  echo "  <DataSet timestep=\"$TIME\" group=\"\" part=\"0\" file=\"$f\"/>" >> $FNAME
+  t=`echo $f | cut -d/ -f2`;
+  t=`printf "%0.f\n" $t`;
+
+  echo "  <DataSet timestep=\"$t\" group=\"\" part=\"0\" file=\"$f\"/>" >> $FNAME
   let TIME=$TIME+1
 done
 

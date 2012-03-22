@@ -15,7 +15,7 @@ Copyright 2008 SciberQuest Inc.
 
 #include <mpi.h>
 
-#define ImageDecompDEBUG
+// #define ImageDecompDEBUG
 
 //-----------------------------------------------------------------------------
 ImageDecomp::ImageDecomp()

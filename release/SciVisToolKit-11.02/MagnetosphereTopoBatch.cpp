@@ -164,7 +164,6 @@ int main(int argc, char **argv)
     bovFileName=(char *)malloc(bovFileNameLen);
     controller->Broadcast(bovFileName,bovFileNameLen,0);
 
-
     controller->Broadcast(&outputPathLen,1,0);
     outputPath=(char *)malloc(outputPathLen);
     controller->Broadcast(outputPath,outputPathLen,0);
@@ -208,7 +207,7 @@ int main(int argc, char **argv)
   // set up reader
   vector<string> arrays;
   vtkSQBOVReader *r=vtkSQBOVReader::New();
-  if (!r->Initialize(root,bovFileName,arrays))
+  if (r->Initialize(root,bovFileName,arrays))
     {
     r->Delete();
     sqErrorMacro(pCerr(),"Failed to initialize reader.");
@@ -223,7 +222,7 @@ int main(int argc, char **argv)
 
   // terminator surfaces
   vtkSQHemisphereSource *hs=vtkSQHemisphereSource::New();
-  if (!hs->Initialize(root))
+  if (hs->Initialize(root))
     {
     // termination surfaces are not neccessary when using
     // in displacement map mode. assume its ok for now
@@ -269,7 +268,7 @@ int main(int argc, char **argv)
 
   // field topology mapper
   vtkSQFieldTracer *ftm=vtkSQFieldTracer::New();
-  if (!ftm->Initialize(root))
+  if (ftm->Initialize(root))
     {
     r->Delete();
     if (hs){ hs->Delete(); }
