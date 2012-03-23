@@ -87,7 +87,7 @@ vtkSQProcessMonitor::vtkSQProcessMonitor()
 
   // gather
   controller->Gather(&hnLen,hnLens,1,0);
-  controller->Gather(&this->Pid,pids,1,0); 
+  controller->Gather(&this->Pid,pids,1,0);
   unsigned long cap=this->ServerSystem->GetMemoryTotal();
   controller->Gather(
       (char *)&cap,
@@ -232,17 +232,8 @@ void vtkSQProcessMonitor::SetTrapFPEUnderflow(int enable)
 }
 
 //-----------------------------------------------------------------------------
-int vtkSQProcessMonitor::RequestInformation(
-      vtkInformation *request,
-      vtkInformationVector **inInfos,
-      vtkInformationVector *outInfos)
+void vtkSQProcessMonitor::UpdateMemoryUseStream()
 {
-  #if defined vtkSQProcessMonitorDEBUG
-  cerr << "===============================vtkSQProcessMonitor::RequestInformation" << endl;
-  #endif
-
-  this->vtkPolyDataAlgorithm::RequestInformation(request,inInfos,outInfos);
-
   // get the local memory use
   unsigned long localMemoryUse=this->ServerSystem->GetMemoryUsed();
 
@@ -281,6 +272,21 @@ int vtkSQProcessMonitor::RequestInformation(
     // root cleans up.
     free(remoteMemoryUse);
     }
+}
+
+//-----------------------------------------------------------------------------
+int vtkSQProcessMonitor::RequestInformation(
+      vtkInformation *request,
+      vtkInformationVector **inInfos,
+      vtkInformationVector *outInfos)
+{
+  #if defined vtkSQProcessMonitorDEBUG
+  cerr << "===============================vtkSQProcessMonitor::RequestInformation" << endl;
+  #endif
+
+  this->vtkPolyDataAlgorithm::RequestInformation(request,inInfos,outInfos);
+
+  this->UpdateMemoryUseStream();
 
   ++this->InformationMTime;
 
@@ -310,8 +316,60 @@ int vtkSQProcessMonitor::RequestData(
 }
 
 //----------------------------------------------------------------------------
+void vtkSQProcessMonitor::PrintMemoryUseStream(ostream &os)
+{
+  if (this->ConfigStream==0)
+    {
+    return;
+    }
+
+  istringstream cs(this->ConfigStream);
+
+  this->UpdateMemoryUseStream();
+  istringstream ms(this->MemoryUseStream);
+
+  if (this->WorldRank!=0)
+    {
+    return;
+    }
+
+  if (cs.good() && ms.good())
+    {
+    int serverType;
+    cs >> serverType;
+
+    int commSize;
+    cs >> commSize;
+    ms >> commSize;
+
+    for (int i=0; i<commSize; ++i)
+      {
+      string serverHostName;
+      unsigned long long serverCapacity;
+      int serverPid;
+
+      cs >> serverHostName;
+      cs >> serverPid;
+      cs >> serverCapacity;
+
+      unsigned long long memUse;
+      ms >> memUse;
+
+      double percentMemUse=(double)memUse/(double)serverCapacity;
+
+      os
+        << i << " "
+        << serverHostName << " "
+        << serverPid << " "
+        << serverCapacity << " "
+        << memUse << " "
+        << percentMemUse
+        << endl;
+      }
+    }
+}
+
+//----------------------------------------------------------------------------
 void vtkSQProcessMonitor::PrintSelf(ostream& os, vtkIndent indent)
 {
-  this->Superclass::PrintSelf(os,indent);
-  // TODO
 }

@@ -25,6 +25,7 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkSQPlaneSource.h"
 #include "vtkSQVolumeSource.h"
 #include "vtkSQHemisphereSource.h"
+#include "vtkSQProcessMonitor.h"
 #include "XMLUtils.h"
 
 #include <sstream>
@@ -398,11 +399,15 @@ int main(int argc, char **argv)
     }
   MPI_Barrier(MPI_COMM_WORLD);
 
+  vtkSQProcessMonitor *pm=vtkSQProcessMonitor::New();
+
   /// execute
   // run the pipeline for each time step, write the
   // result to disk.
   for (int idx=startTimeIdx,q=0; idx<=endTimeIdx; ++idx,++q)
     {
+    pm->PrintMemoryUseStream(cerr);
+
     double time=times[idx];
 
     exec->SetUpdateTimeStep(0,time);

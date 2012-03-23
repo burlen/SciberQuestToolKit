@@ -68,9 +68,11 @@ public:
   void SetTrapFPEOverflow(int on);
   void SetTrapFPEUnderflow(int on);
 
+  void PrintMemoryUseStream(ostream &os);
 protected:
   vtkSQProcessMonitor();
   virtual ~vtkSQProcessMonitor();
+  void UpdateMemoryUseStream();
 
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
   int RequestInformation(vtkInformation *,vtkInformationVector **,vtkInformationVector *);
