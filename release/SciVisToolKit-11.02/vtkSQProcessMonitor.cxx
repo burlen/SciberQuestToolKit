@@ -318,21 +318,15 @@ int vtkSQProcessMonitor::RequestData(
 //----------------------------------------------------------------------------
 void vtkSQProcessMonitor::PrintMemoryUseStream(ostream &os)
 {
-  if (this->ConfigStream==0)
-    {
-    return;
-    }
-
-  istringstream cs(this->ConfigStream);
-
   this->UpdateMemoryUseStream();
-  istringstream ms(this->MemoryUseStream);
 
   if (this->WorldRank!=0)
     {
     return;
     }
 
+  istringstream cs(this->ConfigStream);
+  istringstream ms(this->MemoryUseStream);
   if (cs.good() && ms.good())
     {
     int serverType;
@@ -366,6 +360,10 @@ void vtkSQProcessMonitor::PrintMemoryUseStream(ostream &os)
         << percentMemUse
         << endl;
       }
+    }
+  else
+    {
+    sqErrorMacro(pCerr(),"bad config stresm.");
     }
 }
 

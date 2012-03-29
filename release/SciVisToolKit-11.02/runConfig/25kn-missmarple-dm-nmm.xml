@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<MagnetosphereTopologyBatch>
+
+  <vtkSQBOVReader
+      decomp_dims="10 15 10"
+      block_cache_size="400"
+      meta_read="1"
+      cb_enable="0">
+       <arrays> vi </arrays>
+  </vtkSQBOVReader>
+
+  <vtkSQPlaneSource
+      origin="300 250 511.5"
+      point1="500 250 511.5"
+      point2="300 750 511.6"
+      resolution="50 125"
+      immediate_mode="0"/>
+
+  <vtkSQFieldTracer
+      mode="4"
+      integrator_type="3"
+      min_step_size="1e-8"
+      max_step_size="0.1"
+      max_error="1e-2"
+      max_number_steps="10000000"
+      max_arc_length="100000000"
+      max_integration_interval="1000"
+      null_threshold="1e-3"
+      dynamic_scheduler="1"
+      master_block_size="16"
+      worker_block_size="48"/>
+
+</MagnetosphereTopologyBatch>
