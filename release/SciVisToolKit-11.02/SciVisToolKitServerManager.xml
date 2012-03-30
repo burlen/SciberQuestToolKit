@@ -3323,6 +3323,17 @@ Copyright 2008 SciberQuest Inc.
     </DoubleVectorProperty>
 
     <DoubleVectorProperty
+        name="MaxIntegrationInterval"
+        label="Max Time Interval"
+        command="SetMaxIntegrationInterval"
+        number_of_elements="1"
+        default_values="100000000" >
+      <Documentation>
+        Maximum time interval beyond which line integration is terminated.
+      </Documentation>
+    </DoubleVectorProperty>
+
+    <DoubleVectorProperty
         name="NullThreshold"
         label="Null Threshold"
         command="SetNullThreshold"
