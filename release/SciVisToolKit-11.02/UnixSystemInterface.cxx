@@ -29,6 +29,10 @@ using std::endl;
 #include <execinfo.h>
 #include <stdio.h>
 
+#include <new>
+using std::set_new_handler;
+
+void new_backtrace_handler();
 void backtrace_handler(int sigNo, siginfo_t *sigInfo, void *context);
 
 //-----------------------------------------------------------------------------
@@ -38,6 +42,8 @@ UnixSystemInterface::UnixSystemInterface()
 {
   // get the process id
   this->Pid=getpid();
+
+  set_new_handler(new_backtrace_handler);
 }
 
 //------------------------------------------------------------------------------
@@ -101,7 +107,7 @@ void UnixSystemInterface::StackTraceOnError(int enable)
     sigaction(SIGILL,0,&saILLOrig);
     sigaction(SIGBUS,0,&saBUSOrig);
     sigaction(SIGFPE,0,&saFPEOrig);
-  
+
     // enable read, disable write
     saOrigValid=1;
 
@@ -208,6 +214,17 @@ void UnixSystemInterface::CatchUNDERFLOW(int enable)
     }
 }
 
+//*****************************************************************************
+void new_backtrace_handler()
+{
+  cerr << "[" << getpid() << "]" << endl;
+
+  void *stack[128];
+  int n=backtrace(stack,128);
+  backtrace_symbols_fd(stack,n,2);
+
+  abort();
+}
 
 //*****************************************************************************
 void backtrace_handler(
