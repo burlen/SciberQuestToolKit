@@ -82,7 +82,7 @@ vtkSQKernelConvolution::vtkSQKernelConvolution()
   EnableCUDA(0)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
-  pCerr() << "===============================vtkSQKernelConvolution::vtkSQKernelConvolution" << endl;
+  pCerr() << "=====vtkSQKernelConvolution::vtkSQKernelConvolution" << endl;
   #endif
 
   this->SetNumberOfInputPorts(1);
@@ -213,7 +213,7 @@ vtkSQKernelConvolution::vtkSQKernelConvolution()
 vtkSQKernelConvolution::~vtkSQKernelConvolution()
 {
   #ifdef vtkSQKernelConvolutionDEBUG
-  pCerr() << "===============================vtkSQKernelConvolution::~vtkSQKernelConvolution" << endl;
+  pCerr() << "=====vtkSQKernelConvolution::~vtkSQKernelConvolution" << endl;
   #endif
 
   if (this->Kernel)
@@ -230,7 +230,7 @@ vtkSQKernelConvolution::~vtkSQKernelConvolution()
 int vtkSQKernelConvolution::Initialize(vtkPVXMLElement *root)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
-  pCerr() << "===============================vtkSQKernelConvolution::Initialize" << endl;
+  pCerr() << "=====vtkSQKernelConvolution::Initialize" << endl;
   #endif
 
   vtkPVXMLElement *elem=0;
@@ -319,11 +319,43 @@ int vtkSQKernelConvolution::Initialize(vtkPVXMLElement *root)
 }
 
 //-----------------------------------------------------------------------------
+void vtkSQKernelConvolution::AddInputArray(const char *name)
+{
+  #ifdef vtkSQKernelConvolutionDEBUG
+  pCerr()
+    << "=====vtkSQKernelConvolution::AddInputArray"
+    << "name=" << name << endl;
+  #endif
+
+  if (this->InputArrays.insert(name).second)
+    {
+    cerr << "added " << name << endl;
+    this->Modified();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQKernelConvolution::ClearInputArrays()
+{
+  #ifdef vtkSQKernelConvolutionDEBUG
+  pCerr()
+    << "=====vtkSQKernelConvolution::ClearInputArrays" << endl;
+  #endif
+
+  if (this->InputArrays.size())
+    {
+    cerr << "cleared" << endl;
+    this->InputArrays.clear();
+    this->Modified();
+    }
+}
+
+//-----------------------------------------------------------------------------
 void vtkSQKernelConvolution::SetCPUDriverOptimization(int opt)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
   pCerr()
-    << "===============================vtkSQKernelConvolution::SetCPUDriverOptimization"
+    << "=====vtkSQKernelConvolution::SetCPUDriverOptimization"
     << " " << opt << endl;
   #endif
   this->CPUDriver->SetOptimization(opt);
@@ -341,7 +373,7 @@ void vtkSQKernelConvolution::SetAllMPIRanksToUseCUDA(int allUse)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
   pCerr()
-    << "===============================vtkSQKernelConvolution::SetAllMPIRanksToUseCUDA"
+    << "=====vtkSQKernelConvolution::SetAllMPIRanksToUseCUDA"
     << " " << allUse
     << endl;
   #endif
@@ -367,7 +399,7 @@ void vtkSQKernelConvolution::SetNumberOfMPIRanksToUseCUDA(int nRanks)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
   pCerr()
-    << "===============================vtkSQKernelConvolution::SetNumberOfMPIRanksToUseCUDA"
+    << "=====vtkSQKernelConvolution::SetNumberOfMPIRanksToUseCUDA"
     << " " << nRanks
     << endl;
   #endif
@@ -409,7 +441,7 @@ void vtkSQKernelConvolution::SetNumberOfActiveCUDADevices(int nActive)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
   pCerr()
-    << "===============================vtkSQKernelConvolution::SetNumberOfActiveCUDADevices"
+    << "=====vtkSQKernelConvolution::SetNumberOfActiveCUDADevices"
     << " " << nActive
     << endl;
   #endif
@@ -449,7 +481,7 @@ int vtkSQKernelConvolution::SetCUDADeviceId(int deviceId)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
   pCerr()
-    << "===============================vtkSQKernelConvolution::SetCUDADeviceId"
+    << "=====vtkSQKernelConvolution::SetCUDADeviceId"
     << " " << deviceId
     << endl;
   #endif
@@ -469,7 +501,7 @@ void vtkSQKernelConvolution::SetKernelCUDAMemoryType(int memType)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
   pCerr()
-    << "===============================vtkSQKernelConvolution::SetKernelCUDAMemoryType"
+    << "=====vtkSQKernelConvolution::SetKernelCUDAMemoryType"
     << " " << memType << endl;
   #endif
   this->CUDADriver->SetKernelMemoryType(memType);
@@ -487,7 +519,7 @@ void vtkSQKernelConvolution::SetInputCUDAMemoryType(int memType)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
   pCerr()
-    << "===============================vtkSQKernelConvolution::SetInputCUDAMemoryType"
+    << "=====vtkSQKernelConvolution::SetInputCUDAMemoryType"
     << " " << memType << endl;
   #endif
   this->CUDADriver->SetInputMemoryType(memType);
@@ -517,7 +549,7 @@ int vtkSQKernelConvolution::GetNumberOfWarpsPerCUDABlock()
 void vtkSQKernelConvolution::SetMode(int mode)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
-  pCerr() << "===============================vtkSQKernelConvolution::SetMode" << endl;
+  pCerr() << "=====vtkSQKernelConvolution::SetMode" << endl;
   #endif
 
   if (mode==this->Mode)
@@ -534,7 +566,7 @@ void vtkSQKernelConvolution::SetMode(int mode)
 void vtkSQKernelConvolution::SetKernelType(int type)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
-  pCerr() << "===============================vtkSQKernelConvolution::SetKernelType" << endl;
+  pCerr() << "=====vtkSQKernelConvolution::SetKernelType" << endl;
   #endif
 
   if (type==this->KernelType)
@@ -551,7 +583,7 @@ void vtkSQKernelConvolution::SetKernelType(int type)
 void vtkSQKernelConvolution::SetKernelWidth(int width)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
-  pCerr() << "===============================vtkSQKernelConvolution::SetKernelWidth" << endl;
+  pCerr() << "=====vtkSQKernelConvolution::SetKernelWidth" << endl;
   #endif
 
   if (width==this->KernelWidth)
@@ -574,7 +606,7 @@ void vtkSQKernelConvolution::SetKernelWidth(int width)
 int vtkSQKernelConvolution::UpdateKernel()
 {
   #ifdef vtkSQKernelConvolutionDEBUG
-  pCerr() << "===============================vtkSQKernelConvolution::UpdateKernel" << endl;
+  pCerr() << "=====vtkSQKernelConvolution::UpdateKernel" << endl;
   #endif
 
   if (!this->KernelModified)
@@ -686,7 +718,7 @@ int vtkSQKernelConvolution::RequestDataObject(
     vtkInformationVector* outInfoVec)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
-  pCerr() << "===============================vtkSQKernelConvolution::RequestDataObject" << endl;
+  pCerr() << "=====vtkSQKernelConvolution::RequestDataObject" << endl;
   #endif
 
 
@@ -716,7 +748,7 @@ int vtkSQKernelConvolution::RequestInformation(
       vtkInformationVector *outInfos)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
-  pCerr() << "===============================vtkSQKernelConvolution::RequestInformation" << endl;
+  pCerr() << "=====vtkSQKernelConvolution::RequestInformation" << endl;
   #endif
   //this->Superclass::RequestInformation(req,inInfos,outInfos);
 
@@ -784,7 +816,7 @@ int vtkSQKernelConvolution::RequestUpdateExtent(
       vtkInformationVector *outInfos)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
-  pCerr() << "===============================vtkSQKernelConvolution::RequestUpdateExtent" << endl;
+  pCerr() << "=====vtkSQKernelConvolution::RequestUpdateExtent" << endl;
   #endif
 
   typedef vtkStreamingDemandDrivenPipeline vtkSDDPipeline;
@@ -849,7 +881,7 @@ int vtkSQKernelConvolution::RequestData(
     vtkInformationVector *outInfoVec)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
-  pCerr() << "===============================vtkSQKernelConvolution::RequestData" << endl;
+  pCerr() << "=====vtkSQKernelConvolution::RequestData" << endl;
   #endif
 
   #if defined vtkSQKernelConvolutionTIME
@@ -960,56 +992,69 @@ int vtkSQKernelConvolution::RequestData(
       << endl;
     #endif
 
-    vtkDataArray *V=this->GetInputArrayToProcess(0,inImData);
-
-    if (!V->IsA("vtkFloatArray") && !V->IsA("vtkDoubleArray"))
+    set<string>::iterator it;
+    set<string>::iterator begin=this->InputArrays.begin();
+    set<string>::iterator end=this->InputArrays.end();
+    for (it=begin; it!=end; ++it)
       {
-      vtkErrorMacro(
-        << "This filter operates on vector floating point arrays."
-        << "You provided " << V->GetClassName() << ".");
-      return 1;
+      vtkDataArray *V=inImData->GetPointData()->GetArray((*it).c_str());
+      if (V==0)
+        {
+        vtkErrorMacro(
+          << "Array " << (*it).c_str()
+          << " was requested but is not present");
+        continue;
+        }
+
+      if (!V->IsA("vtkFloatArray") && !V->IsA("vtkDoubleArray"))
+        {
+        vtkErrorMacro(
+          << "This filter operates on vector floating point arrays."
+          << "You provided " << V->GetClassName() << ".");
+        return 1;
+        }
+
+      int nComps = V->GetNumberOfComponents();
+
+      vtkDataArray *W=V->NewInstance();
+      W->SetNumberOfComponents(nComps);
+      W->SetNumberOfTuples(outputTups);
+      W->SetName(V->GetName());
+
+      if (this->EnableCUDA)
+        {
+        #ifdef vtkSQKernelConvolutionDEBUG
+        pCerr() << "using the GPU" << endl;
+        #endif
+        this->CUDADriver->Convolution(
+            inputExt,
+            outputExt,
+            this->KernelExt,
+            nGhost,
+            this->Mode,
+            V,
+            W,
+            this->Kernel);
+        }
+      else
+        {
+        #ifdef vtkSQKernelConvolutionDEBUG
+        pCerr() << "using the CPU" << endl;
+        #endif
+        this->CPUDriver->Convolution(
+            inputExt,
+            outputExt,
+            this->KernelExt,
+            nGhost,
+            this->Mode,
+            V,
+            W,
+            this->Kernel);
+        }
+
+      outImData->GetPointData()->AddArray(W);
+      W->Delete();
       }
-
-    int nComps = V->GetNumberOfComponents();
-
-    vtkDataArray *W=V->NewInstance();
-    W->SetNumberOfComponents(nComps);
-    W->SetNumberOfTuples(outputTups);
-    W->SetName(V->GetName());
-
-    if (this->EnableCUDA)
-      {
-      #ifdef vtkSQKernelConvolutionDEBUG
-      pCerr() << "using the GPU" << endl;
-      #endif
-      this->CUDADriver->Convolution(
-          inputExt,
-          outputExt,
-          this->KernelExt,
-          nGhost,
-          this->Mode,
-          V,
-          W,
-          this->Kernel);
-      }
-    else
-      {
-      #ifdef vtkSQKernelConvolutionDEBUG
-      pCerr() << "using the CPU" << endl;
-      #endif
-      this->CPUDriver->Convolution(
-          inputExt,
-          outputExt,
-          this->KernelExt,
-          nGhost,
-          this->Mode,
-          V,
-          W,
-          this->Kernel);
-      }
-
-    outImData->GetPointData()->AddArray(W);
-    W->Delete();
 
     // outImData->Print(cerr);
     }
@@ -1030,7 +1075,7 @@ int vtkSQKernelConvolution::RequestData(
 void vtkSQKernelConvolution::PrintSelf(ostream& os, vtkIndent indent)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
-  pCerr() << "===============================vtkSQKernelConvolution::PrintSelf" << endl;
+  pCerr() << "=====vtkSQKernelConvolution::PrintSelf" << endl;
   #endif
 
   this->Superclass::PrintSelf(os,indent);
@@ -1038,5 +1083,3 @@ void vtkSQKernelConvolution::PrintSelf(ostream& os, vtkIndent indent)
   // TODO
 
 }
-
-

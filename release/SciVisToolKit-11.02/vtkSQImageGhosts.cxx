@@ -53,10 +53,11 @@ vtkSQImageGhosts::vtkSQImageGhosts()
   WorldRank(0),
   NGhosts(0),
   Mode(CartesianExtent::DIM_MODE_3D),
-  Comm(MPI_COMM_NULL)
+  Comm(MPI_COMM_NULL),
+  CopyAllArrays(1)
 {
   #ifdef vtkSQImageGhostsDEBUG
-  pCerr() << "===============================vtkSQImageGhosts::vtkSQImageGhosts" << endl;
+  pCerr() << "=====vtkSQImageGhosts::vtkSQImageGhosts" << endl;
   #endif
 
   int mpiOk=0;
@@ -79,7 +80,7 @@ vtkSQImageGhosts::vtkSQImageGhosts()
 vtkSQImageGhosts::~vtkSQImageGhosts()
 {
   #ifdef vtkSQImageGhostsDEBUG
-  pCerr() << "===============================vtkSQImageGhosts::~vtkSQImageGhosts" << endl;
+  pCerr() << "=====vtkSQImageGhosts::~vtkSQImageGhosts" << endl;
   #endif
 
   this->SetCommunicator(MPI_COMM_NULL);
@@ -122,6 +123,34 @@ void vtkSQImageGhosts::SetCommunicator(MPI_Comm comm)
     }
 }
 
+//-----------------------------------------------------------------------------
+void vtkSQImageGhosts::AddArrayToCopy(const char *name)
+{
+  #ifdef vtkSQImageGhostsDEBUG
+  pCerr()
+    << "=====vtkSQImageGhosts::ArraysToCopy" << endl
+    << "name=" << name << endl;
+  #endif
+
+  if (this->ArraysToCopy.insert(name).second)
+    {
+    this->Modified();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQImageGhosts::ClearArraysToCopy()
+{
+  #ifdef vtkSQImageGhostsDEBUG
+  pCerr() << "=====vtkSQImageGhosts::ClearArraysToCopy" << endl;
+  #endif
+
+  if (this->ArraysToCopy.size())
+    {
+    this->ArraysToCopy.clear();
+    this->Modified();
+    }
+}
 //-------------------------------------------------------------------------
 int vtkSQImageGhosts::RequestUpdateExtent(
   vtkInformation *vtkNotUsed(request),
@@ -129,7 +158,7 @@ int vtkSQImageGhosts::RequestUpdateExtent(
   vtkInformationVector *outputVector)
 {
   #ifdef vtkSQImageGhostsDEBUG
-  pCerr() << "===============================vtkSQImageGhosts::RequestUpdateExtent" << endl;
+  pCerr() << "=====vtkSQImageGhosts::RequestUpdateExtent" << endl;
   #endif
 
   // We require preceding filters to refrain from creating ghost cells.
@@ -192,7 +221,7 @@ int vtkSQImageGhosts::RequestInformation(
       vtkInformationVector *outInfos)
 {
   #ifdef vtkSQImageGhostsDEBUG
-  pCerr() << "===============================vtkSQImageGhosts::RequestInformation" << endl;
+  pCerr() << "=====vtkSQImageGhosts::RequestInformation" << endl;
   #endif
   //this->Superclass::RequestInformation(req,inInfos,outInfos);
 
@@ -233,7 +262,7 @@ int vtkSQImageGhosts::RequestData(
     vtkInformationVector *outInfoVec)
 {
   #ifdef vtkSQImageGhostsDEBUG
-  pCerr() << "===============================vtkSQImageGhosts::RequestData" << endl;
+  pCerr() << "=====vtkSQImageGhosts::RequestData" << endl;
   #endif
   #if defined vtkSQImageGhostsTIME
   vtkSQLog *log=vtkSQLog::GetGlobalInstance();
@@ -403,24 +432,63 @@ void vtkSQImageGhosts::ExecuteTransactions(
 {
   static int tag=0;
 
-  int nArrays = inputDsa->GetNumberOfArrays();
   int nTransactions = transactions.size();
   size_t nOutputTups = outputExt.Size();
+
+
+  // build up the output dataset attributes
+  if (this->CopyAllArrays)
+    {
+    // all arrays
+    int nArrays=inputDsa->GetNumberOfArrays();
+    for (int i=0; i<nArrays; ++i)
+      {
+      vtkDataArray *inArray=inputDsa->GetArray(i);
+      int nComps = inArray->GetNumberOfComponents();
+
+      vtkDataArray *outArray = inArray->NewInstance();
+      outArray->SetName(inArray->GetName());
+      outArray->SetNumberOfComponents(nComps);
+      outArray->SetNumberOfTuples(nOutputTups);
+      outputDsa->AddArray(outArray);
+      outArray->Delete();
+      }
+    }
+  else
+    {
+    // only selected arrays
+    set<string>::iterator it,begin,end;
+    it=begin=this->ArraysToCopy.begin();
+    end=this->ArraysToCopy.end();
+    for (;it!=end; ++it)
+      {
+      vtkDataArray *inArray=inputDsa->GetArray((*it).c_str());
+      if (inArray)
+        {
+        int nComps = inArray->GetNumberOfComponents();
+
+        vtkDataArray *outArray = inArray->NewInstance();
+        outArray->SetName(inArray->GetName());
+        outArray->SetNumberOfComponents(nComps);
+        outArray->SetNumberOfTuples(nOutputTups);
+        outputDsa->AddArray(outArray);
+        outArray->Delete();
+        }
+      }
+    }
+
+  // copy each array found in the output dataset attributes
+  int nArrays = outputDsa->GetNumberOfArrays();
   for (int i=0; i<nArrays; ++i)
     {
-    vector<MPI_Request> req;
+    vtkDataArray *outArray=outputDsa->GetArray(i);
+    void *pOut = outArray->GetVoidPointer(0);
 
-    vtkDataArray *inArray = inputDsa->GetArray(i);
+    vtkDataArray *inArray=inputDsa->GetArray(outArray->GetName());
     int nComps = inArray->GetNumberOfComponents();
     void *pIn = inArray->GetVoidPointer(0);
 
-    vtkDataArray *outArray = inArray->NewInstance();
-    outArray->SetName(inArray->GetName());
-    outArray->SetNumberOfComponents(nComps);
-    outArray->SetNumberOfTuples(nOutputTups);
-    outputDsa->AddArray(outArray);
-    outArray->Delete();
-    void *pOut = outArray->GetVoidPointer(0);
+    vector<MPI_Request> req;
 
     #ifdef vtkSQImageGhostsDEBUG
     cerr << "Copying array " << inArray->GetName() << endl;
@@ -470,7 +538,7 @@ void vtkSQImageGhosts::ExecuteTransactions(
 void vtkSQImageGhosts::PrintSelf(ostream& os, vtkIndent indent)
 {
   #ifdef vtkSQImageGhostsDEBUG
-  pCerr() << "===============================vtkSQImageGhosts::PrintSelf" << endl;
+  pCerr() << "=====vtkSQImageGhosts::PrintSelf" << endl;
   #endif
 
   this->Superclass::PrintSelf(os,indent);
@@ -478,5 +546,3 @@ void vtkSQImageGhosts::PrintSelf(ostream& os, vtkIndent indent)
   // TODO
 
 }
-
-

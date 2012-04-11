@@ -30,6 +30,9 @@ Copyright 2008 SciberQuest Inc.
 #include <vtkstd/string>
 using vtkstd::string;
 
+#include <vtkstd/utility>
+using vtkstd::pair;
+
 #include "Numerics.hxx"
 
 //#define vtkSQVortexFilterDEBUG
@@ -49,7 +52,6 @@ vtkStandardNewMacro(vtkSQVortexFilter);
 //-----------------------------------------------------------------------------
 vtkSQVortexFilter::vtkSQVortexFilter()
     :
-  PassInput(0),
   SplitComponents(0),
   ResultMagnitude(0),
   ComputeRotation(1),
@@ -94,9 +96,11 @@ int vtkSQVortexFilter::Initialize(vtkPVXMLElement *root)
     return -1;
     }
 
-  int passInput=0;
-  GetOptionalAttribute<int,1>(elem,"passInput",&passInput);
-  this->SetPassInput(passInput);
+
+  // TODO , pass input changed to a list of arrays
+  //int passInput=0;
+  //GetOptionalAttribute<int,1>(elem,"passInput",&passInput);
+  //this->SetPassInput(passInput);
 
   int splitComponents=0;
   GetOptionalAttribute<int,1>(elem,"splitComponents",&splitComponents);
@@ -156,7 +160,7 @@ int vtkSQVortexFilter::Initialize(vtkPVXMLElement *root)
   vtkSQLog *log=vtkSQLog::GetGlobalInstance();
   *log
     << "# ::vtkSQVortexFilter" << "\n"
-    << "#   passInput=" << passInput << "\n"
+    //<< "#   passInput=" << passInput << "\n" TODO
     << "#   resultMagnitude=" << resultMagnitude << "\n"
     << "#   splitComponents=" << splitComponents << "\n"
     << "#   computeRotation=" << computeRotation << "\n"
@@ -171,6 +175,37 @@ int vtkSQVortexFilter::Initialize(vtkPVXMLElement *root)
   #endif
 
   return 0;
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQVortexFilter::AddArrayToCopy(const char *name)
+{
+  #ifdef vtkSQVortexFilterDEBUG
+  pCerr()
+    << "=====vtkSQVortexFilter::ArraysToCopy" << endl
+    << "name=" << name << endl;
+  #endif
+
+  if (this->ArraysToCopy.insert(name).second)
+    {
+    cerr << "copying " << name << endl;
+    this->Modified();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQVortexFilter::ClearArraysToCopy()
+{
+  #ifdef vtkSQVortexFilterDEBUG
+  pCerr() << "=====vtkSQVortexFilter::ClearArraysToCopy" << endl;
+  #endif
+
+  if (this->ArraysToCopy.size())
+    {
+    cerr << "clearing" << endl;
+    this->ArraysToCopy.clear();
+    this->Modified();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -401,7 +436,7 @@ int vtkSQVortexFilter::RequestData(
     return 1;
     }
 
-  // NOTE You can't do a shallow copy because the array dimensions are 
+  // NOTE You can't do a shallow copy because the array dimensions are
   // different on output and input because of the ghost layer.
   // outData->ShallowCopy(inData);
 
@@ -447,34 +482,46 @@ int vtkSQVortexFilter::RequestData(
 
     // Copy the input field, unfortunately it's a deep copy
     // since the input and output have different extents.
-    if (this->PassInput)
+    #if defined vtkSQVortexFilterTIME
+    log->StartEvent("vtkSQVortexFilter::PassInput");
+    #endif
+    set<string>::iterator it;
+    set<string>::iterator begin=this->ArraysToCopy.begin();
+    set<string>::iterator end=this->ArraysToCopy.end();
+    for (it=begin; it!=end; ++it)
       {
-      #if defined vtkSQVortexFilterTIME
-      log->StartEvent("vtkSQVortexFilter::PassInput");
-      #endif
-      vtkDataArray *W=V->NewInstance();
+      vtkDataArray *M=inImData->GetPointData()->GetArray((*it).c_str());
+      if (M==0)
+        {
+        vtkErrorMacro(
+          << "Array " << (*it).c_str()
+          << " was requested but is not present");
+        continue;
+        }
+
+      vtkDataArray *W=M->NewInstance();
       outImData->GetPointData()->AddArray(W);
       W->Delete();
-      int nCompsV=V->GetNumberOfComponents();
-      W->SetNumberOfComponents(nCompsV);
+      int nCompsM=M->GetNumberOfComponents();
+      W->SetNumberOfComponents(nCompsM);
       W->SetNumberOfTuples(outputTups);
-      W->SetName(V->GetName());
-      switch(V->GetDataType())
+      W->SetName(M->GetName());
+      switch(M->GetDataType())
         {
         vtkTemplateMacro(
           Copy<VTK_TT>(
               inputExt.GetData(),
               outputExt.GetData(),
-              (VTK_TT*)V->GetVoidPointer(0),
+              (VTK_TT*)M->GetVoidPointer(0),
               (VTK_TT*)W->GetVoidPointer(0),
-              nCompsV,
+              nCompsM,
               this->Mode,
               USE_OUTPUT_BOUNDS));
         }
-      #if defined vtkSQVortexFilterTIME
-      log->EndEvent("vtkSQVortexFilter::PassInput");
-      #endif
       }
+    #if defined vtkSQVortexFilterTIME
+    log->EndEvent("vtkSQVortexFilter::PassInput");
+    #endif
 
     // Rotation.
     if (this->ComputeRotation)

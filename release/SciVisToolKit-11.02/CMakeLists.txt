@@ -237,6 +237,15 @@ if(PARAVIEW_BUILD_QT_GUI)
   set(_IFACES ${_IFACES} ${IFACES})
   set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
+  QT4_WRAP_CPP(MOC_SRCS pqSQImageGhosts.h)
+  ADD_PARAVIEW_OBJECT_PANEL(
+    IFACES IFACE_SRCS
+    CLASS_NAME pqSQImageGhosts
+    XML_NAME vtkSQImageGhosts
+    XML_GROUP filters)
+  set(_IFACES ${_IFACES} ${IFACES})
+  set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
+
   QT4_WRAP_CPP(MOC_SRCS pqSQVolumeSource.h)
   QT4_WRAP_UI(UI_SRCS pqSQVolumeSourceForm.ui)
   ADD_PARAVIEW_OBJECT_PANEL(
@@ -293,6 +302,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     pqSQBOVMetaReader.cxx
     pqSQFieldTracer.cxx
     pqSQHemisphereSource.cxx
+    pqSQImageGhosts.cxx
     pqSQPlaneSource.cxx
     pqSQTensorGlyph.cxx
     pqSQVolumeSource.cxx

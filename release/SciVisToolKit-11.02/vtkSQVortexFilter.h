@@ -11,6 +11,11 @@ Copyright 2008 SciberQuest Inc.
 
 #include "vtkDataSetAlgorithm.h"
 
+#include <set>
+using std::set;
+#include <string>
+using std::string;
+
 class vtkPVXMLElement;
 class vtkInformation;
 class vtkInformationVector;
@@ -29,8 +34,8 @@ public:
   // Description:
   // Deep copy input arrays to the output. A shallow copy is not possible
   // due to the presence of ghost layers.
-  vtkSetMacro(PassInput,int);
-  vtkGetMacro(PassInput,int);
+  void AddArrayToCopy(const char *name);
+  void ClearArraysToCopy();
 
   // Description:
   // Split vector results into component arrays.
@@ -109,7 +114,7 @@ protected:
 
 private:
   // controls to turn on/off array generation
-  int PassInput;
+  set<string> ArraysToCopy;
   int SplitComponents;
   int ResultMagnitude;
   int ComputeRotation;

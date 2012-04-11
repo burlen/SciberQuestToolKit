@@ -47,8 +47,8 @@ pqSQRemoteSignalDialog::pqSQRemoteSignalDialog(
     Qt::WindowFlags flags)
             :
     QDialog(Parent,flags),
-    Ui(0),
-    Modified(0)
+    Modified(0),
+    Ui(0)
 {
   this->Ui = new pqSQRemoteSignalDialogUI;
   this->Ui->setupUi(this);

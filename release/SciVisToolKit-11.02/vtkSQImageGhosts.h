@@ -16,6 +16,10 @@ Copyright 2008 SciberQuest Inc.
 
 #include <vector>
 using std::vector;
+#include <set>
+using std::set;
+#include <string>
+using std::string;
 
 #include <mpi.h>
 
@@ -34,6 +38,20 @@ public:
   // Description:
   // Initialize from an xml document.
   int Initialize(vtkPVXMLElement *root);
+
+  // Description:
+  // If explicitly unset then the list of arrays constructed by
+  // AddArrayToCopy methods is used. The default is to copy all
+  // arrays. See AddArrayToCopy
+  vtkSetMacro(CopyAllArrays,int);
+  vtkGetMacro(CopyAllArrays,int);
+
+  // Description:
+  // Deep copy a list of arrays from input to the output. In order
+  // for the filter to use the constructed list the default of copying
+  // all arrays must be explicitly disabled by calling SetAllArrays(0).
+  void AddArrayToCopy(const char *name);
+  void ClearArraysToCopy();
 
   // Description:
   // Set the mode to 2D or 3D.
@@ -80,6 +98,8 @@ private:
   int Mode;
   CartesianExtent ProblemDomain;
   MPI_Comm Comm;
+  int CopyAllArrays;
+  set<string> ArraysToCopy;
 
 private:
   vtkSQImageGhosts(const vtkSQImageGhosts &); // Not implemented

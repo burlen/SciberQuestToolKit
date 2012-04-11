@@ -10,6 +10,11 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __vtkSQKernelConvolution_h
 #define __vtkSQKernelConvolution_h
 
+#include <set>
+using std::set;
+#include <string>
+using std::string;
+
 #include "vtkDataSetAlgorithm.h"
 #include "CartesianExtent.h"
 
@@ -28,10 +33,14 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQKernelConvolution *New();
 
-
   // Description:
   // Initialize the filter from an xml document.
   int Initialize(vtkPVXMLElement *root);
+
+  // Description:
+  // Array selection.
+  void AddInputArray(const char *name);
+  void ClearInputArrays();
 
   //BTX
   enum {
@@ -136,6 +145,8 @@ private:
   int WorldRank;
   int HostSize;
   int HostRank;
+  //
+  set<string> InputArrays;
   //
   int KernelWidth;
   int KernelType;

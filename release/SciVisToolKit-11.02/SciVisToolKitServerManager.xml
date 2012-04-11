@@ -1685,8 +1685,9 @@ Copyright 2008 SciberQuest Inc.
       label="SQ Image Ghosts">
 
       <Documentation
-        long_help="TODO"
-        short_help="TODO">
+        long_help="A filter to generate requested ghosts cells for image data."
+        short_help="A filter to generate requested ghosts cells for image data.">
+        A filter to generate requested ghost cells for image data.
       </Documentation>
 
       <InputProperty
@@ -1699,15 +1700,53 @@ Copyright 2008 SciberQuest Inc.
         <DataTypeDomain name="input_type">
           <DataType value="vtkDataSet" />
         </DataTypeDomain>
+        <InputArrayDomain name="input_array" attribute_type="point"/>
         <Documentation>
+          Sets the input for the filter.
         </Documentation>
       </InputProperty>
 
-    <Hints>
-      <View type="RenderView"/>
-    </Hints>
+      <IntVectorProperty
+        name="CopyAllArrays"
+        label="Copy all arrays"
+        command="SetCopyAllArrays"
+        number_of_elements="1"
+        default_values="1">
+        <BooleanDomain name="bool" />
+        <Documentation>
+          Copy all point data, if not set only the selected arrays from the ArraysToCopy
+          list will be coppied.
+        </Documentation>
+      </IntVectorProperty>
 
+      <StringVectorProperty
+        name="ArraysToCopy"
+        command="AddArrayToCopy"
+        clean_command="ClearArraysToCopy"
+        repeat_command="1"
+        number_of_elements_per_command="1"
+        label="Copy selected arrays">
+        <Documentation>
+            This property specifies the name(s) array(s) to filter.
+        </Documentation>
+        <ArrayListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Hints>
+           <!--
+           This overrides the GUI's default mechanism to
+           not set the default value for this property
+           using the domain when the proxy is created
+           -->
+           <NoDefault />
+        </Hints>
+      </StringVectorProperty>
 
+      <Hints>
+        <View type="RenderView"/>
+      </Hints>
     </SourceProxy>
 
 
@@ -4299,7 +4338,7 @@ Copyright 2008 SciberQuest Inc.
            <InputArrayDomain name="input_array" attribute_type="point"
                              number_of_components="3"/>
            <Documentation>
-             This property specifies the input to the Warp (vector) filter.
+             This property specifies the input to the filter.
            </Documentation>
       </InputProperty>
 
@@ -4308,7 +4347,7 @@ Copyright 2008 SciberQuest Inc.
          command="SetInputArrayToProcess"
          number_of_elements="5"
          element_types="0 0 0 0 2"
-         label="Vector Field">
+         label="Array to filter">
             <ArrayListDomain name="array_list" attribute_type="Vectors">
               <RequiredProperties>
                  <Property name="Input" function="Input"/>
@@ -4318,18 +4357,6 @@ Copyright 2008 SciberQuest Inc.
               Identifies the vector field on which to operate.
             </Documentation>
       </StringVectorProperty>
-
-     <IntVectorProperty
-        name="PassInput"
-        label="Copy input"
-        command="SetPassInput"
-        number_of_elements="1"
-        default_values="0">
-        <BooleanDomain name="bool" />
-        <Documentation>
-          Deep copy the input array to the output
-        </Documentation>
-     </IntVectorProperty>
 
      <IntVectorProperty
         name="SplitComponents"
@@ -4475,6 +4502,28 @@ Copyright 2008 SciberQuest Inc.
         </Documentation>
      </IntVectorProperty>
 
+     <StringVectorProperty
+        name="ArraysToCopy"
+        command="AddArrayToCopy"
+        clean_command="ClearArraysToCopy"
+        repeat_command="1"
+        number_of_elements_per_command="1"
+        label="Arrays to copy">
+        <Documentation>
+            This property specifies the name(s) array(s) to filter.
+        </Documentation>
+        <ArrayListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Hints>
+        <!-- This overrides the GUI's default mechanism to
+            not set the default value for this property
+            using the domain when the proxy is created -->
+            <NoDefault />
+        </Hints>
+      </StringVectorProperty>
 
     <Hints>
       <View type="RenderView"/>
@@ -4701,19 +4750,26 @@ Copyright 2008 SciberQuest Inc.
       </InputProperty>
 
       <StringVectorProperty
-         name="SelectInputVectors"
-         command="SetInputArrayToProcess"
-         number_of_elements="5"
-         element_types="0 0 0 0 2"
-         label="Vector Field">
-            <ArrayListDomain name="array_list" attribute_type="Vectors">
-              <RequiredProperties>
-                 <Property name="Input" function="Input"/>
-              </RequiredProperties>
-            </ArrayListDomain>
-            <Documentation>
-              Identifies the vector field on which to operate.
-            </Documentation>
+        name="Arrays to filter"
+        command="AddInputArray"
+        clean_command="ClearInputArrays"
+        repeat_command="1"
+        number_of_elements_per_command="1"
+        label="Arrays">
+        <Documentation>
+            This property specifies the name(s) array(s) to filter.
+        </Documentation>
+        <ArrayListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Hints>
+        <!-- This overrides the GUI's default mechanism to
+            not set the default value for this property
+            using the domain when the proxy is created -->
+            <NoDefault />
+        </Hints>
       </StringVectorProperty>
 
     <IntVectorProperty
