@@ -2,13 +2,14 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 
 */
 #include "pqSQPlaneSource.h"
 
+#include "pqSQTranslateDialog.h"
 #include "vtkSQPlaneSourceConfigurationReader.h"
 #include "vtkSQPlaneSourceConfigurationWriter.h"
 #include "vtkSQPlaneSourceConstants.h"
@@ -326,6 +327,10 @@ void pqSQPlaneSource::contextMenuEvent(QContextMenuEvent *event)
   connect(pasteAct, SIGNAL(triggered()), this, SLOT(PasteConfiguration()));
   context.addAction(pasteAct);
 
+  QAction *transAct=new QAction(tr("Translate"),&context);
+  connect(transAct, SIGNAL(triggered()), this, SLOT(ShowTranslateDialog()));
+  context.addAction(transAct);
+
   context.exec(event->globalPos());
 }
 
@@ -388,6 +393,46 @@ void pqSQPlaneSource::PasteConfiguration()
       }
 
     this->PullServerConfig();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void pqSQPlaneSource::ShowTranslateDialog()
+{
+  #if defined pqSQPlaneSourceDEBUG
+  cerr << ":::::::::::::::::::::::::::::::pqSQPlaneSource::ShowTranslateDialog" << endl;
+  #endif
+
+  pqSQTranslateDialog dialog(this,0);
+
+  if (dialog.exec()==QDialog::Accepted)
+    {
+    double t[3]={0.0};
+    dialog.GetTranslation(t);
+
+    double o[3]={0.0};
+    this->GetOrigin(o);
+    for (int q=0; q<3; ++q)
+      {
+      o[q]+=t[q];
+      }
+    this->SetOrigin(o);
+
+    double p1[3]={0.0};
+    this->GetPoint1(p1);
+    for (int q=0; q<3; ++q)
+      {
+      p1[q]+=t[q];
+      }
+    this->SetPoint1(p1);
+
+    double p2[3]={0.0};
+    this->GetPoint2(p2);
+    for (int q=0; q<3; ++q)
+      {
+      p2[q]+=t[q];
+      }
+    this->SetPoint2(p2);
     }
 }
 
@@ -1253,4 +1298,3 @@ void pqSQPlaneSource::reset()
 
   pqNamedObjectPanel::reset();
 }
-

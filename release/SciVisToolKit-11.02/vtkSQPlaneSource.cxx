@@ -44,7 +44,7 @@ vtkStandardNewMacro(vtkSQPlaneSource);
 vtkSQPlaneSource::vtkSQPlaneSource()
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "===============================vtkSQPlaneSource" << endl;
+  cerr << "=====vtkSQPlaneSource::vtkSQPlaneSource" << endl;
   #endif
 
   this->ImmediateMode=1;
@@ -73,7 +73,7 @@ vtkSQPlaneSource::vtkSQPlaneSource()
 vtkSQPlaneSource::~vtkSQPlaneSource()
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "===============================vtkSQPlaneSource::~vtkSQPlaneSource" << endl;
+  cerr << "=====vtkSQPlaneSource::vtkSQPlaneSource::~vtkSQPlaneSource" << endl;
   #endif
   this->SetDescriptiveName(0);
 }
@@ -126,7 +126,7 @@ int vtkSQPlaneSource::Initialize(vtkPVXMLElement *root)
 void vtkSQPlaneSource::SetResolution(const int xR, const int yR)
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "===============================vtkSQPlaneSource::SetResolution" << endl;
+  cerr << "=====vtkSQPlaneSource::vtkSQPlaneSource::SetResolution" << endl;
   #endif
   // Set the number of x-y subdivisions in the plane.
   if ( xR != this->XResolution || yR != this->YResolution )
@@ -148,7 +148,7 @@ int vtkSQPlaneSource::RequestInformation(
     vtkInformationVector *outInfos)
 {
   #ifdef vtkSQPlaneSourceDEBUG
-    cerr << "===============================vtkSQPlaneSource::RequestInformation" << endl;
+    cerr << "=====vtkSQPlaneSource::vtkSQPlaneSource::RequestInformation" << endl;
   #endif
 
 
@@ -166,7 +166,7 @@ int vtkSQPlaneSource::RequestData(
       vtkInformationVector *outputVector)
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "===============================vtkSQPlaneSource::RequestData" << endl;
+  cerr << "=====vtkSQPlaneSource::vtkSQPlaneSource::RequestData" << endl;
   #endif
 
   // get the info object
@@ -412,7 +412,7 @@ int vtkSQPlaneSource::RequestData(
 void vtkSQPlaneSource::SetNormal(double N[3])
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "===============================SetNormal" << endl;
+  cerr << "=====vtkSQPlaneSource::SetNormal" << endl;
   #endif
 
   // Set the normal to the plane. Will modify the Origin, Point1, and Point2
@@ -485,7 +485,7 @@ void vtkSQPlaneSource::SetNormal(double nx, double ny, double nz)
 void vtkSQPlaneSource::SetCenter(double center[3])
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "===============================SetCenter" << endl;
+  cerr << "=====vtkSQPlaneSource::SetCenter" << endl;
   #endif
 
   // Set the center of the plane. Will modify the Origin, Point1, and Point2
@@ -531,7 +531,7 @@ void vtkSQPlaneSource::SetCenter(double x, double y, double z)
 void vtkSQPlaneSource::ApplyConstraint()
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "===============================ApplyConstraint" << endl;
+  cerr << "=====vtkSQPlaneSource::ApplyConstraint" << endl;
   #endif
 
   double p[3]={0.0};
@@ -590,7 +590,7 @@ void vtkSQPlaneSource::ApplyConstraint()
 void vtkSQPlaneSource::SetConstraint(int type)
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "===============================SetConstraint" << endl;
+  cerr << "=====vtkSQPlaneSource::SetConstraint" << endl;
   cerr << type << endl;
   #endif
 
@@ -608,10 +608,9 @@ void vtkSQPlaneSource::SetConstraint(int type)
 void vtkSQPlaneSource::SetOrigin(double ox, double oy, double oz)
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "===============================SetOrigin" << endl;
+  cerr << "=====vtkSQPlaneSource::SetOrigin" << endl;
   cerr << ox << " " << oy << " " << oz << endl;
   #endif
-
 
   // modifies the normal and origin
   if ( this->Origin[0] == ox
@@ -622,12 +621,11 @@ void vtkSQPlaneSource::SetOrigin(double ox, double oy, double oz)
     }
   else
     {
-    double v1[3], v2[3];
-
     this->Origin[0] = ox;
     this->Origin[1] = oy;
     this->Origin[2] = oz;
 
+    double v1[3], v2[3];
     v1[0] = this->Point1[0]-this->Origin[0];
     v1[1] = this->Point1[1]-this->Origin[1];
     v1[2] = this->Point1[2]-this->Origin[2];
@@ -637,7 +635,7 @@ void vtkSQPlaneSource::SetOrigin(double ox, double oy, double oz)
     v2[2] = this->Point2[2]-this->Origin[2];
 
     // set plane normal
-    this->UpdatePlane(v1,v2);
+    this->UpdatePlane(v1,v2,true);
     this->Modified();
 
     this->ApplyConstraint();
@@ -660,7 +658,7 @@ void vtkSQPlaneSource::SetPoint1(double p[3])
 void vtkSQPlaneSource::SetPoint1(double x, double y, double z)
 {
 #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "===============================SetPoint1" << endl;
+  cerr << "=====vtkSQPlaneSource::SetPoint1" << endl;
   cerr << x << " " << y << " " << z << endl;
   #endif
 
@@ -673,11 +671,11 @@ void vtkSQPlaneSource::SetPoint1(double x, double y, double z)
     }
   else
     {
-    double v1[3], v2[3];
-
     this->Point1[0] = x;
     this->Point1[1] = y;
     this->Point1[2] = z;
+
+    double v1[3], v2[3];
 
     v1[0] = this->Point1[0]-this->Origin[0];
     v1[1] = this->Point1[1]-this->Origin[1];
@@ -688,7 +686,7 @@ void vtkSQPlaneSource::SetPoint1(double x, double y, double z)
     v2[2] = this->Point2[2]-this->Origin[2];
 
     // set plane normal
-    this->UpdatePlane(v1,v2);
+    this->UpdatePlane(v1,v2,true);
     this->Modified();
     }
 }
@@ -703,7 +701,7 @@ void vtkSQPlaneSource::SetPoint2(double p[3])
 void vtkSQPlaneSource::SetPoint2(double x, double y, double z)
 {
   #ifdef vtkSQPlaneSourceDEBUG
-  cerr << "===============================SetPoint2" << endl;
+  cerr << "=====vtkSQPlaneSource::SetPoint2" << endl;
   cerr << x << " " << y << " " << z << endl;
   #endif
 
@@ -716,12 +714,11 @@ void vtkSQPlaneSource::SetPoint2(double x, double y, double z)
     }
   else
     {
-    double v1[3], v2[3];
-
     this->Point2[0] = x;
     this->Point2[1] = y;
     this->Point2[2] = z;
 
+    double v1[3], v2[3];
     v1[0] = this->Point1[0]-this->Origin[0];
     v1[1] = this->Point1[1]-this->Origin[1];
     v1[2] = this->Point1[2]-this->Origin[2];
@@ -731,7 +728,7 @@ void vtkSQPlaneSource::SetPoint2(double x, double y, double z)
     v2[2] = this->Point2[2]-this->Origin[2];
 
     // set plane normal
-    this->UpdatePlane(v1,v2);
+    this->UpdatePlane(v1,v2,true);
     this->Modified();
     }
 }
@@ -763,7 +760,7 @@ void vtkSQPlaneSource::Push(double distance)
 }
 
 //-----------------------------------------------------------------------------
-int vtkSQPlaneSource::UpdatePlane(double v1[3], double v2[3])
+int vtkSQPlaneSource::UpdatePlane(double v1[3], double v2[3], bool quiet)
 {
   // Protected method updates normals and plane center from two axes.
   // set plane center
@@ -776,7 +773,10 @@ int vtkSQPlaneSource::UpdatePlane(double v1[3], double v2[3])
   vtkMath::Cross(v1,v2,this->Normal);
   if ( vtkMath::Normalize(this->Normal) == 0.0 )
     {
-    vtkErrorMacro(<<"Bad plane coordinate system");
+    if (!quiet)
+      {
+      vtkErrorMacro(<<"Bad plane coordinate system");
+      }
     return 0;
     }
   else

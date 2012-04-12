@@ -166,7 +166,7 @@ protected:
   int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
   int RequestInformation(vtkInformation *,vtkInformationVector **,vtkInformationVector *outInfos);
 
-  int UpdatePlane(double v1[3], double v2[3]);
+  int UpdatePlane(double v1[3], double v2[3], bool quiet=false);
 
 private:
   int ImmediateMode;

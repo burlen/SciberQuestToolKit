@@ -211,6 +211,8 @@ if(PARAVIEW_BUILD_QT_GUI)
 
   QT4_WRAP_CPP(MOC_SRCS pqSQPlaneSource.h)
   QT4_WRAP_UI(UI_SRCS pqSQPlaneSourceForm.ui)
+  QT4_WRAP_CPP(MOC_SRCS pqSQTranslateDialog.h)
+  QT4_WRAP_UI(UI_SRCS pqSQTranslateDialogForm.ui)
   ADD_PARAVIEW_OBJECT_PANEL(
     IFACES IFACE_SRCS
     CLASS_NAME pqSQPlaneSource
@@ -305,6 +307,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     pqSQImageGhosts.cxx
     pqSQPlaneSource.cxx
     pqSQTensorGlyph.cxx
+    pqSQTranslateDialog.cxx
     pqSQVolumeSource.cxx
     )
 

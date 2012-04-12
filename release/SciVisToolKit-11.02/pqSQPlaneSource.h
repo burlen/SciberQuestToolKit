@@ -126,6 +126,10 @@ protected slots:
   void CopyConfiguration();
   void PasteConfiguration();
 
+  // Description:
+  // Apply a translation to the current coordinates.
+  void ShowTranslateDialog();
+
 private:
   double N[3];
   double Dims[2];
