@@ -32,6 +32,7 @@ set(SVTK_LIB_INSTALL_PATH
 
 # Server manager wrapped sources.
 set(SM_CXX_SOURCES
+  vtkSQAgyrotropyFilter.cxx
   vtkSQBOVReader.cxx
   vtkSQBOVWriter.cxx
   vtkSQCellGenerator.cxx

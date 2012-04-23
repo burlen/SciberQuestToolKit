@@ -24,6 +24,9 @@ public:
   double GetTranslateY();
   double GetTranslateZ();
 
+  bool GetTypeIsNewOrigin();
+  bool GetTypeIsOffset();
+
 private:
   pqSQTranslateDialogUI *Ui;
 };

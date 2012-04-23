@@ -412,6 +412,15 @@ void pqSQPlaneSource::ShowTranslateDialog()
 
     double o[3]={0.0};
     this->GetOrigin(o);
+
+    if (dialog.GetTypeIsNewOrigin())
+      {
+      for (int q=0; q<3; ++q)
+        {
+        t[q]=t[q]-o[q];
+        }
+      }
+
     for (int q=0; q<3; ++q)
       {
       o[q]+=t[q];

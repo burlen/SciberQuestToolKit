@@ -5,6 +5,7 @@
 #include <QLineEdit>
 #include <QString>
 #include <QDoubleValidator>
+#include <QRadioButton>
 
 // User interface
 //=============================================================================
@@ -59,4 +60,16 @@ double pqSQTranslateDialog::GetTranslateY()
 double pqSQTranslateDialog::GetTranslateZ()
 {
   return this->Ui->tz->text().toDouble();
+}
+
+//------------------------------------------------------------------------------
+bool pqSQTranslateDialog::GetTypeIsNewOrigin()
+{
+  return this->Ui->typeNewOrigin->isChecked();
+}
+
+//------------------------------------------------------------------------------
+bool pqSQTranslateDialog::GetTypeIsOffset()
+{
+  return this->Ui->typeOffset->isChecked();
 }

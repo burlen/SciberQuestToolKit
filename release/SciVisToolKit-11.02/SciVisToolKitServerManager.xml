@@ -4534,6 +4534,74 @@ Copyright 2008 SciberQuest Inc.
 
   <!-- ==================================================================== -->
   <SourceProxy
+    name="vtkSQAgyrotropyFilter"
+    class="vtkSQAgyrotropyFilter"
+    label="SQ Agyrotropy">
+    <Documentation
+      long_help="Long Documentation"
+      short_help="Short Documentation">
+      Textual Documentation.
+    </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+           <InputArrayDomain name="input_array" attribute_type="point"/>
+           <Documentation>
+             This property specifies the input to the Warp (vector) filter.
+           </Documentation>
+      </InputProperty>
+
+      <StringVectorProperty
+         name="Pressure Tensor"
+         command="SetInputArrayToProcess"
+         number_of_elements="5"
+         element_types="0 0 0 0 2"
+         >
+            <ArrayListDomain name="array_list" attribute_type="Tensors">
+              <RequiredProperties>
+                 <Property name="Input" function="Input"/>
+              </RequiredProperties>
+            </ArrayListDomain>
+            <Documentation>
+              Identifies the vector field on which to operate.
+            </Documentation>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+         name="Magnetic Field"
+         command="SetInputArrayToProcess"
+         number_of_elements="5"
+         element_types="0 0 0 0 2"
+         default_values="1"
+         >
+            <ArrayListDomain name="array_list" attribute_type="Vectors">
+              <RequiredProperties>
+                 <Property name="Input" function="Input"/>
+              </RequiredProperties>
+            </ArrayListDomain>
+            <Documentation>
+              Identifies the vector field on which to operate.
+            </Documentation>
+      </StringVectorProperty>
+
+    <Hints>
+      <View type="RenderView"/>
+    </Hints>
+
+  <!-- End vtkSQAgyrotropyFilter -->
+  </SourceProxy>
+
+
+  <!-- ==================================================================== -->
+  <SourceProxy
     name="vtkSQMedianFilter"
     class="vtkSQMedianFilter"
     label="SQ Median Filter">
