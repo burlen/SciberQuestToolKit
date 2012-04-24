@@ -85,10 +85,19 @@ void agyrotropy(T *pT, T *pV, T *pA, size_t n)
     T b = -(nxy*nxy + nxz*nxz + nyz*nyz - nxx*nyy - nxx*nzz - nyy*nzz);
 
     T d = a*a-4.0*b;
+    if ((d<0.0) && (d<-1.0e-6))
+      {
+      d=0.0;
+      }
+    else
     if (d<0.0)
       {
+      cerr
+        << "point " << i << " has negative descriminant." << endl
+        << "a=" << a << endl
+        << "b=" << b << endl
+        << "d=" << d << endl;
       d*=-1.0;
-      cerr << "point " << i << " has negative descriminant." << endl;
       }
 
     pA[i] = 2*sqrt(d)/a;
