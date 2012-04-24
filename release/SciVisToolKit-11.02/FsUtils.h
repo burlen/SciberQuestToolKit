@@ -22,6 +22,7 @@ using std::ifstream;
 using std::ios;
 #include <sstream>
 using std::istringstream;
+#include <cstdio>
 
 #ifndef WIN32
   #define PATH_SEP "/"
@@ -117,9 +118,18 @@ size_t ParseValue(string &in,size_t at, string key, T &value)
   size_t p=in.find(key,at);
   if (p!=string::npos)
     {
-    const int winLen=64; // num chars to include in value conversion
-    p+=key.size();
-    istringstream valss(in.substr(p,winLen));
+    size_t n=key.size();
+
+    // check to make sure match is the whole word
+    if ((p!=0) && isalpha(in[p-1]) && isalpha(in[p+n]))
+      {
+      return string::npos;
+      }
+    // convert value
+    const int maxValueLen=64;
+    p+=n;
+    istringstream valss(in.substr(p,maxValueLen));
+
     valss >> value;
     }
   return p;
