@@ -119,7 +119,7 @@ void ComputeVorticity(
   vortV->SetNumberOfComponents(3);
   vortV->SetNumberOfTuples(nCells);
   string name="vorticity-";
-  name+=gradV->GetName();
+  name+=string(gradV->GetName()).substr(5,string::npos);
   vortV->SetName(name.c_str());
   double *pVortV=vortV->GetPointer(0);
 
@@ -161,7 +161,7 @@ void ComputeHelicity(
   helV->SetNumberOfComponents(3);
   helV->SetNumberOfTuples(nCells);
   string name="helicity-";
-//name+=gradV->GetName();
+  name+=V->GetName();
   helV->SetName(name.c_str());
   double *pVortV=helV->GetPointer(0);
 
@@ -182,6 +182,132 @@ void ComputeHelicity(
     pHelV+=9;
     }
 }
+
+/*
+// *****************************************************************************
+void ComputeLambda2(
+      vtkAlgorithm *alg,
+      double prog0,
+      double prog1,
+      vtkIdType nCells,
+      vtkDoubleArray *V,
+      vtkDoubleArray *vortV,
+      vtkDoubleArray *helV)
+{
+  // input array bounds.
+  const int ni=input[1]-input[0]+1;
+  const int nj=input[3]-input[2]+1;
+  const int nk=input[5]-input[4]+1;
+  FlatIndex idx(ni,nj,nk,mode);
+
+  const int iok=(ni<3?0:1);
+  const int jok=(nj<3?0:1);
+  const int kok=(nk<3?0:1);
+
+  // output array bounds
+  const int _ni=output[1]-output[0]+1;
+  const int _nj=output[3]-output[2]+1;
+  const int _nk=output[5]-output[4]+1;
+  FlatIndex _idx(_ni,_nj,_nk,mode);
+
+  // stencil deltas
+  const double dx[3]={dX[0]*2.0,dX[1]*2.0,dX[2]*2.0};
+
+  // loop over output in patch coordinates (both patches are in the same space)
+  for (int r=output[4]; r<=output[5]; ++r)
+    {
+    const int _k=r-output[4];
+    const int  k=r-input[4];
+    for (int q=output[2]; q<=output[3]; ++q)
+      {
+      const int _j=q-output[2];
+      const int  j=q-input[2];
+      for (int p=output[0]; p<=output[1]; ++p)
+        {
+        const int _i=p-output[0];
+        const int  i=p-input[0];
+
+        // J: gradient velocity tensor, (jacobian)
+        double j11=0.0, j12=0.0, j13=0.0;
+        if (iok)
+          {
+          int vilo_x=3*idx.Index(i-1,j,k);
+          int vilo_y=vilo_x+1;
+          int vilo_z=vilo_y+1;
+
+          int vihi_x=3*idx.Index(i+1,j,k);
+          int vihi_y=vihi_x+1;
+          int vihi_z=vihi_y+1;
+
+          j11=(V[vihi_x]-V[vilo_x])/dx[0];
+          j12=(V[vihi_y]-V[vilo_y])/dx[0];
+          j13=(V[vihi_z]-V[vilo_z])/dx[0];
+          }
+
+        double j21=0.0, j22=0.0, j23=0.0;
+        if (jok)
+          {
+          int vjlo_x=3*idx.Index(i,j-1,k);
+          int vjlo_y=vjlo_x+1;
+          int vjlo_z=vjlo_y+1;
+
+          int vjhi_x=3*idx.Index(i,j+1,k);
+          int vjhi_y=vjhi_x+1;
+          int vjhi_z=vjhi_y+1;
+
+          j21=(V[vjhi_x]-V[vjlo_x])/dx[1];
+          j22=(V[vjhi_y]-V[vjlo_y])/dx[1];
+          j23=(V[vjhi_z]-V[vjlo_z])/dx[1];
+          }
+
+        double j31=0.0, j32=0.0, j33=0.0;
+        if (kok)
+          {
+          int vklo_x=3*idx.Index(i,j,k-1);
+          int vklo_y=vklo_x+1;
+          int vklo_z=vklo_y+1;
+
+          int vkhi_x=3*idx.Index(i,j,k+1);
+          int vkhi_y=vkhi_x+1;
+          int vkhi_z=vkhi_y+1;
+
+          j31=(V[vkhi_x]-V[vklo_x])/dx[2];
+          j32=(V[vkhi_y]-V[vklo_y])/dx[2];
+          j33=(V[vkhi_z]-V[vklo_z])/dx[2];
+          }
+
+        Matrix<double,3,3> J;
+        J <<
+          j11, j12, j13,
+          j21, j22, j23,
+          j31, j32, j33;
+
+        // construct pressure corrected hessian
+        Matrix<double,3,3> S=0.5*(J+J.transpose());
+        Matrix<double,3,3> W=0.5*(J-J.transpose());
+        Matrix<double,3,3> HP=S*S+W*W;
+
+        // compute eigen values, lambda
+        Matrix<double,3,1> e;
+        SelfAdjointEigenSolver<Matrix<double,3,3> >solver(HP,false);
+        e=solver.eigenvalues();  // input array bounds.
+
+        const int pi=_idx.Index(_i,_j,_k);
+        / *
+        const int vi=3*pi;
+        const int vj=vi+1;
+        const int vk=vi+2;
+        * /
+
+        // extract lambda-2
+        slowSort(e.data(),0,3);
+        L2[pi]=e(1,0);
+        }
+      }
+    }
+}
+*/
+
 
 // ****************************************************************************
 void ComputeFTLE(

@@ -40,8 +40,8 @@ for name in names:
   i=0
   while(i<n):
     x=x0+i*dx
-    f_lut.write('  <Point x="%f"  o="%f" r="%f" g="%f" b="%f"/>\n'%(x,x,r[i],g[i],b[i]))
-    f_all.write('  <Point x="%f"  o="%f" r="%f" g="%f" b="%f"/>\n'%(x,x,r[i],g[i],b[i]))
+    f_lut.write('  <Point x="%f"  o="%f" r="%f" g="%f" b="%f"/>\n'%(x,(x+1.0)/2.0,r[i],g[i],b[i]))
+    f_all.write('  <Point x="%f"  o="%f" r="%f" g="%f" b="%f"/>\n'%(x,(x+1.0)/2.0,r[i],g[i],b[i]))
     i+=1
   f_lut.write('</ColorMap>\n')
   f_all.write('</ColorMap>\n')
