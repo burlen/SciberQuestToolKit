@@ -1,4 +1,10 @@
 #!/bin/bash
+#   ____    _ __           ____               __    ____
+#  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
+# _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
+#/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
+#
+#Copyright 2010 SciberQuest Inc.
 
 if [ $# -lt 3 ]
 then
@@ -187,4 +193,4 @@ then
   FIGLET_FONT_FACE="Liberation Serif Bold"
 fi
 
-gimp -i -b "(axes2 \"$INPUT\" \"$OUTPUT\" \"$X_LOW\" \"$X_HIGH\" \"$N_MAJOR_X\" \"$N_MINOR_X\" \"$LABEL_FREQ_X\" \"$Y_LOW\" \"$Y_HIGH\" \"$N_MAJOR_Y\" \"$N_MINOR_Y\" \"$LABEL_FREQ_Y\" \"$MAJOR_TICK_WIDTH\"\"$MAJOR_TICK_LENGTH\" \"$MINOR_TICK_WIDTH\"\"$MINOR_TICK_LENGTH\" \"$TICK_PRECISION\" \"$TICK_FONT_FACE\" \"$TICK_FONT_SIZE\" \"$TICK_FONT_COLOR\" \"$X_LABEL\" \"$Y_LABEL\" \"$LABEL_FONT_FACE\" \"$LABEL_FONT_SIZE\" \"$LABEL_FONT_COLOR\" \"$FIGLET\" \"$FIGLET_FONT_FACE\" \"$FIGLET_FONT_SIZE\" \"$FIGLET_FONT_COLOR\")" -b "(gimp-quit 0)"
+gimp -i -b "(sq-axes \"$INPUT\" \"$OUTPUT\" \"$X_LOW\" \"$X_HIGH\" \"$N_MAJOR_X\" \"$N_MINOR_X\" \"$LABEL_FREQ_X\" \"$Y_LOW\" \"$Y_HIGH\" \"$N_MAJOR_Y\" \"$N_MINOR_Y\" \"$LABEL_FREQ_Y\" \"$MAJOR_TICK_WIDTH\"\"$MAJOR_TICK_LENGTH\" \"$MINOR_TICK_WIDTH\"\"$MINOR_TICK_LENGTH\" \"$TICK_PRECISION\" \"$TICK_FONT_FACE\" \"$TICK_FONT_SIZE\" \"$TICK_FONT_COLOR\" \"$X_LABEL\" \"$Y_LABEL\" \"$LABEL_FONT_FACE\" \"$LABEL_FONT_SIZE\" \"$LABEL_FONT_COLOR\" \"$FIGLET\" \"$FIGLET_FONT_FACE\" \"$FIGLET_FONT_SIZE\" \"$FIGLET_FONT_COLOR\")" -b "(gimp-quit 0)"

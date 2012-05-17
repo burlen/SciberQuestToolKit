@@ -8,7 +8,7 @@
 ;
 
 (define
-  (axes2 inFile outFile xLow xHigh nMajorX nMinorX labelFreqX yLow yHigh nMajorY nMinorY labelFreqY majorWidth majorLength minorWidth minorLength tickPrecision tickFontFace tickFontSize tickFontColor xLabel yLabel labelFontFace labelFontSize labelFontColor figlet figletFontFace figletFontSize figletFontColor)
+  (sq-axes inFile outFile xLow xHigh nMajorX nMinorX labelFreqX yLow yHigh nMajorY nMinorY labelFreqY majorWidth majorLength minorWidth minorLength tickPrecision tickFontFace tickFontSize tickFontColor xLabel yLabel labelFontFace labelFontSize labelFontColor figlet figletFontFace figletFontSize figletFontColor)
     (let*
       (
       (lf    0)    ; log file
@@ -589,9 +589,24 @@
         )
       )
 
-      ; auto-crop
+      ; flatten
       (gimp-image-merge-visible-layers im  CLIP-TO-IMAGE)
       (set! dw (car (gimp-image-get-active-layer im)))
+
+      ; add a white background
+      (set! dw (car (gimp-image-get-active-layer im)))
+      (set! imw (car (gimp-drawable-width dw)))
+      (set! imh (car (gimp-drawable-height dw)))
+      (set! dw (car (gimp-layer-new im imw imh RGB-IMAGE "bg" 100 NORMAL-MODE)))
+      (gimp-image-add-layer im dw 1)
+      (gimp-drawable-fill dw WHITE-FILL)
+      ;(gimp-image-lower-layer-to-bottom im dw)
+
+      ; flatten
+      (gimp-image-merge-visible-layers im  CLIP-TO-IMAGE)
+      (set! dw (car (gimp-image-get-active-layer im)))
+
+      ; auto-crop
       (plug-in-autocrop RUN-NONINTERACTIVE im dw)
 
       ; save the annotated image

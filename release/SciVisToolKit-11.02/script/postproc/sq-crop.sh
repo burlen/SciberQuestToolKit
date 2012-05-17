@@ -6,11 +6,9 @@
 #
 #Copyright 2010 SciberQuest Inc.
 
-if [ $# -ne 2 ] ; then
-  echo "Usage: $0 infile outfile"
+if [ $# != 6 ] ; then
+  echo "Usage: $0 infile outfile wifth height offx offy"
   exit 1
 fi
 
-gimp -i -b "(sq-auto-crop \"$1\" \"$2\")" -b '(gimp-quit 0)'
-
-#EOF
+gimp -i -b "(sq-crop \"$1\" \"$2\" \"$3\" \"$4\" \"$5\" \"$6\")" -b '(gimp-quit 0)'

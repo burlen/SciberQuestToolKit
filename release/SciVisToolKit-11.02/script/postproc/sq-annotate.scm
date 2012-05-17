@@ -8,7 +8,7 @@
 ;
 
 (define
-  (annotate inFile outFile text pos fontSize fontColor)
+  (sq-annotate inFile outFile text xpos ypos fontSize fontColor fontFace)
     (let*
       (
       (imw  0)    ; image width
@@ -55,21 +55,27 @@
       ; (gimp-message fontColor)
 
       (cond
-        ((string=? pos "ur")
+        ((string=? xpos "ur")
           (set! x (- imw (+ rm tw)))
-          (set! y (+ 0 (+ tm th))))
-        ((string=? pos "lr")
+          (set! y (+ 0 (+ tm th)))
+        )
+        ((string=? xpos "lr")
           (set! x (- imw (+ rm tw)))
-          (set! y (- imh (+ bm th))))
-        ((string=? pos "ul")
+          (set! y (- imh (+ bm th)))
+        )
+        ((string=? xpos "ul")
           (set! x (+ 0 (+ rm tw)))
-          (set! y (+ 0 (+ tm th))))
-        ((string=? pos "ll")
+          (set! y (+ 0 (+ tm th)))
+        )
+        ((string=? xpos "ll")
           (set! x (+ 0 (+ rm tw)))
-          (set! y (- imh (+ bm th))))
+          (set! y (- imh (+ bm th)))
+        )
         (else
-          (set! x (- imw (+ rm tw)))
-          (set! y (- imh (+ bm th)))))
+          (set! x (string->number xpos))
+          (set! y (string->number ypos))
+        )
+      )
 
       ; add annotation
       (cond
@@ -83,7 +89,7 @@
           (gimp-context-set-background '(  0   0   0))
           (gimp-context-set-foreground '(145 145 145))))
 
-      (gimp-floating-sel-to-layer
+      (set! tl
         (car
           (gimp-text-fontname
               im
@@ -95,7 +101,13 @@
               TRUE
               fpx
               PIXELS
-              "Nimbus Mono L Bold Oblique")))
+              fontFace)))
+
+      (gimp-floating-sel-to-layer tl)
+      (set! tl (car (gimp-image-get-active-layer im)))
+
+      ; add a drop shadow
+      (script-fu-drop-shadow im tl 6 6 12 '(0 0 0) 100 1)
 
       ; save the annotated image
       (gimp-image-merge-visible-layers im  CLIP-TO-IMAGE)
