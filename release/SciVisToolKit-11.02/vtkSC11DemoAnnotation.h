@@ -54,18 +54,7 @@ public:
   // not used
   vtkSetStringMacro(DummyFileListDomain);
   vtkGetStringMacro(DummyFileListDomain);
-
-  // Description:
-  // Enable disable aggregated bandwidth calculation
-  vtkSetMacro(Mode,int);
-  vtkGetMacro(Mode,int);
-  //BTX
-  enum {
-    MODE_AGGREGATE=0,
-    MODE_SINGLE_RANK=1
-  };
-  //ETX
-
+// BTX
 protected:
   vtkSC11DemoAnnotation();
   ~vtkSC11DemoAnnotation();
@@ -96,11 +85,10 @@ private:
   vector<string> TimeData;
   //ETX
 
-  int Mode;
-
 private:
   vtkSC11DemoAnnotation(const vtkSC11DemoAnnotation&); // Not implemented
   void operator=(const vtkSC11DemoAnnotation&); // Not implemented
+//ETX
 };
 
 #endif

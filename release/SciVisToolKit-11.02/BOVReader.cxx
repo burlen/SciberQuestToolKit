@@ -60,7 +60,8 @@ BOVReader::BOVReader()
   ProcId(-1),
   NProcs(0),
   Comm(MPI_COMM_NULL),
-  Hints(MPI_INFO_NULL)
+  Hints(MPI_INFO_NULL),
+  VectorProjection(VECTOR_PROJECT_NONE)
 {
   int ok;
   MPI_Initialized(&ok);
@@ -98,6 +99,7 @@ const BOVReader &BOVReader::operator=(const BOVReader &other)
   this->SetHints(other.Hints);
   this->SetMetaData(other.GetMetaData());
   this->NGhost=other.NGhost;
+  this->VectorProjection=other.VectorProjection;
 
   return *this;
 }
@@ -387,6 +389,18 @@ int BOVReader::ReadVectorArray(
 
   for (int q=0; q<nComps; ++q)
     {
+    // if a projection is requested then we zero out
+    // the out-of-plane component and skip the I/O/.
+    int p=1<<q;
+    if (p&this->VectorProjection)
+      {
+      for (size_t i=0; i<nCells; ++i)
+        {
+        pfa[nComps*i+q]=0.0;
+        }
+      continue;
+      }
+
     // Read qth component array
     if (!ReadDataArray(
             it.GetComponentFile(q),
@@ -447,6 +461,19 @@ int BOVReader::ReadVectorArray(
 
   for (int q=0; q<nComps; ++q)
     {
+    // if a projection is requested then we zero out
+    // the out-of-plane component and skip the I/O/.
+    int p=1<<q;
+    if (p&this->VectorProjection)
+      {
+      for (size_t i=0; i<nPts; ++i)
+        {
+        pVec[nComps*i+q]=0.0;
+        }
+      continue;
+      }
+
+    // read the qth component
     for (ioit.Initialize(); ioit.Ok(); ioit.Next())
       {
       if (!ReadDataArray(
@@ -918,7 +945,8 @@ void BOVReader::PrintSelf(ostream &os)
     << "  Comm: " << this->Comm << endl
     << "  NGhost: " << this->NGhost << endl
     << "  ProcId: " << this->ProcId << endl
-    << "  NProcs: " << this->NProcs << endl;
+    << "  NProcs: " << this->NProcs << endl
+    << "  VectorProjection: " << this->VectorProjection << endl;
 
   if (this->Hints!=MPI_INFO_NULL)
     {

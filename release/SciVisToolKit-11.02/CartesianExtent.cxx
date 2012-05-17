@@ -35,7 +35,13 @@ int CartesianExtent::GetDimensionMode(
     ||((inExt[0]<minExt) && (inExt[2]<minExt))
     ||((inExt[1]<minExt) && (inExt[2]<minExt)))
     {
-    sqErrorMacro(pCerr(),"This filter does not support less than 2D.");
+    sqErrorMacro(
+      pCerr(),
+      << "The extent is too small." << endl
+      << "minExt=" << minExt << endl
+      << "problemDomain=" << problemDomain << endl
+      << "problemDomainSize=" << Tuple<int>(inExt,3) << endl
+      << "NOTE: This filter does not support less than 2D.");
     return DIM_MODE_INVALID;
     }
   //  Identify 2D cases
@@ -217,5 +223,33 @@ CartesianExtent CartesianExtent::NodeToCell(
   }
 
   return outputExt;
+}
+
+//-----------------------------------------------------------------------------
+void CartesianExtent::Shift(
+      int *ijk,
+      int n,
+      int mode)
+{
+  switch(mode)
+  {
+  case DIM_MODE_2D_XY:
+    ijk[0]+=n;
+    ijk[1]+=n;
+    break;
+  case DIM_MODE_2D_XZ:
+    ijk[0]+=n;
+    ijk[2]+=n;
+    break;
+  case DIM_MODE_2D_YZ:
+    ijk[1]+=n;
+    ijk[2]+=n;
+    break;
+  case DIM_MODE_3D:
+    ijk[0]+=n;
+    ijk[1]+=n;
+    ijk[2]+=n;
+    break;
+  }
 }
 

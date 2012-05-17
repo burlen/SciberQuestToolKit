@@ -15,9 +15,10 @@ Copyright 2008 SciberQuest Inc.
 
 class vtkInformation;
 class vtkInformationVector;
+class CUDAConvolutionDriver;
 
-
-
+// .DESCRIPTION
+//
 class vtkSQKernelConvolution : public vtkDataSetAlgorithm
 {
 public:
@@ -56,9 +57,52 @@ public:
   vtkGetMacro(KernelWidth,int);
 
   // Description:
-  // Set the number of itterations to apply. NOT IMPLEMENTED.
-  vtkSetMacro(NumberOfIterations,int);
-  vtkGetMacro(NumberOfIterations,int);
+  // Query properties of the current device and available devices.
+  vtkGetMacro(NumberOfCUDADevices,int);
+  vtkGetVector2Macro(CUDADeviceRange,int);
+
+  // Description:
+  // Set the number of MPI ranks to use GPUs per host. This is where
+  // EnableCUDA and CUDADeviceID are set on a rank by rank basis.
+  void SetAllMPIRanksToUseCUDA(int allUse);
+  void SetAllMPIRanksToUseCPU(){ this->SetAllMPIRanksToUseCUDA(0); }
+  void SetNumberOfMPIRanksToUseCUDA(int nRanks);
+  int GetNumberOfMPIRanksToUseCUDA(){ return this->NumberOfMPIRanksToUseCUDA; }
+
+  // Description:
+  // Set the number of GPUs to use per host.
+  void SetNumberOfActiveCUDADevices(int nActive);
+  int GetNumberOfActiveCUDADevices(){ return this->NumberOfActiveCUDADevices; }
+
+  // Description:
+  // Set to use CUDA. This is done automatically when
+  // SetNumberOfActiveDevices is called.
+  vtkSetMacro(EnableCUDA,int);
+  vtkGetMacro(EnableCUDA,int);
+
+  // Description:
+  // Set the CUDA device id. This is done automatically when
+  // SetNumberOfActiveDevices is called.
+  void SetCUDADeviceId(int deviceId);
+  vtkGetMacro(CUDADeviceId,int);
+
+  // Description:
+  // Set the number of warps per CUDA block. This paramter is used
+  // to set the block size so that warp size is an even divisor.
+  void SetNumberOfWarpsPerCUDABlock(int nWarpsPerBlock);
+  int GetNumberOfWarpsPerCUDABlock();
+
+  // Description:
+  // Set a flag indicating it's OK to use constant memory
+  // for the convolution kernel.
+  void SetKernelCUDAMemoryType(int memType);
+  int GetKernelCUDAMemoryType();
+
+  // Description:
+  // Set a flag indicating it's OK to use texture memory
+  // for input arrays.
+  void SetInputCUDAMemoryType(int memType);
+  int GetInputCUDAMemoryType();
 
 protected:
   //int FillInputPortInformation(int port, vtkInformation *info);
@@ -75,6 +119,11 @@ protected:
   int UpdateKernel();
 
 private:
+  int WorldSize;
+  int WorldRank;
+  int HostSize;
+  int HostRank;
+  //
   int KernelWidth;
   int KernelType;
   CartesianExtent KernelExt;
@@ -84,6 +133,15 @@ private:
   int Mode;
   //
   int NumberOfIterations;
+  //
+  int NumberOfCUDADevices;
+  int CUDADeviceRange[2];
+  int NumberOfActiveCUDADevices;
+  int CUDADeviceId;
+  int NumberOfMPIRanksToUseCUDA;
+  int EnableCUDA;
+  //
+  CUDAConvolutionDriver *CUDADriver;
 
 private:
   vtkSQKernelConvolution(const vtkSQKernelConvolution &); // Not implemented

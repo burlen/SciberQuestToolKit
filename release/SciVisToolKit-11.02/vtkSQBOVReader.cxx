@@ -348,6 +348,19 @@ void vtkSQBOVReader::SetKSubset(int klo, int khi)
 }
 
 //-----------------------------------------------------------------------------
+void vtkSQBOVReader::SetVectorProjection(int mode)
+{
+  this->Reader->SetVectorProjection(mode);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+int vtkSQBOVReader::GetVectorProjection()
+{
+  return this->Reader->GetVectorProjection();
+}
+
+//-----------------------------------------------------------------------------
 int vtkSQBOVReader::GetNumberOfTimeSteps()
 {
   return this->Reader->GetMetaData()->GetNumberOfTimeSteps();

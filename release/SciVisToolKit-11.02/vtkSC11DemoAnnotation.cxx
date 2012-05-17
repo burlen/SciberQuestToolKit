@@ -53,8 +53,7 @@ vtkSC11DemoAnnotation::vtkSC11DemoAnnotation()
     DummyFileListDomain(0),
     BWDataFile(0),
     TimeStepFile(0),
-    TimeDataFile(0),
-    Mode(MODE_AGGREGATE)
+    TimeDataFile(0)
 {
   this->SetNumberOfOutputPorts(2);
 
@@ -102,11 +101,6 @@ vtkSC11DemoAnnotation::vtkSC11DemoAnnotation()
       {
       npos=hostSet.end();
       string host=hostNames+(i*hostNameLen);
-      size_t at=host.find(".");
-      if (at!=string::npos)
-        {
-        host=host.substr(0,at);
-        }
       it=hostSet.find(host);
       if (it==npos)
         {
@@ -209,102 +203,43 @@ int vtkSC11DemoAnnotation::RequestData(
     vtkInformationVector* outputVector)
 {
   int col1Width=0;
-  if ((this->WorldRank==0) && (this->Mode==MODE_AGGREGATE))
-    {
-    col1Width=this->Hosts[0].size()+3;
-    }
-  else
-  if ((this->WorldRank==0) && (this->Mode==MODE_SINGLE_RANK))
-    {
-    col1Width=12;
-    }
+  if (this->WorldRank==0) col1Width=this->Hosts[0].size()+3;
   const int col2Width=8;
   const int col3Width=10;
   const int width=col1Width+col2Width+col3Width;
   const int half1Width=width/2+5;
   const int half2Width=width-half1Width;
 
+  // only 1 rank per host needs to access the bw data
+  // for that host this prevents counting multiple
+  // times.
   string bwData;
-  string timeData;
-
-  if (this->WorldRank==0)
+  if (this->InBWComm)
     {
-    bwData="***** Gb/s";
-    timeData="***** sec";
-    }
-
-  if ((this->Mode==MODE_AGGREGATE) && this->InBWComm)
-    {
-    // only 1 rank per host needs to access the bw data
-    // for that host this prevents counting multiple
-    // times.
     if (this->BWDataFile && strlen(this->BWDataFile))
       {
       ifstream bwFile(this->BWDataFile);
-      if (bwFile.good())
-        {
-        int bwCommSize;
-        MPI_Comm_size(this->BWComm,&bwCommSize);
-
-        double bw=0;
-        double bwTotal=0;
-        bwFile >> bw;
-        bwFile.close();
-        vector<double> allBw;
-        if (this->WorldRank==0)
-          {
-          allBw.resize(bwCommSize);
-          }
-        MPI_Gather(&bw,1,MPI_DOUBLE,&allBw[0],1,MPI_DOUBLE,0,this->BWComm);
-        if (this->WorldRank==0)
-          {
-          ostringstream oss;
-          oss
-            << setw(1) << "+" << setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl
-            << setw(1) << "|"
-            << setw(half1Width) << setfill(' ') << right << "Bandwidth"
-            << setw(half2Width+1) << right << "|"
-            << endl
-            << setw(1) << "+" << setw(width) << setfill('-') << "-" << setw(1) << "+" << endl;
-          for (int i=0; i<bwCommSize; ++i)
-            {
-            oss
-              << setw(1) << "|" << setw(col1Width) << setfill(' ') << left << this->Hosts[i]
-              << setw(col2Width) << setfill(' ') << right << setprecision(5) << allBw[i]
-              << setw(col3Width) << setfill(' ') << left << " Gb/sec"
-              << setw(1) << "|"  << endl;
-            bwTotal+=allBw[i];
-            }
-          oss
-            << setw(1) << "+" <<  setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl
-            << setw(1) << "|" << setw(col1Width) << setfill(' ') << " "
-            << setw(col2Width) << setfill(' ') << right << setprecision(5) << bwTotal
-            << setw(col3Width) << setfill(' ') << left <<  " Gb/sec"
-            << setw(1) << "|" << endl
-            << setw(1) << "+" <<  setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl;
-
-          bwData=oss.str();
-          }
-        }
-      else
+      if (!bwFile.good())
         {
         vtkErrorMacro("Failed to open " << this->BWDataFile);
+        return 1;
         }
-      }
-    }
-  else
-  if ((this->Mode==MODE_SINGLE_RANK) && (this->WorldRank==0))
-    {
-    // only rank0 accesses the bandwidth data
-    if (this->BWDataFile && strlen(this->BWDataFile))
-      {
-      ifstream bwFile(this->BWDataFile);
-      if (bwFile.good())
-        {
-        double bwTotal=0;
-        bwFile >> bwTotal;
-        bwFile.close();
 
+      int bwCommSize;
+      MPI_Comm_size(this->BWComm,&bwCommSize);
+
+      double bw=0;
+      double bwTotal=0;
+      bwFile >> bw;
+      bwFile.close();
+      vector<double> allBw;
+      if (this->WorldRank==0)
+        {
+        allBw.resize(bwCommSize);
+        }
+      MPI_Gather(&bw,1,MPI_DOUBLE,&allBw[0],1,MPI_DOUBLE,0,this->BWComm);
+      if (this->WorldRank==0)
+        {
         ostringstream oss;
         oss
           << setw(1) << "+" << setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl
@@ -312,64 +247,68 @@ int vtkSC11DemoAnnotation::RequestData(
           << setw(half1Width) << setfill(' ') << right << "Bandwidth"
           << setw(half2Width+1) << right << "|"
           << endl
-          << setw(1) << "+" << setw(width) << setfill('-') << "-" << setw(1) << "+" << endl
-          ///
-          << setw(1) << "|" << setw(col1Width) << setfill(' ') << left << "aggregate"
+          << setw(1) << "+" << setw(width) << setfill('-') << "-" << setw(1) << "+" << endl;
+        for (int i=0; i<bwCommSize; ++i)
+          {
+          oss
+            << setw(1) << "|" << setw(col1Width) << setfill(' ') << left << this->Hosts[i]
+            << setw(col2Width) << setfill(' ') << right << setprecision(5) << allBw[i]
+            << setw(col3Width) << setfill(' ') << left << " Gb/sec"
+            << setw(1) << "|"  << endl;
+          bwTotal+=allBw[i];
+          }
+        oss
+          << setw(1) << "+" <<  setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl
+          << setw(1) << "|" << setw(col1Width) << setfill(' ') << " "
           << setw(col2Width) << setfill(' ') << right << setprecision(5) << bwTotal
-          << setw(col3Width) << setfill(' ') << left << " Gb/sec"
-          << setw(1) << "|"  << endl
-          ///
+          << setw(col3Width) << setfill(' ') << left <<  " Gb/sec"
+          << setw(1) << "|" << endl
           << setw(1) << "+" <<  setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl;
 
         bwData=oss.str();
-        }
-      else
-        {
-        vtkErrorMacro("Failed to open " << this->BWDataFile);
         }
       }
     }
 
   // only rank 0 needs time data
+  string timeData;
   if (this->WorldRank==0)
     {
     if (this->TimeStepFile && strlen(this->TimeStepFile))
       {
       int step=0;
       ifstream timeFile(this->TimeStepFile);
-      if (timeFile.good())
+      if (!timeFile.good())
         {
-        timeFile >> step;
-        timeFile.close();
+        vtkErrorMacro("Failed to open " << this->TimeStepFile);
+        return 1;
+        }
+      timeFile >> step;
+      timeFile.close();
 
-        ostringstream oss;
+      ostringstream oss;
+      oss
+        << setw(1) << "+" <<  setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl;
+
+      if (step<this->TimeData.size())
+        {
         oss
-          << setw(1) << "+" <<  setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl;
-
-        if (step<this->TimeData.size())
-          {
-          oss
-            << setw(1) << "|"
-            <<  setw(width) << setfill(' ') << this->TimeData[step]
-            << setw(1) << "|" <<  endl;
-          }
-        else
-          {
-          oss
-            << setw(1) << "|"
-            <<  setw(width) << setfill(' ') << step
-            << setw(1) << "|" <<  endl;
-          }
-
-        oss
-          << setw(1) << "+" <<  setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl;
-
-        timeData=oss.str();
+          << setw(1) << "|"
+          <<  setw(width) << setfill(' ') << this->TimeData[step]
+          << setw(1) << "|" <<  endl;
         }
       else
         {
-        vtkErrorMacro("Failed to open " << this->TimeStepFile);
+        oss
+          << setw(1) << "|"
+          <<  setw(width) << setfill(' ') << step
+          << setw(1) << "|" <<  endl;
         }
+
+      oss
+        << setw(1) << "+" <<  setw(width) << setfill('-') << "-" << setw(1) << "+" <<  endl;
+
+      timeData=oss.str();
       }
     }
 
@@ -379,29 +318,25 @@ int vtkSC11DemoAnnotation::RequestData(
 
   // output port 1 -> bw data
   outInfo=outputVector->GetInformationObject(0);
-  output=dynamic_cast<vtkTable*>(outInfo->Get(vtkDataObject::DATA_OBJECT()));
-  if (this->WorldRank==0)
-    {
-    data=vtkStringArray::New();
-    data->SetName("BW Data");
-    data->SetNumberOfComponents(1);
-    data->InsertNextValue(bwData.c_str());
-    output->AddColumn(data);
-    data->Delete();
-    }
+  output
+    = dynamic_cast<vtkTable*>(outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  data=vtkStringArray::New();
+  data->SetName("BW Data");
+  data->SetNumberOfComponents(1);
+  data->InsertNextValue(bwData.c_str());
+  output->AddColumn(data);
+  data->Delete();
 
   // output port 2 -> time data
   outInfo=outputVector->GetInformationObject(1);
-  output=dynamic_cast<vtkTable*>(outInfo->Get(vtkDataObject::DATA_OBJECT()));
-  if (this->WorldRank==0)
-    {
-    data=vtkStringArray::New();
-    data->SetName("Time Data");
-    data->SetNumberOfComponents(1);
-    data->InsertNextValue(timeData.c_str());
-    output->AddColumn(data);
-    data->Delete();
-    }
+  output
+    = dynamic_cast<vtkTable*>(outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  data=vtkStringArray::New();
+  data->SetName("Time Data");
+  data->SetNumberOfComponents(1);
+  data->InsertNextValue(timeData.c_str());
+  output->AddColumn(data);
+  data->Delete();
 
   return 1;
 }
@@ -411,4 +346,5 @@ void vtkSC11DemoAnnotation::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+
 

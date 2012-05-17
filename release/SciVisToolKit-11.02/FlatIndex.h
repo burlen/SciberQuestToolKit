@@ -16,15 +16,18 @@ The following formula is applied:
 <pre>
 mode -> k*(A)    + j*(B)    +i*(C)
 --------------------------------------
-xy   -> k*(ninj) + j*(ni)   + i
-xz   -> k*(ni)   + j*(nink) + i
-yz   -> k*(nj)   + j        + i*(njnk)
+3d   -> k*(ninj) + j*(ni)   + i
+xy   ->            j*(ni)   + i
+xz   -> k*(ni)              + i
+yz   -> k*(nj)   + j
 --------------------------------------
 </pre>
 */
 class FlatIndex
 {
 public:
+  FlatIndex() : A(0), B(0), C(0) {}
+
   FlatIndex(int ni, int nj, int nk, int mode);
 
   int Index(int i, int j, int k)
@@ -39,4 +42,5 @@ private:
 };
 
 #endif
+
 

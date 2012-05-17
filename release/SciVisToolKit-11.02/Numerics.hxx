@@ -418,6 +418,73 @@ void Magnitude(
 
 //*****************************************************************************
 template<typename T>
+void Split(
+      int c,
+      size_t n,
+      int nComp,
+      T * __restrict__  V,
+      T * __restrict__  Vc)
+{
+  // take vector array and split a component into a scalar array.
+  for (size_t i=0; i<n; ++i)
+    {
+    size_t ii=nComp*i;
+    Vc[i]=V[ii+c];
+    }
+}
+
+//*****************************************************************************
+template<typename T>
+void Split(
+      size_t n,
+      T * __restrict__  V,
+      T * __restrict__  Vx,
+      T * __restrict__  Vy,
+      T * __restrict__  Vz)
+{
+  // take vector array and split into 3 scalar arrays.
+  for (size_t i=0; i<n; ++i)
+    {
+    size_t ii=3*i;
+    Vx[i]=V[ii  ];
+    Vy[i]=V[ii+1];
+    Vz[i]=V[ii+2];
+    }
+}
+
+//*****************************************************************************
+template<typename T>
+void Split(
+      int n,
+      T * __restrict__  V,
+      T * __restrict__  Vxx,
+      T * __restrict__  Vxy,
+      T * __restrict__  Vxz,
+      T * __restrict__  Vyx,
+      T * __restrict__  Vyy,
+      T * __restrict__  Vyz,
+      T * __restrict__  Vzx,
+      T * __restrict__  Vzy,
+      T * __restrict__  Vzz)
+{
+  // take scalar components and interleve into a vector array.
+  for (int i=0; i<n; ++i)
+    {
+    int ii=9*i;
+    Vxx[i]=V[ii  ];
+    Vxy[i]=V[ii+1];
+    Vxz[i]=V[ii+2];
+    Vyx[i]=V[ii+3];
+    Vyy[i]=V[ii+4];
+    Vyz[i]=V[ii+5];
+    Vzx[i]=V[ii+6];
+    Vzy[i]=V[ii+7];
+    Vzz[i]=V[ii+8];
+    }
+}
+
+//*****************************************************************************
+template<typename T>
 void Interleave(
       size_t n,
       T * __restrict__  Vx,
@@ -551,9 +618,9 @@ void Convolution(
       int *kernel,
       int nComp,
       int mode,
-      T*  V,
-      T*  W,
-      float *K)
+      T* __restrict__  V,
+      T* __restrict__  W,
+      float * __restrict__ K)
 {
   // input array bounds.
   const int ni=input[1]-input[0]+1;
@@ -587,30 +654,34 @@ void Convolution(
       for (int p=output[0]; p<=output[1]; ++p)
         {
         const int _i=p-output[0];
-        const int _pi=_idx.Index(_i,_j,_k);
         const int  i=p-input[0];
 
+        const int _pi=nComp*_idx.Index(_i,_j,_k);
+
+        // intialize the output
         for (int c=0; c<nComp; ++c)
           {
-          const int pi=nComp*_pi+c;
+          W[_pi+c] = 0.0;
+          }
 
-          W[pi] = 0.0;
+        for (int h=kernel[4]; h<=kernel[5]; ++h)
+          {
+          const int kk=h-kernel[4];
 
-          for (int h=kernel[4]; h<=kernel[5]; ++h)
+          for (int g=kernel[2]; g<=kernel[3]; ++g)
             {
-            const int kk=h-kernel[4];
+            const int kj=g-kernel[2];
 
-            for (int g=kernel[2]; g<=kernel[3]; ++g)
+            for (int f=kernel[0]; f<=kernel[1]; ++f)
               {
-              const int kj=g-kernel[2];
+              const int ki=f-kernel[0];
+              int kii = kidx.Index(ki,kj,kk);
 
-              for (int f=kernel[0]; f<=kernel[1]; ++f)
+              int vi = nComp*idx.Index(i+f,j+g,k+h);
+
+              for (int c=0; c<nComp; ++c)
                 {
-                const int ki=f-kernel[0];
-                int vi = nComp*idx.Index(i+f,j+g,k+h)+c;
-                int kii = kidx.Index(ki,kj,kk);
-
-                W[pi] += V[vi]*K[kii];
+                W[_pi+c] += V[vi+c]*K[kii];
                 }
               }
             }

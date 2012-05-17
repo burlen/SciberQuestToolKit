@@ -141,6 +141,24 @@ Copyright 2008 SciberQuest Inc.
       </Documentation>
     </IntVectorProperty>
 
+    <!-- Projection -->
+    <IntVectorProperty
+        name="VectorProjection"
+        lable="Vector Projection"
+        command="SetVectorProjection"
+        number_of_elements="1"
+        default_values="0" >
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="None"/>
+        <Entry value="4" text="XY"/>
+        <Entry value="2" text="XZ"/>
+        <Entry value="1" text="YZ"/>
+      </EnumerationDomain>
+      <Documentation>
+        Field is projected into the axis aligned space when set.
+      </Documentation>
+    </IntVectorProperty>
+
     <!-- MPI File Hints -->
     <IntVectorProperty
         name="UseCollectiveIO"
@@ -486,6 +504,24 @@ Copyright 2008 SciberQuest Inc.
       <BooleanDomain name="bool"/>
       <Documentation>
         If set the block cache is explcitly cleared after each pipeline update.
+      </Documentation>
+    </IntVectorProperty>
+
+    <!-- Projection -->
+    <IntVectorProperty
+        name="VectorProjection"
+        lable="Vector Projection"
+        command="SetVectorProjection"
+        number_of_elements="1"
+        default_values="0" >
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="None"/>
+        <Entry value="4" text="XY"/>
+        <Entry value="2" text="XZ"/>
+        <Entry value="1" text="YZ"/>
+      </EnumerationDomain>
+      <Documentation>
+        Field is projected into the axis aligned space when set.
       </Documentation>
     </IntVectorProperty>
 
@@ -1393,21 +1429,6 @@ Copyright 2008 SciberQuest Inc.
         path to the file containing the time step
        </Documentation>
      </StringVectorProperty>
-
-    <IntVectorProperty
-        name="BWMode"
-        lable="BW Mode"
-        command="SetMode"
-        number_of_elements="1"
-        default_values="0" >
-      <EnumerationDomain name="enum">
-        <Entry value="0" text="AGGREGATE"/>
-        <Entry value="1" text="SINGLE_RANK"/>
-      </EnumerationDomain>
-      <Documentation>
-        Display aggregated bandwidth  across all hosts, or a single number from rank 0.
-      </Documentation>
-    </IntVectorProperty>
 
     <OutputPort name="Bandwidth"  index="0" />
     <OutputPort name="Time"       index="1" />
@@ -3472,23 +3493,6 @@ Copyright 2008 SciberQuest Inc.
             </Documentation>
       </StringVectorProperty>
 
-    <!--
-    <IntVectorProperty
-        name="Mode"
-        lable="Mode"
-        command="SetMode"
-        number_of_elements="1"
-        default_values="0" >
-      <EnumerationDomain name="enum">
-        <Entry value="0" text="3D"/>
-        <Entry value="1" text="2D_XY"/>
-      </EnumerationDomain>
-      <Documentation>
-        Select finite difference stencil.
-      </Documentation>
-    </IntVectorProperty>
-    -->
-
     <IntVectorProperty
         name="KernelType"
         lable="Kernel"
@@ -3536,19 +3540,159 @@ Copyright 2008 SciberQuest Inc.
       </Documentation>
     </IntVectorProperty>
 
-    <!--
     <IntVectorProperty
-        name="NumberOfIterations"
-        label="Iterations"
-        command="SetNumberOfIterations"
+        name="RanksToUseCUDA"
+        label="CUDA Ranks Per Host"
+        command="SetNumberOfMPIRanksToUseCUDA"
         number_of_elements="1"
-        default_values="1">
-      <IntRangeDomain name="range" min="1" max="100"/>
+        default_values="-1">
+       <Documentation>
+         When set larger than 0, ranks are assigned to use GPUs.
+       </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+      name="GetNumberOfCUDADevices"
+      command="GetNumberOfCUDADevices"
+      information_only="1">
+      <SimpleIntInformationHelper/>
+    </IntVectorProperty>
+    <IntVectorProperty
+        name="ActiveCUDADevices"
+        label="Active CUDA Devices Per Host"
+        command="SetNumberOfActiveCUDADevices"
+        number_of_elements="1"
+        default_values="-1">
+       <Documentation>
+         When set larger than 0, work is assigned to GPUs.
+       </Documentation>
+      <IntRangeDomain name="range">
+        <RequiredProperties>
+            <Property name="GetNumberOfCUDADevices" function="Range"/>
+        </RequiredProperties>
+      </IntRangeDomain>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="WarpsPerCUDABlock"
+        label="CUDA Warps Per Block"
+        command="SetNumberOfWarpsPerCUDABlock"
+        number_of_elements="1"
+        default_values="8">
+       <Documentation>
+         Control over domain decomposition. More warps per block means larger blocks.
+       </Documentation>
+    </IntVectorProperty>
+
+    <!-- CUDA 
+    <IntVectorProperty
+        name="Use CUDA"
+        command="SetEnableCUDA"
+        number_of_elements="1"
+        default_values="0" >
+       <BooleanDomain name="bool"/>
+       <Documentation>
+         When enabled CUDA algorithm is used.
+       </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+      name="GetCUDADeviceRange"
+      command="GetCUDADeviceRange"
+      information_only="1">
+      <SimpleIntInformationHelper/>
+    </IntVectorProperty>
+    <IntVectorProperty
+        name="CUDADeviceId"
+        label="CUDA Device Id"
+        command="SetCUDADeviceId"
+        number_of_elements="1"
+        default_values="0">
+      <IntRangeDomain name="range">
+        <RequiredProperties>
+            <Property name="GetCUDADeviceRange" function="Range"/>
+        </RequiredProperties>
+      </IntRangeDomain>
       <Documentation>
-        Set the number of times to apply the convolution.
+        Set the cuda device id to use.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+      name="GetCUDAThreadRange"
+      command="GetCUDAThreadRange"
+      information_only="1">
+      <SimpleIntInformationHelper/>
+    </IntVectorProperty>
+    <IntVectorProperty
+        name="NumberOfCUDAThreads"
+        label="Num. CUDA Threads"
+        command="SetNumberOfCUDAThreads"
+        number_of_elements="1"
+        default_values="1024">
+      <IntRangeDomain name="range">
+        <RequiredProperties>
+            <Property name="GetCUDAThreadRange" function="Range"/>
+        </RequiredProperties>
+      </IntRangeDomain>
+      <Documentation>
+        Set the number of of cuda threads.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+      name="GetCUDABlockRange"
+      command="GetCUDABlockRange"
+      information_only="1">
+      <SimpleIntInformationHelper/>
+    </IntVectorProperty>
+    <IntVectorProperty
+        name="NumberOfCUDABlocks"
+        label="Num. CUDA Blocks"
+        command="SetNumberOfCUDABlocks"
+        number_of_elements="1"
+        default_values="1024">
+      <IntRangeDomain name="range">
+        <RequiredProperties>
+            <Property name="GetCUDABlockRange" function="Range"/>
+        </RequiredProperties>
+      </IntRangeDomain>
+      <Documentation>
+        Set the number of of cuda blocks.
       </Documentation>
     </IntVectorProperty>
     -->
+
+    <IntVectorProperty
+        name="KernelCUDAMemoryType"
+        label="Kernel CUDA Memory Type"
+        command="SetKernelCUDAMemoryType"
+        number_of_elements="1"
+        default_values="0">
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="global"/>
+        <Entry value="1" text="constant"/>
+        <Entry value="2" text="texture"/>
+      </EnumerationDomain>
+      <Documentation>
+        Control where the kernel is placed in device memory.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="InputCUDAMemoryType"
+        label="Input CUDA Memory Type"
+        command="SetInputCUDAMemoryType"
+        number_of_elements="1"
+        default_values="0">
+      <EnumerationDomain name="enum">
+        <Entry value="0" text="global"/>
+        <Entry value="2" text="texture"/>
+      </EnumerationDomain>
+      <Documentation>
+        Control where the input array is placed in device memory.
+      </Documentation>
+    </IntVectorProperty>
 
     <Hints>
       <View type="RenderView"/>

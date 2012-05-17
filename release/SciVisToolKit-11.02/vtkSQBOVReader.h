@@ -79,6 +79,13 @@ public:
   vtkGetVector2Macro(KSubsetRange,int);
 
   // Description:
+  // Set the reader's projection mode.
+  // If set then the reader will project the field into one
+  // of the axis aligned spaces, XY,XZ, or YZ.
+  void SetVectorProjection(int mode);
+  int GetVectorProjection();
+
+  // Description:
   // Set the grid spacing multiplication factor. If 1 then grid
   // spacing on file is used. If greater than 1 dataset is down
   // sampled.
@@ -213,6 +220,7 @@ private:
   int UseDeferredOpen;     // Turn on/off deffered open (only agg.'s open)
   int UseDataSieving;      // Turn on/off data sieving
   int SieveBufferSize;     // Sieve size.
+  int VectorProjection;    
 };
 
 #endif

@@ -20,6 +20,8 @@ Copyright 2008 SciberQuest Inc.
 
 #include <fstream>
 using std::ofstream;
+using std::ios_base;
+
 
 #include <mpi.h>
 
@@ -334,6 +336,7 @@ vtkSQLog *vtkSQLog::GetGlobalInstance()
 void vtkSQLog::Clear()
 {
   this->Log->Clear();
+  this->Header.str("");
 }
 
 //-----------------------------------------------------------------------------
@@ -390,12 +393,6 @@ void vtkSQLog::EndEventSynch(const char *event)
   MPI_Barrier(MPI_COMM_WORLD);
   this->EndEvent(event);
 }
-//-----------------------------------------------------------------------------
-vtkSQLog &vtkSQLog::operator<<(const char *s)
-{
-  *this->Log << s;
-  return *this;
-}
 
 //-----------------------------------------------------------------------------
 void vtkSQLog::Update()
@@ -413,7 +410,7 @@ int vtkSQLog::Write()
     {
     ostringstream oss;
     *this->Log >> oss;
-    ofstream f(this->FileName);
+    ofstream f(this->FileName, ios_base::out|ios_base::app);
     if (!f.good())
       {
       sqErrorMacro(
@@ -425,7 +422,7 @@ int vtkSQLog::Write()
       }
     time_t t;
     time(&t);
-    f << "# " << ctime(&t) << oss.str();
+    f << "# " << ctime(&t) << this->Header.str() << oss.str();
     f.close();
     }
   return 0;

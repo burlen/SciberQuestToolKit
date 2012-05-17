@@ -1,15 +1,28 @@
 <?xml version="1.0"?>
 <SmoothBatch>
 
+      <!--ISubset="5120 10239"-->
   <vtkSQBOVReader
       cb_enable="1"
-      ISubset="5120 10239"
+      ISubset="-1 -1"
       JSubset="-1 -1"
       KSubset="-1 -1">
        <arrays> b </arrays>
   </vtkSQBOVReader>
 
-  <vtkSQKernelConvolution stencilWidth="03"/>
+  <!--
+  memory types:
+    gloabl=0
+    constant=1
+    texture=2
+  -->
+  <vtkSQKernelConvolution
+      stencilWidth="19"
+      numberOfMPIRanksToUseCUDA="-1"
+      numberOfActiveCUDADevices="-1"
+      numberOfWarpsPerCUDABlock="8"
+      inputCUDAMemoryType="2"
+      kernelCUDAMemoryType="0"/>
 
   <vtkSQBOVWriter
       cb_enable="1"

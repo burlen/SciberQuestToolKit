@@ -24,6 +24,7 @@ include(EigenConfig.cmake)
 include(MPICHConfig.cmake)
 include(GimpConfig.cmake)
 include(GeneratePythonBindings.cmake)
+include(CUDAConfig.cmake)
 
 # Server manager wrapped sources.
 set(SM_CXX_SOURCES
@@ -145,6 +146,21 @@ if (SVTK_PROCESS_MONITOR)
   endif()
 endif()
 
+if (CUDA_FOUND)
+  message(STATUS "Including CUDA accelerated filters.")
+  message(STATUS "Cuda ${CUDA_VERSION_STRING} found.")
+  set(CUDA_NVCC_FLAGS "-arch=sm_20;--compiler-options;-fPIC")
+  set(CUDA_NVCC_DEBUG_FLAGS "-g;-G;")
+  set(CUDA_NVCC_RELEASE_FLAGS "-O3")
+  message(STATUS "CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
+  message(STATUS "CUDA_NVCC_DEBUG_FLAGS=${CUDA_NVCC_DEBUG_FLAGS}")
+  message(STATUS "CUDA_NVCC_RELEASE_FLAGS=${CUDA_NVCC_FLAGS}")
+  set(CU_SOURCES
+    CUDAConvolutionDriver.cu)
+  CUDA_ADD_LIBRARY(CUDAConvolutionDriver ${CU_SOURCES})
+  CUDA_BUILD_CLEAN_TARGET()
+endif()
+
 if(PARAVIEW_BUILD_QT_GUI)
   message(STATUS "Including custom panels.")
   set(_IFACES)
@@ -262,6 +278,10 @@ add_paraview_plugin(
   SERVER_MANAGER_XML SciVisToolKitServerManager.xml
   GUI_RESOURCE_FILES ${CLIENT_XML}
   SOURCES ${CXX_SOURCES})
+
+if (CUDA_FOUND)
+  target_link_libraries(SciVisToolKit CUDAConvolutionDriver)
+endif()
 
 if (WIN32 AND SVTK_PROCESS_MONITOR)
   target_link_libraries(SciVisToolKit Psapi)

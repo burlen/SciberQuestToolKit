@@ -150,6 +150,17 @@ public:
     return this->MetaData->DataSetTypeIsStructured();
     }
 
+  /**
+  Project a 3D vector field into axis aligned 2D space.
+  */
+  enum {
+    VECTOR_PROJECT_NONE=0x000,
+    VECTOR_PROJECT_2D_XY=0x100,
+    VECTOR_PROJECT_2D_XZ=0x010,
+    VECTOR_PROJECT_2D_YZ=0x001
+    };
+  void SetVectorProjection(int mode){ this->VectorProjection=mode; }
+  int GetVectorProjection(){ return this->VectorProjection; }
 
   /**
   Print internal state.
@@ -196,6 +207,7 @@ private:
   int NProcs;                // Number of processes.
   MPI_Comm Comm;             // Communicator handle
   MPI_Info Hints;            // MPI-IO file hints.
+  int VectorProjection;      // Option to project onto axis aligned plane.
 };
 
 #endif

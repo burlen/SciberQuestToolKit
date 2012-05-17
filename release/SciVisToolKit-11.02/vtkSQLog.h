@@ -75,24 +75,9 @@ public:
   void EndEventSynch(const char *event);
 
   // Description:
-  // Insert text into the log.
-  vtkSQLog &operator<<(const char *s);
-
-  /*
-  // Description:
-  // Add to the log.
+  // Insert text into the log header on the writer rank.
   template<typename T>
-  vtkSQLog &operator<<(const T& data)
-    {
-    *this->Log << data;
-    return *this;
-    }
-
-  // Description:
-  // Get the log contents.
-  const char *GetLog() const { return this->Log->GetData(); }
-  ostream &GetLogStream(){ return this->Log; }
-  */
+  vtkSQLog &operator<<(const T& s);
 
   // Description:
   // Clear the log.
@@ -147,7 +132,20 @@ private:
 
   static vtkSQLog *GlobalInstance;
   static vtkSQLogDestructor GlobalInstanceDestructor;
+
+  ostringstream Header;
 };
+
+//-----------------------------------------------------------------------------
+template<typename T>
+vtkSQLog &vtkSQLog::operator<<(const T& s)
+{
+  if (this->WorldRank==this->WriterRank)
+    {
+    this->Header << s;
+    }
+    return *this;
+}
 
 #endif
 

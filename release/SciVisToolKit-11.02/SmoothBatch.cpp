@@ -35,6 +35,7 @@ Copyright 2008 SciberQuest Inc.
 #include <sstream>
 using std::ostringstream;
 #include <iostream>
+using std::cin;
 using std::cerr;
 using std::endl;
 #include <iomanip>
@@ -205,10 +206,11 @@ int main(int argc, char **argv)
     controller->Broadcast(&endTime,1,0);
 
     *log
-      << "# " << configName << "\n"
-      << "# " << bovFileName << "\n"
-      << "# " << outputPath << "\n"
-      << "# " << startTimeStr << " " << endTimeStr << "\n";
+      << "# configName=" << configName << "\n"
+      << "# bovFileName=" << bovFileName << "\n"
+      << "# outputPath=" << outputPath << "\n"
+      << "# timeRange=" << startTimeStr << " " << endTimeStr << "\n"
+      << "\n";
     }
   else
     {
@@ -347,14 +349,36 @@ int main(int argc, char **argv)
     nArrays=r->GetNumberOfPointArrays();
     for (int i=0; i<nArrays; ++i)
       {
-      arrays.push_back(r->GetPointArrayName(i));
+      const char * arrayName=r->GetPointArrayName(i);
+      arrays.push_back(arrayName);
       }
+    }
+
+  if (worldRank==0)
+    {
+    *log
+      << "# ::vtkSQBOVReader" << "\n"
+      << "#   cb_enable=" << cb_enable << "\n"
+      << "#   cb_buffer_size=" << cb_buffer_size << "\n"
+      << "#   wholeExtent=" << Tuple<int>(wholeExtent,6) << "\n"
+      << "#   subsetExtent=" << Tuple<int>(subset,6) << "\n";
+    for (int i=0; i<nArrays; ++i)
+      {
+      *log << "#   arrayName_" << i << "=" << arrays[i] << "\n";
+      }
+    *log << "\n";
     }
 
   // set up ghost cell generator
   vtkSQImageGhosts *ig=vtkSQImageGhosts::New();
   ig->AddInputConnection(r->GetOutputPort(0));
   r->Delete();
+  if (worldRank==0)
+    {
+    *log
+      << "# ::vtkSQImageGhosts" << "\n"
+      << "\n";
+    }
 
   // set up kernel convolution filter
   iErr=0;
@@ -365,8 +389,7 @@ int main(int argc, char **argv)
     }
 
   int stencilWidth;
-  iErr+=GetRequiredAttribute<int,1>(elem,"stencilWidth",&stencilWidth);
-
+  iErr=GetRequiredAttribute<int,1>(elem,"stencilWidth",&stencilWidth);
   if (iErr!=0)
     {
     sqErrorMacro(pCerr(),"Error: Parsing " << elem->GetName() <<  ".");
@@ -378,6 +401,81 @@ int main(int argc, char **argv)
   kconv->SetKernelWidth(stencilWidth);
   kconv->AddInputConnection(ig->GetOutputPort(0));
   ig->Delete();
+
+  int numberOfMPIRanksToUseCUDA=0;
+  GetOptionalAttribute<int,1>(elem,"numberOfMPIRanksToUseCUDA",&numberOfMPIRanksToUseCUDA);
+  if (worldRank==0)
+    {
+    *log
+      << "# ::vtkSQKernelConvolution" << "\n"
+      << "#   stencilWidth=" << stencilWidth << "\n"
+      << "#   numberOfMPIRanksToUseCUDA=" << numberOfMPIRanksToUseCUDA << "\n";
+    }
+  kconv->SetNumberOfMPIRanksToUseCUDA(numberOfMPIRanksToUseCUDA);
+  if (numberOfMPIRanksToUseCUDA)
+    {
+    /*
+    kconv->SetEnableCUDA(1);
+
+    int cudaDevice=0;
+    GetOptionalAttribute<int,1>(elem,"cudaDevice",&cudaDevice);
+    if (cudaDevice)
+      {
+      kconv->SetCUDADeviceId(cudaDevice);
+      }
+
+    int numberOfCUDABlocks=0;
+    GetOptionalAttribute<int,1>(elem,"numberOfCUDABlocks",&numberOfCUDABlocks);
+    if (numberOfCUDABlocks)
+      {
+      kconv->SetNumberOfCUDABlocks(numberOfCUDABlocks);
+      }
+
+    int numberOfCUDAThreads=0;
+    GetOptionalAttribute<int,1>(elem,"numberOfCUDAThreads",&numberOfCUDAThreads);
+    if (numberOfCUDAThreads)
+      {
+      kconv->SetNumberOfCUDAThreads(numberOfCUDAThreads);
+      }
+    */
+    int numberOfActiveCUDADevices=1;
+    GetOptionalAttribute<int,1>(elem,"numberOfActiveCUDADevices",&numberOfActiveCUDADevices);
+    kconv->SetNumberOfActiveCUDADevices(numberOfActiveCUDADevices);
+
+    int numberOfWarpsPerCUDABlock=0;
+    GetOptionalAttribute<int,1>(elem,"numberOfWarpsPerCUDABlock",&numberOfWarpsPerCUDABlock);
+    if (numberOfWarpsPerCUDABlock)
+      {
+      kconv->SetNumberOfWarpsPerCUDABlock(numberOfWarpsPerCUDABlock);
+      }
+
+    int kernelCUDAMemType=-1;
+    GetOptionalAttribute<int,1>(elem,"kernelCUDAMemoryType",&kernelCUDAMemType);
+    if (kernelCUDAMemType>=0)
+      {
+      kconv->SetKernelCUDAMemoryType(kernelCUDAMemType);
+      }
+
+    int inputCUDAMemType=-1;
+    GetOptionalAttribute<int,1>(elem,"inputCUDAMemoryType",&inputCUDAMemType);
+    if (inputCUDAMemType>=0)
+      {
+      kconv->SetInputCUDAMemoryType(inputCUDAMemType);
+      }
+
+    if (worldRank==0)
+      {
+      *log
+        //<< "#   cudaDevice=" << cudaDevice << "\n"
+        //<< "#   numberOfCUDABlocks=" << numberOfCUDABlocks << "\n"
+        //<< "#   numberOfCUDAThreads=" << numberOfCUDAThreads << "\n"
+        << "#   numberOfActiveCUDADevices=" << numberOfActiveCUDADevices << "\n"
+        << "#   numberOfWarpsPerCUDABlock=" << numberOfWarpsPerCUDABlock << "\n"
+        << "#   kernelCUDAMemType=" << kernelCUDAMemType << "\n"
+        << "#   inputCUDAMemType=" << inputCUDAMemType << "\n"
+        << "\n";
+      }
+    }
 
   // set up the writer
   elem=GetRequiredElement(root,"vtkSQBOVWriter");
@@ -434,6 +532,17 @@ int main(int argc, char **argv)
   w->AddInputConnection(0,kconv->GetOutputPort(0));
   kconv->Delete();
 
+  if (worldRank==0)
+    {
+    *log
+      << "# ::vtkSQBOVWriter" << "\n"
+      << "#   cb_buffer_size=" << cb_buffer_size << "\n"
+      << "#   stripe_count=" << stripe_count << "\n"
+      << "#   stripe_size=" << stripe_size << "\n"
+      << "#   cb_enable=" << cb_enable << "\n"
+      << "\n";
+    }
+
   // make a directory for this dataset
   if (worldRank==0)
     {
@@ -442,7 +551,7 @@ int main(int argc, char **argv)
       {
       char *sErr=strerror(errno);
       sqErrorMacro(pCerr(),
-          << "Failed to mkdir " << outputPath << "." << endl
+          << "Failed to mkdir " << outputPath << "." << "\n"
           << "Error: " << sErr << ".");
       return SQ_EXIT_ERROR;
       }
@@ -507,7 +616,7 @@ int main(int argc, char **argv)
       << startTime << ":" << startTimeIdx
       << " to "
       << endTime << ":" << endTimeIdx
-      << endl;
+      << "\n";
     }
 
   root->Delete();
@@ -528,7 +637,7 @@ int main(int argc, char **argv)
 
     if (worldRank==0)
       {
-      pCerr() << "processing time " << time << endl;
+      pCerr() << "processing time " << time << "\n";
       }
 
     exec->SetUpdateTimeStep(0,time);

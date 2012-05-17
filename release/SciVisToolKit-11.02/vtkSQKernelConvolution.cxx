@@ -9,8 +9,18 @@ Copyright 2008 SciberQuest Inc.
 */
 #include "vtkSQKernelConvolution.h"
 
+//#define vtkSQKernelConvolutionDEBUG
+#define vtkSQKernelConvolutionTIME
+
+#if defined vtkSQKernelConvolutionTIME
+  #include "vtkSQLog.h"
+#endif
+
+#include "Numerics.hxx"
+#include "Tuple.hxx"
 #include "CartesianExtent.h"
 #include "CartesianExtent.h"
+#include "CUDAConvolutionDriver.h"
 #include "postream.h"
 
 #include "vtkObjectFactory.h"
@@ -29,15 +39,15 @@ Copyright 2008 SciberQuest Inc.
 
 #include <vtkstd/string>
 using vtkstd::string;
+#include <vtkstd/map>
+using vtkstd::map;
+#include <vtkstd/vector>
+using vtkstd::vector;
+#include <vtkstd/utility>
+using vtkstd::pair;
 
-#include "Numerics.hxx"
 
-// #define vtkSQKernelConvolutionDEBUG
-#define vtkSQKernelConvolutionTIME
-
-#if defined vtkSQKernelConvolutionTIME
-  #include "vtkSQLog.h"
-#endif
+#include <mpi.h>
 
 vtkCxxRevisionMacro(vtkSQKernelConvolution, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQKernelConvolution);
@@ -45,12 +55,20 @@ vtkStandardNewMacro(vtkSQKernelConvolution);
 //-----------------------------------------------------------------------------
 vtkSQKernelConvolution::vtkSQKernelConvolution()
     :
+  WorldRank(0),
+  WorldSize(1),
+  HostRank(0),
+  HostSize(1),
   KernelWidth(3),
   KernelType(KERNEL_TYPE_GAUSIAN),
   Kernel(0),
   KernelModified(1),
   Mode(CartesianExtent::DIM_MODE_3D),
-  NumberOfIterations(1)
+  EnableCUDA(0),
+  NumberOfCUDADevices(0),
+  NumberOfActiveCUDADevices(0),
+  CUDADeviceId(-1),
+  NumberOfMPIRanksToUseCUDA(0)
 {
   #ifdef vtkSQKernelConvolutionDEBUG
   pCerr() << "===============================vtkSQKernelConvolution::vtkSQKernelConvolution" << endl;
@@ -58,6 +76,119 @@ vtkSQKernelConvolution::vtkSQKernelConvolution()
 
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
+
+  this->CUDADeviceRange[0]=0;
+  this->CUDADeviceRange[1]=0;
+
+  this->CUDADriver=new CUDAConvolutionDriver;
+  this->CUDADriver->SetNumberOfWarpsPerBlock(1);
+  this->NumberOfCUDADevices=this->CUDADriver->GetNumberOfDevices();
+  if (this->NumberOfCUDADevices)
+    {
+    this->SetCUDADeviceId(0);
+    this->CUDADeviceRange[1]=this->NumberOfCUDADevices-1;
+    }
+  this->SetNumberOfActiveCUDADevices(this->NumberOfCUDADevices);
+
+  this->HostRank=0;
+  this->HostSize=1;
+
+  int mpiOk=0;
+  MPI_Initialized(&mpiOk);
+  if (mpiOk)
+    {
+    const int managementRank=0;
+
+    MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
+    MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
+
+    // may be a parallel run, we need to determine how
+    // many of the ranks are running on each host.
+    const int hostNameLen=512;
+    char hostName[hostNameLen]={'\0'};
+    gethostname(hostName,hostNameLen);
+
+    char *hostNames=0;
+    if (this->WorldRank==managementRank)
+      {
+      hostNames=(char*)malloc(this->WorldSize*hostNameLen);
+      }
+    MPI_Gather(
+        hostName,
+        hostNameLen,
+        MPI_CHAR,
+        hostNames,
+        hostNameLen,
+        MPI_CHAR,
+        managementRank,
+        MPI_COMM_WORLD);
+    int *hostSizes=0;
+    int *hostRanks=0;
+    if (this->WorldRank==managementRank)
+      {
+      hostRanks=(int*)malloc(this->WorldSize*sizeof(int));
+
+      vector<string> keys(this->WorldSize);
+      typedef map<string,int> CountMapType;
+      typedef CountMapType::iterator CountMapItType;
+      typedef pair<CountMapItType,bool> CountMapInsType;
+      typedef pair<const string,int> CountMapValType;
+      CountMapType counts;
+
+      pair<const string,int> val;
+      for (int i=0; i<this->WorldSize; ++i)
+        {
+        keys[i]=hostNames[i*hostNameLen];
+
+        CountMapInsType ret;
+        CountMapValType val(keys[i],0);
+        ret=counts.insert(val);
+        if (ret.second)
+          {
+          ret.first->second=1;
+          }
+        else
+          {
+          ret.first->second+=1;
+          }
+        hostRanks[i]=ret.first->second-1;
+        }
+      hostSizes=(int*)malloc(this->WorldSize*sizeof(int));
+      for (int i=0; i<this->WorldSize; ++i)
+        {
+        hostSizes[i]=counts[keys[i]];
+        }
+      }
+    MPI_Scatter(
+          hostSizes,
+          1,
+          MPI_INT,
+          &this->HostSize,
+          1,
+          MPI_INT,
+          managementRank,
+          MPI_COMM_WORLD);
+    MPI_Scatter(
+          hostRanks,
+          1,
+          MPI_INT,
+          &this->HostRank,
+          1,
+          MPI_INT,
+          managementRank,
+          MPI_COMM_WORLD);
+    if (this->WorldRank==managementRank)
+      {
+      free(hostNames);
+      free(hostSizes);
+      free(hostRanks);
+      }
+    }
+
+  #ifdef vtkSQKernelConvolutionDEBUG
+  pCerr() << "HostSize=" << this->HostSize << endl;
+  pCerr() << "HostRank=" << this->HostRank << endl;
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -72,6 +203,188 @@ vtkSQKernelConvolution::~vtkSQKernelConvolution()
     delete [] this->Kernel;
     this->Kernel=0;
     }
+
+  if (this->CUDADriver)
+    {
+    delete this->CUDADriver;
+    this->CUDADriver=0;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQKernelConvolution::SetAllMPIRanksToUseCUDA(int allUse)
+{
+  #ifdef vtkSQKernelConvolutionDEBUG
+  pCerr()
+    << "===============================vtkSQKernelConvolution::SetAllMPIRanksToUseCUDA"
+    << " " << allUse
+    << endl;
+  #endif
+
+  if (allUse && this->NumberOfActiveCUDADevices)
+    {
+    this->EnableCUDA=1;
+    }
+  else
+    {
+    this->EnableCUDA=0;
+    }
+
+  this->Modified();
+
+  #ifdef vtkSQKernelConvolutionDEBUG
+  pCerr() << "EnableCUDA=" << this->EnableCUDA << endl;
+  #endif
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQKernelConvolution::SetNumberOfMPIRanksToUseCUDA(int nRanks)
+{
+  #ifdef vtkSQKernelConvolutionDEBUG
+  pCerr()
+    << "===============================vtkSQKernelConvolution::SetNumberOfMPIRanksToUseCUDA"
+    << " " << nRanks
+    << endl;
+  #endif
+  if (nRanks==this->NumberOfMPIRanksToUseCUDA)
+    {
+    return;
+    }
+  //nRanks=max(0,nRanks);
+  //nRanks=min(nRanks,this->HostSize);
+  this->NumberOfMPIRanksToUseCUDA=nRanks;
+
+  if (nRanks==-1)
+    {
+    this->SetAllMPIRanksToUseCUDA(1);
+    return;
+    }
+
+  if ( this->NumberOfActiveCUDADevices
+    && (this->HostRank<this->NumberOfMPIRanksToUseCUDA))
+    {
+    // run on GPU
+    this->EnableCUDA=1;
+    }
+  else
+    {
+    // run on CPU
+    this->EnableCUDA=0;
+    }
+
+  this->Modified();
+
+  #ifdef vtkSQKernelConvolutionDEBUG
+  pCerr() << "EnableCUDA=" << this->EnableCUDA << endl;
+  #endif
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQKernelConvolution::SetNumberOfActiveCUDADevices(int nActive)
+{
+  #ifdef vtkSQKernelConvolutionDEBUG
+  pCerr()
+    << "===============================vtkSQKernelConvolution::SetNumberOfActiveCUDADevices"
+    << " " << nActive
+    << endl;
+  #endif
+
+  //nActive=max(0,nActive);
+  nActive=min(nActive,this->NumberOfCUDADevices);
+  if (nActive==this->NumberOfActiveCUDADevices)
+    {
+    return;
+    }
+
+  // interpret -1 to mean use all available
+  if (nActive==-1)
+    {
+    this->NumberOfActiveCUDADevices=this->NumberOfCUDADevices;
+    }
+  else
+    {
+    this->NumberOfActiveCUDADevices=nActive;
+    }
+
+  // determine which device this rank will run on.
+  if (this->NumberOfActiveCUDADevices)
+    {
+    int deviceId=this->HostRank%this->NumberOfActiveCUDADevices;
+    this->SetCUDADeviceId(deviceId);
+    #ifdef vtkSQKernelConvolutionDEBUG
+    pCerr() << "assigned to cuda device " << deviceId << endl;
+    #endif
+    }
+
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQKernelConvolution::SetCUDADeviceId(int deviceId)
+{
+  #ifdef vtkSQKernelConvolutionDEBUG
+  pCerr()
+    << "===============================vtkSQKernelConvolution::SetCUDADeviceId"
+    << " " << deviceId
+    << endl;
+  #endif
+  if (this->CUDADeviceId==deviceId)
+    {
+    return;
+    }
+
+  this->CUDADeviceId=deviceId;
+  this->CUDADriver->SetDeviceId(deviceId);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQKernelConvolution::SetKernelCUDAMemoryType(int memType)
+{
+  #ifdef vtkSQKernelConvolutionDEBUG
+  pCerr()
+    << "===============================vtkSQKernelConvolution::SetKernelCUDAMemoryType"
+    << " " << memType << endl;
+  #endif
+  this->CUDADriver->SetKernelMemoryType(memType);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+int vtkSQKernelConvolution::GetKernelCUDAMemoryType()
+{
+  return this->CUDADriver->GetKernelMemoryType();
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQKernelConvolution::SetInputCUDAMemoryType(int memType)
+{
+  #ifdef vtkSQKernelConvolutionDEBUG
+  pCerr()
+    << "===============================vtkSQKernelConvolution::SetInputCUDAMemoryType"
+    << " " << memType << endl;
+  #endif
+  this->CUDADriver->SetInputMemoryType(memType);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+int vtkSQKernelConvolution::GetInputCUDAMemoryType()
+{
+  return this->CUDADriver->GetInputMemoryType();
+}
+
+//-----------------------------------------------------------------------------
+void vtkSQKernelConvolution::SetNumberOfWarpsPerCUDABlock(int nWarpsPer)
+{
+  this->CUDADriver->SetNumberOfWarpsPerBlock(nWarpsPer);
+  this->Modified();
+}
+
+//-----------------------------------------------------------------------------
+int vtkSQKernelConvolution::GetNumberOfWarpsPerCUDABlock()
+{
+  return this->CUDADriver->GetNumberOfWarpsPerBlock();
 }
 
 //-----------------------------------------------------------------------------
@@ -298,6 +611,10 @@ int vtkSQKernelConvolution::RequestInformation(
     = CartesianExtent::GetDimensionMode(
           inputDomain,
           nGhosts);
+  if (this->Mode==CartesianExtent::DIM_MODE_INVALID)
+    {
+    vtkErrorMacro("Invalid problem domain.");
+    }
 
   // shrink the output problem domain by the requisite number of
   // ghost cells.
@@ -534,18 +851,39 @@ int vtkSQKernelConvolution::RequestData(
     W->SetNumberOfTuples(outputTups);
     W->SetName(V->GetName());
 
-    switch (V->GetDataType())
+    if (this->EnableCUDA)
       {
-      vtkTemplateMacro(
-        Convolution<VTK_TT>(
-            inputExt.GetData(),
-            outputExt.GetData(),
-            this->KernelExt.GetData(),
-            nComps,
-            this->Mode,
-            (VTK_TT*)V->GetVoidPointer(0),
-            (VTK_TT*)W->GetVoidPointer(0),
-            this->Kernel));
+      #ifdef vtkSQKernelConvolutionDEBUG
+      pCerr() << "using the GPU" << endl;
+      #endif
+      this->CUDADriver->Convolution(
+          inputExt,
+          outputExt,
+          this->KernelExt,
+          nGhost,
+          this->Mode,
+          V,
+          W,
+          this->Kernel);
+      }
+    else
+      {
+      #ifdef vtkSQKernelConvolutionDEBUG
+      pCerr() << "using the CPU" << endl;
+      #endif
+      switch (V->GetDataType())
+        {
+        vtkTemplateMacro(
+          Convolution<VTK_TT>(
+              inputExt.GetData(),
+              outputExt.GetData(),
+              this->KernelExt.GetData(),
+              nComps,
+              this->Mode,
+              (VTK_TT*)V->GetVoidPointer(0),
+              (VTK_TT*)W->GetVoidPointer(0),
+              this->Kernel));
+        }
       }
 
     outImData->GetPointData()->AddArray(W);

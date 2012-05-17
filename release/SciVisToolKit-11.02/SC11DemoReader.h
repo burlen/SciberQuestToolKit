@@ -129,7 +129,7 @@ public:
     this->MemoryExtent[4]=czof;         // keep number of cells
     this->MemoryExtent[5]=czof+ncz-1;
 
-    //cerr << "MemoryExtent=" << this->MemoryExtent << endl;
+    cerr << "MemoryExtent=" << this->MemoryExtent << endl;
 
     // mmap file
     this->Data=(float*)mmap(0,this->Size,PROT_READ,MAP_PRIVATE,this->Handle,0);

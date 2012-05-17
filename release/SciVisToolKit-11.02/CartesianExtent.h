@@ -234,7 +234,10 @@ public:
    static CartesianExtent CellToNode(
       const CartesianExtent &inputExt,
       int mode);
-
+  /**
+  shift by the given amount while respecting mode
+  */
+  static void Shift(int *ijk, int n, int mode);
   /// \@}
 
 private:
