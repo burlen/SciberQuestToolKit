@@ -22,9 +22,10 @@ Copyright 2008 SciberQuest Inc.
 using std::ofstream;
 using std::ios_base;
 
+
+#ifndef SVTK_WITHOUT_MPI
 #include <mpi.h>
-
-
+#endif
 
 //=============================================================================
 class LogBuffer
@@ -149,6 +150,7 @@ public:
   /// collect buffer to a root process
   void Gather(int worldRank, int worldSize, int rootRank)
   {
+    #ifndef SVTK_WITHOUT_MPI
     int *bufferSizes=0;
     int *disp=0;
     if (worldRank==rootRank)
@@ -202,6 +204,7 @@ public:
       {
       this->Clear();
       }
+    #endif
   }
 
 protected:
@@ -267,15 +270,16 @@ vtkSQLog::vtkSQLog()
     WriteOnClose(0),
     Log(0)
 {
+  #ifndef SVTK_WITHOUT_MPI
   int mpiOk=0;
   MPI_Initialized(&mpiOk);
   if (!mpiOk)
     {
     vtkErrorMacro("MPI has not been initialized.");
     }
-
   MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
   MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
+  #endif
 
   this->StartTime.reserve(256);
 
@@ -412,15 +416,19 @@ void vtkSQLog::EndEvent(const char *event)
 //-----------------------------------------------------------------------------
 void vtkSQLog::EndEventSynch(int rank, const char *event)
 {
+  #ifndef SVTK_WITHOUT_MPI
   MPI_Barrier(MPI_COMM_WORLD);
   if (this->WorldRank!=rank) return;
+  #endif
   this->EndEvent(event);
 }
 
 //-----------------------------------------------------------------------------
 void vtkSQLog::EndEventSynch(const char *event)
 {
+  #ifndef SVTK_WITHOUT_MPI
   MPI_Barrier(MPI_COMM_WORLD);
+  #endif
   this->EndEvent(event);
 }
 

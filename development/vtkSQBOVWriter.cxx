@@ -37,7 +37,9 @@ typedef vtkStreamingDemandDrivenPipeline vtkSDDPipeline;
 #include "SQMacros.h"
 #include "postream.h"
 
+#ifndef SVTK_WITHOUT_MPI
 #include <mpi.h>
+#endif
 
 #include <algorithm>
 using std::min;
@@ -95,19 +97,27 @@ vtkSQBOVWriter::vtkSQBOVWriter()
   this->WorldRank=0;
   this->WorldSize=1;
 
+  #ifndef SVTK_WITHOUT_MPI
   int mpiOk=0;
   MPI_Initialized(&mpiOk);
   if (!mpiOk)
     {
-    vtkErrorMacro("MPI has not been initialized. Restart ParaView using mpiexec.");
+    vtkErrorMacro(
+      "MPI has not been initialized. "
+      "MPI is required for this writer and the writer must be used in "
+      "client server mode. Start pvserver using mpiexec.");
     }
+  #else
+  vtkErrorMacro(
+    "MPI is required for this writer but this build does not have MPI "
+    "support built in. To uise this writer you must connect to a pvserver "
+    "built with MPI support and started with mpiexec");
+  #endif
 
-  // vtkMultiProcessController *con=vtkMultiProcessController::GetGlobalController();
-  // this->WorldRank=con->GetLocalProcessId();
-  // this->WorldSize=con->GetNumberOfProcesses();
-
+  #ifndef SVTK_WITHOUT_MPI
   MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
   MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
+  #endif
 
   this->HostName[0]='\0';
   #if defined vtkSQBOVWriterDEBUG
@@ -268,7 +278,9 @@ void vtkSQBOVWriter::SetFileName(const char* _arg)
   // Open the newly named dataset.
   if (this->FileName)
     {
+    #ifndef SVTK_WITHOUT_MPI
     this->Writer->SetCommunicator(MPI_COMM_WORLD);
+    #endif
     if(!this->Writer->Open(this->FileName))
       {
       vtkErrorMacro("Failed to open the file \"" << safeio(this->FileName) << "\".");
@@ -384,6 +396,7 @@ void vtkSQBOVWriter::ClearPointArrayStatus()
 //-----------------------------------------------------------------------------
 void vtkSQBOVWriter::SetMPIFileHints()
 {
+  #ifndef SVTK_WITHOUT_MPI
   MPI_Info hints;
   MPI_Info_create(&hints);
 
@@ -490,6 +503,7 @@ void vtkSQBOVWriter::SetMPIFileHints()
   this->Writer->SetHints(hints);
 
   MPI_Info_free(&hints);
+  #endif
 }
 
 //-----------------------------------------------------------------------------

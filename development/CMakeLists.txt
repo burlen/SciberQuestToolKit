@@ -9,14 +9,14 @@ cmake_minimum_required(VERSION 2.8)
 #
 # +---------------------------------------------------------------------------+
 # |                                                                           |
-# |                            SciVis Tool Kit                                |
+# |                            SciberQuest Tool Kit                                |
 # |                                                                           |
 # +---------------------------------------------------------------------------+
 #
-project(SciVisToolKit)
+project(SciberQuestToolKit)
 
 if("${PROJECT_SOURCE_DIR}"  STREQUAL "${PROJECT_BINARY_DIR}")
-  message(FATAL_ERROR "SciVisToolKit requires an out of source Build.")
+  message(FATAL_ERROR "SciberQuestToolKit requires an out of source Build.")
 endif()
 
 include(ParaViewConfig.cmake)
@@ -327,35 +327,37 @@ if(PARAVIEW_BUILD_QT_GUI)
 endif (PARAVIEW_BUILD_QT_GUI)
 
 set (CLIENT_XML
-  SciVisToolKitClientReaders.xml
-  SciVisToolKitClientSources.xml
-  SciVisToolKitClientFilters.xml)
+  SciberQuestToolKitClientReaders.xml
+  SciberQuestToolKitClientSources.xml
+  SciberQuestToolKitClientFilters.xml)
 
 # Generate the plugin, servermanager and wrapped language bindings.
 add_paraview_plugin(
-  SciVisToolKit "11.02"
+  SciberQuestToolKit "11.02"
   GUI_INTERFACES ${_IFACES}
   SERVER_MANAGER_SOURCES ${SM_CXX_SOURCES}
-  SERVER_MANAGER_XML SciVisToolKitServerManager.xml
+  SERVER_MANAGER_XML SciberQuestToolKitServerManager.xml
   GUI_RESOURCE_FILES ${CLIENT_XML}
   SOURCES ${CXX_SOURCES})
 
+
+
 if (SVTK_CUDA AND CUDA_FOUND)
-  target_link_libraries(SciVisToolKit CUDAConvolutionDriver)
+  target_link_libraries(SciberQuestToolKit CUDAConvolutionDriver)
 endif()
 
 if (WIN32 AND SVTK_PROCESS_MONITOR)
-  target_link_libraries(SciVisToolKit Psapi)
+  target_link_libraries(SciberQuestToolKit Psapi)
 endif()
 
-install(TARGETS SciVisToolKit DESTINATION ${SVTK_LIB_INSTALL_PATH})
+install(TARGETS SciberQuestToolKit DESTINATION ${SVTK_LIB_INSTALL_PATH})
 
 set(SVTK_PYTHON_BINDINGS OFF CACHE BOOL "Generate vtk python bindings")
 if (SVTK_PYTHON_BINDINGS)
   message(STATUS "generating vtk python bindings.")
-  generate_python_bindings(SciVisToolKit "${SM_CXX_SOURCES}")
-  install(TARGETS SciVisToolKitPython DESTINATION ${SVTK_LIB_INSTALL_PATH})
-  install(TARGETS SciVisToolKitPythonD DESTINATION ${SVTK_LIB_INSTALL_PATH})
+  generate_python_bindings(SciberQuestToolKit "${SM_CXX_SOURCES}")
+  install(TARGETS SciberQuestToolKitPython DESTINATION ${SVTK_LIB_INSTALL_PATH})
+  install(TARGETS SciberQuestToolKitPythonD DESTINATION ${SVTK_LIB_INSTALL_PATH})
 endif()
 
 # GIMP scripts
@@ -366,8 +368,8 @@ endif()
 if (GIMP_FOUND AND SVTK_POSTPROC_SCRIPTS)
   message(STATUS "Installing post-processing scripts.")
   set(POSTPROC_SCRIPT_DIR "${PROJECT_SOURCE_DIR}/script/postproc/")
-  file(GLOB SVTK_GIMP_SCM_SOURCES  "${POSTPROC_SCRIPT_DIR}/*.scm")
-  file(GLOB SVTK_GIMP_SH_SOURCES  "${POSTPROC_SCRIPT_DIR}/*.sh")
+  file(GLOB SVTK_GIMP_SCM_SOURCES  "${POSTPROC_SCRIPT_DIR}/sq-*.scm")
+  file(GLOB SVTK_GIMP_SH_SOURCES  "${POSTPROC_SCRIPT_DIR}/sq-*.sh")
   install(FILES ${SVTK_GIMP_SCM_SOURCES} DESTINATION ${GIMP_SCRIPT_PATH})
   install(PROGRAMS ${SVTK_GIMP_SH_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()
@@ -429,27 +431,27 @@ if (UNIX)
     install(TARGETS genzero DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
     add_executable(MagnetosphereTopoBatch MagnetosphereTopoBatch.cpp)
-    target_link_libraries(MagnetosphereTopoBatch ${MPI_LIBRARIES} SciVisToolKit)
+    target_link_libraries(MagnetosphereTopoBatch ${MPI_LIBRARIES} SciberQuestToolKit)
     install(TARGETS MagnetosphereTopoBatch DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
     add_executable(SmoothBatch SmoothBatch.cpp)
-    target_link_libraries(SmoothBatch ${MPI_LIBRARIES} SciVisToolKit)
+    target_link_libraries(SmoothBatch ${MPI_LIBRARIES} SciberQuestToolKit)
     install(TARGETS SmoothBatch DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
     add_executable(VortexDetectBatch VortexDetectBatch.cpp)
-    target_link_libraries(VortexDetectBatch ${MPI_LIBRARIES} SciVisToolKit)
+    target_link_libraries(VortexDetectBatch ${MPI_LIBRARIES} SciberQuestToolKit)
     install(TARGETS VortexDetectBatch DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
     add_executable(Slicer Slicer.cpp)
-    target_link_libraries(Slicer ${MPI_LIBRARIES} SciVisToolKit)
+    target_link_libraries(Slicer ${MPI_LIBRARIES} SciberQuestToolKit)
     install(TARGETS Slicer DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
     #add_executable(IOBench IOBench.cpp)
-    #target_link_libraries(IOBench ${MPI_LIBRARIES} SciVisToolKit)
+    #target_link_libraries(IOBench ${MPI_LIBRARIES} SciberQuestToolKit)
     #install(TARGETS IOBench DESTINATION ${CMAKE_INSTALL_PREFIX})
 
     add_executable(MagnetosphereTopoBatchPVD MagnetosphereTopoBatchPVD.cpp)
-    target_link_libraries(MagnetosphereTopoBatchPVD ${MPI_LIBRARIES} SciVisToolKit)
+    target_link_libraries(MagnetosphereTopoBatchPVD ${MPI_LIBRARIES} SciberQuestToolKit)
     install(TARGETS MagnetosphereTopoBatchPVD DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
   endif()
@@ -465,7 +467,7 @@ if (SVTK_TESTING)
   endif(NOT MPI_FOUND)
   add_definitions("-DMPICH_IGNORE_CXX_SEEK")
   add_executable(TestFieldTopologyMapper TestFieldTopologyMapper.cpp)
-  target_link_libraries(TestFieldTopologyMapper SciVisToolKit ${MPI_LIBRARIES})
+  target_link_libraries(TestFieldTopologyMapper SciberQuestToolKit ${MPI_LIBRARIES})
   install(TARGETS TestFieldTopologyMapper DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif ()
 
