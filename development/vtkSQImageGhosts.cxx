@@ -58,23 +58,10 @@ vtkSQImageGhosts::vtkSQImageGhosts()
   #endif
 
   #ifdef SQTK_WITHOUT_MPI
-  vtkErrorMacro(
-    "This class requires MPI howver it was built without MPI.");
+  this->Comm=0;
   #else
-  int mpiOk=0;
-  MPI_Initialized(&mpiOk);
-  if (!mpiOk)
-    {
-    vtkErrorMacro(
-      << "This class requires the MPI runtime, "
-      << "you must run ParaView in client-server mode launched via mpiexec.");
-    }
-
   this->Comm=MPI_COMM_NULL;
   this->SetCommunicator(MPI_COMM_WORLD);
-
-  MPI_Comm_size(this->Comm,&this->WorldSize);
-  MPI_Comm_rank(this->Comm,&this->WorldRank);
   #endif
 
   this->SetNumberOfInputPorts(1);
@@ -108,28 +95,43 @@ int vtkSQImageGhosts::Initialize(vtkPVXMLElement *root)
 //-----------------------------------------------------------------------------
 void vtkSQImageGhosts::SetCommunicator(MPI_Comm comm)
 {
-  #ifndef SQTK_WITHOUT_MPI
   if (this->Comm==comm) return;
 
-  if ((this->Comm!=comm)
-    && (this->Comm!=MPI_COMM_NULL)
-    && (this->Comm!=MPI_COMM_SELF))
+  #ifndef SQTK_WITHOUT_MPI
+  int mpiOk=0;
+  MPI_Initialized(&mpiOk);
+  if (mpiOk)
     {
-    MPI_Comm_free(&this->Comm);
-    }
+    if ((this->Comm!=comm)
+      && (this->Comm!=MPI_COMM_NULL)
+      && (this->Comm!=MPI_COMM_SELF))
+      {
+      MPI_Comm_free(&this->Comm);
+      }
 
-  if ((comm==MPI_COMM_NULL)
-    ||(comm==MPI_COMM_SELF))
-    {
-    this->Comm=comm;
+    if ((comm==MPI_COMM_NULL)
+      ||(comm==MPI_COMM_SELF))
+      {
+      this->Comm=comm;
+      this->WorldSize=1;
+      this->WorldRank=0;
+      }
+    else
+      {
+      MPI_Comm_dup(comm,&this->Comm);
+      MPI_Comm_rank(this->Comm,&this->WorldRank);
+      MPI_Comm_size(this->Comm,&this->WorldSize);
+      }
     }
   else
-    {
-    MPI_Comm_dup(comm,&this->Comm);
-    MPI_Comm_rank(this->Comm,&this->WorldRank);
-    MPI_Comm_size(this->Comm,&this->WorldSize);
-    }
   #endif
+    {
+    // no mpi or not a parallel run
+    this->Comm=comm;
+    this->WorldSize=1;
+    this->WorldRank=0;
+    }
+  this->Modified();
 }
 
 //-----------------------------------------------------------------------------
@@ -278,7 +280,6 @@ int vtkSQImageGhosts::RequestData(
   log->StartEvent("vtkSQImageGhosts::RequestData");
   #endif
 
-  #ifndef SQTK_WITHOUT_MPI
   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
   vtkDataSet *inData
     = dynamic_cast<vtkDataSet*>(inInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -342,57 +343,65 @@ int vtkSQImageGhosts::RequestData(
   CartesianExtent domainCells
      = CartesianExtent::NodeToCell(this->ProblemDomain,this->Mode);
 
-  // gather input extents
-  vector<CartesianExtent> inputExts(this->WorldSize);
-  int *buffer=new int [6*this->WorldSize];
-  MPI_Allgather(
-        inCells.GetData(),
-        6,
-        MPI_INT,
-        buffer,
-        6,
-        MPI_INT,
-        this->Comm);
-
-  for (int i=0; i<this->WorldSize; ++i)
-    {
-    inputExts[i].Set(buffer+6*i);
-    }
-  delete [] buffer;
-
-  // set up transactions
-  int id=0;
+  // construct the set of transactions needed to transfer the
+  // ghost data from remote processes. if not a parallel build
+  // or run then we need not do this
   vector<GhostTransaction> transactions;
-  for (int i=0; i<this->WorldSize; ++i)
+  #ifndef SQTK_WITHOUT_MPI
+  if (this->WorldSize>1)
     {
-    CartesianExtent destExt
-        = CartesianExtent::Grow(
-              inputExts[i],
-              domainCells,
-              this->NGhosts,
-              this->Mode);
+    // gather input extents
+    vector<CartesianExtent> inputExts(this->WorldSize);
+    int *buffer=new int [6*this->WorldSize];
+    MPI_Allgather(
+          inCells.GetData(),
+          6,
+          MPI_INT,
+          buffer,
+          6,
+          MPI_INT,
+          this->Comm);
 
-    for (int j=0; j<this->WorldSize; ++j, ++id)
+    for (int i=0; i<this->WorldSize; ++i)
       {
-      if (i==j) continue;
+      inputExts[i].Set(buffer+6*i);
+      }
+    delete [] buffer;
 
-      CartesianExtent srcExt = inputExts[j];
-      CartesianExtent intExt = srcExt;
-      intExt &= destExt;
+    // set up transactions
+    int id=0;
+    for (int i=0; i<this->WorldSize; ++i)
+      {
+      CartesianExtent destExt
+          = CartesianExtent::Grow(
+                inputExts[i],
+                domainCells,
+                this->NGhosts,
+                this->Mode);
 
-      if (!intExt.Empty())
+      for (int j=0; j<this->WorldSize; ++j, ++id)
         {
-        transactions.push_back(
-              GhostTransaction(
-                    j,
-                    srcExt,
-                    i,
-                    destExt,
-                    intExt,
-                    id));
+        if (i==j) continue;
+
+        CartesianExtent srcExt = inputExts[j];
+        CartesianExtent intExt = srcExt;
+        intExt &= destExt;
+
+        if (!intExt.Empty())
+          {
+          transactions.push_back(
+                GhostTransaction(
+                      j,
+                      srcExt,
+                      i,
+                      destExt,
+                      intExt,
+                      id));
+          }
         }
       }
     }
+  #endif
 
   // apply transactions to point data arrays
   vtkDataSetAttributes *inPd
@@ -423,7 +432,6 @@ int vtkSQImageGhosts::RequestData(
         outCells,
         transactions,
         false);
-  #endif
 
   #if defined vtkSQImageGhostsTIME
   log->EndEvent("vtkSQImageGhosts::RequestData");
@@ -441,12 +449,9 @@ void vtkSQImageGhosts::ExecuteTransactions(
       vector<GhostTransaction> &transactions,
       bool pointData)
 {
-  #ifndef SQTK_WITHOUT_MPI
   static int tag=0;
 
-  int nTransactions = transactions.size();
   size_t nOutputTups = outputExt.Size();
-
 
   // build up the output dataset attributes
   if (this->CopyAllArrays)
@@ -500,8 +505,6 @@ void vtkSQImageGhosts::ExecuteTransactions(
     int nComps = inArray->GetNumberOfComponents();
     void *pIn = inArray->GetVoidPointer(0);
 
-    vector<MPI_Request> req;
-
     #ifdef vtkSQImageGhostsDEBUG
     cerr << "Copying array " << inArray->GetName() << endl;
     #endif
@@ -521,29 +524,35 @@ void vtkSQImageGhosts::ExecuteTransactions(
       }
 
     // execute the transactions to copy ghosts from remote processes
-    for (int j=0; j<nTransactions; ++j, ++tag)
+    // if not a parallel build or run then we need not do this.
+    #ifndef SQTK_WITHOUT_MPI
+    if (this->WorldSize>1)
       {
-      GhostTransaction &trans = transactions[j];
-
-      switch(inArray->GetDataType())
+      vector<MPI_Request> req;
+      int nTransactions = transactions.size();
+      for (int j=0; j<nTransactions; ++j, ++tag)
         {
-        vtkTemplateMacro(
-            trans.Execute<VTK_TT>(
-              this->Comm,
-              this->WorldRank,
-              nComps,
-              (VTK_TT*)pIn,
-              (VTK_TT*)pOut,
-              pointData,
-              this->Mode,
-              req,
-              tag));
-        }
-      }
+        GhostTransaction &trans = transactions[j];
 
-    MPI_Waitall(req.size(), &req[0], MPI_STATUSES_IGNORE);
+        switch(inArray->GetDataType())
+          {
+          vtkTemplateMacro(
+              trans.Execute<VTK_TT>(
+                this->Comm,
+                this->WorldRank,
+                nComps,
+                (VTK_TT*)pIn,
+                (VTK_TT*)pOut,
+                pointData,
+                this->Mode,
+                req,
+                tag));
+          }
+        }
+      MPI_Waitall(req.size(), &req[0], MPI_STATUSES_IGNORE);
+      }
+    #endif
     }
-  #endif
 }
 
 //-----------------------------------------------------------------------------

@@ -41,11 +41,7 @@ public:
       :
     SrcRank(0),
     DestRank(0)
-  {
-    sqErrorMacro(
-        cerr,
-        << "This class requires MPI however it was built without MPI.");
-  }
+  {}
 
   GhostTransaction(
         int srcRank,
@@ -61,11 +57,7 @@ public:
     DestRank(destRank),
     DestExt(destExt),
     IntExt(intExt)
-  {
-    sqErrorMacro(
-        cerr,
-        << "This class requires MPI however it was built without MPI.");
-  }
+  {}
 
   ~GhostTransaction(){}
 
@@ -131,7 +123,9 @@ int GhostTransaction::Execute(
 {
   int iErr=0;
 
-  #ifndef SQTK_WITHOUT_MPI
+  #ifdef SQTK_WITHOUT_MPI
+  sqErrorMacro(cerr,"Attempting to execute MPI code in a serial build.");
+  #else
   ostringstream oss;
 
   if (rank==this->SrcRank)

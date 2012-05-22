@@ -22,7 +22,6 @@ Copyright 2008 SciberQuest Inc.
 using std::ofstream;
 using std::ios_base;
 
-
 #ifndef SQTK_WITHOUT_MPI
 #include <mpi.h>
 #endif
@@ -150,61 +149,65 @@ public:
   /// collect buffer to a root process
   void Gather(int worldRank, int worldSize, int rootRank)
   {
-    #ifndef SQTK_WITHOUT_MPI
-    int *bufferSizes=0;
-    int *disp=0;
-    if (worldRank==rootRank)
+    // in serial this is a no-op
+    if (worldSize>1)
       {
-      bufferSizes=(int *)malloc(worldSize*sizeof(int));
-      disp=(int *)malloc(worldSize*sizeof(int));
-      }
-    int bufferSize=this->GetSize();
-    MPI_Gather(
-        &bufferSize,
-        1,
-        MPI_INT,
+      #ifndef SQTK_WITHOUT_MPI
+      int *bufferSizes=0;
+      int *disp=0;
+      if (worldRank==rootRank)
+        {
+        bufferSizes=(int *)malloc(worldSize*sizeof(int));
+        disp=(int *)malloc(worldSize*sizeof(int));
+        }
+      int bufferSize=this->GetSize();
+      MPI_Gather(
+          &bufferSize,
+          1,
+          MPI_INT,
+          bufferSizes,
+          1,
+          MPI_INT,
+          rootRank,
+          MPI_COMM_WORLD);
+      char *log=0;
+      int cumSize=0;
+      if (worldRank==rootRank)
+        {
+        for (int i=0; i<worldSize; ++i)
+          {
+          disp[i]=cumSize;
+          cumSize+=bufferSizes[i];
+          }
+        //this->Resize(cumSize); // can't do inplace since mpi uses memcpy
+        //this->At=cumSize;
+        log=(char*)malloc(cumSize);
+        }
+      MPI_Gatherv(
+        this->Data,
+        bufferSize,
+        MPI_CHAR,
+        //this->Data,
+        log,
         bufferSizes,
-        1,
-        MPI_INT,
+        disp,
+        MPI_CHAR,
         rootRank,
         MPI_COMM_WORLD);
-    char *log=0;
-    int cumSize=0;
-    if (worldRank==rootRank)
-      {
-      for (int i=0; i<worldSize; ++i)
+      if (worldRank==rootRank)
         {
-        disp[i]=cumSize;
-        cumSize+=bufferSizes[i];
+        this->Clear();
+        this->PushBack(log,cumSize);
+        free(bufferSizes);
+        free(disp);
+        free(log);
         }
-      //this->Resize(cumSize); // can't do inplace since mpi uses memcpy
-      //this->At=cumSize;
-      log=(char*)malloc(cumSize);
+      else
+        {
+        this->Clear();
+        }
+      #endif
       }
-    MPI_Gatherv(
-      this->Data,
-      bufferSize,
-      MPI_CHAR,
-      //this->Data,
-      log,
-      bufferSizes,
-      disp,
-      MPI_CHAR,
-      rootRank,
-      MPI_COMM_WORLD);
-    if (worldRank==rootRank)
-      {
-      this->Clear();
-      this->PushBack(log,cumSize);
-      free(bufferSizes);
-      free(disp);
-      free(log);
-      }
-    else
-      {
-      this->Clear();
-      }
-    #endif
   }
 
 protected:
@@ -473,4 +476,3 @@ void vtkSQLog::PrintSelf(ostream& os, vtkIndent indent)
     << indent << "WriterRank=" << this->WriterRank << endl
     << indent << "Log=" << oss.str() << endl;
 }
-

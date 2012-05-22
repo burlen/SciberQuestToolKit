@@ -180,7 +180,7 @@ int vtkSQRandomCells::RequestData(
   cerr << "=====vtkSQRandomCells::RequestData" << endl;
   #endif
 
-  #ifndef SQTK_WITHOUT_MPI
+
   vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
   vtkDataSet *source
     = dynamic_cast<vtkDataSet*>(inInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -228,10 +228,16 @@ int vtkSQRandomCells::RequestData(
   copier->Initialize(source,output);
 
   int worldSize=1;
-  MPI_Comm_size(MPI_COMM_WORLD,&worldSize);
-
   int worldRank=0;
-  MPI_Comm_rank(MPI_COMM_WORLD,&worldRank);
+  int mpiOk=0;
+  #ifndef SQTK_WITHOUT_MPI
+  MPI_Initialized(&mpiOk);
+  if (mpiOk)
+    {
+    MPI_Comm_size(MPI_COMM_WORLD,&worldSize);
+    MPI_Comm_rank(MPI_COMM_WORLD,&worldRank);
+    }
+  #endif
 
   // count of the cells we own.
   unsigned long long nLocalCells=source->GetNumberOfCells();
@@ -249,15 +255,24 @@ int vtkSQRandomCells::RequestData(
     // get counts of all cells.
     unsigned long long *nRemoteCells
       = (unsigned long long *)malloc(worldSize*sizeof(unsigned long long));
-    MPI_Gather(
-        &nLocalCells,
-        1,
-        MPI_UNSIGNED_LONG_LONG,
-        &nRemoteCells[0],
-        1,
-        MPI_UNSIGNED_LONG_LONG,
-        masterRank,
-        MPI_COMM_WORLD);
+    if (mpiOk)
+      {
+      #ifndef SQTK_WITHOUT_MPI
+      MPI_Gather(
+          &nLocalCells,
+          1,
+          MPI_UNSIGNED_LONG_LONG,
+          &nRemoteCells[0],
+          1,
+          MPI_UNSIGNED_LONG_LONG,
+          masterRank,
+          MPI_COMM_WORLD);
+      #endif
+      }
+    else
+      {
+      nRemoteCells[0]=nLocalCells;
+      }
 
     // construct the cell id block owned by each process.
     unsigned long long nCellsTotal=0;
@@ -394,20 +409,25 @@ int vtkSQRandomCells::RequestData(
         cellsToPass=assignments[i];
         continue;
         }
-      MPI_Send(
-          &nAssigned[i],
-          1,
-          MPI_UNSIGNED_LONG_LONG,
-          i,
-          0,
-          MPI_COMM_WORLD);
-      MPI_Send(
-          &((assignments[i])[0]),
-          nAssigned[i],
-          MPI_UNSIGNED_LONG_LONG,
-          i,
-          1,
-          MPI_COMM_WORLD);
+      if (mpiOk)
+        {
+        #ifndef SQTK_WITHOUT_MPI
+        MPI_Send(
+            &nAssigned[i],
+            1,
+            MPI_UNSIGNED_LONG_LONG,
+            i,
+            0,
+            MPI_COMM_WORLD);
+        MPI_Send(
+            &((assignments[i])[0]),
+            nAssigned[i],
+            MPI_UNSIGNED_LONG_LONG,
+            i,
+            1,
+            MPI_COMM_WORLD);
+        #endif
+        }
       }
     delete [] assignments;
     free(nAssigned);
@@ -415,36 +435,41 @@ int vtkSQRandomCells::RequestData(
   else
     {
     // send a count of the cells we own.
-    MPI_Gather(
-        &nLocalCells,
-        1,
-        MPI_UNSIGNED_LONG_LONG,
-        0,
-        0,
-        MPI_UNSIGNED_LONG_LONG,
-        masterRank,
-        MPI_COMM_WORLD);
+    if (mpiOk)
+      {
+      #ifndef SQTK_WITHOUT_MPI
+      MPI_Gather(
+          &nLocalCells,
+          1,
+          MPI_UNSIGNED_LONG_LONG,
+          0,
+          0,
+          MPI_UNSIGNED_LONG_LONG,
+          masterRank,
+          MPI_COMM_WORLD);
 
-    // obtain our assignments
-    MPI_Status stat;
-    MPI_Recv(
-        &nCellsToPass,
-        1,
-        MPI_UNSIGNED_LONG_LONG,
-        masterRank,
-        0,
-        MPI_COMM_WORLD,
-        &stat);
+      // obtain our assignments
+      MPI_Status stat;
+      MPI_Recv(
+          &nCellsToPass,
+          1,
+          MPI_UNSIGNED_LONG_LONG,
+          masterRank,
+          0,
+          MPI_COMM_WORLD,
+          &stat);
 
-    cellsToPass.resize(nCellsToPass);
-    MPI_Recv(
-        &cellsToPass[0],
-        nCellsToPass,
-        MPI_UNSIGNED_LONG_LONG,
-        masterRank,
-        1,
-        MPI_COMM_WORLD,
-        &stat);
+      cellsToPass.resize(nCellsToPass);
+      MPI_Recv(
+          &cellsToPass[0],
+          nCellsToPass,
+          MPI_UNSIGNED_LONG_LONG,
+          masterRank,
+          1,
+          MPI_COMM_WORLD,
+          &stat);
+      #endif
+      }
     }
 
   // copy cells, assoictaed points and data attributes to the output.
@@ -454,7 +479,6 @@ int vtkSQRandomCells::RequestData(
     }
 
   delete copier;
-  #endif
 
   return 1;
 }

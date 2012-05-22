@@ -1,6 +1,3 @@
-cmake_minimum_required(VERSION 2.8)
-cmake_policy(SET CMP0017 NEW)
-#cmake_policy(SET CMP0003 NEW)
 #    ____    _ __           ____               __    ____
 #   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
 #  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
@@ -8,12 +5,14 @@ cmake_policy(SET CMP0017 NEW)
 #
 # Copyright 2008 SciberQuest Inc.
 #
-# +---------------------------------------------------------------------------+
-# |                                                                           |
-# |                            SciberQuest Tool Kit                                |
-# |                                                                           |
-# +---------------------------------------------------------------------------+
-#
+cmake_minimum_required(VERSION 2.8)
+if (POLICY CMP0017)
+  cmake_policy(SET CMP0017 NEW)
+endif()
+if (POLICY CMP0003)
+  cmake_policy(SET CMP0003 NEW)
+endif()
+
 project(SciberQuestToolKit)
 
 if("${PROJECT_SOURCE_DIR}"  STREQUAL "${PROJECT_BINARY_DIR}")
@@ -23,13 +22,20 @@ endif()
 include(ParaViewConfig.cmake)
 include(EigenConfig.cmake)
 include(MPICHConfig.cmake)
-include(GimpConfig.cmake)
-include(GeneratePythonBindings.cmake)
 include(CUDAConfig.cmake)
+include(GeneratePythonBindings.cmake)
+include(GetDate.cmake)
 
+# identify the build
+set (SQTK_BUILD_VERSION)
+GetDate(SQTK_BUILD_VERSION)
+message(STATUS "SQTK build number ${SQTK_BUILD_VERSION}")
+
+# put the plugin inside the pv install
 set(SQTK_LIB_INSTALL_PATH
   "${CMAKE_INSTALL_PREFIX}/lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}"
   )
+message(STATUS "SQTK will be installed at ${SQTK_LIB_INSTALL_PATH}")
 
 # Server manager wrapped sources.
 set(SM_CXX_SOURCES
@@ -67,17 +73,6 @@ set(SM_CXX_SOURCES
   vtkSQVPICReader.cxx
   )
 
-set(SQTK_SC11_DEMO OFF CACHE BOOL "Build the SC11 demo")
-if (SQTK_SC11_DEMO)
-  message(STATUS "Building the SC11 demo")
-  set(SM_CXX_SOURCES
-    ${SM_CXX_SOURCES}
-    vtkSC11DemoAnnotation.cxx
-    vtkSC11DemoExtentTranslator.cxx
-    vtkSC11DemoReader.cxx
-    )
-endif()
-
 set(SQTK_PROCESS_MONITOR ON CACHE BOOL "Build the process monitor.")
 if (SQTK_PROCESS_MONITOR)
   message(STATUS "Building process monitor.")
@@ -106,7 +101,6 @@ set(CXX_SOURCES
   CartesianExtent.cxx
   CellCopier.cxx
   CPUConvolutionDriver.cxx
-  DebugUtil.cxx
   IdBlock.cxx
   FieldDisplacementMapData.cxx
   FieldLine.cxx
@@ -169,7 +163,6 @@ if (SQTK_PROCESS_MONITOR)
       )
   endif()
 endif()
-
 
 set(SQTK_CUDA OFF CACHE BOOL "Enable CUDA optimizations.")
 if (CUDA_FOUND AND SQTK_CUDA)
@@ -286,18 +279,6 @@ if(PARAVIEW_BUILD_QT_GUI)
     set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
   endif()
 
-  if (SQTK_SC11_DEMO)
-    QT4_WRAP_CPP(MOC_SRCS pqSC11DemoReader.h)
-    ADD_PARAVIEW_OBJECT_PANEL(
-      IFACES IFACE_SRCS
-      CLASS_NAME pqSC11DemoReader
-      XML_NAME vtkSC11DemoReader
-      XML_GROUP sources)
-    set(_IFACES ${_IFACES} ${IFACES})
-    set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
-  endif()
-
-
   set (CXX_SOURCES
     ${CXX_SOURCES}
     ${MOC_SRCS}
@@ -321,27 +302,38 @@ if(PARAVIEW_BUILD_QT_GUI)
       pqSQRemoteSignalDialog.cxx)
   endif()
 
-  if (SQTK_SC11_DEMO)
-    set (CXX_SOURCES ${CXX_SOURCES} pqSC11DemoReader.cxx)
-  endif()
-
 endif (PARAVIEW_BUILD_QT_GUI)
 
-set (CLIENT_XML
-  SciberQuestToolKitClientReaders.xml
-  SciberQuestToolKitClientSources.xml
-  SciberQuestToolKitClientFilters.xml)
+set (SQTK_XML
+  SciberQuestToolKitReaders.xml
+  SciberQuestToolKitWriters.xml
+  SciberQuestToolKitSources.xml
+  SciberQuestToolKitFilters.xml)
+
+set (SQTK_SM_XML
+  SciberQuestToolKitSMReaders.xml
+  SciberQuestToolKitSMWriters.xml
+  SciberQuestToolKitSMSources.xml
+  SciberQuestToolKitSMFilters.xml)
+
+if (SQTK_PROCESS_MONITOR)
+  set (SQTK_XML
+    ${SQTK_XML}
+    SciberQuestToolKitProcessMonitor.xml)
+
+  set (SQTK_SM_XML
+    ${SQTK_SM_XML}
+    SciberQuestToolKitSMProcessMonitor.xml)
+endif()
 
 # Generate the plugin, servermanager and wrapped language bindings.
 add_paraview_plugin(
-  SciberQuestToolKit "11.02"
+  SciberQuestToolKit ${SQTK_BUILD_VERSION}
   GUI_INTERFACES ${_IFACES}
   SERVER_MANAGER_SOURCES ${SM_CXX_SOURCES}
-  SERVER_MANAGER_XML SciberQuestToolKitServerManager.xml
-  GUI_RESOURCE_FILES ${CLIENT_XML}
+  SERVER_MANAGER_XML ${SQTK_SM_XML}
+  GUI_RESOURCE_FILES ${SQTK_XML}
   SOURCES ${CXX_SOURCES})
-
-
 
 if (SQTK_CUDA AND CUDA_FOUND)
   target_link_libraries(SciberQuestToolKit CUDAConvolutionDriver)
@@ -361,114 +353,14 @@ if (SQTK_PYTHON_BINDINGS)
   install(TARGETS SciberQuestToolKitPythonD DESTINATION ${SQTK_LIB_INSTALL_PATH})
 endif()
 
-# GIMP scripts
-set (SQTK_POSTPROC_SCRIPTS OFF CACHE BOOL "Install post-processing scripts.")
-if ((NOT GIMP_FOUND) AND SQTK_POSTPROC_SCRIPTS)
-  message(SEND_ERROR "GIMP was not found.")
-endif()
-if (GIMP_FOUND AND SQTK_POSTPROC_SCRIPTS)
-  message(STATUS "Installing post-processing scripts.")
-  set(POSTPROC_SCRIPT_DIR "${PROJECT_SOURCE_DIR}/script/postproc/")
-  file(GLOB SQTK_GIMP_SCM_SOURCES  "${POSTPROC_SCRIPT_DIR}/sq-*.scm")
-  file(GLOB SQTK_GIMP_SH_SOURCES  "${POSTPROC_SCRIPT_DIR}/sq-*.sh")
-  install(FILES ${SQTK_GIMP_SCM_SOURCES} DESTINATION ${GIMP_SCRIPT_PATH})
-  install(PROGRAMS ${SQTK_GIMP_SH_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-endif()
-
-# batch scripts
-set(BATCH_SCRIPT_DIR "${PROJECT_SOURCE_DIR}/script/batch/")
-set(SQTK_BATCH_SCRIPTS_ALL OFF CACHE BOOL "Install all batchscripts")
-
-set(SQTK_BATCH_SCRIPTS_NAUTILUS OFF CACHE BOOL "Install scripts for Nautilus")
-if (SQTK_BATCH_SCRIPTS_NAUTILUS OR SQTK_BATCH_SCRIPTS_ALL)
-  message(STATUS "Installing batch scripts for Nautilus.")
-  file(GLOB SQTK_BATCH_SCRIPT_SOURCES  "${BATCH_SCRIPT_DIR}/*nautilus*")
-  install(PROGRAMS ${SQTK_BATCH_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-endif()
-
-set(SQTK_BATCH_SCRIPTS_KRAKEN OFF CACHE BOOL "Install scripts for Nautilus")
-if (SQTK_BATCH_SCRIPTS_KRAKEN OR SQTK_BATCH_SCRIPTS_ALL)
-  message(STATUS "Installing batch scripts for Nautilus.")
-  file(GLOB SQTK_BATCH_SCRIPT_SOURCES  "${BATCH_SCRIPT_DIR}/*kraken*")
-  install(PROGRAMS ${SQTK_BATCH_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-endif()
-
-set(SQTK_BATCH_SCRIPTS_LONGHORN OFF CACHE BOOL "Install scripts for Longhorn")
-if (SQTK_BATCH_SCRIPTS_LONGHORN OR SQTK_BATCH_SCRIPTS_ALL)
-  message(STATUS "Installing batch scripts for Longhorn.")
-  file(GLOB SQTK_BATCH_SCRIPT_SOURCES "${BATCH_SCRIPT_DIR}/*longhorn*")
-  install(PROGRAMS ${SQTK_BATCH_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-endif()
-
-# shell scripts
-set(SQTK_SHELL_SCRIPTS ON CACHE BOOL "Install shell scripts.")
-if (SQTK_SHELL_SCRIPTS)
-  message(STATUS "Installing shell scripts.")
-  set(SHELL_SCRIPT_DIR "${PROJECT_SOURCE_DIR}/script/util/")
-  set(SQTK_SHELL_SCRIPT_SOURCES
-    "${SHELL_SCRIPT_DIR}/projxy.sh"
-    "${SHELL_SCRIPT_DIR}/projxz.sh"
-    "${SHELL_SCRIPT_DIR}/pvd.sh"
-    )
-  install(PROGRAMS ${SQTK_SHELL_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-endif()
-
-# command line utilities
-if (UNIX)
-  set(SQTK_UTILITIES OFF CACHE BOOL "Build command line utilities.")
-  if (SQTK_UTILITIES)
-    message(STATUS "Building utilities.")
-    include(FindMPI)
-    if (NOT MPI_FOUND)
-      message(SEND_ERROR "MPI is required for the gentp utility.")
-    endif(NOT MPI_FOUND)
-    add_definitions("-DMPICH_IGNORE_CXX_SEEK")
-
-    add_executable(gentp gentp.cpp FsUtils.cxx)
-    target_link_libraries(gentp ${MPI_LIBRARIES})
-    install(TARGETS gentp DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-
-    add_executable(genzero genzero.cpp)
-    install(TARGETS genzero DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-
-    add_executable(MagnetosphereTopoBatch MagnetosphereTopoBatch.cpp)
-    target_link_libraries(MagnetosphereTopoBatch ${MPI_LIBRARIES} SciberQuestToolKit)
-    install(TARGETS MagnetosphereTopoBatch DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-
-    add_executable(SmoothBatch SmoothBatch.cpp)
-    target_link_libraries(SmoothBatch ${MPI_LIBRARIES} SciberQuestToolKit)
-    install(TARGETS SmoothBatch DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-
-    add_executable(VortexDetectBatch VortexDetectBatch.cpp)
-    target_link_libraries(VortexDetectBatch ${MPI_LIBRARIES} SciberQuestToolKit)
-    install(TARGETS VortexDetectBatch DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-
-    add_executable(Slicer Slicer.cpp)
-    target_link_libraries(Slicer ${MPI_LIBRARIES} SciberQuestToolKit)
-    install(TARGETS Slicer DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-
-    #add_executable(IOBench IOBench.cpp)
-    #target_link_libraries(IOBench ${MPI_LIBRARIES} SciberQuestToolKit)
-    #install(TARGETS IOBench DESTINATION ${CMAKE_INSTALL_PREFIX})
-
-    add_executable(MagnetosphereTopoBatchPVD MagnetosphereTopoBatchPVD.cpp)
-    target_link_libraries(MagnetosphereTopoBatchPVD ${MPI_LIBRARIES} SciberQuestToolKit)
-    install(TARGETS MagnetosphereTopoBatchPVD DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-
-  endif()
-endif()
-
 # testing
 set(SQTK_TESTING OFF CACHE BOOL "Build project tests.")
 if (SQTK_TESTING)
-  message(STATUS "Building tests.")
-  include(FindMPI)
-  if (NOT MPI_FOUND)
-    message(SEND_ERROR "MPI is required for the tests.")
-  endif(NOT MPI_FOUND)
-  add_definitions("-DMPICH_IGNORE_CXX_SEEK")
-  add_executable(TestFieldTopologyMapper TestFieldTopologyMapper.cpp)
-  target_link_libraries(TestFieldTopologyMapper SciberQuestToolKit ${MPI_LIBRARIES})
-  install(TARGETS TestFieldTopologyMapper DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+  if (NOT SQTK_WITHOUT_MPI AND MPI_FOUND)
+    add_definitions("-DMPICH_IGNORE_CXX_SEEK")
+    include_directories(${MPI_INCLUDE_PATH})
+    add_executable(TestFieldTopologyMapper TestFieldTopologyMapper.cpp)
+    target_link_libraries(TestFieldTopologyMapper SciberQuestToolKit ${MPI_LIBRARIES})
+    install(TARGETS TestFieldTopologyMapper DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+  endif ()
 endif ()
-
