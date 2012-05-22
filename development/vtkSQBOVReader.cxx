@@ -357,8 +357,8 @@ void vtkSQBOVReader::SetFileName(const char* _arg)
   #endif
 
   #ifdef SQTK_WITHOUT_MPI
-  vtkErrorMacro(
-      << "This class requires MPI however it was built without MPI.");
+  //vtkErrorMacro(
+  //    << "This class requires MPI however it was built without MPI.");
   #else
   int mpiOk=0;
   MPI_Initialized(&mpiOk);

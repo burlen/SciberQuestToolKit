@@ -125,22 +125,6 @@ vtkSQRandomCells::vtkSQRandomCells()
 
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
-
-  #ifdef SQTK_WITHOUT_MPI
-  sqErrorMacro(
-      cerr,
-      << "This class requires MPI however it was built without MPI.");
-  #else
-  int ok;
-  MPI_Initialized(&ok);
-  if (!ok)
-    {
-    sqErrorMacro(
-      cerr,
-      << "This class requires the MPI runtime, "
-      << "you must run ParaView in client-server mode launched via mpiexec.");
-    }
-  #endif
 }
 
 //----------------------------------------------------------------------------
