@@ -9,4 +9,3 @@ ostream &operator<<(ostream &os, const GhostTransaction &gt)
     << gt.GetIntersectionExtent();
   return os;
 }
-

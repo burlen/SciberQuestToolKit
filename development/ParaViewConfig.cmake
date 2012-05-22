@@ -18,11 +18,3 @@ find_package(ParaView REQUIRED)
 include(${PARAVIEW_USE_FILE})
 
 message(STATUS "ParaView ${PARAVIEW_VERSION_FULL} found.")
-
-if (NOT PARAVIEW_USE_MPI)
-  message(STATUS "WARNING: Building without MPI.")
-  message(STATUS "WARNING: You will only be able to use this build by"
-  message(STATUS "WARNING: connecting to an MPI enabled instance of pvserver.")
-  add_definitions(-DSVTK_WITHOUT_MPI)
-endif()
-

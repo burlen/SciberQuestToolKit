@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
+cmake_policy(SET CMP0017 NEW)
 #cmake_policy(SET CMP0003 NEW)
 #    ____    _ __           ____               __    ____
 #   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
@@ -26,7 +27,7 @@ include(GimpConfig.cmake)
 include(GeneratePythonBindings.cmake)
 include(CUDAConfig.cmake)
 
-set(SVTK_LIB_INSTALL_PATH
+set(SQTK_LIB_INSTALL_PATH
   "${CMAKE_INSTALL_PREFIX}/lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}"
   )
 
@@ -66,8 +67,8 @@ set(SM_CXX_SOURCES
   vtkSQVPICReader.cxx
   )
 
-set(SVTK_SC11_DEMO OFF CACHE BOOL "Build the SC11 demo")
-if (SVTK_SC11_DEMO)
+set(SQTK_SC11_DEMO OFF CACHE BOOL "Build the SC11 demo")
+if (SQTK_SC11_DEMO)
   message(STATUS "Building the SC11 demo")
   set(SM_CXX_SOURCES
     ${SM_CXX_SOURCES}
@@ -77,8 +78,8 @@ if (SVTK_SC11_DEMO)
     )
 endif()
 
-set(SVTK_PROCESS_MONITOR ON CACHE BOOL "Build the process monitor.")
-if (SVTK_PROCESS_MONITOR)
+set(SQTK_PROCESS_MONITOR ON CACHE BOOL "Build the process monitor.")
+if (SQTK_PROCESS_MONITOR)
   message(STATUS "Building process monitor.")
   set(SM_CXX_SOURCES ${SM_CXX_SOURCES} vtkSQProcessMonitor.cxx)
 endif()
@@ -145,7 +146,7 @@ set(CXX_SOURCES
   XMLUtils.cxx
   )
 
-if (SVTK_PROCESS_MONITOR)
+if (SQTK_PROCESS_MONITOR)
   if (WIN32)
     set(CXX_SOURCES
       ${CXX_SOURCES}
@@ -170,8 +171,8 @@ if (SVTK_PROCESS_MONITOR)
 endif()
 
 
-set(SVTK_CUDA OFF CACHE BOOL "Enable CUDA optimizations.")
-if (CUDA_FOUND AND SVTK_CUDA)
+set(SQTK_CUDA OFF CACHE BOOL "Enable CUDA optimizations.")
+if (CUDA_FOUND AND SQTK_CUDA)
   message(STATUS "Including CUDA accelerated filters.")
   message(STATUS "Cuda ${CUDA_VERSION_STRING} found.")
   set(CUDA_NVCC_FLAGS "-arch=sm_20;--compiler-options;-fPIC" CACHE STRING "nvcc flags")
@@ -183,10 +184,10 @@ if (CUDA_FOUND AND SVTK_CUDA)
   set(CU_SOURCES CUDAConvolutionDriver.cu)
   set_property(
     SOURCE ${CU_SOURCES}
-    APPEND PROPERTY COMPILE_DEFINITIONS SVTK_CUDA
+    APPEND PROPERTY COMPILE_DEFINITIONS SQTK_CUDA
     )
   CUDA_ADD_LIBRARY(CUDAConvolutionDriver ${CU_SOURCES})
-  install(TARGETS CUDAConvolutionDriver DESTINATION ${SVTK_LIB_INSTALL_PATH})
+  install(TARGETS CUDAConvolutionDriver DESTINATION ${SQTK_LIB_INSTALL_PATH})
   CUDA_BUILD_CLEAN_TARGET()
 else()
   set(CXX_SOURCES
@@ -268,7 +269,7 @@ if(PARAVIEW_BUILD_QT_GUI)
   set(_IFACES ${_IFACES} ${IFACES})
   set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
 
-  if (SVTK_PROCESS_MONITOR)
+  if (SQTK_PROCESS_MONITOR)
     message(STATUS "Building process monitor ui.")
     QT4_WRAP_CPP(MOC_SRCS pqSQProcessMonitor.h)
     QT4_WRAP_CPP(MOC_SRCS pqSQRemoteCommandDialog.h)
@@ -285,7 +286,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     set(_IFACE_SRCS ${_IFACE_SRCS} ${IFACE_SRCS})
   endif()
 
-  if (SVTK_SC11_DEMO)
+  if (SQTK_SC11_DEMO)
     QT4_WRAP_CPP(MOC_SRCS pqSC11DemoReader.h)
     ADD_PARAVIEW_OBJECT_PANEL(
       IFACES IFACE_SRCS
@@ -312,7 +313,7 @@ if(PARAVIEW_BUILD_QT_GUI)
     pqSQVolumeSource.cxx
     )
 
-  if (SVTK_PROCESS_MONITOR)
+  if (SQTK_PROCESS_MONITOR)
     set (CXX_SOURCES
       ${CXX_SOURCES}
       pqSQProcessMonitor.cxx
@@ -320,7 +321,7 @@ if(PARAVIEW_BUILD_QT_GUI)
       pqSQRemoteSignalDialog.cxx)
   endif()
 
-  if (SVTK_SC11_DEMO)
+  if (SQTK_SC11_DEMO)
     set (CXX_SOURCES ${CXX_SOURCES} pqSC11DemoReader.cxx)
   endif()
 
@@ -342,80 +343,80 @@ add_paraview_plugin(
 
 
 
-if (SVTK_CUDA AND CUDA_FOUND)
+if (SQTK_CUDA AND CUDA_FOUND)
   target_link_libraries(SciberQuestToolKit CUDAConvolutionDriver)
 endif()
 
-if (WIN32 AND SVTK_PROCESS_MONITOR)
+if (WIN32 AND SQTK_PROCESS_MONITOR)
   target_link_libraries(SciberQuestToolKit Psapi)
 endif()
 
-install(TARGETS SciberQuestToolKit DESTINATION ${SVTK_LIB_INSTALL_PATH})
+install(TARGETS SciberQuestToolKit DESTINATION ${SQTK_LIB_INSTALL_PATH})
 
-set(SVTK_PYTHON_BINDINGS OFF CACHE BOOL "Generate vtk python bindings")
-if (SVTK_PYTHON_BINDINGS)
+set(SQTK_PYTHON_BINDINGS OFF CACHE BOOL "Generate vtk python bindings")
+if (SQTK_PYTHON_BINDINGS)
   message(STATUS "generating vtk python bindings.")
   generate_python_bindings(SciberQuestToolKit "${SM_CXX_SOURCES}")
-  install(TARGETS SciberQuestToolKitPython DESTINATION ${SVTK_LIB_INSTALL_PATH})
-  install(TARGETS SciberQuestToolKitPythonD DESTINATION ${SVTK_LIB_INSTALL_PATH})
+  install(TARGETS SciberQuestToolKitPython DESTINATION ${SQTK_LIB_INSTALL_PATH})
+  install(TARGETS SciberQuestToolKitPythonD DESTINATION ${SQTK_LIB_INSTALL_PATH})
 endif()
 
 # GIMP scripts
-set (SVTK_POSTPROC_SCRIPTS OFF CACHE BOOL "Install post-processing scripts.")
-if ((NOT GIMP_FOUND) AND SVTK_POSTPROC_SCRIPTS)
+set (SQTK_POSTPROC_SCRIPTS OFF CACHE BOOL "Install post-processing scripts.")
+if ((NOT GIMP_FOUND) AND SQTK_POSTPROC_SCRIPTS)
   message(SEND_ERROR "GIMP was not found.")
 endif()
-if (GIMP_FOUND AND SVTK_POSTPROC_SCRIPTS)
+if (GIMP_FOUND AND SQTK_POSTPROC_SCRIPTS)
   message(STATUS "Installing post-processing scripts.")
   set(POSTPROC_SCRIPT_DIR "${PROJECT_SOURCE_DIR}/script/postproc/")
-  file(GLOB SVTK_GIMP_SCM_SOURCES  "${POSTPROC_SCRIPT_DIR}/sq-*.scm")
-  file(GLOB SVTK_GIMP_SH_SOURCES  "${POSTPROC_SCRIPT_DIR}/sq-*.sh")
-  install(FILES ${SVTK_GIMP_SCM_SOURCES} DESTINATION ${GIMP_SCRIPT_PATH})
-  install(PROGRAMS ${SVTK_GIMP_SH_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+  file(GLOB SQTK_GIMP_SCM_SOURCES  "${POSTPROC_SCRIPT_DIR}/sq-*.scm")
+  file(GLOB SQTK_GIMP_SH_SOURCES  "${POSTPROC_SCRIPT_DIR}/sq-*.sh")
+  install(FILES ${SQTK_GIMP_SCM_SOURCES} DESTINATION ${GIMP_SCRIPT_PATH})
+  install(PROGRAMS ${SQTK_GIMP_SH_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()
 
 # batch scripts
 set(BATCH_SCRIPT_DIR "${PROJECT_SOURCE_DIR}/script/batch/")
-set(SVTK_BATCH_SCRIPTS_ALL OFF CACHE BOOL "Install all batchscripts")
+set(SQTK_BATCH_SCRIPTS_ALL OFF CACHE BOOL "Install all batchscripts")
 
-set(SVTK_BATCH_SCRIPTS_NAUTILUS OFF CACHE BOOL "Install scripts for Nautilus")
-if (SVTK_BATCH_SCRIPTS_NAUTILUS OR SVTK_BATCH_SCRIPTS_ALL)
+set(SQTK_BATCH_SCRIPTS_NAUTILUS OFF CACHE BOOL "Install scripts for Nautilus")
+if (SQTK_BATCH_SCRIPTS_NAUTILUS OR SQTK_BATCH_SCRIPTS_ALL)
   message(STATUS "Installing batch scripts for Nautilus.")
-  file(GLOB SVTK_BATCH_SCRIPT_SOURCES  "${BATCH_SCRIPT_DIR}/*nautilus*")
-  install(PROGRAMS ${SVTK_BATCH_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+  file(GLOB SQTK_BATCH_SCRIPT_SOURCES  "${BATCH_SCRIPT_DIR}/*nautilus*")
+  install(PROGRAMS ${SQTK_BATCH_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()
 
-set(SVTK_BATCH_SCRIPTS_KRAKEN OFF CACHE BOOL "Install scripts for Nautilus")
-if (SVTK_BATCH_SCRIPTS_KRAKEN OR SVTK_BATCH_SCRIPTS_ALL)
+set(SQTK_BATCH_SCRIPTS_KRAKEN OFF CACHE BOOL "Install scripts for Nautilus")
+if (SQTK_BATCH_SCRIPTS_KRAKEN OR SQTK_BATCH_SCRIPTS_ALL)
   message(STATUS "Installing batch scripts for Nautilus.")
-  file(GLOB SVTK_BATCH_SCRIPT_SOURCES  "${BATCH_SCRIPT_DIR}/*kraken*")
-  install(PROGRAMS ${SVTK_BATCH_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+  file(GLOB SQTK_BATCH_SCRIPT_SOURCES  "${BATCH_SCRIPT_DIR}/*kraken*")
+  install(PROGRAMS ${SQTK_BATCH_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()
 
-set(SVTK_BATCH_SCRIPTS_LONGHORN OFF CACHE BOOL "Install scripts for Longhorn")
-if (SVTK_BATCH_SCRIPTS_LONGHORN OR SVTK_BATCH_SCRIPTS_ALL)
+set(SQTK_BATCH_SCRIPTS_LONGHORN OFF CACHE BOOL "Install scripts for Longhorn")
+if (SQTK_BATCH_SCRIPTS_LONGHORN OR SQTK_BATCH_SCRIPTS_ALL)
   message(STATUS "Installing batch scripts for Longhorn.")
-  file(GLOB SVTK_BATCH_SCRIPT_SOURCES "${BATCH_SCRIPT_DIR}/*longhorn*")
-  install(PROGRAMS ${SVTK_BATCH_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+  file(GLOB SQTK_BATCH_SCRIPT_SOURCES "${BATCH_SCRIPT_DIR}/*longhorn*")
+  install(PROGRAMS ${SQTK_BATCH_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()
 
 # shell scripts
-set(SVTK_SHELL_SCRIPTS ON CACHE BOOL "Install shell scripts.")
-if (SVTK_SHELL_SCRIPTS)
+set(SQTK_SHELL_SCRIPTS ON CACHE BOOL "Install shell scripts.")
+if (SQTK_SHELL_SCRIPTS)
   message(STATUS "Installing shell scripts.")
   set(SHELL_SCRIPT_DIR "${PROJECT_SOURCE_DIR}/script/util/")
-  set(SVTK_SHELL_SCRIPT_SOURCES
+  set(SQTK_SHELL_SCRIPT_SOURCES
     "${SHELL_SCRIPT_DIR}/projxy.sh"
     "${SHELL_SCRIPT_DIR}/projxz.sh"
     "${SHELL_SCRIPT_DIR}/pvd.sh"
     )
-  install(PROGRAMS ${SVTK_SHELL_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+  install(PROGRAMS ${SQTK_SHELL_SCRIPT_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()
 
 # command line utilities
 if (UNIX)
-  set(SVTK_UTILITIES OFF CACHE BOOL "Build command line utilities.")
-  if (SVTK_UTILITIES)
+  set(SQTK_UTILITIES OFF CACHE BOOL "Build command line utilities.")
+  if (SQTK_UTILITIES)
     message(STATUS "Building utilities.")
     include(FindMPI)
     if (NOT MPI_FOUND)
@@ -458,8 +459,8 @@ if (UNIX)
 endif()
 
 # testing
-set(SVTK_TESTING OFF CACHE BOOL "Build project tests.")
-if (SVTK_TESTING)
+set(SQTK_TESTING OFF CACHE BOOL "Build project tests.")
+if (SQTK_TESTING)
   message(STATUS "Building tests.")
   include(FindMPI)
   if (NOT MPI_FOUND)

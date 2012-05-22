@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
@@ -24,6 +24,7 @@ Copyright 2008 SciberQuest Inc.
 #include "CartesianDataBlockIODescriptor.h"
 #include "PriorityQueue.hxx"
 #include "Tuple.hxx"
+#include "postream.h"
 
 #include <sstream>
 using std::ostringstream;
@@ -140,11 +141,8 @@ void vtkSQOOCBOVReader::Close()
       {
       nUsed+=this->BlockUse[i];
       }
-    int worldRank=0;
-    MPI_Comm_rank(MPI_COMM_WORLD,&worldRank);
 
-    cerr
-      << "[" << worldRank << "]"
+    pCerr()
       << " CacheSize=" << this->BlockCacheSize
       << " nUniqueBlocks=" << nUsed
       << " HitCount=" << this->CacheHitCount

@@ -22,8 +22,6 @@ using std::endl;
 #include <complex>
 using std::complex;
 
-//#include<Eigen/Core>
-//#include<Eigen/QR>
 #include<Eigen/Eigenvalues> 
 using namespace Eigen;
 

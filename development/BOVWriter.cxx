@@ -24,8 +24,6 @@ Copyright 2008 SciberQuest Inc.
 #include "SQMacros.h"
 #include "PrintUtils.h"
 
-#include <mpi.h>
-
 #include <sstream>
 using std::ostringstream;
 
@@ -40,18 +38,26 @@ BOVWriter::BOVWriter()
       :
   MetaData(NULL),
   ProcId(-1),
-  NProcs(0),
-  Comm(MPI_COMM_NULL),
-  Hints(MPI_INFO_NULL)
+  NProcs(0)
 {
+  #ifdef SQTK_WITHOUT_MPI
+  sqErrorMacro(
+    cerr,
+    "This class requires MPI but it was built without MPI.");
+  #else
+  this->Comm=MPI_COMM_NULL;
+  this->Hints=MPI_INFO_NULL;
+
   int ok;
   MPI_Initialized(&ok);
   if (!ok)
     {
-    sqErrorMacro(cerr,
-      << "The BOVWriter requires MPI. Start ParaView in"
-      << " Client-Server mode using mpiexec.");
+    sqErrorMacro(
+      cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
     }
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -64,8 +70,10 @@ BOVWriter::BOVWriter(const BOVWriter &other)
 BOVWriter::~BOVWriter()
 {
   this->SetMetaData(NULL);
+  #ifndef SQTK_WITHOUT_MPI
   this->SetCommunicator(MPI_COMM_NULL);
   this->SetHints(MPI_INFO_NULL);
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -86,6 +94,7 @@ const BOVWriter &BOVWriter::operator=(const BOVWriter &other)
 //-----------------------------------------------------------------------------
 void BOVWriter::SetCommunicator(MPI_Comm comm)
 {
+  #ifndef SQTK_WITHOUT_MPI
   if (this->Comm==comm) return;
 
   if ( this->Comm!=MPI_COMM_NULL
@@ -105,11 +114,13 @@ void BOVWriter::SetCommunicator(MPI_Comm comm)
     MPI_Comm_rank(this->Comm,&this->ProcId);
     MPI_Comm_size(this->Comm,&this->NProcs);
     }
+  #endif
 }
 
 //-----------------------------------------------------------------------------
 void BOVWriter::SetHints(MPI_Info hints)
 {
+  #ifndef SQTK_WITHOUT_MPI
   if (this->Hints==hints) return;
 
   if (this->Hints!=MPI_INFO_NULL)
@@ -125,6 +136,7 @@ void BOVWriter::SetHints(MPI_Info hints)
     {
     MPI_Info_dup(hints,&this->Hints);
     }
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -446,6 +458,7 @@ void BOVWriter::PrintSelf(ostream &os)
     << "  ProcId: " << this->ProcId << endl
     << "  NProcs: " << this->NProcs << endl;
 
+  #ifndef SQTK_WITHOUT_MPI
   if (this->Hints!=MPI_INFO_NULL)
     {
     os << "  Hints:" << endl;
@@ -461,6 +474,7 @@ void BOVWriter::PrintSelf(ostream &os)
       os << "    " << key << "=" << val << endl;
       }
     }
+  #endif
 
   this->MetaData->Print(os);
 }

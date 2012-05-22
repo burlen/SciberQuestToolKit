@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 
@@ -10,16 +10,23 @@ Copyright 2008 SciberQuest Inc.
 #ifndef IntersectionSet_h
 #define IntersectionSet_h
 
+#include "SQMacros.h"
+
+#ifdef SQTK_WITHOUT_MPI
+typedef void * MPI_Datatype;
+#else
 #include "mpi.h"
+#endif
+
 #include <string>
 using std::string;
 
 /**
 /// Data associated with a stream line surface intersection set.
-Data associated with a stream line surface intersection set. Streamlines 
+Data associated with a stream line surface intersection set. Streamlines
 are identified by their seedpoint ids. Each streamline is treated internally
 in two parts a forward running part and a backward running part, each of which
-may have an intersection. Nothing says that streamline may not intersect 
+may have an intersection. Nothing says that streamline may not intersect
 multiple surfaces multiple times. We use the integration time as the parameter
 to decide which surface is closest to the seed point and discard others.
 */
@@ -34,7 +41,13 @@ public:
   bwdSurfaceId(-1),
   fwdIntersectTime(-1.0),
   bwdIntersectTime(-1.0)
-    {}
+    {
+    #ifdef SQTK_WITHOUT_MPI
+    sqErrorMacro(
+      cerr,
+      "This class requires MPI however it was built without MPI.");
+    #endif
+    }
 
   /// Construct in an initialized state.
   IntersectData(
@@ -45,7 +58,13 @@ public:
   bwdSurfaceId(bwdSurface),
   fwdIntersectTime(fwdTime),
   bwdIntersectTime(bwdTime)
-    {}
+    {
+    #ifdef SQTK_WITHOUT_MPI
+    sqErrorMacro(
+      cerr,
+      "This class requires MPI however it was built without MPI.");
+    #endif
+    }
 
   /// Copy construct
   IntersectData(const IntersectData &other);

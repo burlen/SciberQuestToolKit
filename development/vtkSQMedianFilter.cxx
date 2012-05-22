@@ -59,8 +59,6 @@ using vtkstd::pair;
 using vtkstd::min;
 using vtkstd::max;
 
-#include <mpi.h>
-
 vtkCxxRevisionMacro(vtkSQMedianFilter, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQMedianFilter);
 

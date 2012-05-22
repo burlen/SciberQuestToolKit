@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 
@@ -15,7 +15,28 @@ Copyright 2008 SciberQuest Inc.
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 #endif
 
+#ifdef SQTK_WITHOUT_MPI
+#define MPI_FLOAT 0
+#define MPI_DOUBLE 0
+#define MPI_CHAR 0
+#define MPI_UNSIGNED_CHAR 0
+#define MPI_SHORT 0
+#define MPI_UNSIGNED_SHORT 0
+#define MPI_INT 0
+#define MPI_UNSIGNED_INT 0
+#define MPI_UNSIGNED 0
+#define MPI_LONG 0
+#define MPI_UNSIGNED_LONG 0
+#define MPI_LONG_LONG 0
+#define MPI_UNSIGNED_LONG_LONG 0
+typedef void * MPI_Status;
+typedef void * MPI_Datatype;
+typedef void * MPI_Info;
+typedef void * MPI_File;
+typedef void * MPI_Comm;
+#else
 #include <mpi.h>
+#endif
 
 #include "CartesianExtent.h"
 #include "SQMacros.h"
@@ -161,6 +182,7 @@ void CreateCartesianView(
       const CartesianExtent &decomp,
       MPI_Datatype &view)
 {
+  #ifndef SQTK_WITHOUT_MPI
   int iErr;
 
   MPI_Datatype nativeType=DataTraits<T>::Type();
@@ -181,7 +203,7 @@ void CreateCartesianView(
   if (domain==decomp)
     {
     iErr=MPI_Type_contiguous(nCells,nativeType,&view);
-    if (iErr) 
+    if (iErr)
       {
       sqErrorMacro(pCerr(),"MPI_Type_contiguous failed.");
       }
@@ -206,6 +228,7 @@ void CreateCartesianView(
     {
     sqErrorMacro(pCerr(),"MPI_Type_commit failed.");
     }
+  #endif
 }
 
 //*****************************************************************************
@@ -216,6 +239,7 @@ void CreateCartesianView(
       int nComps,
       MPI_Datatype &view)
 {
+  #ifndef SQTK_WITHOUT_MPI
   int iErr;
 
   MPI_Datatype nativeType;
@@ -268,6 +292,7 @@ void CreateCartesianView(
     }
 
   MPI_Type_free(&nativeType);
+  #endif
 }
 
 
@@ -282,6 +307,8 @@ MPI_Status WriteDataArray(
         const CartesianExtent &decomp, // region to be wrote, block extents
         T *data)                       // pointer to a buffer to write to disk.
 {
+  MPI_Status ok=0;
+  #ifndef SQTK_WITHOUT_MPI
   int iErr;
   const int eStrLen=2048;
   char eStr[eStrLen]={'\0'};
@@ -357,7 +384,6 @@ MPI_Status WriteDataArray(
     }
 
   // Write
-  MPI_Status ok;
   iErr=MPI_File_write_all(file,data,1,memView,&ok);
   MPI_File_close(&file);
   MPI_Type_free(&fileView);
@@ -370,7 +396,7 @@ MPI_Status WriteDataArray(
         << eStr);
     return 0;
     }
-
+  #endif
   return ok;
 }
 
@@ -393,6 +419,7 @@ int ReadDataArray(
         int compNoMem,                  // start offset in mem array
         T *data)                        // pointer to a buffer to read into.
 {
+  #ifndef SQTK_WITHOUT_MPI
   int iErr;
   int eStrLen=256;
   char eStr[256]={'\0'};
@@ -493,7 +520,7 @@ int ReadDataArray(
         << eStr);
     return 0;
     }
-
+  #endif
   return 1;
 }
 
@@ -514,6 +541,7 @@ int WriteDataArray(
         int compNoMem,                 // start offset in mem array
         T *data)                       // pointer to a buffer to write from.
 {
+  #ifndef SQTK_WITHOUT_MPI
   int iErr;
   int eStrLen=256;
   char eStr[256]={'\0'};
@@ -596,7 +624,7 @@ int WriteDataArray(
         << eStr);
     return 0;
     }
-
+  #endif
   return 1;
 }
 
@@ -611,6 +639,7 @@ int ReadDataArray(
         int compNoMem,                 // start offset in mem array
         T *data)                       // pointer to a buffer to read into.
 {
+  #ifndef SQTK_WITHOUT_MPI
   int iErr;
   int eStrLen=256;
   char eStr[256]={'\0'};
@@ -693,7 +722,7 @@ int ReadDataArray(
         << eStr);
     return 0;
     }
-
+  #endif
   return 1;
 }
 /**
@@ -709,6 +738,7 @@ int ReadDataArray(
         MPI_Datatype fileView,         // file layout
         T *data)                       // pointer to a buffer to read into.
 {
+  #ifndef SQTK_WITHOUT_MPI
   int iErr;
   int eStrLen=256;
   char eStr[256]={'\0'};
@@ -732,7 +762,7 @@ int ReadDataArray(
         << eStr);
     return 0;
     }
-
+  #endif
   return 1;
 }
 

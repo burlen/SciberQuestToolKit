@@ -9,7 +9,13 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __BOVWriter_h
 #define __BOVWriter_h
 
+#ifdef SQTK_WITHOUT_MPI
+typedef void * MPI_Comm;
+typedef void * MPI_Info;
+#else
 #include <mpi.h>
+#endif
+
 #include <vector>
 using std::vector;
 #include <string>
@@ -131,4 +137,3 @@ private:
 };
 
 #endif
-

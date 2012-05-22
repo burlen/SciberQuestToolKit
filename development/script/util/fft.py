@@ -3,8 +3,8 @@
 #import pylab as mpl
 import numpy as np
 
-#fileName='/home/bloring/ext/ParaView/SciVisToolKit/data/asym-2d/uex_292500.gda'
-dataPath='/home/bloring/ext/ParaView/SciVisToolKit/data/asym-2d-1024'
+#fileName='/home/bloring/ext/ParaView/SciberQuestToolKit/data/asym-2d/uex_292500.gda'
+dataPath='/home/bloring/ext/ParaView/SciberQuestToolKit/data/asym-2d-1024'
 inputFile=dataPath+'/uex_292500.gda'
 outputFilePower=dataPath+'/puex_292500.gda'
 outputFileFilter=dataPath+'/fuex_292500.gda'
@@ -78,7 +78,7 @@ print 'wrote power spectrum of filtered data %s'%(outputFilePFilter)
 #pfdata=np.abs(fdata)**2
 
 
-#f=open('/home/bloring/ext/ParaView/SciVisToolKit/data/asym-2d/pfuex_292500.gda','wb')
+#f=open('/home/bloring/ext/ParaView/SciberQuestToolKit/data/asym-2d/pfuex_292500.gda','wb')
 #f.write(fdata.tostring())
 #f.close()
 

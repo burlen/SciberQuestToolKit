@@ -20,7 +20,10 @@ using std::string;
 #include <sstream>
 using std::ostringstream;
 
+#ifndef SQTK_WITHOUT_MPI
 #include <mpi.h>
+#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -44,8 +47,14 @@ public:
       Nxy(0),
       Nz(0)
   {
+    #ifdef SQTK_WITHOUT_MPI
+    sqErrorMacro(
+        cerr,
+        "This class requires MPI however it was built without MPI.");
+    #else
     MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
     MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
+    #endif
   }
 
   ~SC11DemoReader(){ this->Close(); }
@@ -56,6 +65,7 @@ public:
         const char *scalarName,
         CartesianExtent fileExtent)
   {
+    #ifndef SQTK_WITHOUT_MPI
     if (this->Data)
       {
       this->Close();
@@ -141,6 +151,7 @@ public:
       this->Data=0;
       return -1;
       }
+    #endif
 
     return 0;
   }
@@ -232,4 +243,3 @@ private:
 };
 
 #endif
-

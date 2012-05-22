@@ -10,7 +10,7 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __CUDAMacros_h
 #define __CUDAMacros_h
 
-#if defined SVTK_CUDA
+#if defined SQTK_CUDA
 #include <cuda.h>
 
 #include <iomanip>

@@ -414,7 +414,7 @@ int GDAMetaData::Write()
     {
     os
       << "#################################" << endl
-      << "# SQ SciVisToolKit" << endl
+      << "# SQ SciberQuestToolKit" << endl
       << "# GDAMetadata version 1.0" << endl
       << "#################################" << endl;
 

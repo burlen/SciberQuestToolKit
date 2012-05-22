@@ -32,7 +32,9 @@ Copyright 2008 SciberQuest Inc.
 #include "SQMacros.h"
 #include "postream.h"
 
+#ifndef SQTK_WITHOUT_MPI
 #include <mpi.h>
+#endif
 
 #include <algorithm>
 using std::min;
@@ -65,18 +67,25 @@ vtkSC11DemoReader::vtkSC11DemoReader()
   pCerr() << "===============================vtkSC11DemoReader" << endl;
   #endif
 
+  #ifdef SQTK_WITHOUT_MPI
+  vtkErrorMacro(
+      "This class requires MPI however it was built without MPI.");
+  #else
+  int ok;
+  MPI_Initialized(&ok);
+  if (!ok)
+    {
+    vtkErrorMacro(
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    }
+  #else
+
   // Initialize variables
   this->FileName=0;
   this->MetaData=new SC11DemoMetaData;
   this->Reader=new SC11DemoReader;
   this->DirtyValue=-1;
-
-  int mpiOk=0;
-  MPI_Initialized(&mpiOk);
-  if (!mpiOk)
-    {
-    vtkErrorMacro("MPI has not been initialized. Restart ParaView using mpiexec.");
-    }
 
   // Initialize pipeline.
   this->SetNumberOfInputPorts(0);
@@ -412,4 +421,3 @@ void vtkSC11DemoReader::PrintSelf(ostream& os, vtkIndent indent)
   this->Superclass::PrintSelf(os,indent);
   os << endl;
 }
-

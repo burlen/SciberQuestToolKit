@@ -14,13 +14,17 @@ Copyright 2008 SciberQuest Inc.
   #include <unistd.h>
 #endif
 
+#ifndef SQTK_WITHOUT_MPI
 #include <mpi.h>
+#endif
 
 //-----------------------------------------------------------------------------
 ostream &pCerr()
 {
-  int WorldRank;
+  int WorldRank=0;
+  #ifndef SQTK_WITHOUT_MPI
   MPI_Comm_rank(MPI_COMM_WORLD,&WorldRank);
+  #endif
 
   char host[256]={'\0'};
   gethostname(host,256);
@@ -29,4 +33,3 @@ ostream &pCerr()
 
   return cerr;
 }
-

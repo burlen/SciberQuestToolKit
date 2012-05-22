@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
@@ -68,6 +68,7 @@ ostream &operator<<(ostream &os, const BOVVectorImage &vi)
       << endl;
     }
 
+  #ifndef SQTK_WITHOUT_MPI
   // only one of the file's hints
   MPI_File file=vi.ComponentFiles[0]->GetFile();
   if (file)
@@ -92,7 +93,7 @@ ostream &operator<<(ostream &os, const BOVVectorImage &vi)
         }
       }
     }
+  #endif
 
   return os;
 }
-

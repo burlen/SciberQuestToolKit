@@ -160,7 +160,7 @@ pqSQHemisphereSource::~pqSQHemisphereSource()
 //-----------------------------------------------------------------------------
 void pqSQHemisphereSource::Restore()
 {
-  QSettings settings("SciberQuest", "SciVisToolKit");
+  QSettings settings("SciberQuest", "SciberQuestToolKit");
   QString lastUsedDir=settings.value("SQHemisphereSource/lastUsedDir","").toString();
 
   QString fn=QFileDialog::getOpenFileName(this,"Open SQ Hemisphere Source",lastUsedDir,"*.sqhs");
@@ -231,7 +231,7 @@ void pqSQHemisphereSource::Save()
   if (fn.size())
     {
     QString lastUsedDir(StripFileNameFromPath(fn.toStdString()).c_str());
-    QSettings settings("SciberQuest", "SciVisToolKit");
+    QSettings settings("SciberQuest", "SciberQuestToolKit");
     settings.setValue("SQHemisphereSource/lastUsedDir",lastUsedDir);
 
     ofstream f(fn.toStdString().c_str(),ios_base::out|ios_base::trunc);

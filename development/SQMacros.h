@@ -32,7 +32,6 @@ using std::cerr;
     a->Delete();\
     }
 
-
 #define DO_PRAGMA(x) _Pragma(#x)
 #define sqTODOMacro(x)\
   DO_PRAGMA(message("TODO - "#x))

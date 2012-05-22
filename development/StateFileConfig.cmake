@@ -11,23 +11,23 @@
 # |                                                                           |
 # +---------------------------------------------------------------------------+
 
-set(SVTK_DATA_DIR
+set(SQTK_DATA_DIR
   "${PROJECT_SOURCE_DIR}/../data/"
   CACHE FILEPATH
-  "Path to SciVisToolKit test data.")
+  "Path to SciberQuestToolKit test data.")
 
-if (EXISTS ${SVTK_DATA_DIR})
+if (EXISTS ${SQTK_DATA_DIR})
 
   message(STATUS "Configuring state files.")
 
-  set(SVTK_TESTS
+  set(SQTK_TESTS
     test-periodic-bc.pvsm
     test-sq-field-tracer.pvsm
     test-sq-poincare-mapper.pvsm
     test-sq-topology-mapper.pvsm
     )
 
-  foreach (F ${SVTK_TESTS})
+  foreach (F ${SQTK_TESTS})
     configure_file(
       "${PROJECT_SOURCE_DIR}/states/${F}.in"
       "${PROJECT_BINARY_DIR}/states/${F}"
@@ -35,4 +35,4 @@ if (EXISTS ${SVTK_DATA_DIR})
     message(STATUS "    Configured ${F}.")
   endforeach (F)
 
-endif (EXISTS ${SVTK_DATA_DIR})
+endif (EXISTS ${SQTK_DATA_DIR})

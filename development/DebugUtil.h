@@ -5,7 +5,7 @@
 Attach a gdb session to the listed ranks using a named interface.
 The available interfaces are: konsole, emacs, and xterm.
 */
-void GdbAttachRanks(char *iface, char *cRanks);
+void GdbAttachRanks(const char *iface, const char *cRanks);
 
 #endif
 

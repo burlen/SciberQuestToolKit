@@ -22,7 +22,6 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkPointData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkMultiProcessController.h"
-#include "vtkMPIController.h"
 #include "vtkPVXMLElement.h"
 
 #include "vtkSQOOCReader.h"
@@ -39,7 +38,9 @@ Copyright 2008 SciberQuest Inc.
 #include "SQMacros.h"
 #include "postream.h"
 
+#ifndef SQTK_WITHOUT_MPI
 #include <mpi.h>
+#endif
 
 #include <algorithm>
 using std::min;
@@ -116,19 +117,19 @@ vtkSQBOVReader::vtkSQBOVReader()
   this->WorldRank=0;
   this->WorldSize=1;
 
+  // this reader requires MPI, both the build and the runtime
+  // but we won't report the error here because pvclient may
+  // construct the reader to check if it could read a givenn file
+  // the error should reported in SetFileName.
+  #ifndef SQTK_WITHOUT_MPI
   int mpiOk=0;
   MPI_Initialized(&mpiOk);
-  if (!mpiOk)
+  if (mpiOk)
     {
-    vtkErrorMacro("MPI has not been initialized. Restart ParaView using mpiexec.");
+    MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
+    MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
     }
-
-  // vtkMultiProcessController *con=vtkMultiProcessController::GetGlobalController();
-  // this->WorldRank=con->GetLocalProcessId();
-  // this->WorldSize=con->GetNumberOfProcesses();
-
-  MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
-  MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
+  #endif
 
   this->HostName[0]='\0';
   #if defined vtkSQBOVReaderDEBUG
@@ -321,7 +322,6 @@ int vtkSQBOVReader::Initialize(
   return 0;
 }
 
-
 //-----------------------------------------------------------------------------
 int vtkSQBOVReader::CanReadFile(const char *file)
 {
@@ -330,9 +330,16 @@ int vtkSQBOVReader::CanReadFile(const char *file)
   pCerr() << "Check " << safeio(file) << "." << endl;
   #endif
 
+  int status=0;
+
+  #ifndef SQTK_WITHOUT_MPI
+  // only rank 0 opens the file, this results in metadata
+  // being parsed. If the parsing of md is successful then
+  // the file is ours.
   this->Reader->SetCommunicator(MPI_COMM_SELF);
-  int status=this->Reader->Open(file);
+  status=this->Reader->Open(file);
   this->Reader->Close();
+  #endif
 
   return status;
 }
@@ -348,6 +355,19 @@ void vtkSQBOVReader::SetFileName(const char* _arg)
   vtkSQLog *log=vtkSQLog::GetGlobalInstance();
   log->StartEvent("vtkSQBOVReader::SetFileName");
   #endif
+
+  #ifdef SQTK_WITHOUT_MPI
+  vtkErrorMacro(
+      << "This class requires MPI however it was built without MPI.");
+  #else
+  int mpiOk=0;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    vtkErrorMacro(
+        << "MPI has not been initialized. Restart ParaView using mpiexec.");
+    return;
+    }
 
   if (this->FileName == NULL && _arg == NULL) { return;}
   if (this->FileName && _arg && (!strcmp(this->FileName,_arg))) { return;}
@@ -400,6 +420,7 @@ void vtkSQBOVReader::SetFileName(const char* _arg)
     }
 
   this->Modified();
+  #endif
 
   #if defined vtkSQBOVReaderTIME
   log->EndEvent("vtkSQBOVReader::SetFileName");
@@ -798,6 +819,7 @@ int vtkSQBOVReader::RequestInformation(
 //-----------------------------------------------------------------------------
 void vtkSQBOVReader::SetMPIFileHints()
 {
+  #ifndef SQTK_WITHOUT_MPI
   MPI_Info hints;
   MPI_Info_create(&hints);
 
@@ -840,7 +862,6 @@ void vtkSQBOVReader::SetMPIFileHints()
       break;
     }
 
-
   if (this->CollectBufferSize>0)
     {
     ostringstream os;
@@ -874,6 +895,7 @@ void vtkSQBOVReader::SetMPIFileHints()
   this->Reader->SetHints(hints);
 
   MPI_Info_free(&hints);
+  #endif
 }
 
 //-----------------------------------------------------------------------------

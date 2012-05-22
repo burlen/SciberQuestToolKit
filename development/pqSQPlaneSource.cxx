@@ -448,7 +448,7 @@ void pqSQPlaneSource::ShowTranslateDialog()
 //-----------------------------------------------------------------------------
 void pqSQPlaneSource::Restore()
 {
-  QSettings settings("SciberQuest", "SciVisToolKit");
+  QSettings settings("SciberQuest", "SciberQuestToolKit");
   QString lastUsedDir=settings.value("SQPlaneSource/lastUsedDir","").toString();
 
   QString fn=QFileDialog::getOpenFileName(this,"Open SQ Plane Source",lastUsedDir,"*.sqps");
@@ -537,7 +537,7 @@ void pqSQPlaneSource::Save()
   if (fn.size())
     {
     QString lastUsedDir(StripFileNameFromPath(fn.toStdString()).c_str());
-    QSettings settings("SciberQuest", "SciVisToolKit");
+    QSettings settings("SciberQuest", "SciberQuestToolKit");
     settings.setValue("SQPlaneSource/lastUsedDir",lastUsedDir);
 
     ofstream f(fn.toStdString().c_str(),ios_base::out|ios_base::trunc);

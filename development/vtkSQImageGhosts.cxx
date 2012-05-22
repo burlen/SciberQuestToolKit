@@ -33,8 +33,6 @@ typedef vtkStreamingDemandDrivenPipeline vtkSDDPipeline;
 #include <vtkstd/string>
 using vtkstd::string;
 
-#include <mpi.h>
-
 // #define vtkSQImageGhostsDEBUG
 #define vtkSQImageGhostsTIME
 
@@ -53,24 +51,31 @@ vtkSQImageGhosts::vtkSQImageGhosts()
   WorldRank(0),
   NGhosts(0),
   Mode(CartesianExtent::DIM_MODE_3D),
-  Comm(MPI_COMM_NULL),
   CopyAllArrays(1)
 {
   #ifdef vtkSQImageGhostsDEBUG
   pCerr() << "=====vtkSQImageGhosts::vtkSQImageGhosts" << endl;
   #endif
 
+  #ifdef SQTK_WITHOUT_MPI
+  vtkErrorMacro(
+    "This class requires MPI howver it was built without MPI.");
+  #else
   int mpiOk=0;
   MPI_Initialized(&mpiOk);
   if (!mpiOk)
     {
-    vtkErrorMacro("MPI has not been initialized. Restart ParaView using mpiexec.");
+    vtkErrorMacro(
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
     }
 
+  this->Comm=MPI_COMM_NULL;
   this->SetCommunicator(MPI_COMM_WORLD);
 
   MPI_Comm_size(this->Comm,&this->WorldSize);
   MPI_Comm_rank(this->Comm,&this->WorldRank);
+  #endif
 
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
@@ -83,7 +88,9 @@ vtkSQImageGhosts::~vtkSQImageGhosts()
   pCerr() << "=====vtkSQImageGhosts::~vtkSQImageGhosts" << endl;
   #endif
 
+  #ifndef SQTK_WITHOUT_MPI
   this->SetCommunicator(MPI_COMM_NULL);
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -101,6 +108,7 @@ int vtkSQImageGhosts::Initialize(vtkPVXMLElement *root)
 //-----------------------------------------------------------------------------
 void vtkSQImageGhosts::SetCommunicator(MPI_Comm comm)
 {
+  #ifndef SQTK_WITHOUT_MPI
   if (this->Comm==comm) return;
 
   if ((this->Comm!=comm)
@@ -121,6 +129,7 @@ void vtkSQImageGhosts::SetCommunicator(MPI_Comm comm)
     MPI_Comm_rank(this->Comm,&this->WorldRank);
     MPI_Comm_size(this->Comm,&this->WorldSize);
     }
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -269,6 +278,7 @@ int vtkSQImageGhosts::RequestData(
   log->StartEvent("vtkSQImageGhosts::RequestData");
   #endif
 
+  #ifndef SQTK_WITHOUT_MPI
   vtkInformation *inInfo=inInfoVec[0]->GetInformationObject(0);
   vtkDataSet *inData
     = dynamic_cast<vtkDataSet*>(inInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -413,6 +423,7 @@ int vtkSQImageGhosts::RequestData(
         outCells,
         transactions,
         false);
+  #endif
 
   #if defined vtkSQImageGhostsTIME
   log->EndEvent("vtkSQImageGhosts::RequestData");
@@ -430,6 +441,7 @@ void vtkSQImageGhosts::ExecuteTransactions(
       vector<GhostTransaction> &transactions,
       bool pointData)
 {
+  #ifndef SQTK_WITHOUT_MPI
   static int tag=0;
 
   int nTransactions = transactions.size();
@@ -531,8 +543,8 @@ void vtkSQImageGhosts::ExecuteTransactions(
 
     MPI_Waitall(req.size(), &req[0], MPI_STATUSES_IGNORE);
     }
+  #endif
 }
-
 
 //-----------------------------------------------------------------------------
 void vtkSQImageGhosts::PrintSelf(ostream& os, vtkIndent indent)
@@ -542,7 +554,4 @@ void vtkSQImageGhosts::PrintSelf(ostream& os, vtkIndent indent)
   #endif
 
   this->Superclass::PrintSelf(os,indent);
-
-  // TODO
-
 }

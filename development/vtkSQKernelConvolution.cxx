@@ -58,7 +58,10 @@ using vtkstd::pair;
 using vtkstd::min;
 using vtkstd::max;
 
+
+#ifndef SQTK_WITHOUT_MPI
 #include <mpi.h>
+#endif
 
 vtkCxxRevisionMacro(vtkSQKernelConvolution, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQKernelConvolution);
@@ -88,7 +91,7 @@ vtkSQKernelConvolution::vtkSQKernelConvolution()
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
 
-
+  #ifndef SQTK_WITHOUT_MPI
   // may be a parallel run, we need to determine how
   // many of the ranks are running on each host.
   int mpiOk=0;
@@ -180,6 +183,7 @@ vtkSQKernelConvolution::vtkSQKernelConvolution()
       free(hostRanks);
       }
     }
+  #endif
 
   // inti cpu driver
   this->CPUDriver=new CPUConvolutionDriver;

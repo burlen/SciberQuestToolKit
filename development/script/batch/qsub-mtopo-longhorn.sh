@@ -56,7 +56,7 @@ END_TIME=$1
 
 module use -a /home/01237/bloring/modulefiles
 module load PV3-3.8-icc-R
-module load SVTK-PV3-3.8-icc-R
+module load SQTK-PV3-3.8-icc-R
 
 MTB_EXE=`which MagnetosphereTopoBatch`
 echo "MTB_EXE=$MTB_EXE"

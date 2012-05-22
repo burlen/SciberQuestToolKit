@@ -9,7 +9,13 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __BOVScalarImage_h
 #define __BOVScalarImage_h
 
+#ifdef SQTK_WITHOUT_MPI
+typedef void * MPI_Comm;
+typedef void * MPI_Info;
+typedef void * MPI_File;
+#else
 #include <mpi.h>
+#endif
 
 #include <string>
 using std::string;

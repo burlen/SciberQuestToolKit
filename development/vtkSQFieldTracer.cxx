@@ -66,7 +66,9 @@ Copyright 2008 SciberQuest Inc.
 #include "Tuple.hxx"
 #include "postream.h"
 
+#ifndef SQTK_WITHOUT_MPI
 #include <mpi.h>
+#endif
 
 #include <algorithm>
 using std::min;
@@ -75,7 +77,7 @@ using std::max;
 #define vtkSQFieldTracerDEBUG 0
 
 // TODO
-// logging current;ly chews through a tremendous amount of ram
+// logging currently chews through a tremendous amount of ram
 // on the master rank, probably due to log events placed in
 // integrate dynamic.
 //#define vtkSQFieldTracerTIME
@@ -125,15 +127,24 @@ vtkSQFieldTracer::vtkSQFieldTracer()
   pCerr() << "=====vtkSQFieldTracer::vtkSQFieldTracer" << endl;
   #endif
 
-  int mpiOk=0;
-  MPI_Initialized(&mpiOk);
-  if (!mpiOk)
-    {
-    vtkErrorMacro("MPI has not been initialized. Restart ParaView using mpiexec.");
-    }
-
+  #ifdef SQTK_WITHOUT_MPI
+  sqErrorMacro(
+      cerr,
+      << "This class requires MPI however it was built without MPI.");
+  #else
   MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
   MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
+
+  int ok;
+  MPI_Initialized(&ok);
+  if (!ok)
+    {
+    sqErrorMacro(
+      cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    }
+  #endif
 
   this->TermCon=new TerminationCondition;
 
@@ -612,11 +623,13 @@ int vtkSQFieldTracer::RequestData(
   #if vtkSQFieldTracerDEBUG>1
   pCerr() << "=====vtkSQFieldTracer::RequestData" << endl;
   #endif
+
   #if defined vtkSQFieldTracerTIME
   vtkSQLog *log=vtkSQLog::GetGlobalInstance();
   log->StartEvent("vtkSQFieldTracer::RequestData");
   #endif
 
+  #ifndef SQTK_WITHOUT_MPI
   vtkInformation *info;
 
   /// Reader
@@ -861,6 +874,7 @@ int vtkSQFieldTracer::RequestData(
   oocr->Delete();
 
   delete traceData;
+  #endif
 
   #if defined vtkSQFieldTracerTIME
   log->EndEvent("vtkSQFieldTracer::RequestData");
@@ -917,6 +931,7 @@ int vtkSQFieldTracer::IntegrateDynamic(
   log->StartEvent("vtkSQFieldTracer::IntegrateDynamic");
   #endif
 
+  #ifndef SQTK_WITHOUT_MPI
   const int masterProcId=(nProcs>1?1:0); // NOTE: proc 0 is busy with PV overhead.
   const int BLOCK_REQ=2222;
   // Master process distributes the work and integrates
@@ -1049,6 +1064,7 @@ int vtkSQFieldTracer::IntegrateDynamic(
       this->UpdateProgress(prog);
       }
     }
+  #endif
 
   #if defined vtkSQFieldTracerTIME
   log->EndEvent("vtkSQFieldTracer::IntegrateDynamic");
@@ -1493,6 +1509,9 @@ void vtkSQFieldTracer::IntegrateOne(
 //-----------------------------------------------------------------------------
 unsigned long vtkSQFieldTracer::GetGlobalCellId(vtkDataSet *data)
 {
+  unsigned long gid=0;
+
+  #ifndef SQTK_WITHOUT_MPI
   unsigned long nLocal=data->GetNumberOfCells();
 
   unsigned long *nGlobal
@@ -1503,13 +1522,13 @@ unsigned long vtkSQFieldTracer::GetGlobalCellId(vtkDataSet *data)
         &nGlobal,1,MPI_UNSIGNED_LONG,
         MPI_COMM_WORLD);
 
-  unsigned long gid=0;
   for (int i=0; i<this->WorldRank; ++i)
     {
     gid+=nGlobal[i];
     }
 
   free(nGlobal);
+  #endif
 
   return gid;
 }

@@ -23,7 +23,6 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkStreamingDemandDrivenPipeline.h"
 typedef vtkStreamingDemandDrivenPipeline vtkSDDPipeline;
 #include "vtkMultiProcessController.h"
-#include "vtkMPIController.h"
 #include "vtkExtentTranslator.h"
 #include "vtkPVXMLElement.h"
 
@@ -37,7 +36,7 @@ typedef vtkStreamingDemandDrivenPipeline vtkSDDPipeline;
 #include "SQMacros.h"
 #include "postream.h"
 
-#ifndef SVTK_WITHOUT_MPI
+#ifndef SQTK_WITHOUT_MPI
 #include <mpi.h>
 #endif
 
@@ -97,24 +96,20 @@ vtkSQBOVWriter::vtkSQBOVWriter()
   this->WorldRank=0;
   this->WorldSize=1;
 
-  #ifndef SVTK_WITHOUT_MPI
-  int mpiOk=0;
-  MPI_Initialized(&mpiOk);
-  if (!mpiOk)
-    {
-    vtkErrorMacro(
-      "MPI has not been initialized. "
-      "MPI is required for this writer and the writer must be used in "
-      "client server mode. Start pvserver using mpiexec.");
-    }
+  #ifdef SQTK_WITHOUT_MPI
+  sqErrorMacro(
+      cerr,
+      << "This class requires MPI however it was built without MPI.");
   #else
-  vtkErrorMacro(
-    "MPI is required for this writer but this build does not have MPI "
-    "support built in. To uise this writer you must connect to a pvserver "
-    "built with MPI support and started with mpiexec");
-  #endif
-
-  #ifndef SVTK_WITHOUT_MPI
+  int ok;
+  MPI_Initialized(&ok);
+  if (!ok)
+    {
+    sqErrorMacro(
+      cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    }
   MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
   MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
   #endif
@@ -252,6 +247,7 @@ void vtkSQBOVWriter::SetFileName(const char* _arg)
   log->StartEvent("vtkSQBOVWriter::SetFileName");
   #endif
 
+  #ifndef SQTK_WITHOUT_MPI
   vtkDebugMacro(<< this->GetClassName() << ": setting FileName to " << (_arg?_arg:"(null)"));
   if (this->FileName == NULL && _arg == NULL) { return;}
   if (this->FileName && _arg && (!strcmp(this->FileName,_arg))) { return;}
@@ -278,9 +274,7 @@ void vtkSQBOVWriter::SetFileName(const char* _arg)
   // Open the newly named dataset.
   if (this->FileName)
     {
-    #ifndef SVTK_WITHOUT_MPI
     this->Writer->SetCommunicator(MPI_COMM_WORLD);
-    #endif
     if(!this->Writer->Open(this->FileName))
       {
       vtkErrorMacro("Failed to open the file \"" << safeio(this->FileName) << "\".");
@@ -297,6 +291,7 @@ void vtkSQBOVWriter::SetFileName(const char* _arg)
     }
 
   this->Modified();
+  #endif
 
   #if defined vtkSQBOVWriterTIME
   log->EndEvent("vtkSQBOVWriter::SetFileName");
@@ -396,7 +391,7 @@ void vtkSQBOVWriter::ClearPointArrayStatus()
 //-----------------------------------------------------------------------------
 void vtkSQBOVWriter::SetMPIFileHints()
 {
-  #ifndef SVTK_WITHOUT_MPI
+  #ifndef SQTK_WITHOUT_MPI
   MPI_Info hints;
   MPI_Info_create(&hints);
 
@@ -776,10 +771,8 @@ int vtkSQBOVWriter::RequestData(
     return 1;
     }
 
-
   // Construct MPI File hints for the writer.
   this->SetMPIFileHints();
-
 
   // Set the timestep to be writen.
   BOVTimeStepImage *stepImg=this->Writer->OpenTimeStep(stepId);

@@ -6,22 +6,8 @@
 
 Copyright 2008 SciberQuest Inc.
 */
-/*=========================================================================
-
-  Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkSQRandomCells.cxx,v $
-
-  Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
-  All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
 #include "vtkSQRandomCells.h"
- 
+
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkMultiProcessController.h"
@@ -58,20 +44,21 @@ typedef pair<set<unsigned long long>::iterator,bool> SetInsert;
 #include <cstdlib>
 #include <ctime>
 
+#ifndef SQTK_WITHOUT_MPI
 #include <mpi.h>
+#endif
 
 // #define vtkSQRandomCellsDEBUG
 
 vtkCxxRevisionMacro(vtkSQRandomCells, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQRandomCells);
 
-
 //*****************************************************************************
 void dumpBlocks(IdBlock *bins, int n)
 {
   for (int i=0; i<n; ++i)
     {
-    cerr << "proc " << i << " has " << bins[i] << endl; 
+    cerr << "proc " << i << " has " << bins[i] << endl;
     }
 }
 
@@ -130,7 +117,7 @@ int findProcByCellId(unsigned long long cellId, IdBlock *bins, int s, int e)
 vtkSQRandomCells::vtkSQRandomCells()
 {
   #ifdef vtkSQRandomCellsDEBUG
-  cerr << "===============================vtkSQRandomCells::vtkSQRandomCells" << endl;
+  cerr << "=====vtkSQRandomCells::vtkSQRandomCells" << endl;
   #endif
 
   this->SampleSize=0;
@@ -139,19 +126,28 @@ vtkSQRandomCells::vtkSQRandomCells()
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
 
-  int mpiOk=0;
-  MPI_Initialized(&mpiOk);
-  if (!mpiOk)
+  #ifdef SQTK_WITHOUT_MPI
+  sqErrorMacro(
+      cerr,
+      << "This class requires MPI however it was built without MPI.");
+  #else
+  int ok;
+  MPI_Initialized(&ok);
+  if (!ok)
     {
-    vtkErrorMacro("MPI has not been initialized. Restart ParaView using mpiexec.");
+    sqErrorMacro(
+      cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
     }
+  #endif
 }
 
 //----------------------------------------------------------------------------
 vtkSQRandomCells::~vtkSQRandomCells()
 {
   #ifdef vtkSQRandomCellsDEBUG
-  cerr << "===============================vtkSQRandomCells::~vtkSQRandomCells" << endl;
+  cerr << "=====vtkSQRandomCells::~vtkSQRandomCells" << endl;
   #endif
 }
 
@@ -162,7 +158,7 @@ int vtkSQRandomCells::RequestInformation(
     vtkInformationVector *outInfos)
 {
   #ifdef vtkSQRandomCellsDEBUG
-  cerr << "===============================vtkSQRandomCells::RequestInformation" << endl;
+  cerr << "=====vtkSQRandomCells::RequestInformation" << endl;
   #endif
 
   // tell the excutive that we are handling our own paralelization.
@@ -181,14 +177,15 @@ int vtkSQRandomCells::RequestData(
     vtkInformationVector *outInfos)
 {
   #ifdef vtkSQRandomCellsDEBUG
-  cerr << "===============================vtkSQRandomCells::RequestData" << endl;
+  cerr << "=====vtkSQRandomCells::RequestData" << endl;
   #endif
 
+  #ifndef SQTK_WITHOUT_MPI
   vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
   vtkDataSet *source
     = dynamic_cast<vtkDataSet*>(inInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  // sanity -- empty input
+  // validate input, output, and parameters
   if (source==NULL)
     {
     vtkErrorMacro("Empty input.");
@@ -199,14 +196,12 @@ int vtkSQRandomCells::RequestData(
   vtkDataSet *output
     = dynamic_cast<vtkDataSet*>(outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-  // sasnity -- empty output
   if (output==NULL)
     {
     vtkErrorMacro("Empty output.");
     return 1;
     }
 
-  // sanity - user set invalid number of cells.
   if (this->SampleSize<1)
     {
     vtkErrorMacro("Number of cells must be greater than 0.");
@@ -459,7 +454,7 @@ int vtkSQRandomCells::RequestData(
     }
 
   delete copier;
-
+  #endif
 
   return 1;
 }
@@ -468,10 +463,8 @@ int vtkSQRandomCells::RequestData(
 void vtkSQRandomCells::PrintSelf(ostream& os, vtkIndent indent)
 {
   #ifdef vtkSQRandomCellsDEBUG
-  cerr << "===============================vtkSQRandomCells::PrintSelf" << endl;
+  cerr << "=====vtkSQRandomCells::PrintSelf" << endl;
   #endif
 
   this->Superclass::PrintSelf(os,indent);
-
-  // TODO
 }

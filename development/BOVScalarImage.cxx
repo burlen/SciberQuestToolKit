@@ -13,6 +13,9 @@ Copyright 2008 SciberQuest Inc.
 //-----------------------------------------------------------------------------
 MPI_File Open(MPI_Comm comm, MPI_Info hints, const char *fileName, int mode)
 {
+  #ifdef SQTK_WITHOUT_MPI
+  return 0;
+  #else
   // added this to deal with vpic data arrays which use spaces.
   string cleanFileName=fileName;
   size_t fileNameLen=cleanFileName.size();
@@ -41,6 +44,7 @@ MPI_File Open(MPI_Comm comm, MPI_Info hints, const char *fileName, int mode)
     file=0;
     }
   return file;
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -70,10 +74,12 @@ BOVScalarImage::BOVScalarImage(
 //-----------------------------------------------------------------------------
 BOVScalarImage::~BOVScalarImage()
 {
+  #ifndef SQTK_WITHOUT_MPI
   if (this->File)
     {
     MPI_File_close(&this->File);
     }
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -82,6 +88,7 @@ ostream &operator<<(ostream &os, const BOVScalarImage &si)
   os << si.GetName() << endl
      << "  " << si.GetFileName() << " " << si.GetFile() << endl;
 
+  #ifndef SQTK_WITHOUT_MPI
   MPI_File file=si.GetFile();
   if (file)
     {
@@ -107,7 +114,7 @@ ostream &operator<<(ostream &os, const BOVScalarImage &si)
         }
       }
     }
+  #endif
 
   return os;
 }
-

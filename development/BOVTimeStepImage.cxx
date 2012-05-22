@@ -30,6 +30,11 @@ BOVTimeStepImage::BOVTimeStepImage(
       int stepIdx,
       BOVMetaData *metaData)
 {
+  #ifdef SQTK_WITHOUT_MPI
+  sqErrorMacro(
+    cerr,
+    << "This class requires MPI but it was built without MPI.");
+  #else
   int mpiMode=0;
   if (metaData->ReadMode())
     {
@@ -166,6 +171,7 @@ BOVTimeStepImage::BOVTimeStepImage(
       sqErrorMacro(cerr,"Bad array type for array " << arrayName << ".");
       }
     }
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -229,4 +235,3 @@ ostream &operator<<(ostream &os, const BOVTimeStepImage &si)
 
   return os;
 }
-

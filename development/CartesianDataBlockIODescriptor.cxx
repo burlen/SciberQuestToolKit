@@ -21,6 +21,11 @@ CartesianDataBlockIODescriptor::CartesianDataBlockIODescriptor(
       const int periodic[3],
       int nGhosts)
 {
+  #ifdef SQTK_WITHOUT_MPI
+  sqErrorMacro(
+    cerr,
+    << "This class requires MPI but it was built without MPI.");
+  #else
   this->Mode
     = CartesianExtent::GetDimensionMode(fileExt,nGhosts);
 
@@ -96,6 +101,7 @@ CartesianDataBlockIODescriptor::CartesianDataBlockIODescriptor(
         }
       }
     }
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -107,6 +113,7 @@ CartesianDataBlockIODescriptor::~CartesianDataBlockIODescriptor()
 //-----------------------------------------------------------------------------
 void CartesianDataBlockIODescriptor::Clear()
 {
+  #ifndef SQTK_WITHOUT_MPI
   size_t n;
   n=this->MemViews.size();
   for (size_t i=0; i<n; ++i)
@@ -121,6 +128,7 @@ void CartesianDataBlockIODescriptor::Clear()
     MPI_Type_free(&this->FileViews[i]);
     }
   this->FileViews.clear();
+  #endif
 }
 
 //-----------------------------------------------------------------------------

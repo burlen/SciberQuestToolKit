@@ -16,7 +16,7 @@ Copyright 2008 SciberQuest Inc.
 #include "postream.h"
 #include "vtkDataArray.h"
 
-#if defined SVTK_CUDA
+#if defined SQTK_CUDA
   #include "CUDAGlobalMemoryManager.hxx"
   #include "CUDAConstMemoryManager.hxx"
   #include "CUDANumerics.hxx"
@@ -47,7 +47,7 @@ CUDAConvolutionDriver::CUDAConvolutionDriver()
      MaxWarpsPerBlock(1)
 {
   int nDevs=0;
-  #if defined SVTK_CUDA
+  #if defined SQTK_CUDA
   cudaGetDeviceCount(&nDevs);
   #endif
   this->NDevices=nDevs;
@@ -61,7 +61,7 @@ int CUDAConvolutionDriver::SetDeviceId(int deviceId)
     << "===============CUDAConvolutionDriver::SetDeviceId" << endl
     << deviceId << endl;
   #endif
-  #if defined SVTK_CUDA
+  #if defined SQTK_CUDA
   this->DeviceId=deviceId;
   cudaError_t ierr=cudaSetDevice(deviceId);
   if (ierr)
@@ -107,7 +107,7 @@ int CUDAConvolutionDriver::Convolution(
     << "===============CUDAConvolutionDriver::Convolution" << endl;
   #endif
 
-  #if defined SVTK_CUDA
+  #if defined SQTK_CUDA
   int nV[3];
   extV.Size(nV);
   unsigned long vnijk=extV.Size();

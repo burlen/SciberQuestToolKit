@@ -1,17 +1,11 @@
-/*=========================================================================
+/*
+   ____    _ __           ____               __    ____
+  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
+ _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
-  Program:   ParaView
-  Module:    vtkSC11DemoAnnotation.h
-
-  Copyright (c) Kitware, Inc.
-  All rights reserved.
-  See Copyright.txt or http://www.paraview.org/HTML/Copyright.html for details.
-
-     This software is distributed WITHOUT ANY WARRANTY; without even
-     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-     PURPOSE.  See the above copyright notice for more information.
-
-=========================================================================*/
+Copyright 2008 SciberQuest Inc.
+*/
 // .NAME vtkSC11DemoAnnotation
 // .SECTION Description
 // Special annotation for the esnet SC11 demo.
@@ -26,7 +20,11 @@ using std::string;
 #include <vector>
 using std::vector;
 
+#ifdef SQTK_WITHOUT_MPI
+typedef void * MPI_Comm;
+#else
 #include <mpi.h>
+#endif
 
 class VTK_EXPORT vtkSC11DemoAnnotation : public vtkTableAlgorithm
 {
@@ -92,4 +90,3 @@ private:
 };
 
 #endif
-

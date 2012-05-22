@@ -180,7 +180,7 @@ void pqSQRemoteCommandDialog::Save()
     defaults << this->Ui->commandTemplates->itemText(i);
     }
 
-  QSettings settings("SciberQuest","SciVisToolKit");
+  QSettings settings("SciberQuest","SciberQuestToolKit");
 
   settings.setValue("RemoteCommandDialog/defaults",defaults);
 }
@@ -217,7 +217,7 @@ void pqSQRemoteCommandDialog::Restore()
        << "@TERM_EXEC@ -e @SSH_EXEC@ -t @FE_URL@ ssh -t @PV_HOST@ kill -KILL --pid=@PV_PID@";
   #endif
 
-  QSettings settings("SciberQuest", "SciVisToolKit");
+  QSettings settings("SciberQuest", "SciberQuestToolKit");
 
   QStringList defaults
   =settings.value("RemoteCommandDialog/initialDefaults",initialDefaults).toStringList();

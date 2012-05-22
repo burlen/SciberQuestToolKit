@@ -11,6 +11,11 @@ Copyright 2008 SciberQuest Inc.
 #define IntersectionSetColorMapper_h
 
 #include "IntersectionSet.h"
+#include "SQMacros.h"
+
+#ifndef SQTK_WITHOUT_MPI
+#include <mpi.h>
+#endif
 
 #include <vector>
 using std::vector;
@@ -42,7 +47,14 @@ class IntersectionSetColorMapper
 {
 public:
   /// Construct in an invalid state.
-  IntersectionSetColorMapper() : NSurfaces(0) {};
+  IntersectionSetColorMapper() : NSurfaces(0)
+    {
+    #ifdef SQTK_WITHOUT_MPI
+    sqErrorMacro(
+      cerr,
+      << "This class requires MPI however it was built without MPI.");
+    #endif
+    };
   /// Copy construct.
   IntersectionSetColorMapper(const IntersectionSetColorMapper &other){
     *this=other;
@@ -119,6 +131,7 @@ public:
     }
   /// reduce the number of colors to those which are used.
   void SqueezeColorMap(vtkIntArray *scalar){
+    #ifndef SQTK_WITHOUT_MPI
     int procId=0;
     MPI_Comm_rank(MPI_COMM_WORLD,&procId);
     // Walk the color map, for any used color replace it with 
@@ -157,9 +170,11 @@ public:
           }
         }
       }
+    #endif
     }
   /// Process 0 send the used colors in the color map to the terminal.
   void PrintUsed(){
+    #ifndef SQTK_WITHOUT_MPI
     int procId=0;
     MPI_Comm_rank(MPI_COMM_WORLD,&procId);
     for (int j=0; j<this->NSurfaces+1; ++j)
@@ -181,10 +196,12 @@ public:
           }
         }
       }
+    #endif
     }
   /// Process 0 send the color map to the terminal.
   void PrintAll()
     {
+    #ifndef SQTK_WITHOUT_MPI
     int procId=0;
     MPI_Comm_rank(MPI_COMM_WORLD,&procId);
     if (procId!=0)
@@ -202,8 +219,8 @@ public:
         cerr << this->ColorLegend[idx] << "->" << this->Colors[idx] << endl;
         }
       }
+    #endif
     }
-
 
 private:
   int NSurfaces;

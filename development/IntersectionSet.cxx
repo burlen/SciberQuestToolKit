@@ -1,8 +1,18 @@
+/*
+   ____    _ __           ____               __    ____
+  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
+ _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
+
+Copyright 2008 SciberQuest Inc.
+
+*/
 #include "IntersectionSet.h"
 
 #include <sstream>
 #include <iostream>
 using namespace std;
+
 //*****************************************************************************
 inline bool InRange(int a, int b, int v){ return v>=a && v<=b; }
 
@@ -38,8 +48,8 @@ const IntersectData &IntersectData::operator=(const IntersectData &other)
 //-----------------------------------------------------------------------------
 int IntersectData::CommitType(MPI_Datatype *classType)
 {
+  #ifndef SQTK_WITHOUT_MPI
   #define nBlocks 2
-
   int blockLen[nBlocks]={3, 2};
   MPI_Datatype blockType[nBlocks]={MPI_INT, MPI_DOUBLE};
   MPI_Aint blockDispl[nBlocks];
@@ -51,8 +61,8 @@ int IntersectData::CommitType(MPI_Datatype *classType)
   MPI_Type_struct(nBlocks,blockLen,blockDispl,blockType,classType);
 
   return MPI_Type_commit(classType)==MPI_SUCCESS;
-  
   #undef nBlocks
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -66,19 +76,6 @@ string IntersectData::Print()
      << "bwdIntersectTime: " << this->bwdIntersectTime << endl;
   return os.str();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -108,13 +105,20 @@ const IntersectionSet &IntersectionSet::operator=(
 //-----------------------------------------------------------------------------
 IntersectionSet::IntersectionSet()
 {
+  #ifdef SQTK_WITHOUT_MPI
+  sqErrorMacro(
+    cerr,
+    "This class requires MPI however it was built without MPI.");
+  #endif
   this->Data.CommitType(&this->DataType);
 }
 
 //-----------------------------------------------------------------------------
 IntersectionSet::~IntersectionSet()
 {
+  #ifndef SQTK_WITHOUT_MPI
   MPI_Type_free(&this->DataType);
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -128,12 +132,12 @@ void IntersectionSet::Reduce(IntersectData &other)
 {
   IntersectData &local=this->Data;
 
-  // This reduction we take the surface id for the earliest/first 
+  // This reduction we take the surface id for the earliest/first
   // intersection of the two based on the integration time. We have to
-  // do it twice, once for the forward running stream line and once for 
+  // do it twice, once for the forward running stream line and once for
   // the backward running stream line.
   // Start forward running.
-  if ( !ValidId(local.fwdSurfaceId) 
+  if ( !ValidId(local.fwdSurfaceId)
     && ValidId(other.fwdSurfaceId) )
     {
     // I don't have the intersection data but he does, take his data.
@@ -141,8 +145,8 @@ void IntersectionSet::Reduce(IntersectData &other)
     local.fwdIntersectTime=other.fwdIntersectTime;
     }
   else
-  if ( ValidId(local.fwdSurfaceId) 
-    && ValidId(other.fwdSurfaceId) 
+  if ( ValidId(local.fwdSurfaceId)
+    && ValidId(other.fwdSurfaceId)
     && local.fwdIntersectTime>other.fwdIntersectTime )
     {
     // We both have intersection data but his is the first, take his data.
@@ -154,7 +158,7 @@ void IntersectionSet::Reduce(IntersectData &other)
   // nothing to do.
 
   // Same thing backward running.
-  if ( !ValidId(local.bwdSurfaceId) 
+  if ( !ValidId(local.bwdSurfaceId)
     && ValidId(other.bwdSurfaceId) )
     {
     // I don't have the intersection data but he does, take his data.
@@ -162,8 +166,8 @@ void IntersectionSet::Reduce(IntersectData &other)
     local.bwdIntersectTime=other.bwdIntersectTime;
     }
   else
-  if ( ValidId(local.bwdSurfaceId) 
-    && ValidId(other.bwdSurfaceId) 
+  if ( ValidId(local.bwdSurfaceId)
+    && ValidId(other.bwdSurfaceId)
     && local.bwdIntersectTime>other.bwdIntersectTime )
     {
     // We both have intersection data but his is the first, take his data.
@@ -171,13 +175,14 @@ void IntersectionSet::Reduce(IntersectData &other)
     local.bwdIntersectTime=other.bwdIntersectTime;
     }
   // else
-  // if niether have valid data, or mine is the first one, in both case
+  // if niether have valid data, or mine is the first one, in both cases
   // nothing to do.
 }
 
 //-----------------------------------------------------------------------------
 int IntersectionSet::AllReduce()
 {
+  #ifndef SQTK_WITHOUT_MPI
   // Get our identities
   MPI_Status stat;
   int procId;
@@ -210,7 +215,7 @@ int IntersectionSet::AllReduce()
     MPI_Recv(&rcd,1,this->DataType,rcid,rcid,MPI_COMM_WORLD,&stat);
     this->Reduce(rcd);
     }
-  // everybody tell their paraent what they have, and listen to 
+  // everybody tell their paraent what they have, and listen to
   // the parent for the reduction.
   if (ValidId(pid))
     {
@@ -231,6 +236,7 @@ int IntersectionSet::AllReduce()
     // cerr << "proc " << procId << " send to right " << rcid << endl;
     MPI_Send(&this->Data,1,this->DataType,rcid,procId,MPI_COMM_WORLD);
     }
+  #endif
 
   return 1;
 }

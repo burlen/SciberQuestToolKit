@@ -49,7 +49,7 @@ export LD_LIBRARY_PATH=$PV_PATH/lib/paraview-3.12/:/sw/analysis/python/2.7.1/sle
 
 export PATH=$PV_PATH/bin:/sw/analysis/python/2.7.1/sles11.1_intel11.1/bin:/opt/sgi/mpt/mpt-2.04/bin:/sw/analysis/git/1.7.6/sles11.1_intel11.1/bin:/nics/e/sw/tools/bin:/usr/local/hsi/bin:/usr/local/gold/bin:/opt/intel/Compiler/11.1/038/bin/intel64:/opt/moab/6.0.4/bin:/opt/torque/3.0.3/bin:/usr/local/bin:/usr/bin:/bin:/usr/lib/mit/bin:/usr/lib/mit/sbin
 
-JID=`qsub -v MPI_TYPE_MAX,MPI_GROUP_MAX,PV_PATH,PATH,LD_LIBRARY_PATH,PV_NCPUS,CONFIG_FILE,BOV_FILE,OUTPUT_PATH,START_TIME,END_TIME,PV_EXE -N svtk-batch -A $ACCOUNT -q $QUEUE -l ncpus=$NCPUS,mem=$MEM\MB,walltime=$WALLTIME /sw/analysis/paraview/3.12.0/sles11.1_intel11.1.038/bin/qsub-svtk-batch-nautilus.qsub`
+JID=`qsub -v MPI_TYPE_MAX,MPI_GROUP_MAX,PV_PATH,PATH,LD_LIBRARY_PATH,PV_NCPUS,CONFIG_FILE,BOV_FILE,OUTPUT_PATH,START_TIME,END_TIME,PV_EXE -N sqtk-batch -A $ACCOUNT -q $QUEUE -l ncpus=$NCPUS,mem=$MEM\MB,walltime=$WALLTIME /sw/analysis/paraview/3.12.0/sles11.1_intel11.1.038/bin/qsub-sqtk-batch-nautilus.qsub`
 ERRNO=$?
 if [ $ERRNO == 0 ] 
 then

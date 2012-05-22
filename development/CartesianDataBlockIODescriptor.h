@@ -11,7 +11,12 @@ Copyright 2008 SciberQuest Inc.
 
 #include "CartesianExtent.h"
 
+#ifdef SQTK_WITHOUT_MPI
+typedef void * MPI_Datatype;
+#else
 #include <mpi.h>
+#endif
+
 #include <vector>
 using std::vector;
 #include <iostream>

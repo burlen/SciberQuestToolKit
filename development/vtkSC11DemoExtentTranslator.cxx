@@ -15,7 +15,9 @@ Copyright 2008 SciberQuest Inc.
 #include "Tuple.hxx"
 #include "postream.h"
 
+#ifndef SQTK_WITHOUT_MPI
 #include <mpi.h>
+#endif
 
 //#define vtkSC11DemoExtentTranslatorDEBUG
 
@@ -28,6 +30,7 @@ vtkStandardNewMacro(vtkSC11DemoExtentTranslator);
 //-----------------------------------------------------------------------------
 void vtkSC11DemoExtentTranslator::SetUpdateExtent(CartesianExtent &ext)
 {
+  #ifndef SQTK_WITHOUT_MPI
   int worldSize;
   int worldRank;
   MPI_Comm_size(MPI_COMM_WORLD,&worldSize);
@@ -44,15 +47,14 @@ void vtkSC11DemoExtentTranslator::SetUpdateExtent(CartesianExtent &ext)
         MPI_INT,
         MPI_COMM_WORLD);
 
-
   this->UpdateExtent.resize(worldSize);
   for (int i=0; i<worldSize; ++i)
     {
     int ii=6*i;
     this->UpdateExtent[i].Set(allUpdateExt+ii);
     }
+  #endif
 }
-
 
 //-----------------------------------------------------------------------------
 int vtkSC11DemoExtentTranslator::PieceToExtentThreadSafe(
@@ -100,4 +102,3 @@ int vtkSC11DemoExtentTranslator::PieceToExtentThreadSafe(
 
   return 1;
 }
-

@@ -14,7 +14,7 @@
 
 module use -a /home/01237/bloring/modulefiles
 module load PV3-3.8.0-icc-ompi-R
-module load SVTK-11.02-PV3-3.8.0-icc-ompi-R
+module load SQTK-11.02-PV3-3.8.0-icc-ompi-R
 
 EXE=`which Slicer`
 echo "EXE=$EXE"

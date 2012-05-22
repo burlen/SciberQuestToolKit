@@ -3,7 +3,7 @@
 # following parameters can be modifed here for different users
 ACCT=TG-ATM090046
 QUEUE=request
-SVTK_INSTALL=/home/01237/bloring/apps/PV3-3.12.0-R-IM
+SQTK_INSTALL=/home/01237/bloring/apps/PV3-3.12.0-R-IM
 
 n_args=$#
 required_n_args=7
@@ -33,7 +33,7 @@ DEST_DIR=$7
 
 echo "ACCT=$ACCT"
 echo "QUEUE=$QUEUE"
-echo "SVTK_INSTALL=$SVTK_INSTALL"
+echo "SQTK_INSTALL=$SQTK_INSTALL"
 echo "N_CPUS=$N_CPUS"
 echo "RUN_TIME=$RUN_TIME"
 echo "EXE=$EXE"
@@ -72,8 +72,8 @@ do
 
     #echo \
     qsub -A $ACCT -V -N mt-$step -q $QUEUE -P vis -pe 4way $N_CPUS -l h_rt=$RUN_TIME \
-         $SVTK_INSTALL/bin/qsub-svtk-batch-longhorn.qsub \
-         $SVTK_INSTALL/bin/$EXE \
+         $SQTK_INSTALL/bin/qsub-sqtk-batch-longhorn.qsub \
+         $SQTK_INSTALL/bin/$EXE \
          $CONFIG_FILE \
          $SRC_DIR/$BOV_FILE \
          $DEST_DIR \

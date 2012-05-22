@@ -16,7 +16,10 @@ Copyright 2008 SciberQuest Inc.
 #include "SQMacros.h"
 #include "postream.h"
 
+#ifndef SQTK_WITHOUT_MPI
 #include <mpi.h>
+#endif
+
 #include <string>
 using std::string;
 #include <fstream>
@@ -32,13 +35,20 @@ public:
       WorldSize(1),
       NTimeSteps(0)
   {
+    #ifdef SQTK_WITHOUT_MPI
+    sqErrorMacro(
+        cerr,
+        << "Built without MPI however this class requires MPI.");
+    #else
     MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
     MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
+    #endif
   }
   ~SC11DemoMetaData(){ this->Close(); }
 
   int Open(const char *fileName)
   {
+    #ifndef SQTK_WITHOUT_MPI
     this->Close();
 
     if (this->WorldRank==0)
@@ -144,6 +154,7 @@ RANK_0_PARSE_ERROR:
     // i/o error occurs.
     int nBytes=0;
     MPI_Bcast(&nBytes,1,MPI_INT,0,MPI_COMM_WORLD);
+    #endif
     return -1;
   }
 
@@ -211,4 +222,3 @@ private:
 };
 
 #endif
-

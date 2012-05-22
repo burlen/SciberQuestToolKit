@@ -21,6 +21,14 @@ using std::vector;
 #include <string>
 using std::string;
 
+#ifdef SQTK_WITHOUT_MPI
+typedef void * MPI_Comm;
+typedef void * MPI_Info;
+typedef void * MPI_File;
+#else
+#include <mpi.h>
+#endif
+
 /// Handle to the files comprising a multi-component vector.
 class BOVVectorImage
 {
@@ -61,4 +69,3 @@ private:
 ostream &operator<<(ostream &os, const BOVVectorImage &vi);
 
 #endif
-

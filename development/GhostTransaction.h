@@ -2,7 +2,7 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 
@@ -12,7 +12,13 @@ Copyright 2008 SciberQuest Inc.
 
 #include "CartesianExtent.h"
 #include "MPIRawArrayIO.hxx"
+
+#ifdef SQTK_WITHOUT_MPI
+typedef void * MPI_Request;
+typedef void * MPI_Comm;
+#else
 #include <mpi.h>
+#endif
 
 #include <sstream>
 using std::ostringstream;
@@ -35,7 +41,11 @@ public:
       :
     SrcRank(0),
     DestRank(0)
-  {}
+  {
+    sqErrorMacro(
+        cerr,
+        << "This class requires MPI however it was built without MPI.");
+  }
 
   GhostTransaction(
         int srcRank,
@@ -51,7 +61,11 @@ public:
     DestRank(destRank),
     DestExt(destExt),
     IntExt(intExt)
-  {}
+  {
+    sqErrorMacro(
+        cerr,
+        << "This class requires MPI however it was built without MPI.");
+  }
 
   ~GhostTransaction(){}
 
@@ -115,9 +129,10 @@ int GhostTransaction::Execute(
        vector<MPI_Request> &req,
        int tag)
 {
-  ostringstream oss;
-
   int iErr=0;
+
+  #ifndef SQTK_WITHOUT_MPI
+  ostringstream oss;
 
   if (rank==this->SrcRank)
     {
@@ -226,9 +241,9 @@ int GhostTransaction::Execute(
     cerr << oss.str();
     #endif
     }
+  #endif
 
   return iErr;
 }
 
 #endif
-

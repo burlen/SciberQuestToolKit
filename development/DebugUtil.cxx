@@ -1,20 +1,16 @@
 /*
-!      ____    _ __           ____               __    ____
-!     / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
-!    _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-!   /___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
-!
-!
-! Copyright 2010 SciberQuest Inc.
-!
-! No permission is granted to reproduce this software.
-!
-! This is experimental software and is provided ‘‘as is’’, with no
-! warranties of any kind whatsoever, no support, no promise of updates,
-! or printed documentation.
-!==============================================================================
+   ____    _ __           ____               __    ____
+  / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
+ _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
+
+Copyright 2008 SciberQuest Inc.
 */
+
+#ifndef SQTK_WITHOUT_MPI
 #include <mpi.h>
+#endif
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -22,7 +18,6 @@
 #include <limits.h>
 #include <algorithm>
 using std::min;
-
 
 //*****************************************************************************
 static
@@ -124,19 +119,21 @@ void StartX11GdbSession(char *iface, char *pid, char *display, char *title)
 }
 
 //*****************************************************************************
-void GdbAttachRanks(char *iface, char *cRanks)
+void GdbAttachRanks(const char *iface, const char *cRanks)
 {
   int nRanks;
   int *iRanks;
-  int iErr=ParseRanksStr(cRanks,&iRanks,&nRanks);
+  int iErr=ParseRanksStr(const_cast<char*>(cRanks),&iRanks,&nRanks);
   if (iErr!=0)
     {
     fprintf(stderr,"Error: Invalid rank list: %s\n.",cRanks);
     return;
     }
 
-  int myRank;
+  int myRank=0;
+  #ifndef SQTK_WITHOUT_MPI
   MPI_Comm_rank(MPI_COMM_WORLD,&myRank);
+  #endif
   int masterRank=INT_MAX;
   int rankActive=0;
 
@@ -164,7 +161,7 @@ void GdbAttachRanks(char *iface, char *cRanks)
   if (rankActive)
     {
     // Get iformation about this processs.
-    char *display=getenv("DISPLAY");
+    const char *display=getenv("DISPLAY");
     if (display==0)
       {
       display="0:0";
@@ -197,7 +194,11 @@ void GdbAttachRanks(char *iface, char *cRanks)
     if (gdbPid==0)
       {
       // start gdb...
-      StartX11GdbSession(iface,pid,display,title);
+      StartX11GdbSession(
+            const_cast<char*>(iface),
+            pid,
+            const_cast<char*>(display),
+            title);
       fprintf(stderr,"%i Failed to start gdb.",__LINE__);
       return;
       }
@@ -217,7 +218,9 @@ void GdbAttachRanks(char *iface, char *cRanks)
       }
     }
 
+  #ifndef SQTK_WITHOUT_MPI
   MPI_Barrier(MPI_COMM_WORLD);
+  #endif
 
   // User's ready to continue , yeild back to the caller.
   return;
@@ -228,5 +231,3 @@ void GdbAttachAll(char *iface)
 {
   GdbAttachRanks(iface,"-1");
 }
-
-

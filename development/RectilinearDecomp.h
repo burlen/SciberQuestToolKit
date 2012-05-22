@@ -9,7 +9,6 @@ Copyright 2008 SciberQuest Inc.
 #ifndef __RectilinearDecomp_h
 #define __RectilinearDecomp_h
 
-
 #include "CartesianDecomp.h"
 #include "CartesianExtent.h"
 #include "CartesianBounds.h"
@@ -17,7 +16,6 @@ Copyright 2008 SciberQuest Inc.
 
 class CartesianDataBlock;
 class CartesianDataBlockIODescriptor;
-
 
 /// Splits a cartesian grid into a set of smaller cartesian grids.
 /**
@@ -58,4 +56,3 @@ private:
 };
 
 #endif
-

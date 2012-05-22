@@ -31,9 +31,9 @@ licPath = '%s/libSurfaceLIC.so'%(pvPath)
 LoadPlugin(licPath,False,globals())
 LoadPlugin(licPath,True,globals())
 
-svtkPath = '%s/libSciVisToolKit.so'%(pvPath)
-LoadPlugin(svtkPath,False,globals())
-LoadPlugin(svtkPath,True,globals())
+sqtkPath = '%s/libSciberQuestToolKit.so'%(pvPath)
+LoadPlugin(sqtkPath,False,globals())
+LoadPlugin(sqtkPath,True,globals())
 
 ###############################################################################
 def createLUT(arrayName,arrayComps,lutRange,lutMode,obj):

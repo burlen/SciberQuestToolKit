@@ -2,14 +2,19 @@
    ____    _ __           ____               __    ____
   / __/___(_) /  ___ ____/ __ \__ _____ ___ / /_  /  _/__  ____
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
-/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
+/___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2008 SciberQuest Inc.
 */
 #ifndef __BOVTimeStepImage_h
 #define __BOVTimeStepImage_h
 
+#ifdef SQTK_WITHOUT_MPI
+typedef void * MPI_Comm;
+typedef void * MPI_Info;
+#else
 #include <mpi.h>
+#endif
 
 #include <vector>
 using std::vector;

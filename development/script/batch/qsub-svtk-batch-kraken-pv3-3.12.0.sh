@@ -41,7 +41,7 @@ export LD_LIBRARY_PATH=$PV_PATH/lib/paraview-3.12/:$PV_PATH/lib
 PATH=/sw/xt/cmake/2.8.2/sles10.1_gnu4.1.2/bin:/sw/xt-cle2.2/subversion/1.4.6/sles10.1_gnu4.3.2/bin:/opt/cray/xt-asyncpe/4.9/bin:/opt/cray/pmi/2.1.4-1.0000.8596.15.1.ss/bin:/opt/gcc/4.5.3/bin:/opt/cray/MySQL/5.0.64-1.0202.2899.21.1/sbin:/opt/cray/MySQL/5.0.64-1.0202.2899.21.1/bin:/opt/cray/projdb/1.0.0-1.0202.19483.52.1/bin:/opt/cray/account/1.0.0-2.0202.19482.49.18/bin:/opt/cray/csa/3.0.0-1_2.0202.21426.77.7/sbin:/opt/cray/csa/3.0.0-1_2.0202.21426.77.7/bin:/opt/cray/job/1.5.5-0.1_2.0202.21413.56.7/bin:/opt/xt-lustre-ss/2.2.74_1.6.5/usr/sbin:/opt/xt-lustre-ss/2.2.74_1.6.5/usr/bin:/opt/xt-boot/2.2.74/bin/snos64:/opt/xt-os/2.2.74/bin/snos64:/opt/xt-service/2.2.74/bin/snos64:/opt/xt-prgenv/2.2.74/bin:/sw/altd/bin:/sw/xt/tgusage/3.0-r2/binary/bin:/sw/xt/bin:/usr/local/gold/bin:/usr/local/hsi/bin:/usr/local/openssh/bin:/opt/moab/5.4.3.s16991/bin:/opt/torque/2.4.14/bin:/opt/modules/3.1.6.5/bin:/usr/local/bin:/usr/bin:/usr/X11R6/bin:/bin:/usr/games:/opt/gnome/bin:/usr/lib/jvm/jre/bin:/usr/lib/mit/bin:/usr/lib/mit/sbin:.:/usr/lib/qt3/bin:/nics/c/home/bloring/bin
 export PATH=$PV_PATH/lib/paraview-3.12:$PATH
 
-JID=`qsub -v PV_PATH,PATH,LD_LIBRARY_PATH,PV_NCPUS,CONFIG_FILE,BOV_FILE,OUTPUT_PATH,START_TIME,END_TIME,PV_EXE -N svtk-batch -j eo -A $ACCOUNT -q $QUEUE -l size=$NCPUS,walltime=$WALLTIME $PV_PATH/bin/qsub-svtk-batch-kraken.qsub`
+JID=`qsub -v PV_PATH,PATH,LD_LIBRARY_PATH,PV_NCPUS,CONFIG_FILE,BOV_FILE,OUTPUT_PATH,START_TIME,END_TIME,PV_EXE -N sqtk-batch -j eo -A $ACCOUNT -q $QUEUE -l size=$NCPUS,walltime=$WALLTIME $PV_PATH/bin/qsub-sqtk-batch-kraken.qsub`
 ERRNO=$?
 if [ $ERRNO == 0 ] 
 then
@@ -56,7 +56,7 @@ fi
 #!/bin/bash
 
 echo
-echo "Starting svtk-batch..."
+echo "Starting sqtk-batch..."
 echo 
 
 

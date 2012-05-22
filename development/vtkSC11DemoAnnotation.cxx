@@ -40,15 +40,14 @@ using std::right;
 using std::left;
 #include <algorithm>
 
-#include <mpi.h>
-
+//----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSC11DemoAnnotation);
+
 //----------------------------------------------------------------------------
 vtkSC11DemoAnnotation::vtkSC11DemoAnnotation()
         :
     WorldRank(0),
     WorldSize(1),
-    BWComm(MPI_COMM_NULL),
     InBWComm(0),
     DummyFileListDomain(0),
     BWDataFile(0),
@@ -57,12 +56,19 @@ vtkSC11DemoAnnotation::vtkSC11DemoAnnotation()
 {
   this->SetNumberOfOutputPorts(2);
 
+  #ifdef SQTK_WITHOUT_MPI
+  vtkErrorMacro(
+    "This class requires MPI however it was built without MPI.");
+  #else
+  this->BWComm=MPI_COMM_NULL;
+
   int ok=0;
   MPI_Initialized(&ok);
   if (!ok)
     {
     vtkErrorMacro(
-      "This filter requires MPI, restart pvserver using mpiexec.");
+      "This class requires the MPI runtime, "
+      "you must run ParaView in client-server mode launched via mpiexec.");
     return;
     }
 
@@ -131,6 +137,7 @@ vtkSC11DemoAnnotation::vtkSC11DemoAnnotation()
     {
     this->InBWComm=1;
     }
+  #endif
 }
 
 //----------------------------------------------------------------------------
@@ -140,10 +147,12 @@ vtkSC11DemoAnnotation::~vtkSC11DemoAnnotation()
   this->SetBWDataFile(0);
   this->SetTimeStepFile(0);
 
+  #ifndef SQTK_WITHOUT_MPI
   if (this->InBWComm)
     {
     MPI_Comm_free(&this->BWComm);
     }
+  #endif
 }
 
 //----------------------------------------------------------------------------
@@ -202,6 +211,7 @@ int vtkSC11DemoAnnotation::RequestData(
     vtkInformationVector** inputVector,
     vtkInformationVector* outputVector)
 {
+  #ifndef SQTK_WITHOUT_MPI
   int col1Width=0;
   if (this->WorldRank==0) col1Width=this->Hosts[0].size()+3;
   const int col2Width=8;
@@ -337,6 +347,7 @@ int vtkSC11DemoAnnotation::RequestData(
   data->InsertNextValue(timeData.c_str());
   output->AddColumn(data);
   data->Delete();
+  #endif
 
   return 1;
 }
@@ -346,5 +357,3 @@ void vtkSC11DemoAnnotation::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
-
-

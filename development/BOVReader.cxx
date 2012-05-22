@@ -15,8 +15,6 @@ Copyright 2008 SciberQuest Inc.
 #include "vtkRectilinearGrid.h"
 #include "vtkStructuredGrid.h"
 #include "vtkPointData.h"
-// #include "vtkMultiProcessController.h"
-// #include "vtkMPICommunicator.h"
 
 #include "BinaryStream.hxx"
 #include "BOVTimeStepImage.h"
@@ -27,8 +25,6 @@ Copyright 2008 SciberQuest Inc.
 #include "MPIRawArrayIO.hxx"
 #include "SQMacros.h"
 #include "PrintUtils.h"
-
-#include <mpi.h>
 
 #include <sstream>
 using std::ostringstream;
@@ -51,7 +47,6 @@ using std::ostringstream;
   #include "vtkSQLog.h"
 #endif
 
-
 //-----------------------------------------------------------------------------
 BOVReader::BOVReader()
       :
@@ -59,18 +54,26 @@ BOVReader::BOVReader()
   NGhost(1),
   ProcId(-1),
   NProcs(0),
-  Comm(MPI_COMM_NULL),
-  Hints(MPI_INFO_NULL),
   VectorProjection(VECTOR_PROJECT_NONE)
 {
+  #ifdef SQTK_WITHOUT_MPI
+  sqErrorMacro(
+      cerr,
+      << "This class requires MPI however it was built without MPI.");
+  #else
+  this->Comm=MPI_COMM_NULL;
+  this->Hints=MPI_INFO_NULL;
+
   int ok;
   MPI_Initialized(&ok);
   if (!ok)
     {
-    sqErrorMacro(cerr,
-      << "The BOVReader requires MPI. Start ParaView in"
-      << " Client-Server mode using mpiexec.");
+    sqErrorMacro(
+      cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
     }
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -83,8 +86,10 @@ BOVReader::BOVReader(const BOVReader &other)
 BOVReader::~BOVReader()
 {
   this->SetMetaData(NULL);
+  #ifndef SQTK_WITHOUT_MPI
   this->SetCommunicator(MPI_COMM_NULL);
   this->SetHints(MPI_INFO_NULL);
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -107,6 +112,7 @@ const BOVReader &BOVReader::operator=(const BOVReader &other)
 //-----------------------------------------------------------------------------
 void BOVReader::SetCommunicator(MPI_Comm comm)
 {
+  #ifndef SQTK_WITHOUT_MPI
   if (this->Comm==comm) return;
 
   if ( this->Comm!=MPI_COMM_NULL
@@ -126,11 +132,13 @@ void BOVReader::SetCommunicator(MPI_Comm comm)
     MPI_Comm_rank(this->Comm,&this->ProcId);
     MPI_Comm_size(this->Comm,&this->NProcs);
     }
+  #endif
 }
 
 //-----------------------------------------------------------------------------
 void BOVReader::SetHints(MPI_Info hints)
 {
+  #ifndef SQTK_WITHOUT_MPI
   if (this->Hints==hints) return;
 
   if (this->Hints!=MPI_INFO_NULL)
@@ -146,6 +154,7 @@ void BOVReader::SetHints(MPI_Info hints)
     {
     MPI_Info_dup(hints,&this->Hints);
     }
+  #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -181,6 +190,9 @@ int BOVReader::Open(const char *fileName)
   log->StartEvent("BOVReader::Open");
   #endif
 
+  int ok=0;
+
+  #ifndef SQTK_WITHOUT_MPI
   if (this->MetaData==0)
     {
     sqErrorMacro(cerr,"No MetaData object.");
@@ -189,7 +201,6 @@ int BOVReader::Open(const char *fileName)
 
   // Only one process touches the disk to avoid
   // swamping the metadata server.
-  int ok=0;
   if (this->ProcId==0)
     {
     ok=this->MetaData->OpenDataset(fileName,'r');
@@ -222,6 +233,7 @@ int BOVReader::Open(const char *fileName)
       this->MetaData->UnPack(str);
       }
     }
+  #endif
 
   #if defined BOVReaderTIME
   log->EndEvent("BOVReader::Open");
@@ -948,6 +960,7 @@ void BOVReader::PrintSelf(ostream &os)
     << "  NProcs: " << this->NProcs << endl
     << "  VectorProjection: " << this->VectorProjection << endl;
 
+  #ifndef SQTK_WITHOUT_MPI
   if (this->Hints!=MPI_INFO_NULL)
     {
     os << "  Hints:" << endl;
@@ -963,6 +976,7 @@ void BOVReader::PrintSelf(ostream &os)
       os << "    " << key << "=" << val << endl;
       }
     }
+  #endif
 
   this->MetaData->Print(os);
 }

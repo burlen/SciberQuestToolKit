@@ -17,5 +17,5 @@ DATA_PATH=$1
 
 IBRUN_PATH=/share/sge6.2/default/pe_scripts
 
-$IBRUN_PATH/ibrun /home/01237/bloring/apps/SVTK-PV3-3.8-icc-R/gentp $DATA_PATH 
+$IBRUN_PATH/ibrun /home/01237/bloring/apps/SQTK-PV3-3.8-icc-R/gentp $DATA_PATH 
 

@@ -13,7 +13,9 @@ Copyright 2008 SciberQuest Inc.
 #include "Tuple.hxx"
 #include "SQMacros.h"
 
+#ifndef SQTK_WITHOUT_MPI
 #include <mpi.h>
+#endif
 
 #define CartesianDecompDEBUG
 
@@ -71,10 +73,15 @@ int DecompSearch(
   return DecompSearch(decomp,dext,q,pt,I);
 }
 
-
 //-----------------------------------------------------------------------------
 CartesianDecomp::CartesianDecomp()
 {
+  #ifdef SQTK_WITHOUT_MPI
+  sqErrorMacro(
+    cerr,
+    << "This class requires MPI however it was built without MPI.");
+  #endif
+
   this->Mode=CartesianExtent::DIM_MODE_3D;
 
   this->DecompDims[0]=
@@ -202,6 +209,7 @@ void CartesianDecomp::SetExtent(const CartesianExtent &ext)
 //-----------------------------------------------------------------------------
 int CartesianDecomp::SetDecompDims(int nBlocks)
 {
+  #ifndef SQTK_WITHOUT_MPI
   if (nBlocks==0)
     {
     sqErrorMacro(cerr,"0 is an invald number of blocks.");
@@ -215,6 +223,7 @@ int CartesianDecomp::SetDecompDims(int nBlocks)
   MPI_Dims_create(nBlocks,3,decompDims);
 
   this->SetDecompDims(decompDims);
+  #endif
 
   return 1;
 }
@@ -303,18 +312,3 @@ CartesianDataBlock *CartesianDecomp::GetBlock(const double *pt)
 
   return this->GetBlock(I);
 }
-
-// //-----------------------------------------------------------------------------
-// CartesianDataBlockIODescriptor *CartesianDecomp::GetBlockIODescriptor(int idx)
-// {
-//   if (this->IODescriptors[i]==0)
-//     {
-//     this->IODescriptors[i]
-//       = new CartesianDataBlockIODescriptor(
-//           this->GetBlock(idx),this->Extent,this->PeriodicBC,this->NGhosts);
-//     }
-// 
-//   return this->IODescriptors[i];
-// }
-
-

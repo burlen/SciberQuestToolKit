@@ -13,8 +13,6 @@ Copyright 2008 SciberQuest Inc.
 #include "Tuple.hxx"
 #include "SQMacros.h"
 
-#include <mpi.h>
-
 // #define ImageDecompDEBUG
 
 //-----------------------------------------------------------------------------

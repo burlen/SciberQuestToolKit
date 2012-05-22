@@ -19,6 +19,6 @@ cmake \
     -DMPI_INCLUDE_PATH:STRING=/opt/apps/intel11_1/openmpi/1.3.3/include \
     -DMPI_LIBRARY:FILEPATH=/opt/apps/intel11_1/openmpi/1.3.3/lib/libmpi.so \
     -DMPI_LINK_FLAGS:STRING=-Wl,--export-dynamic \
-    -DSVTK_UTILITIES=ON \
+    -DSQTK_UTILITIES=ON \
     $*
 

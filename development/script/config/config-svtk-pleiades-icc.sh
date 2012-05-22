@@ -10,5 +10,5 @@ cmake \
     -DCMAKE_CXX_FLAGS=-Wno-deprecated \
     -DMPI_INCLUDE_PATH=$MPI/include \
     -DMPI_LIBRARY=$MPI/lib/libmpi.so \
-    -DBUILD_SVTK_UTILITIES=ON \
+    -DBUILD_SQTK_UTILITIES=ON \
     $*
