@@ -4,7 +4,7 @@
  _\ \/ __/ / _ \/ -_) __/ /_/ / // / -_|_-</ __/ _/ // _ \/ __/
 /___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
 
-Copyright 2008 SciberQuest Inc.
+Copyright 2012 SciberQuest Inc.
 */
 #ifndef __CartesianDataBlockIODescriptorIterator_h
 #define __CartesianDataBlockIODescriptorIterator_h
