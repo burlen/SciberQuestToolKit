@@ -48,8 +48,10 @@ const IntersectData &IntersectData::operator=(const IntersectData &other)
 //-----------------------------------------------------------------------------
 int IntersectData::CommitType(MPI_Datatype *classType)
 {
-  #ifndef SQTK_WITHOUT_MPI
-  #define nBlocks 2
+  #ifdef SQTK_WITHOUT_MPI
+  return 0;
+  #else
+  const int nBlocks=2;
   int blockLen[nBlocks]={3, 2};
   MPI_Datatype blockType[nBlocks]={MPI_INT, MPI_DOUBLE};
   MPI_Aint blockDispl[nBlocks];
@@ -61,7 +63,6 @@ int IntersectData::CommitType(MPI_Datatype *classType)
   MPI_Type_struct(nBlocks,blockLen,blockDispl,blockType,classType);
 
   return MPI_Type_commit(classType)==MPI_SUCCESS;
-  #undef nBlocks
   #endif
 }
 

@@ -449,7 +449,6 @@ void vtkSQImageGhosts::ExecuteTransactions(
       vector<GhostTransaction> &transactions,
       bool pointData)
 {
-  static int tag=0;
 
   size_t nOutputTups = outputExt.Size();
 
@@ -528,6 +527,7 @@ void vtkSQImageGhosts::ExecuteTransactions(
     #ifndef SQTK_WITHOUT_MPI
     if (this->WorldSize>1)
       {
+      static int tag=0;
       vector<MPI_Request> req;
       int nTransactions = transactions.size();
       for (int j=0; j<nTransactions; ++j, ++tag)
