@@ -27,9 +27,11 @@ include(GeneratePythonBindings.cmake)
 include(GetDate.cmake)
 
 # identify the build
-set (SQTK_BUILD_VERSION)
-GetDate(SQTK_BUILD_VERSION)
-message(STATUS "SQTK build number ${SQTK_BUILD_VERSION}")
+set(SQTK_RELEASE "20120524")
+message(STATUS "SQTK release ${SQTK_RELEASE}")
+set (SQTK_BUILD)
+GetDate(SQTK_BUILD)
+message(STATUS "SQTK build ${SQTK_BUILD}")
 
 # put the plugin inside the pv install
 set(SQTK_LIB_INSTALL_PATH
@@ -328,7 +330,7 @@ endif()
 
 # Generate the plugin, servermanager and wrapped language bindings.
 add_paraview_plugin(
-  SciberQuestToolKit ${SQTK_BUILD_VERSION}
+  SciberQuestToolKit "${SQTK_RELEASE}.${SQTK_BUILD}"
   GUI_INTERFACES ${_IFACES}
   SERVER_MANAGER_SOURCES ${SM_CXX_SOURCES}
   SERVER_MANAGER_XML ${SQTK_SM_XML}
