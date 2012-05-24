@@ -8,12 +8,46 @@ Copyright 2012 SciberQuest Inc.
 -->
 
 <ServerManagerConfiguration>
-<ProxyGroup name="internal_writers">
-  <!-- ================================================================= -->
-  <Proxy name="vtkSQBOVWriterCore" class="vtkSQBOVWriter">
-    <Documentation>
-      Internal writer for writing parallel BOV files using MPI-I/O.
+<ProxyGroup name="writers">
+  <!--====================================================================-->
+  <WriterProxy name="vtkSQBOVWriter"
+    class="vtkSQBOVWriter"
+    file_name_method="SetFileName"
+    supports_parallel="1">
+    <Documentation
+      short_help="Write BOV files using MPI-I/O">
+      Write BOV files using MPI-I/O
     </Documentation>
+
+    <InputProperty name="Input" command="SetInputConnection">
+      <DataTypeDomain name="input_type" composite_data_supported="0">
+        <DataType value="vtkImageData"/>
+      </DataTypeDomain>
+      <Documentation>
+        The input filter/source whose output dataset is to written to the
+        file.
+      </Documentation>
+    </InputProperty>
+
+    <StringVectorProperty name="FileName"
+      command="SetFileName"
+      number_of_elements="1">
+      <Documentation>
+        The name of the file to be written.
+      </Documentation>
+    </StringVectorProperty>
+
+    <IntVectorProperty name="WriteAllTimeSteps"
+      command="SetWriteAllTimeSteps"
+      number_of_elements="1"
+      default_values="0"
+      label="Write all timesteps as file-series">
+      <BooleanDomain name="bool" />
+      <Documentation>
+      When WriteAllTimeSteps is turned ON, the writer is executed
+      once for each timestep available from the reader.
+      </Documentation>
+    </IntVectorProperty>
 
     <!-- MPI File Hints -->
     <IntVectorProperty
@@ -21,7 +55,7 @@ Copyright 2012 SciberQuest Inc.
         lable="Collective IO"
         command="SetUseCollectiveIO"
         number_of_elements="1"
-        default_values="1" >
+        default_values="0" >
       <EnumerationDomain name="enum">
         <Entry value="0" text="automatic"/>
         <Entry value="1" text="disabled"/>
@@ -44,7 +78,7 @@ Copyright 2012 SciberQuest Inc.
         <Entry value="2" text="enabled"/>
       </EnumerationDomain>
       <Documentation>
-        Turn on/off MPI-IO collective buffering.
+        Turn on/off MPI-IO direct I/O
       </Documentation>
     </IntVectorProperty>
 
@@ -128,33 +162,8 @@ Copyright 2012 SciberQuest Inc.
         Set the size of the buffer for sieving. Set to 0 to use the implementation default.
       </Documentation>
     </IntVectorProperty>
-    <!-- End of SQBOVCore -->
-  </Proxy>
-</ProxyGroup>
 
-<ProxyGroup name="writers">
-  <!--====================================================================-->
-  <WriterProxy name="vtkSQBOVWriter"
-    class="vtkFileSeriesWriter"
-    file_name_method="SetFileName"
-    parallel_only="1"
-    base_proxygroup="internal_writers"
-    base_proxyname="ParallelFileSeriesWriter">
-    <Documentation
-      short_help="Write BOV files using MPI-I/O">
-      Write BOV files using MPI-I/O
-    </Documentation>
-
-    <InputProperty name="Input" command="SetInputConnection">
-      <DataTypeDomain name="input_type" composite_data_supported="0">
-        <DataType value="vtkImageData"/>
-      </DataTypeDomain>
-      <Documentation>
-        The input filter/source whose output dataset is to written to the
-        file.
-      </Documentation>
-    </InputProperty>
-
+    <!--
     <SubProxy>
       <Proxy name="Writer"
         proxygroup="internal_writers"
@@ -170,6 +179,7 @@ Copyright 2012 SciberQuest Inc.
         <Property name="SieveBufferSize"/>
       </ExposedProperties>
     </SubProxy>
+    -->
 
     <Hints>
       <Property name="Input" show="0"/>

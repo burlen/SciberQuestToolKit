@@ -14,8 +14,7 @@ Copyright 2012 SciberQuest Inc.
   <SourceProxy
       name="vtkSQBOVReader"
       class="vtkSQBOVReader"
-      label="SQ BOV Reader"
-      parallel_only="1">
+      label="SQ BOV Reader">
     <Documentation
         short_help="BOV reader.">
         long_help="BOV Reader. Reads raw or brick of values files in parallel handles time."
@@ -157,7 +156,7 @@ Copyright 2012 SciberQuest Inc.
         lable="Collective IO"
         command="SetUseCollectiveIO"
         number_of_elements="1"
-        default_values="1" >
+        default_values="0" >
       <EnumerationDomain name="enum">
         <Entry value="0" text="automatic"/>
         <Entry value="1" text="disabled"/>
@@ -273,8 +272,7 @@ Copyright 2012 SciberQuest Inc.
   <SourceProxy
       name="vtkSQBOVMetaReader"
       class="vtkSQBOVReader"
-      label="SQ BOV Meta Reader"
-      parallel_only="1">
+      label="SQ BOV Meta Reader">
     <Documentation
         short_help="BOV reader.">
         long_help="BOV Reader. Reads raw or brick of values files in parallel handles time."
@@ -524,7 +522,7 @@ Copyright 2012 SciberQuest Inc.
         lable="Collective IO"
         command="SetUseCollectiveIO"
         number_of_elements="1"
-        default_values="1" >
+        default_values="0" >
       <EnumerationDomain name="enum">
         <Entry value="0" text="automatic"/>
         <Entry value="1" text="disabled"/>

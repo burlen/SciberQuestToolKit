@@ -18,7 +18,7 @@ Copyright 2012 SciberQuest Inc.
 #ifndef __vtkSQLog_h
 #define __vtkSQLog_h
 
-//#define vtkSQLogDEBUG
+#define vtkSQLogDEBUG
 
 #include "vtkObject.h"
 

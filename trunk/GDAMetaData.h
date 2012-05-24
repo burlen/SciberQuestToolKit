@@ -54,8 +54,6 @@ public:
   return 0 on error.
   */
   virtual int OpenDataset(const char *fileName, char mode);
-  virtual int OpenDatasetForRead(const char *fileName);
-  virtual int OpenDatasetForWrite(const char *fileName);
 
   /**
   Free any resources and set the object into a default
@@ -93,6 +91,8 @@ public:
 
 private:
   void ClearCoordinates();
+  int OpenDatasetForRead(const char *fileName);
+  int OpenDatasetForWrite(const char *fileName, char mode);
 
 private:
   bool HasDipoleCenter;

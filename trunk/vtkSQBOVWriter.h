@@ -70,6 +70,7 @@ public:
   // Description:
   // Time domain discovery interface.
   int GetNumberOfTimeSteps();
+  double GetTimeStep(int i);
   void GetTimeSteps(double *times);
 
   //BTX
@@ -114,6 +115,16 @@ public:
   // Writes a bov metadata file.
   int WriteMetaData();
 
+  // Description:
+  // Force a write.
+  void Write();
+
+  // Description:
+  // When set Write will drive the pipeline once for each
+  // available timestep.
+  vtkSetMacro(WriteAllTimeSteps,int);
+  vtkGetMacro(WriteAllTimeSteps,int);
+
 protected:
   /// Pipeline internals.
   int RequestUpdateExtent(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
@@ -137,11 +148,14 @@ private:
   int DimMode;             // 2d or 3d cases
   char *FileName;          // Name of data file to load.
   bool FileNameChanged;    // Flag indicating that the dataset needs to be opened
+  int IncrementalMetaData; // append to metadata with each update
+  int WriteAllTimeSteps;   // drive the pipeline for all timesteps.
+  int TimeStepId;          // step id only used for writing all steps.
   int WorldRank;           // rank of this process
   int WorldSize;           // number of processes
   char HostName[5];        // short host name where this process runs
   int UseCollectiveIO;     // Turn on/off collective IO
-  int UseDirectIO;         // 
+  int UseDirectIO;         //
   int NumberOfIONodes;     // Number of aggregator for CIO
   int CollectBufferSize;   // Gather buffer size (if small IO is staged).
   int UseDeferredOpen;     // Turn on/off deffered open (only agg.'s open)
@@ -152,8 +166,3 @@ private:
 };
 
 #endif
-
-
-
-
-

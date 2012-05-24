@@ -95,7 +95,7 @@ public:
   */
   virtual char GetMode() const { return this->Mode; }
   virtual bool ReadMode() const { return this->Mode=='r'; }
-  virtual bool WriteMode() const { return this->Mode=='w'; }
+  virtual bool WriteMode() const { return (this->Mode=='w')||(this->Mode=='a'); }
 
   /**
   Write the object state in the metadata format. return 0 on error.

@@ -57,16 +57,18 @@ BOVReader::BOVReader()
   VectorProjection(VECTOR_PROJECT_NONE)
 {
   #ifdef SQTK_WITHOUT_MPI
-  sqErrorMacro(
-      cerr,
-      << "This class requires MPI however it was built without MPI.");
+  // don't report this error since the reader get's constructed
+  // as part of PV's format selection process.
+  //sqErrorMacro(
+  //    cerr,
+  //    << "This class requires MPI however it was built without MPI.");
   #else
   this->Comm=MPI_COMM_NULL;
   this->Hints=MPI_INFO_NULL;
 
-  int ok;
-  MPI_Initialized(&ok);
-  if (!ok)
+  int mpiOk;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
     {
     sqErrorMacro(
       cerr,
@@ -115,6 +117,17 @@ void BOVReader::SetCommunicator(MPI_Comm comm)
   #ifndef SQTK_WITHOUT_MPI
   if (this->Comm==comm) return;
 
+  int mpiOk=0;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    sqErrorMacro(
+      cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    return;
+    }
+
   if ( this->Comm!=MPI_COMM_NULL
     && this->Comm!=MPI_COMM_WORLD
     && this->Comm!=MPI_COMM_SELF)
@@ -140,6 +153,17 @@ void BOVReader::SetHints(MPI_Info hints)
 {
   #ifndef SQTK_WITHOUT_MPI
   if (this->Hints==hints) return;
+
+  int mpiOk=0;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    sqErrorMacro(
+      cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    return;
+    }
 
   if (this->Hints!=MPI_INFO_NULL)
     {
@@ -193,6 +217,17 @@ int BOVReader::Open(const char *fileName)
   int ok=0;
 
   #ifndef SQTK_WITHOUT_MPI
+  int mpiOk=0;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    sqErrorMacro(
+      cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    return 0;
+    }
+
   if (this->MetaData==0)
     {
     sqErrorMacro(cerr,"No MetaData object.");

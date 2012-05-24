@@ -61,9 +61,9 @@ int GDAMetaData::OpenDataset(const char *fileName, char mode)
       return this->OpenDatasetForRead(fileName);
       }
     else
-    if (mode=='w')
+    if ((mode=='w')||(mode=='a'))
       {
-      return this->OpenDatasetForWrite(fileName);
+      return this->OpenDatasetForWrite(fileName,mode);
       }
     else
       {
@@ -74,9 +74,9 @@ int GDAMetaData::OpenDataset(const char *fileName, char mode)
 }
 
 //-----------------------------------------------------------------------------
-int GDAMetaData::OpenDatasetForWrite(const char *fileName)
+int GDAMetaData::OpenDatasetForWrite(const char *fileName, char mode)
 {
-  this->Mode='w';
+  this->Mode=mode;
   this->IsOpen=1;
   this->FileName=fileName;
   this->SetPathToBricks(StripFileNameFromPath(fileName).c_str());
@@ -391,18 +391,24 @@ int GDAMetaData::Write()
     return 0;
     }
 
-  if (this->Mode!='w')
+  if ((this->Mode!='w')&&(this->Mode!='a'))
     {
     sqErrorMacro(cerr, "Writing to a read only file.");
     return 0;
     }
 
-  // if the file exists , assume that header data is
-  // present only add array metadata. This enables
-  // building the dataset in multiple passes.
-  bool writeHeader=!FileExists(this->FileName.c_str());
+  bool writeHeader=true;
+  ofstream os;
+  if (this->Mode=='a')
+    {
+    writeHeader=!FileExists(this->FileName.c_str());
+    os.open(this->FileName.c_str(),ios_base::app);
+    }
+  else
+    {
+    os.open(this->FileName.c_str(),ios_base::trunc);
+    }
 
-  ofstream os(this->FileName.c_str(),ios_base::app);
   if (!os.good())
     {
     sqErrorMacro(cerr,
@@ -414,8 +420,8 @@ int GDAMetaData::Write()
     {
     os
       << "#################################" << endl
-      << "# SQ SciberQuestToolKit" << endl
-      << "# GDAMetadata version 1.0" << endl
+      << "# SciberQuestToolKit" << endl
+      << "# Metadata version 1.0" << endl
       << "#################################" << endl;
 
     if (this->DataSetTypeIsImage())

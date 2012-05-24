@@ -333,7 +333,6 @@ void vtkSQKernelConvolution::AddInputArray(const char *name)
 
   if (this->InputArrays.insert(name).second)
     {
-    cerr << "added " << name << endl;
     this->Modified();
     }
 }
@@ -348,7 +347,6 @@ void vtkSQKernelConvolution::ClearInputArrays()
 
   if (this->InputArrays.size())
     {
-    cerr << "cleared" << endl;
     this->InputArrays.clear();
     this->Modified();
     }
@@ -758,7 +756,7 @@ int vtkSQKernelConvolution::RequestInformation(
 
   // We will work in a restricted problem domain so that we have
   // always a single layer of ghost cells available. To make it so
-  // we'll take the upstream's domain and shrink it by half the 
+  // we'll take the upstream's domain and shrink it by half the
   // kernel width.
   int nGhosts = this->KernelWidth/2;
 

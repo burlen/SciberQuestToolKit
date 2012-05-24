@@ -95,6 +95,16 @@ const BOVWriter &BOVWriter::operator=(const BOVWriter &other)
 void BOVWriter::SetCommunicator(MPI_Comm comm)
 {
   #ifndef SQTK_WITHOUT_MPI
+  int mpiOk;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    sqErrorMacro(cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    return;
+    }
+
   if (this->Comm==comm) return;
 
   if ( this->Comm!=MPI_COMM_NULL
@@ -121,6 +131,16 @@ void BOVWriter::SetCommunicator(MPI_Comm comm)
 void BOVWriter::SetHints(MPI_Info hints)
 {
   #ifndef SQTK_WITHOUT_MPI
+  int mpiOk;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    sqErrorMacro(cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    return;
+    }
+
   if (this->Hints==hints) return;
 
   if (this->Hints!=MPI_INFO_NULL)
@@ -159,7 +179,7 @@ void BOVWriter::SetMetaData(const BOVMetaData *metaData)
 }
 
 //-----------------------------------------------------------------------------
-int BOVWriter::Open(const char *fileName)
+int BOVWriter::Open(const char *fileName, char mode)
 {
   if (this->MetaData==0)
     {
@@ -167,7 +187,7 @@ int BOVWriter::Open(const char *fileName)
     return 0;
     }
 
-  int ok=this->MetaData->OpenDataset(fileName,'w');
+  int ok=this->MetaData->OpenDataset(fileName,mode);
   return ok;
 }
 
@@ -459,6 +479,16 @@ void BOVWriter::PrintSelf(ostream &os)
     << "  NProcs: " << this->NProcs << endl;
 
   #ifndef SQTK_WITHOUT_MPI
+  int mpiOk;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    sqErrorMacro(cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    return;
+    }
+
   if (this->Hints!=MPI_INFO_NULL)
     {
     os << "  Hints:" << endl;

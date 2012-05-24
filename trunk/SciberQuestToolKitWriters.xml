@@ -10,4 +10,3 @@ Copyright 2012 SciberQuest Inc.
   <ProxyManager type="writer" />
   <Proxy group="writers" name="vtkSQBOVWriter" />
 </ParaViewWriters>
-

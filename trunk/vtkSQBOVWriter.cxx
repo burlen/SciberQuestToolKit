@@ -78,12 +78,19 @@ vtkStandardNewMacro(vtkSQBOVWriter);
 vtkSQBOVWriter::vtkSQBOVWriter()
 {
   #if defined vtkSQBOVWriterDEBUG
-  pCerr() << "===============================vtkSQBOVWriter" << endl;
+  pCerr() << "=====vtkSQBOVWriter::vtkSQBOVWriter" << endl;
   #endif
+
+  // Initialize pipeline.
+  this->SetNumberOfInputPorts(1);
+  this->SetNumberOfOutputPorts(0);
 
   // Initialize variables
   this->FileName=0;
   this->FileNameChanged=false;
+  this->IncrementalMetaData=0;
+  this->WriteAllTimeSteps=0;
+  this->TimeStepId=0;
   this->UseCollectiveIO=HINT_DISABLED;
   this->NumberOfIONodes=0;
   this->CollectBufferSize=0;
@@ -96,22 +103,6 @@ vtkSQBOVWriter::vtkSQBOVWriter()
   this->WorldRank=0;
   this->WorldSize=1;
 
-  #ifdef SQTK_WITHOUT_MPI
-  vtkErrorMacro(
-      << "This class requires MPI however it was built without MPI.");
-  #else
-  int ok;
-  MPI_Initialized(&ok);
-  if (!ok)
-    {
-    vtkErrorMacro(
-      << "This class requires the MPI runtime, "
-      << "you must run ParaView in client-server mode launched via mpiexec.");
-    }
-  MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
-  MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
-  #endif
-
   this->HostName[0]='\0';
   #if defined vtkSQBOVWriterDEBUG
   char hostname[HOST_NAME_MAX];
@@ -123,22 +114,37 @@ vtkSQBOVWriter::vtkSQBOVWriter()
     }
   #endif
 
+  #ifdef SQTK_WITHOUT_MPI
+  vtkErrorMacro(
+      << "This class requires MPI however it was built without MPI.");
+  #else
+  int mpiOk;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    vtkErrorMacro(
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    }
+  else
+    {
+    MPI_Comm_size(MPI_COMM_WORLD,&this->WorldSize);
+    MPI_Comm_rank(MPI_COMM_WORLD,&this->WorldRank);
+    }
+  #endif
+
   // Configure the internal writer.
   this->Writer=BOVWriter::New();
 
   GDAMetaData md;
   this->Writer->SetMetaData(&md);
-
-  // Initialize pipeline.
-  this->SetNumberOfInputPorts(1);
-  this->SetNumberOfOutputPorts(0);
 }
 
 //-----------------------------------------------------------------------------
 vtkSQBOVWriter::~vtkSQBOVWriter()
 {
   #if defined vtkSQBOVWriterDEBUG
-  pCerr() << "===============================~vtkSQBOVWriter" << endl;
+  pCerr() << "=====vtkSQBOVWriter::~vtkSQBOVWriter" << endl;
   #endif
 
   this->Clear();
@@ -237,7 +243,7 @@ int vtkSQBOVWriter::Initialize(vtkPVXMLElement *root)
 void vtkSQBOVWriter::SetFileName(const char* _arg)
 {
   #if defined vtkSQBOVWriterDEBUG
-  pCerr() << "===============================SetFileName" << endl;
+  pCerr() << "=====vtkSQBOVWriter::SetFileName" << endl;
   pCerr() << "Set FileName " << safeio(_arg) << "." << endl;
   #endif
   #if defined vtkSQBOVWriterTIME
@@ -273,7 +279,8 @@ void vtkSQBOVWriter::SetFileName(const char* _arg)
   if (this->FileName)
     {
     this->Writer->SetCommunicator(MPI_COMM_WORLD);
-    if(!this->Writer->Open(this->FileName))
+    char mode=this->IncrementalMetaData==0?'w':'a';
+    if(!this->Writer->Open(this->FileName,mode))
       {
       vtkErrorMacro("Failed to open the file \"" << safeio(this->FileName) << "\".");
       return;
@@ -327,10 +334,16 @@ void vtkSQBOVWriter::GetTimeSteps(double *times)
 }
 
 //-----------------------------------------------------------------------------
+double vtkSQBOVWriter::GetTimeStep(int i)
+{
+  return this->Writer->GetMetaData()->GetTimeStep(i);
+}
+
+//-----------------------------------------------------------------------------
 void vtkSQBOVWriter::SetPointArrayStatus(const char *name, int status)
 {
   #if defined vtkSQBOVWriterDEBUG
-  pCerr() << "===============================SetPointArrayStatus" << endl;
+  pCerr() << "=====vtkSQBOVWriter::SetPointArrayStatus" << endl;
   pCerr() << safeio(name) << " " << status << endl;
   #endif
   if (status)
@@ -348,7 +361,7 @@ void vtkSQBOVWriter::SetPointArrayStatus(const char *name, int status)
 int vtkSQBOVWriter::GetPointArrayStatus(const char *name)
 {
   #if defined vtkSQBOVWriterDEBUG
-  pCerr() << "===============================GetPointArrayStatus" << endl;
+  pCerr() << "=====vtkSQBOVWriter::GetPointArrayStatus" << endl;
   #endif
   return this->Writer->GetMetaData()->IsArrayActive(name);
 }
@@ -357,7 +370,7 @@ int vtkSQBOVWriter::GetPointArrayStatus(const char *name)
 int vtkSQBOVWriter::GetNumberOfPointArrays()
 {
   #if defined vtkSQBOVWriterDEBUG
-  pCerr() << "===============================GetNumberOfPointArrays" << endl;
+  pCerr() << "=====vtkSQBOVWriter::GetNumberOfPointArrays" << endl;
   #endif
   return this->Writer->GetMetaData()->GetNumberOfArrays();
 }
@@ -366,7 +379,7 @@ int vtkSQBOVWriter::GetNumberOfPointArrays()
 const char* vtkSQBOVWriter::GetPointArrayName(int idx)
 {
   #if defined vtkSQBOVWriterDEBUG
-  pCerr() << "===============================GetArrayName" << endl;
+  pCerr() << "=====vtkSQBOVWriter::GetArrayName" << endl;
   #endif
   return this->Writer->GetMetaData()->GetArrayName(idx);
 }
@@ -375,7 +388,7 @@ const char* vtkSQBOVWriter::GetPointArrayName(int idx)
 void vtkSQBOVWriter::ClearPointArrayStatus()
 {
   #if defined vtkSQBOVWriterDEBUG
-  pCerr() << "===============================ClearPointArrayStatus" << endl;
+  pCerr() << "=====vtkSQBOVWriter::ClearPointArrayStatus" << endl;
   #endif
 
   int nArrays=this->GetNumberOfPointArrays();
@@ -390,6 +403,16 @@ void vtkSQBOVWriter::ClearPointArrayStatus()
 void vtkSQBOVWriter::SetMPIFileHints()
 {
   #ifndef SQTK_WITHOUT_MPI
+  int mpiOk;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    vtkErrorMacro(
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    return;
+    }
+
   MPI_Info hints;
   MPI_Info_create(&hints);
 
@@ -506,10 +529,19 @@ int vtkSQBOVWriter::RequestUpdateExtent(
       vtkInformationVector *outInfos)
 {
   #ifdef vtkSQBOVWriterDEBUG
-  pCerr() << "===============================vtkSQBOVWriter::RequestUpdateExtent" << endl;
+  pCerr() << "=====vtkSQBOVWriter::RequestUpdateExtent" << endl;
   #endif
 
   vtkInformation *inInfo=inInfos[0]->GetInformationObject(0);
+
+  // if we are writing all times we need to set the speciic
+  // time value here.
+  double time=-1.0;
+  if (this->WriteAllTimeSteps)
+    {
+    time=this->GetTimeStep(this->TimeStepId);
+    inInfo->Set(vtkSDDPipeline::UPDATE_TIME_STEPS(),&time,1);
+    }
 
   // get the extent from the upstream source and use it
   // to compute this ranks update extent.
@@ -542,8 +574,9 @@ int vtkSQBOVWriter::RequestUpdateExtent(
 
   #ifdef vtkSQBOVWriterDEBUG
   pCerr()
-    << "WHOLE_EXTENT=" << wholeExt << endl
-    << "UPDATE_EXTENT=" << updateExt << endl;
+    << "WHOLE_EXTENT=" << wholeExt << " "
+    << "UPDATE_EXTENT=" << updateExt << " "
+    << "UPDATE_TIME_STEPS=" << time << endl;
   #endif
 
   return 1;
@@ -556,7 +589,7 @@ int vtkSQBOVWriter::RequestDataObject(
       vtkInformationVector* outInfos)
 {
   #if defined vtkSQBOVWriterDEBUG
-  pCerr() << "===============================RequestDataObject" << endl;
+  pCerr() << "=====vtkSQBOVWriter::RequestDataObject" << endl;
   #endif
 
   return 1;
@@ -569,12 +602,12 @@ int vtkSQBOVWriter::RequestInformation(
   vtkInformationVector* /*outInfos*/)
 {
   #if defined vtkSQBOVWriterDEBUG
-  pCerr() << "===============================RequestInformation" << endl;
+  pCerr() << "=====vtkSQBOVWriter::RequestInformation" << endl;
   #endif
 
   if (!this->Writer->IsOpen())
     {
-    vtkWarningMacro("No file open, cannot process RequestInformation!");
+    vtkErrorMacro("No file open.");
     return 1;
     }
 
@@ -622,12 +655,18 @@ int vtkSQBOVWriter::RequestData(
         vtkInformationVector * /*outInfos*/)
 {
   #if defined vtkSQBOVWriterDEBUG
-  pCerr() << "===============================RequestData" << endl;
+  pCerr() << "=====vtkSQBOVWriter::RequestData" << endl;
   #endif
   #if defined vtkSQBOVWriterTIME
   vtkSQLog *log=vtkSQLog::GetGlobalInstance();
   log->StartEvent("vtkSQBOVWriter::RequestData");
   #endif
+
+  if (!this->Writer->IsOpen())
+    {
+    vtkErrorMacro("No file open.");
+    return 1;
+    }
 
   BOVMetaData *md=this->Writer->GetMetaData();
 
@@ -639,6 +678,12 @@ int vtkSQBOVWriter::RequestData(
   if (input==NULL)
     {
     vtkErrorMacro("Filter data has not been configured correctly.");
+    return 1;
+    }
+
+  if (md->GetNumberOfTimeSteps()<1)
+    {
+    vtkErrorMacro("No timesteps available.");
     return 1;
     }
 
@@ -785,9 +830,24 @@ int vtkSQBOVWriter::RequestData(
     return 1;
     }
 
+  // when writing all time steps we can trigger re-execute here
+  // the time step is set in request updated extent.
+  if (this->WriteAllTimeSteps)
+    {
+    if (this->TimeStepId<this->GetNumberOfTimeSteps())
+      {
+      req->Set(vtkSDDPipeline::CONTINUE_EXECUTING(), 1);
+      ++this->TimeStepId;
+      }
+    else
+      {
+      req->Remove(vtkSDDPipeline::CONTINUE_EXECUTING());
+      }
+    }
+
   #if defined vtkSQBOVWriterDEBUG
   this->Writer->PrintSelf(pCerr());
-  input->Print(pCerr());
+  //input->Print(pCerr());
   #endif
 
   #if defined vtkSQBOVWriterTIME
@@ -795,6 +855,28 @@ int vtkSQBOVWriter::RequestData(
   #endif
 
   return 1;
+}
+
+//----------------------------------------------------------------------------
+void vtkSQBOVWriter::Write()
+{
+  #if defined vtkSQBOVWriterDEBUG
+  pCerr() << "=====vtkSQBOVWriter::Write" << endl;
+  #endif
+
+  if (!this->Writer->IsOpen())
+    {
+    vtkErrorMacro("No file open.");
+    return;
+    }
+
+  this->TimeStepId=0;
+
+  // drive the pipeline.
+  this->Modified();
+  this->UpdateInformation();
+  this->Update();
+  this->WriteMetaData();
 }
 
 //-----------------------------------------------------------------------------
@@ -808,4 +890,3 @@ void vtkSQBOVWriter::PrintSelf(ostream& os, vtkIndent indent)
   this->Writer->PrintSelf(os);
   os << endl;
 }
-

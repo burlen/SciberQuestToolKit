@@ -183,6 +183,17 @@ void CreateCartesianView(
       MPI_Datatype &view)
 {
   #ifndef SQTK_WITHOUT_MPI
+  int mpiOk=0;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    sqErrorMacro(
+      cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    return;
+    }
+
   int iErr;
 
   MPI_Datatype nativeType=DataTraits<T>::Type();
@@ -240,6 +251,17 @@ void CreateCartesianView(
       MPI_Datatype &view)
 {
   #ifndef SQTK_WITHOUT_MPI
+  int mpiOk=0;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    sqErrorMacro(
+      cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    return;
+    }
+
   int iErr;
 
   MPI_Datatype nativeType;
@@ -309,6 +331,17 @@ MPI_Status WriteDataArray(
 {
   MPI_Status ok=0;
   #ifndef SQTK_WITHOUT_MPI
+  int mpiOk=0;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    sqErrorMacro(
+      cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    return 0;
+    }
+
   int iErr;
   const int eStrLen=2048;
   char eStr[eStrLen]={'\0'};
@@ -420,6 +453,17 @@ int ReadDataArray(
         T *data)                        // pointer to a buffer to read into.
 {
   #ifndef SQTK_WITHOUT_MPI
+  int mpiOk=0;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    sqErrorMacro(
+      cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    return 0;
+    }
+
   int iErr;
   int eStrLen=256;
   char eStr[256]={'\0'};
@@ -542,6 +586,17 @@ int WriteDataArray(
         T *data)                       // pointer to a buffer to write from.
 {
   #ifndef SQTK_WITHOUT_MPI
+  int mpiOk=0;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    sqErrorMacro(
+      cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    return 0;
+    }
+
   int iErr;
   int eStrLen=256;
   char eStr[256]={'\0'};
@@ -640,6 +695,17 @@ int ReadDataArray(
         T *data)                       // pointer to a buffer to read into.
 {
   #ifndef SQTK_WITHOUT_MPI
+  int mpiOk=0;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    sqErrorMacro(
+      cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    return 0;
+    }
+
   int iErr;
   int eStrLen=256;
   char eStr[256]={'\0'};
@@ -739,6 +805,17 @@ int ReadDataArray(
         T *data)                       // pointer to a buffer to read into.
 {
   #ifndef SQTK_WITHOUT_MPI
+  int mpiOk=0;
+  MPI_Initialized(&mpiOk);
+  if (!mpiOk)
+    {
+    sqErrorMacro(
+      cerr,
+      << "This class requires the MPI runtime, "
+      << "you must run ParaView in client-server mode launched via mpiexec.");
+    return 0;
+    }
+
   int iErr;
   int eStrLen=256;
   char eStr[256]={'\0'};

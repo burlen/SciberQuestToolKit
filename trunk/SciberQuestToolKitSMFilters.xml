@@ -569,8 +569,7 @@ Copyright 2012 SciberQuest Inc.
   <SourceProxy
       name="vtkSQFieldTracer"
       label="SQ Field Tracer"
-      class="vtkSQFieldTracer"
-      parallel_only="1">
+      class="vtkSQFieldTracer">
 
     <!-- Inputs -->
     <InputProperty
@@ -836,8 +835,7 @@ Copyright 2012 SciberQuest Inc.
   <SourceProxy
       name="vtkSQFieldTracerRK45"
       label="SQ Field Tracer RK-4-5"
-      class="vtkSQFieldTracer"
-      parallel_only="1">
+      class="vtkSQFieldTracer">
 
     <!-- Inputs -->
     <InputProperty
@@ -1105,8 +1103,7 @@ Copyright 2012 SciberQuest Inc.
   <SourceProxy
       name="vtkSQFieldTopologyMapper"
       label="SQ Field Topology Mapper"
-      class="vtkSQFieldTracer"
-      parallel_only="1">
+      class="vtkSQFieldTracer">
 
     <!-- Inputs -->
     <InputProperty
@@ -1366,8 +1363,7 @@ Copyright 2012 SciberQuest Inc.
   <SourceProxy
     name="vtkSQPoincareMapper"
     label="SQ Poincare Mapper"
-    class="vtkSQFieldTracer"
-    parallel_only="1">
+    class="vtkSQFieldTracer">
 
     <!-- Inputs -->
     <InputProperty
@@ -1628,8 +1624,7 @@ Copyright 2012 SciberQuest Inc.
   <SourceProxy
     name="vtkSQPoincareMapperRK45"
     label="SQ Poincare Mapper RK-4-5"
-    class="vtkSQFieldTracer"
-    parallel_only="1">
+    class="vtkSQFieldTracer">
 
     <!-- Inputs -->
     <InputProperty
@@ -1900,8 +1895,7 @@ Copyright 2012 SciberQuest Inc.
   <SourceProxy
     name="vtkSQDisplacementMapper"
     label="SQ Displacement Mapper"
-    class="vtkSQFieldTracer"
-    parallel_only="1">
+    class="vtkSQFieldTracer">
 
     <!-- Inputs -->
     <InputProperty
@@ -2173,8 +2167,7 @@ Copyright 2012 SciberQuest Inc.
   <SourceProxy
     name="vtkSQDisplacementMapperRK45"
     label="SQ Displacement Mapper RK-4-5"
-    class="vtkSQFieldTracer"
-    parallel_only="1">
+    class="vtkSQFieldTracer">
 
     <!-- Inputs -->
     <InputProperty

@@ -77,7 +77,7 @@ public:
   /**
   Open a dataset.
   */
-  int Open(const char *fileName);
+  int Open(const char *fileName, char mode='w');
 
   /**
   Return's true if the dataset has been successfully opened.

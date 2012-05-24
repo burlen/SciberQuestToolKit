@@ -83,6 +83,10 @@ vtkSQBOVReader::vtkSQBOVReader()
   pCerr() << "===============================vtkSQBOVReader" << endl;
   #endif
 
+  // Initialize pipeline.
+  this->SetNumberOfInputPorts(0);
+  this->SetNumberOfOutputPorts(1);
+
   // Initialize variables
   this->MetaRead=0;
   this->FileName=0;
@@ -147,10 +151,6 @@ vtkSQBOVReader::vtkSQBOVReader()
 
   GDAMetaData md;
   this->Reader->SetMetaData(&md);
-
-  // Initialize pipeline.
-  this->SetNumberOfInputPorts(0);
-  this->SetNumberOfOutputPorts(1);
 }
 
 //-----------------------------------------------------------------------------

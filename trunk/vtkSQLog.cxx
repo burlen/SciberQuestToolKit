@@ -26,6 +26,10 @@ using std::ios_base;
 #include <mpi.h>
 #endif
 
+// set this ini the header since there are conditional compile
+// there as well
+//#define vtkSQLogDEBUG
+
 //=============================================================================
 class LogBuffer
 {
