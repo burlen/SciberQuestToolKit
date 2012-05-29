@@ -72,10 +72,12 @@ set(SM_CXX_SOURCES
   vtkSQVolumeSource.cxx
   vtkSQVortexFilter.cxx
   vtkSQVortexDetect.cxx
-  vtkSQVPICReader.cxx
   )
 
 set(SQTK_PROCESS_MONITOR ON CACHE BOOL "Build the process monitor.")
+if (APPLE)
+  set(SQTK_PROCESS_MONITOR OFF)
+endif()
 if (SQTK_PROCESS_MONITOR)
   message(STATUS "Building process monitor.")
   set(SM_CXX_SOURCES ${SM_CXX_SOURCES} vtkSQProcessMonitor.cxx)
@@ -124,7 +126,6 @@ set(CXX_SOURCES
   RectilinearDecomp.cxx
   RefCountedPointer.cxx
   StreamlineData.cxx
-  SystemInterfaceFactory.cxx
   TerminationCondition.cxx
   TopologicalClassSelector.cxx
   UnstructuredFieldDisplacementMap.cxx
@@ -132,6 +133,7 @@ set(CXX_SOURCES
   UnstructuredGridCellCopier.cxx
   vtkSQHemisphereSourceConfigurationWriter.cxx
   vtkSQHemisphereSourceConfigurationReader.cxx
+  vtkSQLog.cxx
   vtkSQMetaDataKeys.cxx
   vtkSQOOCBOVReader.cxx
   vtkSQOOCReader.cxx
@@ -143,6 +145,10 @@ set(CXX_SOURCES
   )
 
 if (SQTK_PROCESS_MONITOR)
+  set(CXX_SOURCES
+    ${CXX_SOURCES}
+    SystemInterfaceFactory.cxx
+    )
   if (WIN32)
     set(CXX_SOURCES
       ${CXX_SOURCES}
@@ -152,14 +158,12 @@ if (SQTK_PROCESS_MONITOR)
   elseif (APPLE)
     set(CXX_SOURCES
       ${CXX_SOURCES}
-      vtkSQLog.cxx
       UnixSystemInterface.cxx
       OSXSystemInterface.cxx
       )
   else()
     set(CXX_SOURCES
       ${CXX_SOURCES}
-      vtkSQLog.cxx
       UnixSystemInterface.cxx
       LinuxSystemInterface.cxx
       )
