@@ -27,7 +27,7 @@ include(GeneratePythonBindings.cmake)
 include(GetDate.cmake)
 
 # identify the build
-set(SQTK_RELEASE "20120524")
+set(SQTK_RELEASE "20120531")
 set(SQTK_BUILD_DATE)
 GetDate(SQTK_BUILD_DATE)
 set (SQTK_VERSION "SQTK-${SQTK_RELEASE} ${CMAKE_SYSTEM} ${CMAKE_CXX_COMPILER} ${SQTK_BUILD_DATE}")
