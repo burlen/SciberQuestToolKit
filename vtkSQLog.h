@@ -32,6 +32,7 @@ using std::ostringstream;
 class vtkSQLog;
 class LogBuffer;
 
+//BTX
 //=============================================================================
 class vtkSQLogDestructor
 {
@@ -44,6 +45,7 @@ public:
 private:
   vtkSQLog *Log;
 };
+//ETX
 
 //=============================================================================
 class vtkSQLog : public vtkObject
@@ -79,10 +81,12 @@ public:
   void EndEventSynch(const char *event);
   void EndEventSynch(int rank, const char *event);
 
+  //BTX
   // Description:
   // Insert text into the log header on the writer rank.
   template<typename T>
   vtkSQLog &operator<<(const T& s);
+  //ETX
 
   // Description:
   // Clear the log.
@@ -141,6 +145,7 @@ private:
   ostringstream Header;
 };
 
+//BTX
 //-----------------------------------------------------------------------------
 template<typename T>
 vtkSQLog &vtkSQLog::operator<<(const T& s)
@@ -151,6 +156,6 @@ vtkSQLog &vtkSQLog::operator<<(const T& s)
     }
     return *this;
 }
+//ETX
 
 #endif
-

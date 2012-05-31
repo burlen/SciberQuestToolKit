@@ -6,7 +6,6 @@
 
 Copyright 2012 SciberQuest Inc.
 */
-
 #include "vtkSQLog.h"
 
 #include "SQMacros.h"
@@ -15,8 +14,33 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkObjectFactory.h"
 
 #include <ctime>
+#if !defined(WIN32)
 #include <sys/time.h>
 #include <unistd.h>
+#else
+#include <process.h>
+#include <Winsock2.h>
+#include <time.h>
+int gettimeofday(struct timeval *tv, void *)
+{
+  FILETIME ft;
+  GetSystemTimeAsFileTime(&ft);
+
+  __int64 tmpres = 0;
+  tmpres = ft.dwHighDateTime;
+  tmpres <<= 32;
+  tmpres |= ft.dwLowDateTime;
+
+  /*converting file time to unix epoch*/
+  const __int64 DELTA_EPOCH_IN_MICROSECS= 11644473600000000;
+  tmpres /= 10;  /*convert into microseconds*/
+  tmpres -= DELTA_EPOCH_IN_MICROSECS; 
+  tv->tv_sec = (__int32)(tmpres*0.000001);
+  tv->tv_usec =(tmpres%1000000);
+
+  return 0;
+}
+#endif
 
 #include <fstream>
 using std::ofstream;

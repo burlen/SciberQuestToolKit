@@ -29,7 +29,7 @@ typedef vtkStreamingDemandDrivenPipeline vtkSDDPipeline;
 using vtkstd::string;
 
 // #define vtkSQImageSourceDEBUG
-#define vtkSQImageSourceTIME
+// #define vtkSQImageSourceTIME
 
 #if defined vtkSQImageSourceTIME
   #include "vtkSQLog.h"

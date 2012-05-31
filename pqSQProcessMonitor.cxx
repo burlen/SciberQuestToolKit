@@ -710,7 +710,7 @@ void pqSQProcessMonitor::PullServerConfig()
 
       HostData *serverHost;
 
-      pair<string,HostData*> ins(serverHostName,0);
+      pair<string,HostData*> ins(serverHostName,(HostData*)0);
       pair<map<string,HostData*>::iterator,bool> ret;
       ret=this->ServerHosts.insert(ins);
       if (ret.second)

@@ -35,7 +35,7 @@ using std::ostringstream;
   #define PATH_SEP "/"
 #endif
 
-#define BOVReaderTIME
+//#define BOVReaderTIME
 
 #ifdef WIN32
   // these are only usefull in terminals

@@ -50,7 +50,7 @@ using std::max;
 using std::ostringstream;
 
 // #define vtkSQBOVReaderDEBUG
-#define vtkSQBOVReaderTIME
+// #define vtkSQBOVReaderTIME
 
 #ifdef WIN32
   // for gethostname on windows.

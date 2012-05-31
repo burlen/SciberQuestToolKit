@@ -9,8 +9,8 @@ Copyright 2012 SciberQuest Inc.
 */
 #include "vtkSQKernelConvolution.h"
 
-//#define vtkSQKernelConvolutionDEBUG
-#define vtkSQKernelConvolutionTIME
+// #define vtkSQKernelConvolutionDEBUG
+// #define vtkSQKernelConvolutionTIME
 
 #if defined vtkSQKernelConvolutionTIME
   #include "vtkSQLog.h"

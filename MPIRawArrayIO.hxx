@@ -5,15 +5,13 @@
 /___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_)
 
 Copyright 2012 SciberQuest Inc.
-
 */
 #ifndef __MPIRawArrayIO_hxx
 #define __MPIRawArrayIO_hxx
 
-// disbale warning about passing string literals.
-#if not defined(__INTEL_COMPILER) && defined(__GNUG__)
-#pragma GCC diagnostic ignored "-Wwrite-strings"
-#endif
+#include "CartesianExtent.h"
+#include "SQMacros.h"
+#include "postream.h"
 
 #ifdef SQTK_WITHOUT_MPI
 #define MPI_FLOAT 0
@@ -37,10 +35,6 @@ typedef void * MPI_Comm;
 #else
 #include <mpi.h>
 #endif
-
-#include "CartesianExtent.h"
-#include "SQMacros.h"
-#include "postream.h"
 
 //=============================================================================
 template<typename T> class DataTraits;

@@ -5,12 +5,11 @@
 /___/\__/_/_.__/\__/_/  \___\_\_,_/\__/___/\__/ /___/_//_/\__(_) 
 
 Copyright 2012 SciberQuest Inc.
-
 */
 #include "vtkSQMedianFilter.h"
 
-//#define vtkSQMedianFilterDEBUG
-#define vtkSQMedianFilterTIME
+// #define vtkSQMedianFilterDEBUG
+// #define vtkSQMedianFilterTIME
 
 #if defined vtkSQMedianFilterTIME
   #include "vtkSQLog.h"
@@ -41,12 +40,7 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkPointData.h"
 #include "vtkCellData.h"
 
-#ifdef WIN32
-  #include <Winsock2.h>
-#else
-  #include <unistd.h>
-#endif
-
+#include <cstdlib>
 #include <vtkstd/string>
 using vtkstd::string;
 #include <vtkstd/map>

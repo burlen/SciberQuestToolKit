@@ -35,8 +35,8 @@ using vtkstd::pair;
 
 #include "Numerics.hxx"
 
-//#define vtkSQVortexFilterDEBUG
-#define vtkSQVortexFilterTIME
+// #define vtkSQVortexFilterDEBUG
+// #define vtkSQVortexFilterTIME
 
 #ifdef WIN32
   #undef vtkSQVortexFilterDEBUG

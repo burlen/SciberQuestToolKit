@@ -6,7 +6,6 @@
 
 Copyright 2012 SciberQuest Inc.
 */
-
 #include "CPUConvolutionDriver.h"
 
 #include "CartesianExtent.h"
@@ -22,6 +21,7 @@ using std::cerr;
 using std::endl;
 #include <vector>
 using std::vector;
+#include <cstdlib>
 
 //#define CPUConvolutionDriverDEBUG
 

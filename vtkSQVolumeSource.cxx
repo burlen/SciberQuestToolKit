@@ -50,7 +50,7 @@ typedef pair<map<vtkIdType,vtkIdType>::iterator,bool> MapInsert;
 typedef pair<vtkIdType,vtkIdType> MapElement;
 
 // #define vtkSQVolumeSourceDEBUG
-#define vtkSQVolumeSourceTIME
+// #define vtkSQVolumeSourceTIME
 
 vtkCxxRevisionMacro(vtkSQVolumeSource, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQVolumeSource);

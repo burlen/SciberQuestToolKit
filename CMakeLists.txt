@@ -28,10 +28,10 @@ include(GetDate.cmake)
 
 # identify the build
 set(SQTK_RELEASE "20120524")
-message(STATUS "SQTK release ${SQTK_RELEASE}")
-set (SQTK_BUILD)
-GetDate(SQTK_BUILD)
-message(STATUS "SQTK build ${SQTK_BUILD}")
+set(SQTK_BUILD_DATE)
+GetDate(SQTK_BUILD_DATE)
+set (SQTK_VERSION "SQTK-${SQTK_RELEASE} ${CMAKE_SYSTEM} ${CMAKE_CXX_COMPILER} ${SQTK_BUILD_DATE}")
+message(STATUS "SQTK version ${SQTK_VERSION}")
 
 # put the plugin inside the pv install
 set(SQTK_LIB_INSTALL_PATH
@@ -55,6 +55,7 @@ set(SM_CXX_SOURCES
   vtkSQImageSource.cxx
   vtkSQKernelConvolution.cxx
   vtkSQLineSource.cxx
+  vtkSQLog.cxx
   vtkSQMedianFilter.cxx
   vtkSQPlaneSourceCellGenerator.cxx
   vtkSQPStreamTracer.cxx
@@ -133,7 +134,6 @@ set(CXX_SOURCES
   UnstructuredGridCellCopier.cxx
   vtkSQHemisphereSourceConfigurationWriter.cxx
   vtkSQHemisphereSourceConfigurationReader.cxx
-  vtkSQLog.cxx
   vtkSQMetaDataKeys.cxx
   vtkSQOOCBOVReader.cxx
   vtkSQOOCReader.cxx
@@ -334,7 +334,7 @@ endif()
 
 # Generate the plugin, servermanager and wrapped language bindings.
 add_paraview_plugin(
-  SciberQuestToolKit "${SQTK_RELEASE}.${SQTK_BUILD}"
+  SciberQuestToolKit "${SQTK_VERSION}"
   GUI_INTERFACES ${_IFACES}
   SERVER_MANAGER_SOURCES ${SM_CXX_SOURCES}
   SERVER_MANAGER_XML ${SQTK_SM_XML}

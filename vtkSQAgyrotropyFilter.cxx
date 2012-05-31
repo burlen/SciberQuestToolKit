@@ -32,12 +32,14 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkDoubleArray.h"
 
 #include "XMLUtils.h"
+#include "SQMacros.h"
 
 #include <algorithm>
 using std::min;
 using std::max;
 #include <string>
 using std::string;
+#include <cmath>
 
 #define vtkSQAgyrotropyFilterDEBUG 0
 #define vtkSQAgyrotropyFilterTIME 0
@@ -45,6 +47,7 @@ using std::string;
 #if defined vtkSQAgyrotropyFilterTIME
   #include "vtkSQLog.h"
 #endif
+
 
 
 // ****************************************************************************
@@ -100,7 +103,7 @@ void agyrotropy(T *pT, T *pV, T *pA, size_t n)
       d*=-1.0;
       }
 
-    pA[i] = 2*sqrt(d)/a;
+    pA[i] = 2*::sqrt(d)/a;
 
     pV+=3;
     pT+=9;

@@ -47,8 +47,8 @@ using std::max;
 #include <sstream>
 using std::ostringstream;
 
-//#define vtkSQBOVWriterDEBUG
-#define vtkSQBOVWriterTIME
+// #define vtkSQBOVWriterDEBUG
+// #define vtkSQBOVWriterTIME
 
 #ifdef WIN32
   // for gethostname on windows.

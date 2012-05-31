@@ -6,9 +6,11 @@
 
 Copyright 2012 SciberQuest Inc.
 */
+#include "SQMacros.h"
 
 #include <vector>
 using std::vector;
+
 
 //*****************************************************************************
 enum {
@@ -208,4 +210,3 @@ void Interleave(
     }
   }
 }
-

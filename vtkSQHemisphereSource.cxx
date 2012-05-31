@@ -40,7 +40,7 @@ Copyright 2012 SciberQuest Inc.
 
 #include <math.h>
 
-#define vtkSQHemisphereSourceTIME
+// #define vtkSQHemisphereSourceTIME
 
 //*****************************************************************************
 void LocateHemisphere(float *pX, size_t nx,double *C, double *N)
