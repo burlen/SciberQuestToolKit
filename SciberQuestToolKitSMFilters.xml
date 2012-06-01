@@ -3207,7 +3207,6 @@ Copyright 2012 SciberQuest Inc.
   <!-- End vtkSQMedianFilter -->
   </SourceProxy>
 
-
   <!-- ==================================================================== -->
   <SourceProxy
     name="vtkSQKernelConvolution"
@@ -3397,6 +3396,86 @@ Copyright 2012 SciberQuest Inc.
     </Hints>
 
   <!-- End vtkSQKernelConvolution -->
+  </SourceProxy>
+
+  <!-- ==================================================================== -->
+  <SourceProxy
+    name="vtkSQWaveletFilter"
+    class="vtkSQWaveletFilter"
+    label="SQ Wavelet Filter">
+    <Documentation
+      long_help="Long Documentation"
+      short_help="Short Documentation">
+      Wavelet and Inverse wavelet transform.
+    </Documentation>
+
+     <InputProperty
+        name="Input"
+        command="SetInputConnection">
+           <ProxyGroupDomain name="groups">
+             <Group name="sources"/>
+             <Group name="filters"/>
+           </ProxyGroupDomain>
+           <DataTypeDomain name="input_type">
+             <DataType value="vtkDataSet"/>
+           </DataTypeDomain>
+           <InputArrayDomain name="input_array" attribute_type="point"/>
+      </InputProperty>
+
+      <StringVectorProperty
+        name="Arrays to filter"
+        command="AddInputArray"
+        clean_command="ClearInputArrays"
+        repeat_command="1"
+        number_of_elements_per_command="1"
+        label="Arrays">
+        <Documentation>
+            This property specifies the name(s) array(s) to filter.
+        </Documentation>
+        <ArrayListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </ArrayListDomain>
+        <Hints>
+        <!-- This overrides the GUI's default mechanism to
+            not set the default value for this property
+            using the domain when the proxy is created -->
+            <NoDefault />
+        </Hints>
+      </StringVectorProperty>
+
+    <IntVectorProperty
+        name="WaveletBasis"
+        label="Basis"
+        command="SetWaveletBasis"
+        number_of_elements="1"
+        default_values="1" >
+      <EnumerationDomain name="enum">
+        <Entry value="1" text="Haar"/>
+      </EnumerationDomain>
+      <Documentation>
+        Select a basis function.
+      </Documentation>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+        name="Invert"
+        label="Invert"
+        command="SetInvert"
+        number_of_elements="1"
+        default_values="0" >
+      <BooleanDomain name="bool"/>
+      <Documentation>
+        Set this to compute the inverse transform.
+      </Documentation>
+    </IntVectorProperty>
+
+    <Hints>
+      <View type="RenderView"/>
+    </Hints>
+
+  <!-- End vtkSQWaveletFilter -->
   </SourceProxy>
 
   <!-- ==================================================================== -->

@@ -73,6 +73,7 @@ set(SM_CXX_SOURCES
   vtkSQVolumeSource.cxx
   vtkSQVortexFilter.cxx
   vtkSQVortexDetect.cxx
+  vtkSQWaveletFilter.cxx
   )
 
 set(SQTK_PROCESS_MONITOR ON CACHE BOOL "Build the process monitor.")
