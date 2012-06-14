@@ -73,7 +73,6 @@ using std::ostringstream;
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 #endif
 
-vtkCxxRevisionMacro(vtkSQBOVReader, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQBOVReader);
 
 //-----------------------------------------------------------------------------
@@ -661,7 +660,7 @@ int vtkSQBOVReader::RequestDataObject(
   info->Set(vtkDataObject::DATA_EXTENT_TYPE(),VTK_3D_EXTENT);
   info->Set(vtkDataObject::DATA_OBJECT(),dataset);
 
-  dataset->SetPipelineInformation(info);
+  //dataset->SetPipelineInformation(info);
   dataset->Delete();
 
   #if defined vtkSQBOVReaderDEBUG
@@ -926,10 +925,10 @@ int vtkSQBOVReader::RequestData(
   // Figure out which of our time steps is closest to the requested
   // one, fallback to the 0th step.
   int stepId=this->Reader->GetMetaData()->GetTimeStep(0);
-  if (info->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS()))
+  if (info->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
     {
-    double *step
-      = info->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS());
+    double step
+      = info->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
     int nSteps
       = info->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
     double* steps =
@@ -937,16 +936,16 @@ int vtkSQBOVReader::RequestData(
 
     for (int i=0; i<nSteps; ++i)
       {
-      if (fequal(steps[i],*step,1E-10))
+      if (fequal(steps[i],step,1E-10))
         {
         stepId=this->Reader->GetMetaData()->GetTimeStep(i);
         break;
         }
       }
-    info->Set(vtkDataObject::DATA_TIME_STEPS(),step,1);
-    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEPS(),step,1);
+    info->Set(vtkDataObject::DATA_TIME_STEP(),step);
+    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(),step);
     #if defined vtkSQBOVReaderDEBUG
-    pCerr() << "Requested time " << *step << " using " << stepId << "." << endl;
+    pCerr() << "Requested time " << step << " using " << stepId << "." << endl;
     #endif
     }
 

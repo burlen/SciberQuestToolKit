@@ -12,10 +12,10 @@
 #include <QDialog>
 #include <QLineEdit>
 
-#include <vtkstd/vector>
-using vtkstd::vector;
-#include <vtkstd/string>
-using vtkstd::string;
+#include <vector>
+using std::vector;
+#include <string>
+using std::string;
 
 class pqSQRemoteCommandDialogUI;
 

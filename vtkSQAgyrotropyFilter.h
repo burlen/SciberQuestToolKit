@@ -22,7 +22,7 @@ class VTK_EXPORT vtkSQAgyrotropyFilter : public vtkDataSetAlgorithm
 public:
   static vtkSQAgyrotropyFilter *New();
 
-  vtkTypeRevisionMacro(vtkSQAgyrotropyFilter,vtkDataSetAlgorithm);
+  vtkTypeMacro(vtkSQAgyrotropyFilter,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

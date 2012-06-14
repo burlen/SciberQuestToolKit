@@ -23,7 +23,7 @@ class vtkInformationVector;
 class vtkSQVortexFilter : public vtkDataSetAlgorithm
 {
 public:
-  vtkTypeRevisionMacro(vtkSQVortexFilter,vtkDataSetAlgorithm);
+  vtkTypeMacro(vtkSQVortexFilter,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQVortexFilter *New();
 

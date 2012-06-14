@@ -30,8 +30,8 @@ typedef vtkStreamingDemandDrivenPipeline vtkSDDPipeline;
 #include "vtkPointData.h"
 #include "vtkCellData.h"
 #include "vtkPVXMLElement.h"
-#include <vtkstd/string>
-using vtkstd::string;
+#include <string>
+using std::string;
 
 // #define vtkSQImageGhostsDEBUG
 // #define vtkSQImageGhostsTIME
@@ -40,8 +40,6 @@ using vtkstd::string;
   #include "vtkSQLog.h"
 #endif
 
-
-vtkCxxRevisionMacro(vtkSQImageGhosts, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQImageGhosts);
 
 //-----------------------------------------------------------------------------

@@ -282,8 +282,6 @@ For singleton pattern
 vtkSQLog *vtkSQLog::GlobalInstance=0;
 vtkSQLogDestructor vtkSQLog::GlobalInstanceDestructor;
 
-//-----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkSQLog, "$Revision: 0.0 $");
 
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSQLog);

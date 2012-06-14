@@ -30,7 +30,6 @@
 
 // #define vtkSQRandomSeedPointsDEBUG
 
-vtkCxxRevisionMacro(vtkSQRandomSeedPoints, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQRandomSeedPoints);
 
 //----------------------------------------------------------------------------

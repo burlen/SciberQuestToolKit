@@ -28,7 +28,7 @@ class vtkSMProxy;
 class VTK_EXPORT vtkSQPlaneSourceConfigurationWriter : public vtkSMProxyConfigurationWriter
 {
 public:
-  vtkTypeRevisionMacro(vtkSQPlaneSourceConfigurationWriter,vtkObject);
+  vtkTypeMacro(vtkSQPlaneSourceConfigurationWriter,vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQPlaneSourceConfigurationWriter *New();
 

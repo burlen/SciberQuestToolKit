@@ -17,10 +17,6 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkUnstructuredGrid.h"
 #include "vtkPolyData.h"
 
-
-//-----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkSQFieldTopologySplit,"$Revision: 1.0$");
-
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSQFieldTopologySplit);
 

@@ -12,7 +12,6 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkObjectFactory.h"
 #include "vtkSMProxy.h"
 
-vtkCxxRevisionMacro(vtkSQPlaneSourceConfigurationReader,"$Revision: 1.0$");
 vtkStandardNewMacro(vtkSQPlaneSourceConfigurationReader);
 
 //-----------------------------------------------------------------------------

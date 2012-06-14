@@ -71,7 +71,6 @@ using std::ostringstream;
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 #endif
 
-vtkCxxRevisionMacro(vtkSQBOVWriter, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQBOVWriter);
 
 //-----------------------------------------------------------------------------
@@ -540,7 +539,7 @@ int vtkSQBOVWriter::RequestUpdateExtent(
   if (this->WriteAllTimeSteps)
     {
     time=this->GetTimeStep(this->TimeStepId);
-    inInfo->Set(vtkSDDPipeline::UPDATE_TIME_STEPS(),&time,1);
+    inInfo->Set(vtkSDDPipeline::UPDATE_TIME_STEP(),time);
     }
 
   // get the extent from the upstream source and use it
@@ -690,10 +689,10 @@ int vtkSQBOVWriter::RequestData(
   // Figure out which of our time steps is closest to the requested
   // one, fallback to the 0th step.
   int stepId=md->GetTimeStep(0);
-  if (info->Has(vtkSDDPipeline::UPDATE_TIME_STEPS()))
+  if (info->Has(vtkSDDPipeline::UPDATE_TIME_STEP()))
     {
-    double *step
-      = info->Get(vtkSDDPipeline::UPDATE_TIME_STEPS());
+    double step
+      = info->Get(vtkSDDPipeline::UPDATE_TIME_STEP());
     int nSteps
       = info->Length(vtkSDDPipeline::TIME_STEPS());
     double* steps =
@@ -701,7 +700,7 @@ int vtkSQBOVWriter::RequestData(
 
     for (int i=0; i<nSteps; ++i)
       {
-      if (fequal(steps[i],*step,1E-10))
+      if (fequal(steps[i],step,1E-10))
         {
         stepId=md->GetTimeStep(i);
         break;
@@ -709,7 +708,7 @@ int vtkSQBOVWriter::RequestData(
       }
 
     #if defined vtkSQBOVWriterDEBUG
-    pCerr() << "Requested time " << *step << " using " << stepId << "." << endl;
+    pCerr() << "Requested time " << step << " using " << stepId << "." << endl;
     #endif
     }
 

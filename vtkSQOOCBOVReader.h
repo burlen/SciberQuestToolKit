@@ -39,7 +39,7 @@ class VTK_EXPORT vtkSQOOCBOVReader : public vtkSQOOCReader
 {
 public:
   static vtkSQOOCBOVReader *New();
-  vtkTypeRevisionMacro(vtkSQOOCBOVReader, vtkObject);
+  vtkTypeMacro(vtkSQOOCBOVReader, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   /**

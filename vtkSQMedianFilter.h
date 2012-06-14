@@ -24,7 +24,7 @@ class vtkInformationVector;
 class vtkSQMedianFilter : public vtkDataSetAlgorithm
 {
 public:
-  vtkTypeRevisionMacro(vtkSQMedianFilter,vtkDataSetAlgorithm);
+  vtkTypeMacro(vtkSQMedianFilter,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQMedianFilter *New();
 

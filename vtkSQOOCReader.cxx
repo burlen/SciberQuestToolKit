@@ -13,8 +13,6 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkInformationDoubleVectorKey.h"
 #include "vtkInformationIntegerVectorKey.h"
 
-//-----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkSQOOCReader, "$Revision: 0.0 $");
 
 //-----------------------------------------------------------------------------
 vtkInformationKeyMacro(vtkSQOOCReader,READER,ObjectBase);

@@ -22,7 +22,7 @@ class vtkSQPlaneSourceCellGenerator : public vtkSQCellGenerator
 public:
   static vtkSQPlaneSourceCellGenerator *New();
   void PrintSelf(ostream& os, vtkIndent indent);
-  vtkTypeRevisionMacro(vtkSQPlaneSourceCellGenerator, vtkObject);
+  vtkTypeMacro(vtkSQPlaneSourceCellGenerator, vtkObject);
 
   /**
   Return the total number of cells available.

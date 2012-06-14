@@ -94,7 +94,6 @@ using std::max;
   #include "vtkSQLog.h"
 #endif
 
-vtkCxxRevisionMacro(vtkSQFieldTracer, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQFieldTracer);
 
 const double vtkSQFieldTracer::EPSILON = 1.0E-12;
@@ -508,7 +507,7 @@ int vtkSQFieldTracer::RequestDataObject(
       if (!outData || !outData->IsA(inData->GetClassName()))
         {
         outData=inData->NewInstance();
-        outData->SetPipelineInformation(outInfo);
+        outInfo->Set(vtkDataObject::DATA_OBJECT(),outData);
         outData->Delete();
         vtkInformation *portInfo=this->GetOutputPortInformation(0);
         portInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(),VTK_PIECES_EXTENT);
@@ -523,7 +522,7 @@ int vtkSQFieldTracer::RequestDataObject(
         // consrtruct a polydata for the field line output. output type
         // is always polydata.
         outData=vtkPolyData::New();
-        outData->SetPipelineInformation(outInfo);
+        outInfo->Set(vtkDataObject::DATA_OBJECT(),outData);
         outData->Delete();
         vtkInformation *portInfo=this->GetOutputPortInformation(0);
         portInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(),VTK_PIECES_EXTENT);
@@ -1218,7 +1217,7 @@ void vtkSQFieldTracer::IntegrateOne(
         // Initialize the vector field interpolator.
         interp=vtkInterpolatedVelocityField::New();
         interp->AddDataSet(oocRCache);
-        interp->SelectVectors(fieldName);
+        interp->SelectVectors(vtkDataObject::FIELD_ASSOCIATION_POINTS,fieldName);
         this->Integrator->SetFunctionSet(interp);
         interp->Delete();
         #if defined vtkSQFieldTracerTIME

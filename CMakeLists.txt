@@ -45,7 +45,6 @@ set(SM_CXX_SOURCES
   vtkSQBOVReader.cxx
   vtkSQBOVWriter.cxx
   vtkSQCellGenerator.cxx
-  vtkSQDistributedStreamTracer.cxx
   vtkSQEdgeFilter.cxx
   vtkSQFieldTopologySelect.cxx
   vtkSQFieldTopologySplit.cxx
@@ -58,7 +57,6 @@ set(SM_CXX_SOURCES
   vtkSQLog.cxx
   vtkSQMedianFilter.cxx
   vtkSQPlaneSourceCellGenerator.cxx
-  vtkSQPStreamTracer.cxx
   vtkSQVolumeSourceCellGenerator.cxx
   vtkSQPlaneSource.cxx
   vtkSQPointSource.cxx
@@ -66,7 +64,6 @@ set(SM_CXX_SOURCES
   vtkSQRandomSeedPoints.cxx
   vtkSQSeedPointLatice.cxx
   vtkSQSphereSource.cxx
-  vtkSQStreamTracer.cxx
   vtkSQSurfaceVectors.cxx
   vtkSQTensorGlyph.cxx
   vtkSQTubeFilter.cxx

@@ -29,7 +29,6 @@
 
 #include <math.h>
 
-vtkCxxRevisionMacro(vtkSQSphereSource, "$Revision: 1.70 $");
 vtkStandardNewMacro(vtkSQSphereSource);
 
 //----------------------------------------------------------------------------

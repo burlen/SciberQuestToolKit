@@ -28,10 +28,6 @@ Copyright 2012 SciberQuest Inc.
 #define GetClassSelectionMacro(CID)\
   int vtkSQFieldTopologySelect::GetSelect##CID(){ return this->ClassSelection[CID]; }
 
-
-//-----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkSQFieldTopologySelect,"$Revision: 1.0$");
-
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSQFieldTopologySelect);
 

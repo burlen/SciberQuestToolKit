@@ -37,7 +37,6 @@
 using std::map;
 using std::pair;
 
-vtkCxxRevisionMacro(vtkSQPlaneSource,"$Revision: 1.0$");
 vtkStandardNewMacro(vtkSQPlaneSource);
 
 //-----------------------------------------------------------------------------

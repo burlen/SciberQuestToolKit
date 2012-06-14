@@ -80,7 +80,7 @@ void TopologicalClassSelector::SetInput(vtkDataSet *input)
 void TopologicalClassSelector::AppendRange(double v0, double v1)
 {
   vtkThreshold *threshold=vtkThreshold::New();
-  threshold->SetInput(this->Input);
+  threshold->SetInputData(this->Input);
   threshold->SetInputArrayToProcess(
         0,
         0,
@@ -88,11 +88,11 @@ void TopologicalClassSelector::AppendRange(double v0, double v1)
         vtkDataObject::FIELD_ASSOCIATION_CELLS,
         "IntersectColor");
   threshold->ThresholdBetween(v0,v1);
+  threshold->Update();
 
   vtkUnstructuredGrid *ug=threshold->GetOutput();
-  ug->Update();
 
-  this->Append->AddInput(ug);
+  this->Append->AddInputData(ug);
 
   threshold->Delete();
 }
@@ -100,8 +100,8 @@ void TopologicalClassSelector::AppendRange(double v0, double v1)
 //-----------------------------------------------------------------------------
 vtkUnstructuredGrid *TopologicalClassSelector::GetOutput()
 {
+  this->Append->Update();
   vtkUnstructuredGrid *ug=this->Append->GetOutput();
-  ug->Update();
 
 //   cerr << "Geting output" << endl;
 //   ug->Print(cerr);

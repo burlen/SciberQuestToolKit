@@ -13,7 +13,6 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkStringList.h"
 #include "vtkSMNamedPropertyIterator.h"
 
-vtkCxxRevisionMacro(vtkSQPlaneSourceConfigurationWriter,"$Revision: 1.0$");
 vtkStandardNewMacro(vtkSQPlaneSourceConfigurationWriter);
 
 //-----------------------------------------------------------------------------

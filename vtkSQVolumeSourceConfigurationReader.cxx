@@ -14,7 +14,6 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkSMRenderViewProxy.h"
 
 
-vtkCxxRevisionMacro(vtkSQVolumeSourceConfigurationReader,"$Revision: 1.0$");
 vtkStandardNewMacro(vtkSQVolumeSourceConfigurationReader);
 
 //-----------------------------------------------------------------------------

@@ -531,11 +531,13 @@ void vtkSQTensorGlyph::SetSourceConnection(int id, vtkAlgorithmOutput* algOutput
     }
 }
 
+/*
 //----------------------------------------------------------------------------
 void vtkSQTensorGlyph::SetSource(vtkPolyData *source)
 {
   this->SetInput(1, source);
 }
+*/
 
 //----------------------------------------------------------------------------
 vtkPolyData *vtkSQTensorGlyph::GetSource()

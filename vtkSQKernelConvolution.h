@@ -29,7 +29,7 @@ class CUDAConvolutionDriver;
 class vtkSQKernelConvolution : public vtkDataSetAlgorithm
 {
 public:
-  vtkTypeRevisionMacro(vtkSQKernelConvolution,vtkDataSetAlgorithm);
+  vtkTypeMacro(vtkSQKernelConvolution,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQKernelConvolution *New();
 

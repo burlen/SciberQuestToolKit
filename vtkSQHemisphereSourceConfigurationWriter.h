@@ -28,7 +28,7 @@ class vtkSMProxy;
 class VTK_EXPORT vtkSQHemisphereSourceConfigurationWriter : public vtkSMProxyConfigurationWriter
 {
 public:
-  vtkTypeRevisionMacro(vtkSQHemisphereSourceConfigurationWriter,vtkObject);
+  vtkTypeMacro(vtkSQHemisphereSourceConfigurationWriter,vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQHemisphereSourceConfigurationWriter *New();
 

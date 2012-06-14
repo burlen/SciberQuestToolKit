@@ -28,7 +28,7 @@ class VTK_EXPORT vtkSQSeedPointLatice : public vtkPolyDataAlgorithm
 {
 public:
   static vtkSQSeedPointLatice *New();
-  vtkTypeRevisionMacro(vtkSQSeedPointLatice,vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkSQSeedPointLatice,vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

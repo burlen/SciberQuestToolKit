@@ -37,7 +37,6 @@ Copyright 2012 SciberQuest Inc.
 
 // #define vtkSQSeedPointLaticeDEBUG
 
-vtkCxxRevisionMacro(vtkSQSeedPointLatice, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQSeedPointLatice);
 
 

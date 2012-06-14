@@ -30,7 +30,7 @@ class VTK_EXPORT vtkSQProcessMonitor : public vtkPolyDataAlgorithm
 {
 public:
   void PrintSelf(ostream& os, vtkIndent indent);
-  vtkTypeRevisionMacro(vtkSQProcessMonitor,vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkSQProcessMonitor,vtkPolyDataAlgorithm);
 
   // Description:
   // Construct plane perpendicular to z-axis, resolution 1x1, width

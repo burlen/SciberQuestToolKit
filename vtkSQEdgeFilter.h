@@ -18,7 +18,7 @@ class vtkInformationVector;
 class vtkSQEdgeFilter : public vtkDataSetAlgorithm
 {
 public:
-  vtkTypeRevisionMacro(vtkSQEdgeFilter,vtkDataSetAlgorithm);
+  vtkTypeMacro(vtkSQEdgeFilter,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQEdgeFilter *New();
 

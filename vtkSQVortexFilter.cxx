@@ -27,11 +27,11 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkCellData.h"
 #include "vtkPVXMLElement.h"
 
-#include <vtkstd/string>
-using vtkstd::string;
+#include <string>
+using std::string;
 
-#include <vtkstd/utility>
-using vtkstd::pair;
+#include <utility>
+using std::pair;
 
 #include "Numerics.hxx"
 
@@ -46,7 +46,6 @@ using vtkstd::pair;
   #include<vtkSQLog.h>
 #endif
 
-vtkCxxRevisionMacro(vtkSQVortexFilter, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQVortexFilter);
 
 //-----------------------------------------------------------------------------
@@ -231,7 +230,6 @@ int vtkSQVortexFilter::RequestDataObject(
     outInfo->Set(vtkDataObject::DATA_TYPE_NAME(),inputType);
     outInfo->Set(vtkDataObject::DATA_OBJECT(),outData);
     outInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(), inData->GetExtentType());
-    outData->SetPipelineInformation(outInfo);
     outData->Delete();
     }
   return 1;

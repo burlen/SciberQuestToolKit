@@ -19,7 +19,8 @@
 #include "pqActiveObjects.h"
 #include "pqFileDialog.h"
 
-#include <vtkstd/string>
+#include <string>
+using std::string;
 
 #define pqErrorMacro(estr)\
   qDebug()\

@@ -25,15 +25,13 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkPointData.h"
 #include "vtkCellData.h"
 
-#include <vtkstd/string>
-using vtkstd::string;
+#include <string>
+using std::string;
 
 #include "Numerics.hxx"
 
 //#define vtkSQEdgeFilterDEBUG
 
-
-vtkCxxRevisionMacro(vtkSQEdgeFilter, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQEdgeFilter);
 
 //-----------------------------------------------------------------------------
@@ -86,7 +84,7 @@ int vtkSQEdgeFilter::RequestDataObject(
     outInfo->Set(vtkDataObject::DATA_TYPE_NAME(),inputType);
     outInfo->Set(vtkDataObject::DATA_OBJECT(),outData);
     outInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(), inData->GetExtentType());
-    outData->SetPipelineInformation(outInfo);
+    //outData->SetPipelineInformation(outInfo);
     outData->Delete();
     }
   return 1;

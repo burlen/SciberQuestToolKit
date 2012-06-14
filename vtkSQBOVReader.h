@@ -42,7 +42,7 @@ class VTK_EXPORT vtkSQBOVReader : public vtkDataSetAlgorithm
 {
 public:
   static vtkSQBOVReader *New();
-  vtkTypeRevisionMacro(vtkSQBOVReader,vtkDataSetAlgorithm);
+  vtkTypeMacro(vtkSQBOVReader,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

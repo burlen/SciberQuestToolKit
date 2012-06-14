@@ -20,7 +20,7 @@ class VTK_EXPORT vtkSQRandomCells : public vtkDataSetAlgorithm
 {
 public:
   static vtkSQRandomCells *New();
-  vtkTypeRevisionMacro(vtkSQRandomCells,vtkDataSetAlgorithm);
+  vtkTypeMacro(vtkSQRandomCells,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

@@ -58,7 +58,7 @@ public:
   virtual int GetCellPointIndexes(vtkIdType cid, vtkIdType *idx)=0;
 
 public:
-  vtkTypeRevisionMacro(vtkSQCellGenerator, vtkObject);
+  vtkTypeMacro(vtkSQCellGenerator, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
 

@@ -20,7 +20,7 @@ class vtkSQVolumeSourceCellGenerator : public vtkSQCellGenerator
 public:
   static vtkSQVolumeSourceCellGenerator *New();
   void PrintSelf(ostream& os, vtkIndent indent);
-  vtkTypeRevisionMacro(vtkSQVolumeSourceCellGenerator, vtkObject);
+  vtkTypeMacro(vtkSQVolumeSourceCellGenerator, vtkObject);
 
   /**
   Return the total number of cells available.

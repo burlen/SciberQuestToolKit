@@ -13,8 +13,6 @@ Copyright 2012 SciberQuest Inc.
 #include "Numerics.hxx"
 #include "Tuple.hxx"
 
-//-----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkSQVolumeSourceCellGenerator,"$Revision: 1.0$");
 
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSQVolumeSourceCellGenerator);

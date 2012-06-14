@@ -14,7 +14,6 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkSMNamedPropertyIterator.h"
 #include "vtkSMRenderViewProxy.h"
 
-vtkCxxRevisionMacro(vtkSQHemisphereSourceConfigurationWriter,"$Revision: 1.0$");
 vtkStandardNewMacro(vtkSQHemisphereSourceConfigurationWriter);
 
 //-----------------------------------------------------------------------------

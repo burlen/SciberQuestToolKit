@@ -25,8 +25,8 @@ typedef vtkStreamingDemandDrivenPipeline vtkSDDPipeline;
 #include "vtkDataSet.h"
 #include "vtkDataSetAttributes.h"
 #include "vtkPVXMLElement.h"
-#include <vtkstd/string>
-using vtkstd::string;
+#include <string>
+using std::string;
 
 // #define vtkSQImageSourceDEBUG
 // #define vtkSQImageSourceTIME
@@ -36,7 +36,6 @@ using vtkstd::string;
 #endif
 
 
-vtkCxxRevisionMacro(vtkSQImageSource, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQImageSource);
 
 //-----------------------------------------------------------------------------

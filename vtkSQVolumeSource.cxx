@@ -52,7 +52,6 @@ typedef pair<vtkIdType,vtkIdType> MapElement;
 // #define vtkSQVolumeSourceDEBUG
 // #define vtkSQVolumeSourceTIME
 
-vtkCxxRevisionMacro(vtkSQVolumeSource, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQVolumeSource);
 
 //----------------------------------------------------------------------------

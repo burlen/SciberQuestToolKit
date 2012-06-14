@@ -35,7 +35,7 @@ class vtkPVXMLElement;
 class vtkSQImageGhosts : public vtkDataSetAlgorithm
 {
 public:
-  vtkTypeRevisionMacro(vtkSQImageGhosts,vtkDataSetAlgorithm);
+  vtkTypeMacro(vtkSQImageGhosts,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQImageGhosts *New();
 

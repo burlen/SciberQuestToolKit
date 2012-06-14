@@ -46,24 +46,23 @@ Copyright 2012 SciberQuest Inc.
   #include <unistd.h>
 #endif
 
-#include <vtkstd/string>
-using vtkstd::string;
-#include <vtkstd/map>
-using vtkstd::map;
-#include <vtkstd/vector>
-using vtkstd::vector;
-#include <vtkstd/utility>
-using vtkstd::pair;
-#include <vtkstd/algorithm>
-using vtkstd::min;
-using vtkstd::max;
+#include <string>
+using std::string;
+#include <map>
+using std::map;
+#include <vector>
+using std::vector;
+#include <utility>
+using std::pair;
+#include <algorithm>
+using std::min;
+using std::max;
 
 
 #ifndef SQTK_WITHOUT_MPI
 #include <mpi.h>
 #endif
 
-vtkCxxRevisionMacro(vtkSQKernelConvolution, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQKernelConvolution);
 
 //-----------------------------------------------------------------------------
@@ -449,7 +448,7 @@ void vtkSQKernelConvolution::SetNumberOfActiveCUDADevices(int nActive)
   #endif
 
   //nActive=max(0,nActive);
-  nActive=vtkstd::min(nActive,this->NumberOfCUDADevices);
+  nActive=std::min(nActive,this->NumberOfCUDADevices);
   if (nActive==this->NumberOfActiveCUDADevices)
     {
     return;
@@ -737,7 +736,6 @@ int vtkSQKernelConvolution::RequestDataObject(
     outInfo->Set(vtkDataObject::DATA_TYPE_NAME(),inputType);
     outInfo->Set(vtkDataObject::DATA_OBJECT(),outData);
     outInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(), inData->GetExtentType());
-    outData->SetPipelineInformation(outInfo);
     outData->Delete();
     }
   return 1;

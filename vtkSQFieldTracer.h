@@ -40,7 +40,7 @@ class TerminationCondition;
 class VTK_EXPORT vtkSQFieldTracer : public vtkDataSetAlgorithm
 {
 public:
-  vtkTypeRevisionMacro(vtkSQFieldTracer,vtkDataSetAlgorithm);
+  vtkTypeMacro(vtkSQFieldTracer,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQFieldTracer *New();
 

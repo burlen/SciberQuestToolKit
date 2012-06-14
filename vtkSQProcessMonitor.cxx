@@ -35,7 +35,6 @@ using std::istringstream;
 #include "SystemInterfaceFactory.h"
 
 
-vtkCxxRevisionMacro(vtkSQProcessMonitor, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQProcessMonitor);
 
 //-----------------------------------------------------------------------------

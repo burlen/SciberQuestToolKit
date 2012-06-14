@@ -48,7 +48,7 @@ Copyright 2012 SciberQuest Inc.
 #include <QDebug>
 
 #include <string>
-using vtkstd::string;
+using std::string;
 
 #include <iostream>
 using std::cerr;

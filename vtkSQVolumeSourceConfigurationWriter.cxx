@@ -14,7 +14,6 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkSMNamedPropertyIterator.h"
 
 
-vtkCxxRevisionMacro(vtkSQVolumeSourceConfigurationWriter,"$Revision: 1.0$");
 vtkStandardNewMacro(vtkSQVolumeSourceConfigurationWriter);
 
 //-----------------------------------------------------------------------------

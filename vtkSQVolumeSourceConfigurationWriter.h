@@ -28,7 +28,7 @@ class vtkSMProxy;
 class VTK_EXPORT vtkSQVolumeSourceConfigurationWriter : public vtkSMProxyConfigurationWriter
 {
 public:
-  vtkTypeRevisionMacro(vtkSQVolumeSourceConfigurationWriter,vtkObject);
+  vtkTypeMacro(vtkSQVolumeSourceConfigurationWriter,vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQVolumeSourceConfigurationWriter *New();
 

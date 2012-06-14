@@ -23,7 +23,7 @@ class VTK_EXPORT vtkSQRandomSeedPoints : public vtkPolyDataAlgorithm
 {
 public:
   static vtkSQRandomSeedPoints *New();
-  vtkTypeRevisionMacro(vtkSQRandomSeedPoints,vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkSQRandomSeedPoints,vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

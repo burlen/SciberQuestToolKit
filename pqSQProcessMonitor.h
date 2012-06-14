@@ -11,11 +11,11 @@ Copyright 2012 SciberQuest Inc.
 
 #include "pqNamedObjectPanel.h"
 
-#include <vtkstd/map>
+#include <map>
 using std::map;
-#include <vtkstd/string>
+#include <string>
 using std::string;
-#include  <vtkstd/vector>
+#include  <vector>
 using std::vector;
 
 class pqSQProcessMonitorUI;

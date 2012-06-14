@@ -13,8 +13,6 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkSMProxy.h"
 #include "vtkSMRenderViewProxy.h"
 
-
-vtkCxxRevisionMacro(vtkSQHemisphereSourceConfigurationReader,"$Revision: 1.0$");
 vtkStandardNewMacro(vtkSQHemisphereSourceConfigurationReader);
 
 //-----------------------------------------------------------------------------

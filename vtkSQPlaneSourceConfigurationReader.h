@@ -29,7 +29,7 @@ class vtkPVXMLElement;
 class VTK_EXPORT vtkSQPlaneSourceConfigurationReader : public vtkSMProxyConfigurationReader
 {
 public:
-  vtkTypeRevisionMacro(vtkSQPlaneSourceConfigurationReader,vtkSMProxyConfigurationReader);
+  vtkTypeMacro(vtkSQPlaneSourceConfigurationReader,vtkSMProxyConfigurationReader);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQPlaneSourceConfigurationReader *New();
 

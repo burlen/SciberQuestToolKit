@@ -51,7 +51,7 @@ class VTK_EXPORT vtkSQFieldTopologySplit : public vtkDataSetAlgorithm
 {
 public:
   void PrintSelf(ostream& os, vtkIndent indent);
-  vtkTypeRevisionMacro(vtkSQFieldTopologySplit,vtkDataSetAlgorithm);
+  vtkTypeMacro(vtkSQFieldTopologySplit,vtkDataSetAlgorithm);
   static vtkSQFieldTopologySplit *New();
 
 protected:

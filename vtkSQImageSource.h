@@ -22,7 +22,7 @@ class vtkPVXMLElement;
 class vtkSQImageSource : public vtkImageAlgorithm
 {
 public:
-  vtkTypeRevisionMacro(vtkSQImageSource,vtkImageAlgorithm);
+  vtkTypeMacro(vtkSQImageSource,vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQImageSource *New();
 

@@ -12,9 +12,6 @@ Copyright 2012 SciberQuest Inc.
 #include "vtkInformationObjectBaseKey.h"
 
 //-----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkSQCellGenerator, "$Revision: 0.0 $");
-
-//-----------------------------------------------------------------------------
 vtkInformationKeyMacro(vtkSQCellGenerator,CELL_GENERATOR,ObjectBase);
 
 //-----------------------------------------------------------------------------

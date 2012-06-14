@@ -52,7 +52,7 @@ class vtkSQLog : public vtkObject
 {
 public:
   static vtkSQLog *New();
-  vtkTypeRevisionMacro(vtkSQLog,vtkObject);
+  vtkTypeMacro(vtkSQLog,vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

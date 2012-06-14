@@ -55,7 +55,7 @@ public:
   static vtkInformationIntegerVectorKey *PERIODIC_BC();
 
 public:
-  vtkTypeRevisionMacro(vtkSQOOCReader, vtkObject);
+  vtkTypeMacro(vtkSQOOCReader, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
 

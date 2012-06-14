@@ -39,7 +39,6 @@ using std::ostringstream;
   #define vtkSQOOCBOVReaderDEBUG 0
 #endif
 
-vtkCxxRevisionMacro(vtkSQOOCBOVReader, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQOOCBOVReader);
 
 //-----------------------------------------------------------------------------

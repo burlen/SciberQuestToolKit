@@ -110,10 +110,6 @@ void agyrotropy(T *pT, T *pV, T *pA, size_t n)
     }
 }
 
-
-//-----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkSQAgyrotropyFilter, "$Revision: 0.0 $");
-
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSQAgyrotropyFilter);
 

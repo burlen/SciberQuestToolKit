@@ -29,7 +29,7 @@ class vtkPVXMLElement;
 class VTK_EXPORT vtkSQHemisphereSourceConfigurationReader : public vtkSMProxyConfigurationReader
 {
 public:
-  vtkTypeRevisionMacro(vtkSQHemisphereSourceConfigurationReader,vtkSMProxyConfigurationReader);
+  vtkTypeMacro(vtkSQHemisphereSourceConfigurationReader,vtkSMProxyConfigurationReader);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQHemisphereSourceConfigurationReader *New();
 

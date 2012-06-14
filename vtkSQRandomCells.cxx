@@ -50,7 +50,6 @@ typedef pair<set<unsigned long long>::iterator,bool> SetInsert;
 
 // #define vtkSQRandomCellsDEBUG
 
-vtkCxxRevisionMacro(vtkSQRandomCells, "$Revision: 0.0 $");
 vtkStandardNewMacro(vtkSQRandomCells);
 
 //*****************************************************************************

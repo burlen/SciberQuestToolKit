@@ -11,7 +11,6 @@ Copyright 2012 SciberQuest Inc.
   <Category name="SciberQuestSciVis" menu_label="Sciber&amp;Quest" show_in_toolbar="0">
     <Proxy group="filters" name="vtkSQAgyrotropyFilter"/>
     <Proxy group="filters" name="vtkSC11DemoAnnotation"/>
-    <Proxy group="filters" name="vtkSQDistributedStreamTracer"/>
     <Proxy group="filters" name="vtkSQEdgeFilter"/>
     <Proxy group="filters" name="vtkSQDisplacementMapper"/>
     <Proxy group="filters" name="vtkSQDisplacementMapperRK45"/>

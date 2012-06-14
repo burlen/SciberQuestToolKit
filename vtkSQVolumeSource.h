@@ -22,7 +22,7 @@ class VTK_EXPORT vtkSQVolumeSource : public vtkUnstructuredGridAlgorithm
 {
 public:
   static vtkSQVolumeSource *New();
-  vtkTypeRevisionMacro(vtkSQVolumeSource,vtkUnstructuredGridAlgorithm);
+  vtkTypeMacro(vtkSQVolumeSource,vtkUnstructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

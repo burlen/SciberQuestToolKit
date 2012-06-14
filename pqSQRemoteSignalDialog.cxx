@@ -24,9 +24,6 @@ using std::endl;
 
 #include "pqFileDialog.h"
 
-#include <vtkstd/string>
-#include <vtksys/ios/sstream>
-
 #define pqErrorMacro(estr)\
   qDebug()\
       << "Error in:" << endl\
@@ -140,4 +137,3 @@ int pqSQRemoteSignalDialog::GetTrapFPEUnderflow()
 {
   return this->Ui->fpeTrapUnderflow->isChecked();
 }
-

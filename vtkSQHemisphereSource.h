@@ -21,7 +21,7 @@ class vtkPVXMLElement;
 class VTK_EXPORT vtkSQHemisphereSource : public vtkPolyDataAlgorithm
 {
 public:
-  vtkTypeRevisionMacro(vtkSQHemisphereSource,vtkPolyDataAlgorithm);
+  vtkTypeMacro(vtkSQHemisphereSource,vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
   static vtkSQHemisphereSource *New();
 

@@ -48,13 +48,13 @@ using Ui::pqSQProcessMonitorForm;
 #include "SystemInterface.h"
 #include "SystemInterfaceFactory.h"
 
-#include <vtkstd/map>
+#include <map>
 using std::map;
 using std::pair;
-#include <vtkstd/vector>
-using vtkstd::vector;
-#include <vtkstd/string>
-using vtkstd::string;
+#include <vector>
+using std::vector;
+#include <string>
+using std::string;
 #include <sstream>
 using std::ostringstream;
 using std::istringstream;

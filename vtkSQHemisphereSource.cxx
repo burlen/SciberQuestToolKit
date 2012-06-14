@@ -91,7 +91,6 @@ void LocateHemisphere(float *pX, size_t nx,double *C, double *N)
 }
 
 
-vtkCxxRevisionMacro(vtkSQHemisphereSource, "$Revision: 1.70 $");
 vtkStandardNewMacro(vtkSQHemisphereSource);
 
 //----------------------------------------------------------------------------
@@ -273,7 +272,6 @@ int vtkSQHemisphereSource::RequestData(
   ss->SetStartPhi(0.0);
   ss->SetEndPhi(90.0);
   ss->Update();
-  ss->GetOutput()->Update();
   northPd->DeepCopy(ss->GetOutput());
 
   // orient it
@@ -298,7 +296,6 @@ int vtkSQHemisphereSource::RequestData(
   ss->SetStartPhi(90.0);
   ss->SetEndPhi(180.0);
   ss->Update();
-  ss->GetOutput()->Update();
   southPd->DeepCopy(ss->GetOutput());
 
   // orient it
