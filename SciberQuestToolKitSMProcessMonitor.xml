@@ -23,7 +23,7 @@ Copyright 2012 SciberQuest Inc.
     <!-- run configuration from each server instance -->
     <StringVectorProperty name="ConfigStream"
       command="GetConfigStream"
-      information_only="1" >
+      information_only="1">
       <SimpleStringInformationHelper />
     </StringVectorProperty>
 
@@ -50,7 +50,8 @@ Copyright 2012 SciberQuest Inc.
       name="EnableBacktraceHandler"
       command="SetEnableBacktraceHandler"
       number_of_elements="1"
-      default_values="0">
+      default_values="0"
+      panel_visibility="default">
     <Documentation>
       Enable/Disable a signal handler that prints a backtrace.
     </Documentation>
@@ -61,7 +62,8 @@ Copyright 2012 SciberQuest Inc.
       name="TrapFPEDivByZero"
       command="SetTrapFPEDivByZero"
       number_of_elements="1"
-      default_values="0">
+      default_values="0"
+      panel_visibility="default">
     <Documentation>
       Trap divide by zero FPE.
     </Documentation>
@@ -71,7 +73,8 @@ Copyright 2012 SciberQuest Inc.
       name="TrapFPEInexact"
       command="SetTrapFPEInexact"
       number_of_elements="1"
-      default_values="0">
+      default_values="0"
+      panel_visibility="default">
       <Documentation>
         Trap inexact FPE.
       </Documentation>
@@ -81,7 +84,8 @@ Copyright 2012 SciberQuest Inc.
       name="TrapFPEInvalid"
       command="SetTrapFPEInvalid"
       number_of_elements="1"
-      default_values="0">
+      default_values="0"
+      panel_visibility="default">
       <Documentation>
         Trap invalid FPE.
       </Documentation>
@@ -91,7 +95,8 @@ Copyright 2012 SciberQuest Inc.
       name="TrapFPEOverflow"
       command="SetTrapFPEOverflow"
       number_of_elements="1"
-      default_values="0">
+      default_values="0"
+      panel_visibility="default">
       <Documentation>
         Trap overflow FPE.
       </Documentation>
@@ -101,7 +106,8 @@ Copyright 2012 SciberQuest Inc.
       name="TrapFPEUnderflow"
       command="SetTrapFPEUnderflow"
       number_of_elements="1"
-      default_values="0">
+      default_values="0"
+      panel_visibility="default">
       <Documentation>
         Trap underflow FPE.
       </Documentation>
@@ -111,7 +117,8 @@ Copyright 2012 SciberQuest Inc.
       name="TrapAllFPE"
       command="SetTrapAllFPE"
       number_of_elements="1"
-      default_values="0">
+      default_values="0"
+      panel_visibility="default">
       <Documentation>
         Enable/Disable all floating point exceptions.
       </Documentation>
